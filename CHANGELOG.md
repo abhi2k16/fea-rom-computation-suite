@@ -27,9 +27,18 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
   versions; not exported from the package. Tests: `tests/test_torch_system_bases.py` (skip without torch).
 - Measured on a 20-element clamped-clamped geometrically nonlinear beam loaded along mode 1 to three thicknesses
   of deflection (relative error against the full nonlinear solve): 3 modes alone 6.8%; with modal derivatives
-  (9 vectors) 0.57%; dual modes 1.3%; quadratic manifold (still 3 coordinates) 0.57%. Wall-clock speed-ups
-  were not measured. Tests: `test_modal_derivatives`, `test_dual_modes_eed`, `test_quadratic_manifold`,
+  (9 vectors) 0.57%; dual modes 1.3%; quadratic manifold (still 3 coordinates) 0.57%. Tests: `test_modal_derivatives`, `test_dual_modes_eed`, `test_quadratic_manifold`,
   `test_slow_fast`, `test_subspace_nnm`, `test_free_interface_cms`, `test_parametric_compare`.
+
+- `enhanced_enforced_displacement_rom(..., mode_scales=)`: per-coordinate probe sizes (array or callable of the
+  amplitude). Needed for modal-derivative coordinates, which grow like the square of a mode amplitude; probing them
+  at the mode amplitude gave a 91% static error in our beam test.
+- `examples/system_driven_bases_timing.py` and measured timings (2 CPU cores, best of 3) against a full-order
+  load-stepped Newton solve over a sweep of 8 loads: quadratic manifold with ECSW 3.0x, 10.9x and 57x faster per
+  query on 20, 100 and 400 beam elements (errors 0.81%, 0.83%, 4.1%), breaking even after 1 to 2 queries;
+  Galerkin on a reduced basis only 3x to 5x because it still evaluates the full-order force; the polynomial
+  (EED) force 168x faster per query at 400 elements but with 18.7 s offline, 13.7% error and a failed Newton
+  solve on the 100-element mesh. See the user guide for the full table.
 
 ### Changed (renames)
 - Renamed modules and tests that carried wave or phase numbers: `rom_engine.wave13_validation` is now

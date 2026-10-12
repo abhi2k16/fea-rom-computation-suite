@@ -1001,34 +1001,41 @@ def _term_gradient(model, q):
     return G
 
 
-def _eed_states(m, amplitudes, max_distinct):
+def _eed_states(m, amplitudes, max_distinct, mode_scales=None):
     """Displacement states of the enhanced enforced-displacement identification: every mode alone, every pair and
     (if max_distinct == 3) every triple, each at each amplitude and with the signs that separate even from odd
-    powers."""
+    powers. Coordinate j of a probe at amplitude a has size a * s_j, where s = mode_scales (an (m,) array, or a
+    callable a -> (m,) array; default all ones)."""
     from itertools import combinations, product
     states = []
     for a in amplitudes:
+        if mode_scales is None:
+            sc = np.ones(m)
+        else:
+            sc = np.asarray(mode_scales(a) if callable(mode_scales) else mode_scales, dtype=float)
+            if sc.shape != (m,):
+                raise ValueError(f"mode_scales must give shape ({m},), got {sc.shape}")
         for j in range(m):
             for sgn in (+1.0, -1.0):
                 q = np.zeros(m)
-                q[j] = sgn * a
+                q[j] = sgn * a * sc[j]
                 states.append(q)
         if max_distinct >= 2:
             for j, l in combinations(range(m), 2):
                 for s2 in (+1.0, -1.0):
                     q = np.zeros(m)
-                    q[j], q[l] = a, s2 * a
+                    q[j], q[l] = a * sc[j], s2 * a * sc[l]
                     states.append(q)
         if max_distinct >= 3:
             for j, l, p in combinations(range(m), 3):
                 for s2, s3 in product((+1.0, -1.0), repeat=2):
                     q = np.zeros(m)
-                    q[j], q[l], q[p] = a, s2 * a, s3 * a
+                    q[j], q[l], q[p] = a * sc[j], s2 * a * sc[l], s3 * a * sc[p]
                     states.append(q)
     return states
 
 
-def enhanced_enforced_displacement_rom(V, tangent_fn, amplitudes, max_distinct=2, K_r=None):
+def enhanced_enforced_displacement_rom(V, tangent_fn, amplitudes, max_distinct=2, K_r=None, mode_scales=None):
     """Identify a `PolynomialModalROM` from reduced TANGENT stiffness probes instead of force probes
     (Perez, Wang and Mignolet 2014; Tiso, Karamooz Mahdiabadi and Marconi 2021, Section 4.5.5.2).
 
@@ -1051,6 +1058,11 @@ def enhanced_enforced_displacement_rom(V, tangent_fn, amplitudes, max_distinct=2
         the i-th column of the tangent (the rank of the identification is returned and tested against the number of
         terms). 3 adds triple probes, O(m^3) evaluations, as a redundant check.
     K_r : reduced linear stiffness V^T K_T(0) V, computed from `tangent_fn` if not given.
+    mode_scales : relative probe size of each coordinate, an (m,) array or a callable amplitude -> (m,) array
+        (default: all ones, i.e. every coordinate probed at the same amplitude). Needed when the coordinates live
+        on very different scales, as modal-derivative coordinates do (they grow like the SQUARE of a mode
+        amplitude): probing them at the mode amplitude takes the structure far outside its valid range and ruins the
+        fit. A callable lets the scale follow the amplitude, e.g. from lifting a mode through a quadratic manifold.
 
     Returns (model, info): a fitted `PolynomialModalROM`, and `info` with `n_tangent_evals`, `n_states`, `rank`,
     `n_terms` and `residual` (relative least-squares residual).
@@ -1069,7 +1081,7 @@ def enhanced_enforced_displacement_rom(V, tangent_fn, amplitudes, max_distinct=2
     if K_r is None:
         K_r = reduced(np.zeros(n))
     model = PolynomialModalROM(m)
-    states = _eed_states(m, amplitudes, max_distinct)
+    states = _eed_states(m, amplitudes, max_distinct, mode_scales)
     A_rows, B_rows = [], []
     for q in states:
         J_nl = reduced(V @ q) - K_r                  # (m, m): J_nl[r, s] = d F_nl,r / d q_s
@@ -1085,7 +1097,7 @@ def enhanced_enforced_displacement_rom(V, tangent_fn, amplitudes, max_distinct=2
                        n_terms=A.shape[1], residual=res)
 
 
-def EnhancedEnforcedDisplacementROM(V, tangent_fn, amplitudes, max_distinct=2):
+def EnhancedEnforcedDisplacementROM(V, tangent_fn, amplitudes, max_distinct=2, mode_scales=None):
     """Name matching `ICEROM` / `EnforcedDisplacementROM`: a fitted `PolynomialModalROM` from tangent probes.
     Returns the model only; use `enhanced_enforced_displacement_rom` for the diagnostics."""
-    return enhanced_enforced_displacement_rom(V, tangent_fn, amplitudes, max_distinct)[0]
+    return enhanced_enforced_displacement_rom(V, tangent_fn, amplitudes, max_distinct, mode_scales=mode_scales)[0]

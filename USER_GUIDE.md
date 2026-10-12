@@ -1501,7 +1501,26 @@ It reproduces the coupled Galerkin solve on the same basis; what it changes is t
 | Quadratic manifold from the derivatives | 3 | 0.57% |
 | Slow-fast, same bending and derivative vectors | 3 slow | 0.57% |
 
-These are static errors on one beam and one load shape; the free-vibration backbone in the derivative-augmented subspace agreed with a full-order Newmark run to within 3% at the two amplitudes tested. Wall-clock speed-ups were not measured, and nothing here has been tried on shells.
+**Speed.** The table above says nothing about time, and a smaller basis is not automatically faster: Galerkin on any basis still calls the full-order internal force at every Newton iteration. `examples/system_driven_bases_timing.py` times a sweep of 8 load levels (1 to 4 thicknesses) against the full-order Newton solver on three mesh sizes. Measured here (2 CPU cores, NumPy, best of 3; worst relative error over the sweep; your machine will differ):
+
+| Mesh (free DOFs) | Full-order, per query | Reduced model | Error | Per-query speed-up | Offline | Break-even queries |
+|---|---:|---|---:|---:|---:|---:|
+| 20 elements (57) | 34 ms | Galerkin, 3 modes | 7.8% | 3.2x | 0 | 0 |
+| | | Galerkin, modal-derivative basis | 0.81% | 3.2x | 0.01 s | 1 |
+| | | polynomial force (EED) | 0.97% | 4.3x | 1.6 s | 63 |
+| | | quadratic manifold + ECSW (14 of 20 elements) | 0.81% | 3.0x | 0.04 s | 2 |
+| 100 elements (297) | 200 ms | Galerkin, 3 modes | 8.4% | 3.3x | 0 | 0 |
+| | | Galerkin, modal-derivative basis | 0.83% | 2.9x | 0.06 s | 1 |
+| | | polynomial force (EED) | Newton did not converge | n/a | n/a | n/a |
+| | | quadratic manifold + ECSW (16 of 100) | 0.83% | 10.9x | 0.24 s | 2 |
+| 400 elements (1197) | 1.82 s | Galerkin, 3 modes | 15% | 5.4x | 0 | 0 |
+| | | Galerkin, modal-derivative basis | 3.7% | 5.2x | 0.43 s | 1 |
+| | | polynomial force (EED) | 13.7% | 168x | 18.7 s | 11 |
+| | | quadratic manifold + ECSW (23 of 400) | 4.1% | 57x | 1.06 s | 1 |
+
+What this shows: the speed comes from not evaluating the full-order force, not from the basis itself. On the small mesh nothing gains more than about 4x. The manifold with ECSW pays off as the mesh grows (3x, 11x, 57x) and breaks even after one or two queries; over the 8-query sweep at 400 elements its effective speed-up, with the 1 s offline cost charged, is 11x. The polynomial (EED) force is the fastest per query at 400 elements (168x), but its offline cost is the highest (the tangent probes assemble the full tangent 361 times) and it was less accurate than Galerkin on the same basis (13.7% against 3.7%), and its Newton solve failed to converge on the 100-element mesh, so treat it as the least robust of the four. Accuracy of every reduced model got worse on the finer meshes with the same modes. One beam, one load direction, static only; a transient run and other structures were not timed.
+
+These are static errors on one beam and one load shape; the free-vibration backbone in the derivative-augmented subspace agreed with a full-order Newmark run to within 3% at the two amplitudes tested. Timings are in the Speed paragraph above; nothing here has been tried on shells.
 
 > [!NOTE]
 > Each function has an opt-in PyTorch counterpart named `torch_*` in `rom_engine/torch_system_bases.py` (import the module directly; it is not re-exported). The full-order callables must then be torch-native. For the small dense matrices of a reduced model the NumPy path is often faster; the torch versions are for batched or differentiable use.

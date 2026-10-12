@@ -1690,8 +1690,8 @@ Surrogate nonlinear structural ROMs: RBF surrogate of the nonlinear force (MFS-N
 - 🔧 **`ShiMeiROM(n_modes)`** ★ — Same regression as `ICEROM` -- kept as a separate, honestly- labeled name because the literature (Section 1's citations) distinguishes ICE and Shi & Mei by training-data convention details (e.g. membrane augmentation) this module ...
 - 🔧 **`EnforcedDisplacementROM(n_modes)`** ★ — STEP's own convention (Muravyov & Rizzi 2003): `PolynomialModalROM` fit with `EnforcedDisplacementStrategy`-generated training data (no load-scaling formula needed).
 
-- 🔧 **`enhanced_enforced_displacement_rom(V, tangent_fn, amplitudes, max_distinct=2, K_r=None)`** ★ — Identify a `PolynomialModalROM` from reduced TANGENT stiffness probes instead of force probes (Perez, Wang and Mignolet 2014; Tiso, Karamooz Mahdiabadi and Marconi 2021, Section 4.5.5.2).
-- 🔧 **`EnhancedEnforcedDisplacementROM(V, tangent_fn, amplitudes, max_distinct=2)`** ★ — Name matching `ICEROM` / `EnforcedDisplacementROM`: a fitted `PolynomialModalROM` from tangent probes.
+- 🔧 **`enhanced_enforced_displacement_rom(V, tangent_fn, amplitudes, max_distinct=2, K_r=None, mode_scales=None)`** ★ — Identify a `PolynomialModalROM` from reduced TANGENT stiffness probes instead of force probes (Perez, Wang and Mignolet 2014; Tiso, Karamooz Mahdiabadi and Marconi 2021, Section 4.5.5.2).
+- 🔧 **`EnhancedEnforcedDisplacementROM(V, tangent_fn, amplitudes, max_distinct=2, mode_scales=None)`** ★ — Name matching `ICEROM` / `EnforcedDisplacementROM`: a fitted `PolynomialModalROM` from tangent probes.
 
 </details>
 

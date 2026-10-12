@@ -65,6 +65,21 @@ def test_eed_cost_grows_quadratically_with_the_number_of_modes(synth):
     assert i3["n_tangent_evals"] > counts[4]
 
 
+def test_eed_mode_scales_shape_the_probes_and_are_validated(synth):
+    sc = np.array([1.0, 0.5, 0.25, 0.1])
+    model, info = enhanced_enforced_displacement_rom(synth["Phi"], synth["K_t"], [0.02, 0.04], mode_scales=sc)
+    rng = np.random.default_rng(3)
+    for _ in range(8):
+        q = rng.uniform(-0.04, 0.04, 4)
+        t = _true_force(synth, q)
+        assert np.linalg.norm(model.force(q) - t) < 1e-9 * np.linalg.norm(t)
+    # a callable gives the same probes as the equivalent array
+    m2, _ = enhanced_enforced_displacement_rom(synth["Phi"], synth["K_t"], [0.02, 0.04], mode_scales=lambda a: sc)
+    assert np.allclose(m2.coeffs, model.coeffs)
+    with pytest.raises(ValueError):
+        enhanced_enforced_displacement_rom(synth["Phi"], synth["K_t"], [0.02], mode_scales=np.ones(3))
+
+
 def test_eed_validates_arguments_and_named_wrapper(synth):
     with pytest.raises(ValueError):
         enhanced_enforced_displacement_rom(synth["Phi"], synth["K_t"], [0.02], max_distinct=4)

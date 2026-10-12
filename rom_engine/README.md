@@ -376,7 +376,8 @@ rom_engine/
     ├── greedy_frequency_training.py       # adaptive vs. uniform training-frequency selection
     ├── certified_bound_cantilever.py      # certified SCM-family bound: guarantee + honest reach
     ├── plate_modal_identification.py      # non-intrusive ID on a real plate FE model (air/water)
-    └── mode_shape_vibration_recovery.py   # full-field mode shapes + time-domain recovery
+    ├── mode_shape_vibration_recovery.py   # full-field mode shapes + time-domain recovery
+    └── system_driven_bases_timing.py      # accuracy, online/offline time and break-even of the system-driven models
 ```
 
 <a id="s-6"></a>
