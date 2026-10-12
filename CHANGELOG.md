@@ -33,6 +33,10 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 - `enhanced_enforced_displacement_rom(..., mode_scales=)`: per-coordinate probe sizes (array or callable of the
   amplitude). Needed for modal-derivative coordinates, which grow like the square of a mode amplitude; probing them
   at the mode amplitude gave a 91% static error in our beam test.
+- `examples/system_driven_bases_timing.py` now also runs transient releases and a clamped corotational plate
+  (`tests/shell_plate_fixtures.py`), resumable with `--cache`. Measured: manifold + ECSW 9.0x on a 100-element beam
+  transient and 4.0x / 10.0x on 4x4 / 6x6 plate transients; Galerkin 1.0x to 1.6x; polynomial force fastest per run
+  but 124 s to 274 s offline and failed on the beam transient. 6x6 plate accuracy (7.5% for every model) is unexplained.
 - `examples/system_driven_bases_timing.py` and measured timings (2 CPU cores, best of 3) against a full-order
   load-stepped Newton solve over a sweep of 8 loads: quadratic manifold with ECSW 3.0x, 10.9x and 57x faster per
   query on 20, 100 and 400 beam elements (errors 0.81%, 0.83%, 4.1%), breaking even after 1 to 2 queries;

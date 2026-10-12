@@ -1,0 +1,101 @@
+{
+ "model": "shell",
+ "size": 6,
+ "n_free": 150,
+ "offline": {
+  "modal derivatives": 4.353984999999739,
+  "EED polynomial": 274.43232300000454,
+  "manifold ECSW": 9.726626699999542
+ },
+ "basis": 9,
+ "ecsw": {
+  "selected": 19,
+  "total": 36
+ },
+ "static": {
+  "t_fom_per_query": 13.17048971999975,
+  "n_queries": 5,
+  "models": {
+   "Galerkin, 3 modes (full force)": {
+    "coords": 3,
+    "t": 3.279578760000004,
+    "err": 0.07617217962235885,
+    "offline": 0.0,
+    "speedup": 4.015908957771068,
+    "effective_speedup": 4.015908957771069,
+    "break_even": 0
+   },
+   "Galerkin, modal derivatives (full force)": {
+    "coords": 9,
+    "t": 3.508392140000069,
+    "err": 0.07655773459633643,
+    "offline": 4.353984999999739,
+    "speedup": 3.753995903091805,
+    "effective_speedup": 3.007517898621684,
+    "break_even": 1
+   },
+   "polynomial force (EED)": {
+    "coords": 9,
+    "t": 0.008941799999956857,
+    "err": 0.07655773471379687,
+    "offline": 274.43232300000454,
+    "speedup": 1472.9125813665364,
+    "effective_speedup": 0.23991970519412245,
+    "break_even": 21
+   },
+   "quadratic manifold + ECSW": {
+    "coords": 3,
+    "t": 1.9750557800001842,
+    "err": 0.076566774198922,
+    "offline": 9.726626699999542,
+    "speedup": 6.668414053601323,
+    "effective_speedup": 3.3594921812090144,
+    "break_even": 1
+   }
+  }
+ },
+ "transient": {
+  "t_fom_run": 283.04096899999786,
+  "n_steps": 100,
+  "dt": 0.000412712570556147,
+  "u0_peak_thicknesses": 2.799214717217451,
+  "models": {
+   "Galerkin, 3 modes (full force)": {
+    "coords": 3,
+    "t": 182.4710654999999,
+    "err": 0.08488099361808223,
+    "offline": 0.0,
+    "speedup": 1.5511553474213589,
+    "effective_speedup": 1.5511553474213589,
+    "break_even": 0
+   },
+   "Galerkin, modal derivatives (full force)": {
+    "coords": 9,
+    "t": 180.61611249999987,
+    "err": 0.07476107134455139,
+    "offline": 4.353984999999739,
+    "speedup": 1.567085932048272,
+    "effective_speedup": 1.5301985176279558,
+    "break_even": 1
+   },
+   "polynomial force (EED)": {
+    "coords": 9,
+    "t": 0.6969177999999374,
+    "err": 0.07476107134455139,
+    "offline": 274.43232300000454,
+    "speedup": 406.1325008487705,
+    "effective_speedup": 1.028756406178377,
+    "break_even": 1
+   },
+   "quadratic manifold + ECSW": {
+    "coords": 3,
+    "t": 28.22244900000078,
+    "err": 0.07511234943162214,
+    "offline": 9.726626699999542,
+    "speedup": 10.028930125801274,
+    "effective_speedup": 7.458441708502415,
+    "break_even": 1
+   }
+  }
+ }
+}

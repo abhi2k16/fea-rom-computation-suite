@@ -1518,9 +1518,36 @@ It reproduces the coupled Galerkin solve on the same basis; what it changes is t
 | | | polynomial force (EED) | 13.7% | 168x | 18.7 s | 11 |
 | | | quadratic manifold + ECSW (23 of 400) | 4.1% | 57x | 1.06 s | 1 |
 
-What this shows: the speed comes from not evaluating the full-order force, not from the basis itself. On the small mesh nothing gains more than about 4x. The manifold with ECSW pays off as the mesh grows (3x, 11x, 57x) and breaks even after one or two queries; over the 8-query sweep at 400 elements its effective speed-up, with the 1 s offline cost charged, is 11x. The polynomial (EED) force is the fastest per query at 400 elements (168x), but its offline cost is the highest (the tangent probes assemble the full tangent 361 times) and it was less accurate than Galerkin on the same basis (13.7% against 3.7%), and its Newton solve failed to converge on the 100-element mesh, so treat it as the least robust of the four. Accuracy of every reduced model got worse on the finer meshes with the same modes. One beam, one load direction, static only; a transient run and other structures were not timed.
+What this shows: the speed comes from not evaluating the full-order force, not from the basis itself. On the small mesh nothing gains more than about 4x. The manifold with ECSW pays off as the mesh grows (3x, 11x, 57x) and breaks even after one or two queries; over the 8-query sweep at 400 elements its effective speed-up, with the 1 s offline cost charged, is 11x. The polynomial (EED) force is the fastest per query at 400 elements (168x), but its offline cost is the highest (the tangent probes assemble the full tangent 361 times) and it was less accurate than Galerkin on the same basis (13.7% against 3.7%), and its Newton solve failed to converge on the 100-element mesh, so treat it as the least robust of the four. Accuracy of every reduced model got worse on the finer meshes with the same modes. One beam, one load direction.
 
-These are static errors on one beam and one load shape; the free-vibration backbone in the derivative-augmented subspace agreed with a full-order Newmark run to within 3% at the two amplitudes tested. Timings are in the Speed paragraph above; nothing here has been tried on shells.
+**Transient and shell runs.** The same script (`python examples/system_driven_bases_timing.py <beam|shell> <size> <n_sweep>`) also releases the structure from its static state at about 2.2 to 2.8 thicknesses for two linear periods and compares against full-order average-acceleration Newmark (the manifold uses RK4). Shells are a clamped square corotational MITC plate under uniform pressure (a coarse mesh: its first frequency is about 20% above the analytic value). Same machine; error is the worst relative field error over time.
+
+| Case | Full-order | Reduced model | Error | Speed-up | Offline | Break-even |
+|---|---:|---|---:|---:|---:|---:|
+| Beam, 100 el., transient (200 steps) | 6.6 s | Galerkin, 3 modes | 67% | 1.2x | 0 | 0 |
+| | | Galerkin, modal derivatives | 1.6% | 1.0x | 0.06 s | never |
+| | | polynomial force (EED) | Newton did not converge | n/a | n/a | n/a |
+| | | quadratic manifold + ECSW (16 of 100) | 2.2% | 9.0x | 0.24 s | 1 |
+| Plate 4x4 (54 DOFs), static, 5 loads | 5.4 s/query | Galerkin, 3 modes | 0.37% | 3.1x | 0 | 0 |
+| | | Galerkin, modal derivatives | 0.04% | 3.0x | 2.0 s | 1 |
+| | | polynomial force (EED) | 0.04% | 369x | 124 s | 24 |
+| | | quadratic manifold + ECSW (16 of 16) | 0.04% | 3.7x | 4.5 s | 2 |
+| Plate 4x4, transient (100 steps) | 86 s | Galerkin, 3 modes | 2.3% | 1.0x | 0 | 0 |
+| | | Galerkin, modal derivatives | 0.09% | 1.0x | 2.0 s | 5 |
+| | | polynomial force (EED) | 0.09% | 114x | 124 s | 2 |
+| | | quadratic manifold + ECSW | 2.1% | 4.0x | 4.5 s | 1 |
+| Plate 6x6 (150 DOFs), static, 5 loads | 13.2 s/query | Galerkin, 3 modes | 7.6% | 4.0x | 0 | 0 |
+| | | Galerkin, modal derivatives | 7.7% | 3.8x | 4.4 s | 1 |
+| | | polynomial force (EED) | 7.7% | 1473x | 274 s | 21 |
+| | | quadratic manifold + ECSW (19 of 36) | 7.7% | 6.7x | 9.7 s | 1 |
+| Plate 6x6, transient (100 steps) | 283 s | Galerkin, 3 modes | 8.5% | 1.6x | 0 | 0 |
+| | | Galerkin, modal derivatives | 7.5% | 1.6x | 4.4 s | 1 |
+| | | polynomial force (EED) | 7.5% | 406x | 274 s | 1 |
+| | | quadratic manifold + ECSW | 7.5% | 10.0x | 9.7 s | 1 |
+
+What this shows: in transient runs Galerkin on any basis is about 1x to 1.6x, because the full-order force is evaluated at every Newton iteration of every step. The manifold with ECSW gives 9x on the 100-element beam and 4x to 10x on the plates, and its offline cost is repaid in one run. The polynomial force is two to three orders of magnitude faster per run, but its tangent probes cost 124 s and 274 s on the plates and it failed on the beam transient, so it only pays off when the same model is run many times. On the 4x4 plate the nonlinearity is mild: ECSW kept all 16 elements, and the manifold's 2.1% transient error is a period error (0.16%) and is no better than three modes alone. On the 6x6 plate every reduced model, including the 9-vector bases, sits at 7.5% to 7.7% in both static and transient runs; we did not find out why, so treat the 6x6 accuracy numbers as unexplained (the speed-ups are unaffected). Beam at 400 elements was not run for the transient case. One plate geometry and one load shape.
+
+The free-vibration backbone in the derivative-augmented subspace agreed with a full-order Newmark run to within 3% at the two amplitudes tested.
 
 > [!NOTE]
 > Each function has an opt-in PyTorch counterpart named `torch_*` in `rom_engine/torch_system_bases.py` (import the module directly; it is not re-exported). The full-order callables must then be torch-native. For the small dense matrices of a reduced model the NumPy path is often faster; the torch versions are for batched or differentiable use.
