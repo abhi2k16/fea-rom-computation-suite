@@ -1,13 +1,13 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-build_user_guide_html.py -- render USER_GUIDE.md as the styled, single-file USER_GUIDE.html.
+build_user_guide_html.py -- render USER_GUIDE.md (or README.md / API_REFERENCE.md) as a styled, single-file HTML page.
 
     pip install markdown pygments
     python tools/build_user_guide_html.py                 # USER_GUIDE.md -> USER_GUIDE.html
-    python tools/build_user_guide_html.py in.md out.html
+    python tools/build_user_guide_html.py in.md out.html   # also README.md and API_REFERENCE.md
 
-The markdown is the source of truth; edit it and rebuild. Every ``<a id="s-..."></a>`` anchor that sits right
+The markdown is the source of truth; edit it and rebuild. Every ``<a id="s-..."></a>`` (or ``mod-...`` / ``part...``) anchor that sits right
 above a heading becomes an entry in the sidebar (level-1 headings flush left, deeper ones indented).
 GitHub-style alert quotes (``> [!NOTE]``, TIP, WARNING, IMPORTANT) become coloured callout boxes.
 """
@@ -35,6 +35,7 @@ blockquote{border-left:4px solid var(--pu);margin:12px 0;padding:4px 14px;backgr
 .callout{border-radius:10px;padding:8px 14px;margin:14px 0;border:1px solid;border-left-width:5px}.callout p{margin:4px 0}.callout .ct{font-weight:700;text-transform:uppercase;font-size:12px;letter-spacing:.06em}
 .callout.note{background:#10243a;border-color:var(--bl)}.callout.note .ct{color:var(--bl)}.callout.tip{background:#0f2a22;border-color:var(--gr)}.callout.tip .ct{color:var(--gr)}
 .callout.warning{background:#2e2410;border-color:var(--am)}.callout.warning .ct{color:var(--am)}.callout.important{background:#2a1530;border-color:var(--pk)}.callout.important .ct{color:var(--pk)}
+div.sg{margin:14px 6px 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--pk)}
 div[align=center]{text-align:center;padding:10px 0}div[align=center] h1{margin-top:6px;font-size:38px}img{max-width:100%}hr{border:0;border-top:1px solid var(--line);margin:26px 0}
 @media(max-width:900px){#side{display:none}#main{margin-left:0;padding:16px}}
 '''
@@ -53,7 +54,7 @@ def _plain(text):
 def _nav(lines):
     items = []
     for i, line in enumerate(lines):
-        m = re.fullmatch(r'<a id="(s-[^"]+)"></a>', line.strip())
+        m = re.fullmatch(r'<a id="((?:s-|mod-|part)[^"]+)"></a>', line.strip())
         if not m:
             continue
         j = i + 1
@@ -91,13 +92,17 @@ def _callouts(lines, md):
 def build(md_text):
     import markdown
     from pygments.formatters import HtmlFormatter
-    md = markdown.Markdown(extensions=["tables", "fenced_code", "codehilite"],
+    md = markdown.Markdown(extensions=["tables", "fenced_code", "codehilite", "md_in_html"],
                            extension_configs={"codehilite": {"css_class": "hl", "guess_lang": False}})
     lines = md_text.splitlines()
     nav = _nav(lines)
     title = _plain(next((ln[2:] for ln in lines if ln.startswith("# ")), "User guide"))
     lines, boxes = _callouts(lines, md)
     text = "\n".join(lines)
+    if "API Reference" in title:                      # the inventory nests members two spaces deep; Markdown needs four
+        text = re.sub(r"(?m)^  - ", "    - ", text)
+        nav = nav.replace('<a class="sm" href="#mod-adaptivity-py">', '<div class="sg">fea_engine</div><a class="sm" href="#mod-adaptivity-py">', 1)
+        nav = nav.replace('<a class="sm" href="#mod-affine-py">', '<div class="sg">rom_engine</div><a class="sm" href="#mod-affine-py">', 1)
     text = text.replace('<div align="center">', CENTER_OPEN).replace("</div>", CENTER_CLOSE)
     body = md.convert(text)
     body = body.replace(f"<p>{CENTER_OPEN}</p>", '<div align="center">').replace(CENTER_OPEN, '<div align="center">')

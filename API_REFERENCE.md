@@ -42,7 +42,7 @@ flowchart LR
 | | 🧱 Classes | 🔧 Functions | ⚙️ Methods | 📦 Modules |
 |---|---:|---:|---:|---:|
 | **`fea_engine`** | 61 | 158 | 227 | 35 |
-| **`rom_engine`** | 43 | 77 | 147 | 37 |
+| **`rom_engine`** | 53 | 110 | 179 | 44 |
 
 > [!NOTE]
 > The inventory (Part 3) is generated from the source code, so signatures are exact. Purposes are the first sentence of each docstring; module descriptions and the task table are hand-written. ★ marks names importable straight from the package. The examples in Part 2 were all executed and show real output. For explanations and more worked examples see [`USER_GUIDE.md`](USER_GUIDE.md).
@@ -58,7 +58,7 @@ flowchart LR
 
 **🏗️ `fea_engine` modules:** [adaptivity.py](#mod-adaptivity-py) &#183; [autograd_tangent.py](#mod-autograd-tangent-py) &#183; [backend_dispatch.py](#mod-backend-dispatch-py) &#183; [batched_solve.py](#mod-batched-solve-py) &#183; [beam2d_reissner_vectorized.py](#mod-beam2d-reissner-vectorized-py) &#183; [beam2d_reissner_vectorized_torch.py](#mod-beam2d-reissner-vectorized-torch-py) &#183; [build_mesh.py](#mod-build-mesh-py) &#183; [damping.py](#mod-damping-py) &#183; [differentiable.py](#mod-differentiable-py) &#183; [elements/base.py](#mod-elements-base-py) &#183; [elements/beams.py](#mod-elements-beams-py) &#183; [elements/beams3d.py](#mod-elements-beams3d-py) &#183; [elements/contact.py](#mod-elements-contact-py) &#183; [elements/nonlinear_solids.py](#mod-elements-nonlinear-solids-py) &#183; [elements/plates.py](#mod-elements-plates-py) &#183; [elements/shells.py](#mod-elements-shells-py) &#183; [elements/shells_director.py](#mod-elements-shells-director-py) &#183; [elements/solids.py](#mod-elements-solids-py) &#183; [elements/trusses.py](#mod-elements-trusses-py) &#183; [facet_loads.py](#mod-facet-loads-py) &#183; [geometry/shapes.py](#mod-geometry-shapes-py) &#183; [grading.py](#mod-grading-py) &#183; [iterative_solvers.py](#mod-iterative-solvers-py) &#183; [loads.py](#mod-loads-py) &#183; [material.py](#mod-material-py) &#183; [mesh.py](#mod-mesh-py) &#183; [mesh_io.py](#mod-mesh-io-py) &#183; [mesh_transform.py](#mod-mesh-transform-py) &#183; [mixed_assembly.py](#mod-mixed-assembly-py) &#183; [nonlinear_solver.py](#mod-nonlinear-solver-py) &#183; [postprocess.py](#mod-postprocess-py) &#183; [solver.py](#mod-solver-py) &#183; [topopt.py](#mod-topopt-py) &#183; [torch_sparse_solver.py](#mod-torch-sparse-solver-py) &#183; [vectorized_assembly.py](#mod-vectorized-assembly-py)
 
-**📉 `rom_engine` modules:** [affine.py](#mod-affine-py) &#183; [attractor.py](#mod-attractor-py) &#183; [balanced_truncation.py](#mod-balanced-truncation-py) &#183; [cms.py](#mod-cms-py) &#183; [dataset_diagnostics.py](#mod-dataset-diagnostics-py) &#183; [differentiable_correction.py](#mod-differentiable-correction-py) &#183; [ensemble_uq.py](#mod-ensemble-uq-py) &#183; [frequency.py](#mod-frequency-py) &#183; [galerkin.py](#mod-galerkin-py) &#183; [greedy.py](#mod-greedy-py) &#183; [hankel_norm.py](#mod-hankel-norm-py) &#183; [hyper_reduction.py](#mod-hyper-reduction-py) &#183; [intrusive_nonlinear_rom.py](#mod-intrusive-nonlinear-rom-py) &#183; [krylov.py](#mod-krylov-py) &#183; [linear_dynamics.py](#mod-linear-dynamics-py) &#183; [loewner.py](#mod-loewner-py) &#183; [membrane_expansion.py](#mod-membrane-expansion-py) &#183; [metrics.py](#mod-metrics-py) &#183; [mode_correction.py](#mod-mode-correction-py) &#183; [neural_operator.py](#mod-neural-operator-py) &#183; [nnm.py](#mod-nnm-py) &#183; [nonlinear_dynamics.py](#mod-nonlinear-dynamics-py) &#183; [nonlinear_rom.py](#mod-nonlinear-rom-py) &#183; [parameterized_latent_ode.py](#mod-parameterized-latent-ode-py) &#183; [passivity.py](#mod-passivity-py) &#183; [pod.py](#mod-pod-py) &#183; [random_vibration.py](#mod-random-vibration-py) &#183; [reduced_basis_operator.py](#mod-reduced-basis-operator-py) &#183; [sampling.py](#mod-sampling-py) &#183; [scm.py](#mod-scm-py) &#183; [scm_lp.py](#mod-scm-lp-py) &#183; [screening.py](#mod-screening-py) &#183; [soar.py](#mod-soar-py) &#183; [state_space.py](#mod-state-space-py) &#183; [torch_linalg.py](#mod-torch-linalg-py) &#183; [validation.py](#mod-validation-py) &#183; [cross_configuration_validation.py](#mod-cross-configuration-validation-py)
+**📉 `rom_engine` modules:** [affine.py](#mod-affine-py) &#183; [attractor.py](#mod-attractor-py) &#183; [balanced_truncation.py](#mod-balanced-truncation-py) &#183; [cms.py](#mod-cms-py) &#183; [dataset_diagnostics.py](#mod-dataset-diagnostics-py) &#183; [differentiable_correction.py](#mod-differentiable-correction-py) &#183; [dual_modes.py](#mod-dual-modes-py) &#183; [ensemble_uq.py](#mod-ensemble-uq-py) &#183; [frequency.py](#mod-frequency-py) &#183; [galerkin.py](#mod-galerkin-py) &#183; [greedy.py](#mod-greedy-py) &#183; [hankel_norm.py](#mod-hankel-norm-py) &#183; [hyper_reduction.py](#mod-hyper-reduction-py) &#183; [intrusive_nonlinear_rom.py](#mod-intrusive-nonlinear-rom-py) &#183; [krylov.py](#mod-krylov-py) &#183; [linear_dynamics.py](#mod-linear-dynamics-py) &#183; [loewner.py](#mod-loewner-py) &#183; [membrane_expansion.py](#mod-membrane-expansion-py) &#183; [metrics.py](#mod-metrics-py) &#183; [modal_derivatives.py](#mod-modal-derivatives-py) &#183; [mode_correction.py](#mod-mode-correction-py) &#183; [neural_operator.py](#mod-neural-operator-py) &#183; [nnm.py](#mod-nnm-py) &#183; [nonlinear_dynamics.py](#mod-nonlinear-dynamics-py) &#183; [nonlinear_rom.py](#mod-nonlinear-rom-py) &#183; [parameterized_latent_ode.py](#mod-parameterized-latent-ode-py) &#183; [parametric_modes.py](#mod-parametric-modes-py) &#183; [passivity.py](#mod-passivity-py) &#183; [pod.py](#mod-pod-py) &#183; [quadratic_manifold.py](#mod-quadratic-manifold-py) &#183; [random_vibration.py](#mod-random-vibration-py) &#183; [reduced_basis_operator.py](#mod-reduced-basis-operator-py) &#183; [sampling.py](#mod-sampling-py) &#183; [scm.py](#mod-scm-py) &#183; [scm_lp.py](#mod-scm-lp-py) &#183; [screening.py](#mod-screening-py) &#183; [slow_fast.py](#mod-slow-fast-py) &#183; [soar.py](#mod-soar-py) &#183; [state_space.py](#mod-state-space-py) &#183; [subspace_nnm.py](#mod-subspace-nnm-py) &#183; [torch_linalg.py](#mod-torch-linalg-py) &#183; [torch_system_bases.py](#mod-torch-system-bases-py) &#183; [validation.py](#mod-validation-py) &#183; [cross_configuration_validation.py](#mod-cross-configuration-validation-py)
 
 ---
 
@@ -1270,7 +1270,7 @@ Balanced truncation (plain, frequency-weighted, singular-perturbation) for state
 
 Component mode synthesis: Guyan static condensation and Craig-Bampton substructure reduction, plus coupling of reduced substructures into one model. Use it for assemblies or when parts are reduced separately and joined at interface DOFs.
 
-<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🧱 3 classes &nbsp;·&nbsp; 🔧 3 functions</summary>
+<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🧱 5 classes &nbsp;·&nbsp; 🔧 5 functions</summary>
 
 - 🧱 **`class GuyanModel(T: np.ndarray, K: np.ndarray, M: np.ndarray, master: np.ndarray, slave: np.ndarray)`** ★
   - `.expand(u_master)`
@@ -1285,6 +1285,13 @@ Component mode synthesis: Guyan static condensation and Craig-Bampton substructu
   - `.local_coords(k, x)` — Reduced coordinates of substructure k extracted from a global reduced vector x.
   - `.expand(k, x)` — Full-order displacement of substructure k for a global reduced vector x.
 - 🔧 **`couple(subs, interface_maps)`** ★ — Join Craig-Bampton substructures; see `CoupledModel`.
+
+- 🧱 **`class FreeInterfaceModel(T: np.ndarray, K: np.ndarray, M: np.ndarray, method: str, omega_free: np.ndarray, interface: np.ndarray, n_modes: int)`** ★ — Free-interface reduction of one substructure.
+  - `.expand(coords)`
+- 🔧 **`free_interface_cms(K, M, interface, n_modes, method='rubin')`** ★ — Free-interface component mode synthesis with residual flexibility.
+- 🧱 **`class InterfaceReducedModel(T: np.ndarray, K: np.ndarray, M: np.ndarray, S: np.ndarray, omega_interface: np.ndarray, n_interface_kept: int, n_modes: int)`** ★ — Craig-Bampton model whose interface coordinates were replaced by characteristic constraint modes.
+  - `.expand(coords)`
+- 🔧 **`reduce_interface(cb, n_keep)`** ★ — Interface reduction by characteristic constraint modes (Castanier, Tan and Pierre 2001): solve the eigenproblem of the constraint-mode block, K_bb x = lambda M_bb x, keep the `n_keep` lowest, and replace the physical interface coordinates by their amplitudes.
 
 </details>
 
@@ -1321,6 +1328,19 @@ Trainable correction term added to a reduced equilibrium residual, calibrated th
   - `.torch_value(q_t)`
   - `.parameters()`
 - 🔧 **`calibrate_reduced_correction_explicit(q_reference, Lambda, F_nl_fn, F_ext, correction, n_epochs=500, lr=0.01, optimizer_cls=None, verbose=False)`** ★ — ROM-level counterpart of fea_engine.differentiable.calibrate_ correction_explicit() -- minimizes
+
+</details>
+
+<a id="mod-dual-modes-py"></a>
+
+### 📦 `dual_modes.py`
+
+Dual modes: non-intrusive membrane enrichment of a vibration-mode basis from static solves of the full nonlinear model (no stiffness derivatives needed).
+
+<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🔧 2 functions</summary>
+
+- 🔧 **`amplitude_to_load_factor(mode, amplitude)`** ★ — alpha such that the linear response alpha * mode has peak absolute value `amplitude`.
+- 🔧 **`dual_modes(K, M, modes, fom_solver, amplitudes, p=None, dominant=None, n_dual=None, n_keep_per_set=None, tol=1e-10)`** ★ — Compute dual modes and return the augmented basis [modes, duals].
 
 </details>
 
@@ -1549,6 +1569,26 @@ Method-independent error and comparison metrics between full and reduced results
 
 </details>
 
+<a id="mod-modal-derivatives-py"></a>
+
+### 📦 `modal_derivatives.py`
+
+Static and dynamic modal derivatives from a tangent-stiffness callable, maximum-modal-interaction selection, and basis augmentation: the system-driven way to add membrane freedom to a bending basis.
+
+<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🧱 1 class &nbsp;·&nbsp; 🔧 7 functions</summary>
+
+- 🔧 **`directional_stiffness_derivative(tangent_fn, direction, u0=None, step=None, length_scale=1.0, rel_step=1e-06)`** ★ — dK/dq along `direction`: [K_T(u0 + eps d) - K_T(u0 - eps d)] / (2 eps), a central difference.
+- 🧱 **`class ModalDerivatives(theta: np.ndarray, directions: np.ndarray, asymmetry: float, n_tangent_evals: int, kind: str)`** ★ — Result of `static_modal_derivatives` / `dynamic_modal_derivatives`.
+  - 🏷️ `.n_modes` *(property)*
+- 🔧 **`static_modal_derivatives(K, directions, tangent_fn=None, dK=None, u0=None, step=None, length_scale=1.0, rel_step=1e-06, symmetrize=True)`** ★ — Static modal derivatives theta_ij = -K^-1 (dK/dq_j) phi_i for every pair of `directions`.
+- 🔧 **`dynamic_modal_derivatives(K, M, omega2, modes, tangent_fn=None, dK=None, u0=None, step=None, length_scale=1.0, rel_step=1e-06)`** ★ — Dynamic modal derivatives from the bordered system
+- 🔧 **`modal_coordinates(Phi, M, u_history)`** ★ — q(t) = Phi^T M u(t) for a displacement history of shape (n_steps, n); returns (n_steps, m).
+- 🔧 **`modal_interaction_weights(q_history, dt=1.0)`** ★ — w_ij = integral of |q_i(t) q_j(t)| dt (trapezoid rule) from a cheap LINEAR modal run under the load of interest.
+- 🔧 **`select_modal_derivatives(weights, n_select=None, fraction=None)`** ★ — Rank the m(m+1)/2 derivatives (i <= j) by `weights` and return the chosen pairs, highest weight first.
+- 🔧 **`augment_with_derivatives(modes, theta, pairs=None, M=None, tol=1e-08, max_vectors=None)`** ★ — Augmented basis [Phi, Psi]: the chosen derivative vectors, made orthogonal to the modes and compressed.
+
+</details>
+
 <a id="mod-mode-correction-py"></a>
 
 ### 📦 `mode_correction.py`
@@ -1618,7 +1658,7 @@ Generic reduced nonlinear time integration utilities.
 
 Surrogate nonlinear structural ROMs: RBF surrogate of the nonlinear force (MFS-NLROM) and polynomial (ICE / Nash-form) models with their static and dynamic solvers. (Some functions use PyTorch, optional.)
 
-<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🧱 8 classes &nbsp;·&nbsp; 🔧 3 functions &nbsp;·&nbsp; 🔥 uses PyTorch</summary>
+<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🧱 8 classes &nbsp;·&nbsp; 🔧 5 functions &nbsp;·&nbsp; 🔥 uses PyTorch</summary>
 
 - 🧱 **`class ReducedForceModel()`** ★ — Protocol every nonlinear-force model in this family implements.
   - `.fit(q_samples, F_samples, **kwargs)` — Train the model from paired reduced-displacement / reduced nonlinear-force samples.
@@ -1650,6 +1690,9 @@ Surrogate nonlinear structural ROMs: RBF surrogate of the nonlinear force (MFS-N
 - 🔧 **`ShiMeiROM(n_modes)`** ★ — Same regression as `ICEROM` -- kept as a separate, honestly- labeled name because the literature (Section 1's citations) distinguishes ICE and Shi & Mei by training-data convention details (e.g. membrane augmentation) this module ...
 - 🔧 **`EnforcedDisplacementROM(n_modes)`** ★ — STEP's own convention (Muravyov & Rizzi 2003): `PolynomialModalROM` fit with `EnforcedDisplacementStrategy`-generated training data (no load-scaling formula needed).
 
+- 🔧 **`enhanced_enforced_displacement_rom(V, tangent_fn, amplitudes, max_distinct=2, K_r=None)`** ★ — Identify a `PolynomialModalROM` from reduced TANGENT stiffness probes instead of force probes (Perez, Wang and Mignolet 2014; Tiso, Karamooz Mahdiabadi and Marconi 2021, Section 4.5.5.2).
+- 🔧 **`EnhancedEnforcedDisplacementROM(V, tangent_fn, amplitudes, max_distinct=2)`** ★ — Name matching `ICEROM` / `EnforcedDisplacementROM`: a fitted `PolynomialModalROM` from tangent probes.
+
 </details>
 
 <a id="mod-parameterized-latent-ode-py"></a>
@@ -1667,6 +1710,19 @@ Parameterised latent ODE trained across a sweep of physical parameters (research
   - 🏷️ `.is_full_horizon` *(property)*
   - `.advance()` — Unconditionally move to the next stage (a no-op once `is_full_horizon` is already True).
   - `.maybe_advance(loss, tol)` — Advance one stage if `loss < tol` and not already at full horizon.
+
+</details>
+
+<a id="mod-parametric-modes-py"></a>
+
+### 📦 `parametric_modes.py`
+
+First-order (Nelson-type) sensitivity of eigenvalues and vibration modes to a parameter such as a shape imperfection, plus a first-order mode update.
+
+<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🔧 2 functions</summary>
+
+- 🔧 **`mode_sensitivities(K, M, dK, dM=None, n_modes=None, exact=True, modes=None, omega2=None, gap_tol=1e-08)`** ★ — Return (d_omega2, dPhi, info) for the lowest `n_modes` modes.
+- 🔧 **`updated_modes(modes, dPhi, step, M=None)`** ★ — First-order updated modes phi + step * dPhi, re-orthonormalised against M (Euclidean if None).
 
 </details>
 
@@ -1706,6 +1762,36 @@ Proper orthogonal decomposition: `PodBasis` from a snapshot matrix (optionally m
 - 🧱 **`class MultiFieldPOD(field_slices, W, sign_reference_field=0)`** ★ — Multi-field POD diagnostics on top of `PodBasis`, for snapshots whose state vector interleaves several physically DISTINCT fields (Georgiou 2005, "Advanced Proper Orthogonal Decomposition Tools...
   - `.fit(snapshots, n_modes=None, energy_threshold=None, check_block_diagonal=True)` — Fit the underlying mass-weighted PodBasis (M=W) on RAW (not mean-subtracted) snapshots, then compute every multi-field diagnostic on top of it.
   - `.reconstruct_field(field_index, Q=None)` — Field-separated reconstruction: the time history of just ONE field, reconstructed from POD amplitudes -- e.g. pull out just the ...
+
+</details>
+
+<a id="mod-quadratic-manifold-py"></a>
+
+### 📦 `quadratic_manifold.py`
+
+Quadratic manifold u = Phi q + 1/2 Omega(q,q): fit from snapshots or built from modal derivatives, configuration-dependent reduced mass and convective force, ECSW on the manifold with simulation-free training, and a reduced static/dynamic model.
+
+<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🧱 3 classes &nbsp;·&nbsp; 🔧 3 functions</summary>
+
+- 🧱 **`class QuadraticManifold(Phi, Omega, M=None)`** ★ — u = Phi q + 1/2 Omega(q, q); Omega is (n, m, m) and symmetrised on construction.
+  - `.map(q)`
+  - `.tangent(q)` — P(q) = Phi + Omega q, shape (n, m).
+  - `.second_derivative(qd)` — Omega(q', q') (n,), the convective acceleration of the lifted state.
+  - `.reduced_mass(q)`
+  - `.convective_force(q, qd)`
+  - `.project(u)` — Linear coordinates of a state, q = Phi^T M u (Euclidean if M is None) -- the coordinate the manifold was built around, not a nearest-point projection onto the manifold.
+  - `.lift(Q)` — Map columns of Q (m, k) to states (n, k).
+- 🔧 **`fit_quadratic_manifold(Phi, snapshots, M=None, ridge=1e-08)`** ★ — Least-squares Omega from snapshots (n, k): minimise sum_k || (u_k - Phi q_k) - 1/2 Omega(q_k, q_k) ||^2, with q_k = Phi^T M u_k (M-orthonormal Phi) and a ridge penalty `ridge` * scale on the coefficients.
+- 🔧 **`manifold_from_derivatives(Phi, theta, M=None)`** ★ — Omega = modal derivatives (Jain et al.
+- 🔧 **`lifted_training_states(manifold, amplitudes, n_samples=60, seed=0)`** ★ — SIMULATION-FREE training set: modal coordinates drawn uniformly in the box |q_i| <= amplitudes_i (plus the box corners along each axis, so the extremes are covered), lifted through the manifold.
+- 🧱 **`class ManifoldECSW(manifold, elem_dofs, elem_force_fn, weights, info=None)`** ★ — ECSW weights on a quadratic manifold, trained on lifted coordinates (no full-order simulation).
+  - `.fit(manifold, Q, elem_dofs, elem_force_fn, tol=0.0001, max_elements=None)`
+  - 🏷️ `.n_selected` *(property)*
+  - `.reduced_force(q)`
+- 🧱 **`class QuadraticManifoldROM(manifold, f_int=None, hyper=None)`** ★ — Reduced model on a quadratic manifold.
+  - `.reduced_force(q)`
+  - `.static_solve(f_ext, q0=None, tol=1e-12)` — Solve P(q)^T (f_int(Gamma(q)) - f_ext) = 0 for q.
+  - `.simulate(f_ext_fn, q0, qd0, dt, n_steps, damping=None)` — Explicit RK4 for M~(q) q'' = P^T f_ext(t) - P^T M Omega(q',q') - reduced_force(q) - C q'.
 
 </details>
 
@@ -1806,6 +1892,23 @@ Cross-ROM stability screening for Loewner identification: keep only modes that r
 
 </details>
 
+<a id="mod-slow-fast-py"></a>
+
+### 📦 `slow_fast.py`
+
+Slow-fast static condensation of membrane (fast) against bending (slow) coordinates, with the condensed force and Schur-complement tangent.
+
+<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🧱 1 class</summary>
+
+- 🧱 **`class SlowFastROM(Vs, Vf, f_int, tangent_fn)`** ★ — Condensed slow-coordinate model.
+  - `.fast_response(q, f_ext=None, p0=None)` — p(q): Newton solve of Vf^T (f_int(Vs q + Vf p) - f_ext) = 0.
+  - `.state(q, f_ext=None)`
+  - `.reduced_force(q, f_ext=None)`
+  - `.reduced_tangent(q, f_ext=None)`
+  - `.static_solve(f_ext, q0=None)` — Slow-coordinate static solve Vs^T (f_int(u(q)) - f_ext) = 0 with p(q) condensed out.
+
+</details>
+
 <a id="mod-soar-py"></a>
 
 ### 📦 `soar.py`
@@ -1842,6 +1945,19 @@ Convert a second-order structural system (M, C, K, B, C_out) to first-order stat
 
 </details>
 
+<a id="mod-subspace-nnm-py"></a>
+
+### 📦 `subspace_nnm.py`
+
+NNM backbone of a reduced model in an augmented subspace: diagonalises the basis, identifies the cubic force by enhanced enforced displacement, and calls the harmonic-balance continuation.
+
+<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🔧 2 functions</summary>
+
+- 🔧 **`diagonalize_basis(V, K, M)`** ★ — Rotate basis V so that V^T M V = I and V^T K V = diag(omega^2).
+- 🔧 **`nnm_backbone_in_subspace(V, K, M, tangent_fn, eed_amplitudes, q_amplitude_range, n_points=6, n_harmonics=3, master_mode=0, max_distinct=2)`** ★ — Backbone of the reduced model on span(V).
+
+</details>
+
 <a id="mod-torch-linalg-py"></a>
 
 ### 📦 `torch_linalg.py`
@@ -1858,13 +1974,50 @@ Torch-native dense linear algebra helpers (Lyapunov, Sylvester, Gramian square r
 
 </details>
 
+<a id="mod-torch-system-bases-py"></a>
+
+### 📦 `torch_system_bases.py`
+
+Opt-in PyTorch counterparts (`torch_*`) of the modal-derivative, dual-mode, quadratic-manifold, slow-fast, free-interface CMS and mode-sensitivity code, side by side with the NumPy versions; differentiable where noted.
+
+<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🧱 3 classes &nbsp;·&nbsp; 🔧 10 functions &nbsp;·&nbsp; 🔥 uses PyTorch</summary>
+
+- 🔧 **`torch_directional_stiffness_derivative(tangent_fn, direction, u0=None, step=None, length_scale=1.0, rel_step=1e-06, device='cpu')`** — Torch counterpart of `modal_derivatives.directional_stiffness_derivative` (central difference); `tangent_fn` takes and returns tensors.
+- 🔧 **`torch_static_modal_derivatives(K, directions, tangent_fn=None, dK=None, u0=None, step=None, length_scale=1.0, rel_step=1e-06, symmetrize=True, device='cpu')`** — Torch counterpart of `static_modal_derivatives`.
+- 🔧 **`torch_modal_interaction_weights(q_history, dt=1.0, device='cpu')`** — Torch counterpart of `modal_interaction_weights`: w_ij = integral |q_i q_j| dt, all pairs at once.
+- 🔧 **`torch_augment_with_derivatives(modes, theta, pairs=None, M=None, tol=1e-08, max_vectors=None, device='cpu')`** — Torch counterpart of `augment_with_derivatives`.
+- 🔧 **`torch_dual_modes(K, M, modes, fom_solver, amplitudes, p=None, dominant=None, n_dual=None, n_keep_per_set=None, tol=1e-10, device='cpu')`** — Torch counterpart of `dual_modes.dual_modes`.
+- 🧱 **`class TorchQuadraticManifold(Phi, Omega, M=None, device='cpu')`** — Torch counterpart of `QuadraticManifold`: u = Phi q + 1/2 Omega(q, q).
+  - `.map(q)`
+  - `.tangent(q)`
+  - `.second_derivative(qd)`
+  - `.reduced_mass(q)`
+  - `.convective_force(q, qd)`
+  - `.lift(Q)` — Map columns of Q (m, k) to states (n, k) in one batched call.
+- 🔧 **`torch_fit_quadratic_manifold(Phi, snapshots, M=None, ridge=1e-08, device='cpu')`** — Torch counterpart of `fit_quadratic_manifold` (ridge least squares for Omega).
+- 🔧 **`torch_manifold_from_derivatives(Phi, theta, M=None, device='cpu')`** — Omega = modal derivatives (tensor or array of shape (n, m, m)).
+- 🧱 **`class TorchQuadraticManifoldROM(manifold, f_int, tangent_fn=None)`** — Torch counterpart of `QuadraticManifoldROM` (full internal force only; no ECSW).
+  - `.reduced_force(q)`
+  - `.static_solve(f_ext, q0=None, tol=1e-09, max_iter=50)`
+- 🧱 **`class TorchSlowFastROM(Vs, Vf, f_int, tangent_fn, device='cpu')`** — Torch counterpart of `SlowFastROM`.
+  - `.fast_response(q, f_ext=None, p0=None)`
+  - `.state(q, f_ext=None)`
+  - `.reduced_force(q, f_ext=None)`
+  - `.reduced_tangent(q, f_ext=None)`
+  - `.static_solve(f_ext, q0=None, tol=1e-09, max_iter=50)`
+- 🔧 **`torch_free_interface_cms(K, M, interface, n_modes, method='rubin', device='cpu')`** — Torch counterpart of `cms.free_interface_cms`.
+- 🔧 **`torch_reduce_interface(cb_K, cb_M, cb_T, n_interface, n_modes, n_keep, device='cpu')`** — Torch counterpart of `cms.reduce_interface` on the arrays of a Craig-Bampton model (K, M, T, n_interface, n_modes).
+- 🔧 **`torch_mode_sensitivities(K, M, dK, dM=None, n_modes=None, gap_tol=1e-08, device='cpu')`** — Torch counterpart of `parametric_modes.mode_sensitivities` (exact, full eigen-decomposition).
+
+</details>
+
 <a id="mod-validation-py"></a>
 
 ### 📦 `validation.py`
 
 One method-agnostic way to validate any reduced model against the full-order one: error report, timing and speed-up, convergence study and basis-size selection.
 
-<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🧱 1 class &nbsp;·&nbsp; 🔧 3 functions</summary>
+<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🧱 1 class &nbsp;·&nbsp; 🔧 6 functions</summary>
 
 - 🧱 **`class ValidationReport(errors: np.ndarray, norm: str, tol: float, t_fom: float, t_rom: float, worst_index: int, extra: dict)`** ★
   - 🏷️ `.mean` *(property)*
@@ -1877,6 +2030,10 @@ One method-agnostic way to validate any reduced model against the full-order one
 - 🔧 **`validate_rom(rom_predict, fom_predict, test_inputs, tol=None, norm='rel_l2', timing=True)`** ★ — Compare a reduced predictor with the full-order predictor over held-out inputs.
 - 🔧 **`convergence_study(build_rom, sizes, fom_predict, test_inputs, norm='rel_l2')`** ★ — Error versus reduced size.
 - 🔧 **`select_basis_size(study, tol, use='max')`** ★ — Smallest size in a `convergence_study` whose error (`use` = 'max' or 'mean') is <= tol.
+
+- 🔧 **`effective_speedup(n_queries, t_online, t_offline, t_full)`** ★ — Effective speed-up SP_M = (M t_online + t_offline) -> M t_full / (M t_online + t_offline): the offline (training, basis and hyper-reduction) cost is charged against the M online queries, so a ROM that is fast per query but expensive to build is not credited with its raw per-query ratio.
+- 🔧 **`break_even_queries(t_online, t_offline, t_full)`** ★ — Smallest number of queries at which the ROM (online + offline) is cheaper than the full model; None if the ROM is not faster per query.
+- 🔧 **`compare_bases(bases, fom_predict, make_predictor, test_inputs, offline_times=None, norm='rel_l2', n_queries=None)`** ★ — Compare several reduced bases (or any reduced models) on the SAME held-out inputs.
 
 </details>
 

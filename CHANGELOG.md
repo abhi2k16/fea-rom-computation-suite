@@ -6,6 +6,37 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 
 ## Unreleased
 
+### Added (rom_engine)
+- System-driven bases for geometrically nonlinear structures (`modal_derivatives.py`): `static_modal_derivatives`
+  and `dynamic_modal_derivatives` from a tangent-stiffness callable (central differences, one LU factorisation),
+  `modal_interaction_weights` / `select_modal_derivatives` (maximum modal interaction) and
+  `augment_with_derivatives` (M-orthonormal augmented basis).
+- `dual_modes`: membrane enrichment from nonlinear static solves of the full model. The ranking rule is
+  reconstructed from a partly garbled source equation; the docstring says so.
+- `enhanced_enforced_displacement_rom` / `EnhancedEnforcedDisplacementROM` (`nonlinear_rom.py`): polynomial reduced
+  force identified from reduced tangent probes only; pair probes (O(m^2) evaluations) already identify every term.
+- `quadratic_manifold.py`: `QuadraticManifold` (`u = Phi q + 1/2 Omega(q,q)`, configuration-dependent reduced
+  mass, convective force), `fit_quadratic_manifold`, `manifold_from_derivatives`, `lifted_training_states`,
+  `ManifoldECSW` (hyper-reduction trained without full-order simulation) and `QuadraticManifoldROM`.
+- `SlowFastROM` (`slow_fast.py`), `nnm_backbone_in_subspace` (`subspace_nnm.py`), `mode_sensitivities` /
+  `updated_modes` (`parametric_modes.py`).
+- `cms.py`: `free_interface_cms` (Rubin, MacNeal; requires a non-singular K) and `reduce_interface`
+  (characteristic constraint modes).
+- `validation.py`: `compare_bases`, `effective_speedup`, `break_even_queries`.
+- `torch_system_bases.py`: opt-in PyTorch counterparts (`torch_*`) of the above, side by side with the NumPy
+  versions; not exported from the package. Tests: `tests/test_torch_system_bases.py` (skip without torch).
+- Measured on a 20-element clamped-clamped geometrically nonlinear beam loaded along mode 1 to three thicknesses
+  of deflection (relative error against the full nonlinear solve): 3 modes alone 6.8%; with modal derivatives
+  (9 vectors) 0.57%; dual modes 1.3%; quadratic manifold (still 3 coordinates) 0.57%. Wall-clock speed-ups
+  were not measured. Tests: `test_modal_derivatives`, `test_dual_modes_eed`, `test_quadratic_manifold`,
+  `test_slow_fast`, `test_subspace_nnm`, `test_free_interface_cms`, `test_parametric_compare`.
+
+### Changed (renames)
+- Renamed modules and tests that carried wave or phase numbers: `rom_engine.wave13_validation` is now
+  `rom_engine.cross_configuration_validation` (no alias kept; update imports); tests
+  `test_wave13_validation`, `test_wave1_newton_robustness`, `test_shell4director_phase2/3` and the script
+  `validate_phase_b_coupling.py` and doc `phase4_error_bounds_greedy_roadmap.md` now have descriptive names.
+
 ### Added (fea_engine)
 - Batched stress recovery: `stress`, `strain` and `von_mises` evaluate each block with array operations
   (`vectorized=True`, default). Measured speed-up over the per-element loop (best of repeats, 2-core CPU,

@@ -1439,6 +1439,73 @@ r = select_basis_size(study, 1e-3)     # smallest tested size meeting the tolera
 
 The report is only as meaningful as its test inputs: use inputs that were not used for training, and include a few outside the training range.
 
+<a id="s-24b"></a>
+
+## 🧩 ROM: system-driven bases and quadratic manifolds
+
+A thin structure bends easily and stretches stiffly. When it deflects by a few thicknesses, the bending motion pulls the membrane (in-plane) coordinates along, and a basis of vibration modes alone has no in-plane freedom to follow. The modules below add that freedom. They need only plain arrays and callables, never an `fea_engine` object: `K0` and `M` (free-DOF stiffness and mass), `Phi` (M-orthonormal vibration modes), the full-order callables `f_int(u)` and `tangent_fn(u)`, and, for dual modes, a nonlinear static solver `fom_solver(load)`.
+
+**Modal derivatives (`modal_derivatives.py`).** The static derivative `theta_ij` solves `K theta_ij = -(dK/dq_j) phi_i`: how mode `i` changes when mode `j` is excited. `K` is factorised once and `dK/dq_j` comes from two tangent evaluations per mode.
+
+```python
+from rom_engine import (static_modal_derivatives, augment_with_derivatives, manifold_from_derivatives,
+                        QuadraticManifoldROM, dual_modes, SlowFastROM)
+
+md = static_modal_derivatives(K0, Phi, tangent_fn=tangent_fn, length_scale=L)   # L: a typical length of the model
+V, info = augment_with_derivatives(Phi, md, M=M)       # modes + M-orthonormalised derivative vectors
+# restrict to the pairs a load actually excites (maximum modal interaction):
+#   W = modal_interaction_weights(q_history, dt); pairs = select_modal_derivatives(W, n_select=4)
+#   V, info = augment_with_derivatives(Phi, md, pairs=pairs, M=M)
+```
+
+**Dual modes (`dual_modes.py`)** need no stiffness derivatives, only a few nonlinear static solves of the full model at response amplitudes that run from linear to strongly nonlinear:
+
+```python
+D, dinfo = dual_modes(K0, M, Phi, fom_solver, amplitudes=[0.5 * h, 3 * h, 6 * h], dominant=0)
+print(dinfo["n_solves"])        # modes x amplitudes full-order solves
+```
+
+The ranking of the candidate dual modes is reconstructed from a partly garbled source equation and is flagged as such in the docstring; treat it as a way to build a basis to compare, not a certified selection.
+
+**Quadratic manifold (`quadratic_manifold.py`).** Instead of adding columns, let the state curve away from the mode subspace, `u = Phi q + 1/2 Omega(q, q)`, keeping the same number of coordinates. `manifold_from_derivatives` sets `Omega` to the modal derivatives; `fit_quadratic_manifold(Phi, snapshots, M=M)` fits it from snapshots instead. The reduced mass `P^T M P` and a convective force then depend on `q`, and `QuadraticManifoldROM` handles that:
+
+```python
+man = manifold_from_derivatives(Phi, md, M)
+rom = QuadraticManifoldROM(man, f_int=f_int)
+q = rom.static_solve(F)         # solves P(q)^T (f_int(Gamma(q)) - F) = 0
+u = man.map(q)
+# t, Q, Qd = rom.simulate(load_fn, q0, qd0, dt, n_steps)     # explicit RK4, for small problems
+```
+
+For hyper-reduction, `ManifoldECSW.fit(man, Q, elem_dofs, elem_force_fn)` selects weighted elements from the tangent-space-projected element forces. `Q, _ = lifted_training_states(man, amplitudes)` generates the training coordinates by lifting modal coordinates inside a box, so no full-order simulation is run.
+
+**Slow-fast condensation (`slow_fast.py`).** Keep the bending modes as slow coordinates and treat the derivative vectors as quasi-static fast coordinates solved out by an inner Newton iteration:
+
+```python
+sf = SlowFastROM(Phi, V[:, Phi.shape[1]:], f_int, tangent_fn)
+q = sf.static_solve(F)
+u = sf.state(q, F)
+```
+
+It reproduces the coupled Galerkin solve on the same basis; what it changes is the structure of the problem, not the answer. The fast coordinates' inertia is dropped, which is valid when the membrane frequencies are far above the bending ones.
+
+**Also in this family.** `nnm_backbone_in_subspace` (backbone of an augmented-subspace model, identified from tangent probes by `enhanced_enforced_displacement_rom`), `free_interface_cms` and `reduce_interface` (Rubin and MacNeal free-interface reduction, interface reduction by characteristic constraint modes; `K` must be non-singular), `mode_sensitivities` (how modes move with a parameter such as an imperfection amplitude) and `compare_bases` / `effective_speedup` / `break_even_queries` (compare several bases on the same inputs and charge offline cost against online queries).
+
+**What it did on the test beam.** A 20-element clamped-clamped geometrically nonlinear beam, loaded along mode 1 to three thicknesses of mid-deflection, relative error against the full nonlinear static solve:
+
+| Reduced model | Coordinates | Error |
+|---|---:|---:|
+| 3 vibration modes | 3 | 6.8% |
+| + 6 modal-derivative vectors | 9 | 0.57% |
+| + 3 dual modes (3 amplitudes, 9 full-order solves) | 6 | 1.3% |
+| Quadratic manifold from the derivatives | 3 | 0.57% |
+| Slow-fast, same bending and derivative vectors | 3 slow | 0.57% |
+
+These are static errors on one beam and one load shape; the free-vibration backbone in the derivative-augmented subspace agreed with a full-order Newmark run to within 3% at the two amplitudes tested. Wall-clock speed-ups were not measured, and nothing here has been tried on shells.
+
+> [!NOTE]
+> Each function has an opt-in PyTorch counterpart named `torch_*` in `rom_engine/torch_system_bases.py` (import the module directly; it is not re-exported). The full-order callables must then be torch-native. For the small dense matrices of a reduced model the NumPy path is often faster; the torch versions are for batched or differentiable use.
+
 <a id="s-25"></a>
 
 ## 🧭 Choosing a ROM method
@@ -1454,6 +1521,7 @@ The report is only as meaningful as its test inputs: use inputs that were not us
 | Only measured/sampled frequency-response DATA, no matrices | `LoewnerROM` (+ `screen_physical_modes`) |
 | A geometrically nonlinear model, want a fast reduced solve or time integration | `MultiFidelitySurrogate`/`PolynomialModalROM` (or `NeuralSurrogate` for a larger training set) + `integrate_newmark_surrogate` |
 | A nonlinear model's backbone curve (amplitude-dependent frequency) | `HarmonicBalanceSystem` + `solve_nnm_backbone` |
+| A geometrically nonlinear thin structure whose mode basis misses the in-plane (membrane) response | `static_modal_derivatives` + `augment_with_derivatives`, or `dual_modes` when you only have a nonlinear static solver, or `QuadraticManifoldROM` to keep the coordinate count (see the system-driven bases section above) |
 
 ---
 
