@@ -208,7 +208,7 @@ class FrequencyROM:
         this omega -- computed EFFICIENTLY, in O(Q * n_dof * n_modes),
         via AffineDecomposition.assemble_action() rather than
         O(n_dof^2) via assemble() (see
-        docs/phase4_error_bounds_greedy_roadmap.md Section 2 for the
+        docs/error_bounds_greedy_roadmap.md Section 2 for the
         derivation). Since n_modes << n_dof for any basis worth
         reducing to, this is cheap enough to call many times inside a
         greedy training loop's inner sweep over candidate frequencies
@@ -222,7 +222,7 @@ class FrequencyROM:
         lower bound on A(omega)'s smallest singular value (the
         "coercivity constant" of the reduced-basis-method literature),
         which is NOT implemented here; see
-        docs/phase4_error_bounds_greedy_roadmap.md Section 3 for why
+        docs/error_bounds_greedy_roadmap.md Section 3 for why
         that is a genuinely hard, still-open problem near resonance
         (the literature is explicit that residual/coercivity-based
         estimators do not give tight bounds there), and why this
@@ -251,7 +251,7 @@ class FrequencyROM:
         DISAGREEMENT between this ROM and a second FrequencyROM (same
         M, K, C; a DIFFERENT basis) at this omega, used as a practical
         error indicator that needs no coercivity constant at all (see
-        docs/phase4_error_bounds_greedy_roadmap.md Section 3).
+        docs/error_bounds_greedy_roadmap.md Section 3).
 
         This sidesteps residual_norm()'s fundamental limitation
         (dividing by a near-zero singular value near resonance to turn

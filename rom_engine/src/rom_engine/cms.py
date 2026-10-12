@@ -189,3 +189,95 @@ class CoupledModel:
 def couple(subs, interface_maps):
     """Join Craig-Bampton substructures; see `CoupledModel`."""
     return CoupledModel(subs, interface_maps)
+
+
+# ----------------------------------------------------------------------------- 
+# Free-interface methods and interface reduction (Tiso, Karamooz Mahdiabadi and Marconi 2021, Section 4.4;
+# Rubin 1975; MacNeal 1971; Castanier, Tan and Pierre 2001 for characteristic constraint modes).
+@dataclass
+class FreeInterfaceModel:
+    """Free-interface reduction of one substructure. Coordinates: [modal amplitudes (n_modes); residual-
+    flexibility amplitudes (n_interface)] for method 'rubin', modal amplitudes only for 'macneal' (residual
+    inertia neglected and the residual coordinates condensed out)."""
+    T: np.ndarray
+    K: np.ndarray
+    M: np.ndarray
+    method: str
+    omega_free: np.ndarray       # free-interface frequencies [rad/s] kept
+    interface: np.ndarray
+    n_modes: int
+
+    def expand(self, coords):
+        return self.T @ _arr(coords)
+
+
+def free_interface_cms(K, M, interface, n_modes, method="rubin"):
+    """Free-interface component mode synthesis with residual flexibility.
+
+    The retained free-interface modes Phi_k (M-orthonormal) are enriched by the RESIDUAL ATTACHMENT modes of the
+    interface: columns of  G_r = K^-1 - Phi_k diag(1/omega^2) Phi_k^T  at the interface DOFs, which carry the static
+    flexibility of the truncated modes. 'rubin' (Rubin 1975) keeps the residual modes' inertia; 'macneal' (MacNeal
+    1971) neglects it and condenses the residual coordinates statically.
+
+    Requires a non-singular K (the substructure must be restrained; free rigid-body motion is not handled here).
+    """
+    K, M = _arr(K), _arr(M)
+    n = K.shape[0]
+    b, _ = _split(n, interface)
+    w2, Phi = eigh(K, M)
+    if w2[0] <= 1e-12 * w2[-1]:
+        raise ValueError("K is singular (rigid-body modes): restrain the substructure first")
+    nm = int(min(n_modes, n))
+    Pk, wk2 = Phi[:, :nm], w2[:nm]
+    G = np.linalg.inv(K) - (Pk / wk2) @ Pk.T
+    R = G[:, b]
+    # residual flexibility vanishes when all modes are kept: drop (numerically) null residual directions
+    U, sv, _ = np.linalg.svd(R, full_matrices=False)
+    keep = sv > 1e-9 * max(float(np.linalg.norm(np.linalg.inv(K), 2)), 1e-300)
+    R = U[:, keep] * sv[keep]
+    T = np.hstack([Pk, R])
+    Kr, Mr = T.T @ K @ T, T.T @ M @ T
+    omega = np.sqrt(wk2)
+    if method == "rubin":
+        return FreeInterfaceModel(T, 0.5 * (Kr + Kr.T), 0.5 * (Mr + Mr.T), "rubin", omega, b, nm)
+    if method == "macneal":
+        k, r = slice(0, nm), slice(nm, None)
+        Kc = Kr[k, k] - Kr[k, r] @ np.linalg.solve(Kr[r, r], Kr[r, k])
+        X = np.vstack([np.eye(nm), -np.linalg.solve(Kr[r, r], Kr[r, k])])      # static elimination of residuals
+        Mc = X.T @ np.block([[Mr[k, k], np.zeros((nm, R.shape[1]))],
+                             [np.zeros((R.shape[1], nm)), np.zeros((R.shape[1],) * 2)]]) @ X
+        return FreeInterfaceModel(T @ X, 0.5 * (Kc + Kc.T), 0.5 * (Mc + Mc.T), "macneal", omega, b, nm)
+    raise ValueError("method must be 'rubin' or 'macneal'")
+
+
+@dataclass
+class InterfaceReducedModel:
+    """Craig-Bampton model whose interface coordinates were replaced by characteristic constraint modes."""
+    T: np.ndarray
+    K: np.ndarray
+    M: np.ndarray
+    S: np.ndarray                # (n_b + n_m, n_keep + n_m) coordinate transformation
+    omega_interface: np.ndarray  # frequencies of the interface (constraint-mode) eigenproblem [rad/s]
+    n_interface_kept: int
+    n_modes: int
+
+    def expand(self, coords):
+        return self.T @ _arr(coords)
+
+
+def reduce_interface(cb, n_keep):
+    """Interface reduction by characteristic constraint modes (Castanier, Tan and Pierre 2001): solve the
+    eigenproblem of the constraint-mode block, K_bb x = lambda M_bb x, keep the `n_keep` lowest, and replace the
+    physical interface coordinates by their amplitudes. With n_keep = n_interface the model is unchanged
+    (exact change of variables). Returns an InterfaceReducedModel; because the coordinates are no longer physical
+    interface displacements it is used standalone, not with `couple`."""
+    nb, nm = cb.n_interface, cb.n_modes
+    n_keep = int(min(n_keep, nb))
+    lam, X = eigh(cb.K[:nb, :nb], cb.M[:nb, :nb])
+    S = np.zeros((nb + nm, n_keep + nm))
+    S[:nb, :n_keep] = X[:, :n_keep]
+    S[nb:, n_keep:] = np.eye(nm)
+    K = S.T @ cb.K @ S
+    M = S.T @ cb.M @ S
+    return InterfaceReducedModel(cb.T @ S, 0.5 * (K + K.T), 0.5 * (M + M.T), S, np.sqrt(np.clip(lam, 0, None)),
+                                 n_keep, nm)

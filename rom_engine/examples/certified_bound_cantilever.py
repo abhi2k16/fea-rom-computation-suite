@@ -7,7 +7,7 @@ Demonstrates the ONE genuinely CERTIFIED (rigorously provable, not just
 a practical heuristic) error signal in rom_engine:
 SingularValueLowerBound + certified_error_bound(), built on the
 Weyl/Mirsky singular-value perturbation inequality (see scm.py's module
-docstring and docs/phase4_error_bounds_greedy_roadmap.md Section 3).
+docstring and docs/error_bounds_greedy_roadmap.md Section 3).
 
 This script does two things honestly, in order:
 

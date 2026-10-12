@@ -18,7 +18,7 @@ constraints on an "attainable set" in R^(Q^2). That is the sharpest
 version of this idea, but its LP formulation for a general complex,
 non-normal affine operator is substantial machinery to implement
 correctly from scratch (see
-docs/phase4_error_bounds_greedy_roadmap.md Section 3's caveat about
+docs/error_bounds_greedy_roadmap.md Section 3's caveat about
 this).
 
 THIS module implements a SIMPLER, still fully rigorous, SCM-FAMILY
@@ -262,7 +262,7 @@ def certified_error_bound(rom, scm_bound, omega, F):
         A RIGOROUS upper bound on the true error, or +inf if
         scm_bound's lower bound at this omega is <= 0 (uninformative;
         happens near resonance more often than not with a small
-        reference set -- see docs/phase4_error_bounds_greedy_roadmap.md
+        reference set -- see docs/error_bounds_greedy_roadmap.md
         Section 3's discussion of why this whole family of bounds is
         fundamentally weaker there, an honest limitation this function
         surfaces as +inf rather than hides).

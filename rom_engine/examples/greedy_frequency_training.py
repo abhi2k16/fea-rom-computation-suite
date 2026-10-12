@@ -17,7 +17,7 @@ basis under the SAME full-order-solve budget (same final rank):
 The uniform grid doesn't know in advance where the model's resonances
 are; the greedy loop finds them without being told, purely from how
 much a candidate frequency's prediction changes as the training set
-grows (docs/phase4_error_bounds_greedy_roadmap.md Section 4). This
+grows (docs/error_bounds_greedy_roadmap.md Section 4). This
 script shows both: which frequencies each strategy actually trains on,
 and how each performs on a held-out test set concentrated near the
 model's real resonances.

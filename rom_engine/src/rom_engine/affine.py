@@ -145,7 +145,7 @@ class AffineDecomposition:
         # matrix products, just kept before the final contraction).
         # This is what makes assemble_action() below possible without
         # ever forming the full (n_dof, n_dof) A(mu): see
-        # docs/phase4_error_bounds_greedy_roadmap.md Section 2.
+        # docs/error_bounds_greedy_roadmap.md Section 2.
         self.component_action = [Kq @ V for Kq in self.components]
         self.n_modes = V.shape[1]
         return self
@@ -167,7 +167,7 @@ class AffineDecomposition:
         residual norm (frequency.FrequencyROM.residual_norm()),
         callable many times inside a greedy training loop's inner
         sweep over candidate parameters -- see
-        docs/phase4_error_bounds_greedy_roadmap.md Section 2.
+        docs/error_bounds_greedy_roadmap.md Section 2.
 
         Requires project(basis) to have been called first. q must be
         in the SAME reduced coordinates that basis (V) defines --

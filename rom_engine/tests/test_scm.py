@@ -23,7 +23,7 @@ Checks:
   4. An HONEST characterization of the bound's practical looseness for
      a real FE stiffness matrix: the "useful radius" around a
      reference point is measured and reported directly, not glossed
-     over -- see docs/phase4_error_bounds_greedy_roadmap.md's Phase 4d
+     over -- see docs/error_bounds_greedy_roadmap.md's Phase 4d
      status note for why this is expected (a real, large scale
      mismatch between ||K||_2 and sigma_min(A(omega)) for this model,
      not an implementation bug), and why the classical natural-norm

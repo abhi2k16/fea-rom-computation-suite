@@ -45,7 +45,7 @@ greedy    : weak-greedy adaptive training for FrequencyROM --
             that approach as weak near resonance) drive
             greedy_train_frequency_basis() to spend full-order solves
             where the current basis is weakest instead of on a fixed
-            grid. See docs/phase4_error_bounds_greedy_roadmap.md.
+            grid. See docs/error_bounds_greedy_roadmap.md.
 scm       : a genuinely CERTIFIED lower bound on sigma_min(A(omega)),
             turning residual_norm() into a true a posteriori error
             BOUND (not just an estimate) via a simplified,
@@ -66,7 +66,7 @@ scm_lp    : the genuine classical LP-based Successive Constraint Method
             complex, non-Hermitian A(omega), sidestepping a genuine,
             literature-acknowledged derivation ambiguity the sharper
             "natural-norm" SCM variant has for complex operators -- see
-            docs/phase4_error_bounds_greedy_roadmap.md Section 9 for
+            docs/error_bounds_greedy_roadmap.md Section 9 for
             why that variant was deliberately NOT attempted).
             LPSingularValueLowerBound mirrors SingularValueLowerBound's
             API exactly (from_affine/add_reference/lower_bound/
@@ -525,7 +525,7 @@ parameterized_latent_ode : Wave 13 item 119 -- rk4_step()/integrate_rk4()
             (z0, xi) directly -- a genuinely different, less physically-
             constrained trade-off than nonlinear_rom.ReducedForceModel's
             instantaneous state->force protocol, not a replacement for it.
-wave13_validation : Wave 13 item 120 -- a cross-configuration validation
+cross_configuration_validation : a cross-configuration validation
             harness tying items 117/118/119 together on ONE real
             fea_engine fixture pair (rather than re-proving each item's
             own already-tested claim in isolation): two independent
@@ -606,6 +606,21 @@ Note: pod/galerkin/affine's array-handling now preserves complex dtype
 hardcoded dtype=float -- every pre-existing real-valued use is
 unaffected (see each module's _as_array() docstring).
 
+system-driven bases and quadratic manifolds for geometrically nonlinear ROMs
+modal_derivatives : static and dynamic modal derivatives from a tangent-stiffness callable, maximum-modal-interaction
+            selection, and basis augmentation.
+dual_modes : non-intrusive membrane enrichment from static solves of the full model.
+nonlinear_rom : enhanced_enforced_displacement_rom -- polynomial reduced force identified from tangent probes (173).
+quadratic_manifold : u = Phi q + 1/2 Omega(q,q) with configuration-dependent reduced mass, ECSW on the manifold
+            and simulation-free training.
+slow_fast : static condensation of membrane against bending coordinates.
+cms : free_interface_cms (Rubin, MacNeal) and reduce_interface (characteristic constraint modes).
+subspace_nnm : NNM backbone of a reduced model in an augmented subspace.
+parametric_modes : Nelson-type mode sensitivities to a parameter.
+validation : compare_bases, effective_speedup, break_even_queries.
+torch_system_bases : opt-in PyTorch counterparts (torch_*) of the modules above, side by side with the NumPy
+            versions; import directly when torch is installed (not exported here, like torch_linalg).
+
 Roadmap: the 5-phase nonlinear-surrogate-ROM plan in
 docs/nonlinear_surrogate_rom_roadmap.md (sampling.py, nonlinear_rom.py,
 nonlinear_dynamics.py, and nnm.py above) is now fully implemented and
@@ -619,7 +634,7 @@ PSD-driven random-vibration stress analyzer built on top of
 frequency.py's sweep (random_vibration.py, Phase 6 of
 docs/frequency_domain_rom_roadmap.md) is also now implemented and
 validated. The genuine classical LP-based Successive Constraint Method
-(scm_lp.py, Phase 4e of docs/phase4_error_bounds_greedy_roadmap.md) is
+(scm_lp.py, Phase 4e of docs/error_bounds_greedy_roadmap.md) is
 also now implemented and validated -- unconditionally certified, but
 measured to be narrower than scm.py's simplified bound on this
 package's real cantilever fixture (Section 10 of that doc), not the
@@ -734,7 +749,7 @@ from .membrane_expansion import MembraneBasis
 from .neural_operator import reduced_eom_residual_trajectory
 from .reduced_basis_operator import RegularizedProjectionEncoder
 from .parameterized_latent_ode import rk4_step, integrate_rk4, CurriculumSchedule
-from .wave13_validation import (
+from .cross_configuration_validation import (
     cross_check_reduced_dynamics, cross_check_basis_generalization,
     run_cross_configuration_validation,
 )
@@ -749,19 +764,34 @@ from .attractor import (
 )
 # Wave 13's torch-gated classes (ExcitationResponseOperator,
 # LatentRefinementNet, ParameterizedODEFunc, ParameterizedLatentODE,
-# wave13_validation.cross_check_operators_torch) genuinely subclass
+# cross_configuration_validation.cross_check_operators_torch) genuinely subclass
 # torch.nn.Module and so, unlike NeuralSurrogate above, cannot be
 # DEFINED at all without torch importable -- deliberately NOT
 # re-exported here (see neural_operator's own module docstring note);
 # import them directly from their own module when torch is installed.
 
-from .cms import guyan, craig_bampton, couple, GuyanModel, CraigBamptonModel, CoupledModel
+from .cms import (guyan, craig_bampton, couple, GuyanModel, CraigBamptonModel, CoupledModel,
+                  free_interface_cms, reduce_interface, FreeInterfaceModel, InterfaceReducedModel)
 from .hyper_reduction import (
     deim_indices, qdeim_indices, DEIM, gappy_reconstruct, ecsw_weights,
     ecsw_training_matrix, ECSW, reduced_force_error, HyperReducedNonlinearROM,
 )
 from .linear_dynamics import newmark_linear, modal_superposition, piecewise_linear_exact, galerkin_transient
-from .validation import validate_rom, convergence_study, select_basis_size, ValidationReport
+from .validation import (validate_rom, convergence_study, select_basis_size, ValidationReport,
+                         effective_speedup, break_even_queries, compare_bases)
+from .modal_derivatives import (
+    directional_stiffness_derivative, ModalDerivatives, static_modal_derivatives, dynamic_modal_derivatives,
+    modal_coordinates, modal_interaction_weights, select_modal_derivatives, augment_with_derivatives,
+)
+from .dual_modes import dual_modes, amplitude_to_load_factor
+from .nonlinear_rom import enhanced_enforced_displacement_rom, EnhancedEnforcedDisplacementROM
+from .quadratic_manifold import (
+    QuadraticManifold, fit_quadratic_manifold, manifold_from_derivatives, lifted_training_states,
+    ManifoldECSW, QuadraticManifoldROM,
+)
+from .slow_fast import SlowFastROM
+from .subspace_nnm import diagonalize_basis, nnm_backbone_in_subspace
+from .parametric_modes import mode_sensitivities, updated_modes
 
 __all__ = [
     "PodBasis", "MultiFieldPOD", "assemble_field_weight_matrix", "trapezoidal_field_gram",
@@ -811,6 +841,15 @@ __all__ = [
     "ecsw_training_matrix", "ECSW", "reduced_force_error", "HyperReducedNonlinearROM",
     "newmark_linear", "modal_superposition", "piecewise_linear_exact", "galerkin_transient",
     "validate_rom", "convergence_study", "select_basis_size", "ValidationReport",
+    "effective_speedup", "break_even_queries", "compare_bases",
+    "free_interface_cms", "reduce_interface", "FreeInterfaceModel", "InterfaceReducedModel",
+    "directional_stiffness_derivative", "ModalDerivatives", "static_modal_derivatives",
+    "dynamic_modal_derivatives", "modal_coordinates", "modal_interaction_weights", "select_modal_derivatives",
+    "augment_with_derivatives", "dual_modes", "amplitude_to_load_factor",
+    "enhanced_enforced_displacement_rom", "EnhancedEnforcedDisplacementROM",
+    "QuadraticManifold", "fit_quadratic_manifold", "manifold_from_derivatives", "lifted_training_states",
+    "ManifoldECSW", "QuadraticManifoldROM", "SlowFastROM", "diagonalize_basis", "nnm_backbone_in_subspace",
+    "mode_sensitivities", "updated_modes",
 ]
 
 __version__ = "0.2.0"

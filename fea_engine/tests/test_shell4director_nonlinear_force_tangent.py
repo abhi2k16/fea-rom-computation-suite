@@ -1,8 +1,8 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_shell4director_phase3.py -- validation for Wave 4 item 47, Phase 3
-(docs/director_based_shell_element_roadmap.md Section 5, steps 7-8):
+test_shell4director_nonlinear_force_tangent.py -- validation of the nonlinear
+force and tangent (docs/director_based_shell_element_roadmap.md Section 5):
 `elements.shells_director.Shell4Director`'s full nonlinear
 `internal_force()`/`tangent_stiffness()`, isolated from the (separately
 tested, slow) multi-element/elastica benchmark in

@@ -128,3 +128,44 @@ def select_basis_size(study, tol, use="max"):
         if e <= tol:
             return r
     return None
+
+
+# ----------------------------------------------------------------------------- 
+def effective_speedup(n_queries, t_online, t_offline, t_full):
+    """Effective speed-up SP_M = (M t_online + t_offline) -> M t_full / (M t_online + t_offline): the offline
+    (training, basis and hyper-reduction) cost is charged against the M online queries, so a ROM that is fast per
+    query but expensive to build is not credited with its raw per-query ratio. Returns inf only if both online and
+    offline times are zero."""
+    cost = n_queries * t_online + t_offline
+    return float("inf") if cost == 0 else float(n_queries * t_full / cost)
+
+
+def break_even_queries(t_online, t_offline, t_full):
+    """Smallest number of queries at which the ROM (online + offline) is cheaper than the full model; None if the
+    ROM is not faster per query."""
+    if t_full <= t_online:
+        return None
+    return int(np.ceil(t_offline / (t_full - t_online)))
+
+
+def compare_bases(bases, fom_predict, make_predictor, test_inputs, offline_times=None, norm="rel_l2",
+                  n_queries=None):
+    """Compare several reduced bases (or any reduced models) on the SAME held-out inputs.
+
+    bases : dict name -> object; `make_predictor(obj)` must return a callable(x) -> array.
+    offline_times : optional dict name -> seconds spent building that model (training solves, SVD, ...), used for
+        the effective speed-up and break-even count.
+    Returns dict name -> dict(size, max, mean, t_online, t_fom, speedup, effective_speedup, break_even); size is
+    `obj.shape[1]` if it has a shape, else None. Nothing is ranked: read the rows.
+    """
+    xs = list(test_inputs)
+    out = {}
+    for name, obj in bases.items():
+        rep = validate_rom(make_predictor(obj), fom_predict, xs, norm=norm, timing=True)
+        off = 0.0 if offline_times is None else float(offline_times.get(name, 0.0))
+        nq = len(xs) if n_queries is None else n_queries
+        out[name] = dict(size=getattr(obj, "shape", (None, None))[1], max=rep.max, mean=rep.mean,
+                         t_online=rep.t_rom, t_fom=rep.t_fom, speedup=rep.speedup,
+                         effective_speedup=effective_speedup(nq, rep.t_rom, off, rep.t_fom),
+                         break_even=break_even_queries(rep.t_rom, off, rep.t_fom))
+    return out

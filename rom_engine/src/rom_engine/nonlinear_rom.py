@@ -983,3 +983,109 @@ def EnforcedDisplacementROM(n_modes):
     fit with `EnforcedDisplacementStrategy`-generated training data
     (no load-scaling formula needed)."""
     return PolynomialModalROM(n_modes)
+
+
+# =====================================================================
+# Enhanced enforced displacement
+# =====================================================================
+def _term_gradient(model, q):
+    """G[t, s] = d X_t / d q_s for the monomials X_t of `model` (quadratic terms first, then cubic), at q."""
+    q = np.asarray(q, dtype=float)
+    n_terms = len(model.quad_idx) + len(model.cub_idx)
+    G = np.zeros((n_terms, model.n_modes))
+    for c, idx in enumerate(list(model.quad_idx) + list(model.cub_idx)):
+        for s, mult in Counter(idx).items():
+            rest = list(idx)
+            rest.remove(s)
+            G[c, s] += mult * float(np.prod(q[rest]))
+    return G
+
+
+def _eed_states(m, amplitudes, max_distinct):
+    """Displacement states of the enhanced enforced-displacement identification: every mode alone, every pair and
+    (if max_distinct == 3) every triple, each at each amplitude and with the signs that separate even from odd
+    powers."""
+    from itertools import combinations, product
+    states = []
+    for a in amplitudes:
+        for j in range(m):
+            for sgn in (+1.0, -1.0):
+                q = np.zeros(m)
+                q[j] = sgn * a
+                states.append(q)
+        if max_distinct >= 2:
+            for j, l in combinations(range(m), 2):
+                for s2 in (+1.0, -1.0):
+                    q = np.zeros(m)
+                    q[j], q[l] = a, s2 * a
+                    states.append(q)
+        if max_distinct >= 3:
+            for j, l, p in combinations(range(m), 3):
+                for s2, s3 in product((+1.0, -1.0), repeat=2):
+                    q = np.zeros(m)
+                    q[j], q[l], q[p] = a, s2 * a, s3 * a
+                    states.append(q)
+    return states
+
+
+def enhanced_enforced_displacement_rom(V, tangent_fn, amplitudes, max_distinct=2, K_r=None):
+    """Identify a `PolynomialModalROM` from reduced TANGENT stiffness probes instead of force probes
+    (Perez, Wang and Mignolet 2014; Tiso, Karamooz Mahdiabadi and Marconi 2021, Section 4.5.5.2).
+
+    The reduced nonlinear force is  F_nl,r(q) = sum_{i<=j} B_r(i,j) q_i q_j + sum_{i<=j<=k} A_r(i,j,k) q_i q_j q_k.
+    Its Jacobian is LINEAR in the coefficients, and equals  V^T K_T(V q) V - K_r  at any state, so each probe
+    state q gives m x m linear equations. States are placed along single modes, along pairs of modes and
+    (optionally) triples, at the given amplitudes and with both signs, and the coefficients are the least-squares
+    solution. No nonlinear static solve and no force evaluation is needed, only `tangent_fn`.
+
+    Parameters
+    ----------
+    V : (n, m) reduced basis. It must contain membrane-dominated vectors (modal derivatives, dual modes or high
+        frequency modes) for the polynomial to represent the stretching of a thin structure.
+    tangent_fn : callable(u) -> K_T(u), dense or sparse, on the same DOFs as V.
+    amplitudes : reduced-coordinate amplitudes of the probes (at least two are advisable: the signs separate even
+        and odd powers, the two levels separate quadratic from cubic contributions).
+    max_distinct : 2 (default) probes single modes and pairs, O(m^2) tangent evaluations. This already identifies
+        every coefficient, including the cubic terms that involve three different modes: the Jacobian of
+        q_i q_j q_k is q_j q_k with respect to q_i, so a probe that excites only j and k still sees the term through
+        the i-th column of the tangent (the rank of the identification is returned and tested against the number of
+        terms). 3 adds triple probes, O(m^3) evaluations, as a redundant check.
+    K_r : reduced linear stiffness V^T K_T(0) V, computed from `tangent_fn` if not given.
+
+    Returns (model, info): a fitted `PolynomialModalROM`, and `info` with `n_tangent_evals`, `n_states`, `rank`,
+    `n_terms` and `residual` (relative least-squares residual).
+    """
+    V = np.asarray(V, dtype=float)
+    n, m = V.shape
+    if max_distinct not in (2, 3):
+        raise ValueError("max_distinct must be 2 or 3")
+
+    def reduced(u):
+        Kt = tangent_fn(u)
+        KV = Kt @ V
+        KV = KV.toarray() if hasattr(KV, "toarray") else np.asarray(KV)
+        return V.T @ KV
+
+    if K_r is None:
+        K_r = reduced(np.zeros(n))
+    model = PolynomialModalROM(m)
+    states = _eed_states(m, amplitudes, max_distinct)
+    A_rows, B_rows = [], []
+    for q in states:
+        J_nl = reduced(V @ q) - K_r                  # (m, m): J_nl[r, s] = d F_nl,r / d q_s
+        G = _term_gradient(model, q)                 # (n_terms, m)
+        A_rows.append(G.T)                           # equation for column s: sum_t C[t, r] G[t, s] = J_nl[r, s]
+        B_rows.append(J_nl.T)
+    A = np.vstack(A_rows)
+    B = np.vstack(B_rows)
+    C, _, rank, _ = np.linalg.lstsq(A, B, rcond=None)
+    model.coeffs = C
+    res = float(np.linalg.norm(A @ C - B) / max(np.linalg.norm(B), 1e-300))
+    return model, dict(n_tangent_evals=len(states) + 1, n_states=len(states), rank=int(rank),
+                       n_terms=A.shape[1], residual=res)
+
+
+def EnhancedEnforcedDisplacementROM(V, tangent_fn, amplitudes, max_distinct=2):
+    """Name matching `ICEROM` / `EnforcedDisplacementROM`: a fitted `PolynomialModalROM` from tangent probes.
+    Returns the model only; use `enhanced_enforced_displacement_rom` for the diagnostics."""
+    return enhanced_enforced_displacement_rom(V, tangent_fn, amplitudes, max_distinct)[0]

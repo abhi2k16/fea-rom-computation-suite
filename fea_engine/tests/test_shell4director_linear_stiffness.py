@@ -1,9 +1,8 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_shell4director_phase2.py -- validation for Wave 4 item 47,
-Phase 2 (docs/director_based_shell_element_roadmap.md Section 5,
-steps 3-6): `elements.shells_director.Shell4Director`'s LINEAR (u=0)
+test_shell4director_linear_stiffness.py -- validation of the
+linear stiffness (docs/director_based_shell_element_roadmap.md Section 5): `elements.shells_director.Shell4Director`'s LINEAR (u=0)
 stiffness, independently assembled from director kinematics.
 
 Four lines of evidence:

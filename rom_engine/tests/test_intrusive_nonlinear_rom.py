@@ -11,7 +11,7 @@ fea_engine models, per the roadmap's own four-part validation criteria:
      that f_int_r(q) = V^T @ internal_force_fn(V@q) is mathematically
      consistent with the full-order system when there's no actual
      reduction happening. Built on a real, genuinely nonlinear
-     fea_engine.elements.Beam2DReissner cantilever (item 140), not a
+     fea_engine.elements.Beam2DReissner cantilever, not a
      toy linear system.
   2. In the linear regime (an artificially-linearized internal_force_fn),
      this class's own K_r/M_r and the resulting modal frequencies match

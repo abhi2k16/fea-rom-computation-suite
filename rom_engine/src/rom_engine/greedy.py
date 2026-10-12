@@ -7,7 +7,7 @@ basis from a fixed (e.g. uniform) grid of frequencies, ADAPTIVELY pick
 which frequencies to full-order-solve at, spending that (expensive)
 budget where the current basis is actually weak.
 
-The algorithm (see docs/phase4_error_bounds_greedy_roadmap.md Section
+The algorithm (see docs/error_bounds_greedy_roadmap.md Section
 4 for the full research background): start from a small seed set of
 frequencies, then repeatedly (1) evaluate a CHEAP error indicator
 across every untried candidate frequency, (2) full-order-solve ONLY at

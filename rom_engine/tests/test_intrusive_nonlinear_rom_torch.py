@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 """
 test_intrusive_nonlinear_rom_torch.py -- torch-backend addendum to Wave
-17 item 144 (fea_engine/docs/consolidated_future_roadmap.md), validates
+17 item 144, validates
 the `torch_reduced_matrices()`/`integrate_rk4_torch()`/
 `integrate_newton_newmark_torch()` methods added to
 `rom_engine.intrusive_nonlinear_rom.IntrusiveNonlinearROM` against this

@@ -1120,7 +1120,7 @@ previously-debugged sign-error history real enough to make composing
 a second mechanism onto it a materially riskier change than this item
 asked for). See `nonlinear_solver._extra_convergence_ok()`/
 `_armijo_line_search_step()` for the two shared implementations every
-driver above calls, and `tests/test_wave1_newton_robustness.py` for
+driver above calls, and `tests/test_newton_robustness.py` for
 their validation.
 
 ```python

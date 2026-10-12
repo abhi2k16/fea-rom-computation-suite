@@ -6,7 +6,7 @@ Huynh, Rozza, Sen, Patera 2007): a rigorous lower bound on
 sigma_min(A(omega)) computed via a small ONLINE LINEAR PROGRAM over
 offline-selected reference ("control") points, rather than
 scm.py's simplified single-Lipschitz-constant construction. See
-docs/phase4_error_bounds_greedy_roadmap.md Section 9 for the full
+docs/error_bounds_greedy_roadmap.md Section 9 for the full
 derivation and the honest scoping decision this module makes -- read
 that before using this module for anything beyond what its docstrings
 below already say.
@@ -85,7 +85,7 @@ class LPSingularValueLowerBound:
     A(omega) = sum_q theta_q(omega) A_q, computed via the genuine
     classical Successive Constraint Method's online linear program
     (see module docstring for the SCM-squared reduction this uses, and
-    docs/phase4_error_bounds_greedy_roadmap.md Section 9 for the full
+    docs/error_bounds_greedy_roadmap.md Section 9 for the full
     derivation and honest scoping note).
 
     Parameters

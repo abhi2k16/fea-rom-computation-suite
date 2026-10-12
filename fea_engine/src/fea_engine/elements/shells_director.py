@@ -732,7 +732,7 @@ class Shell4Director(Element):
         EXACTLY -- confirmed numerically to ~1e-25 (machine precision),
         not merely small, across rotations 0.5-90 degrees about
         in-plane, out-of-plane, and general axes (see
-        `tests/test_shell4director_phase3.py`).
+        `tests/test_shell4director_nonlinear_force_tangent.py`).
 
         Returns (gamma (2,) engineering shear strain in the LOCAL
         (e1_0,e2_0) physical basis, detJ)."""
@@ -815,7 +815,7 @@ class Shell4Director(Element):
         maps any uniform nodal field to EXACTLY zero -- curvature is
         rigid-rotation-exact with NO further work needed, confirmed
         directly (`Um`/`Ub` both ~1e-30, machine zero, at every tested
-        rotation -- see `tests/test_shell4director_phase3.py`).
+        rotation -- see `tests/test_shell4director_nonlinear_force_tangent.py`).
 
         SHEAR -- A REAL, FOUND SIGN DIVERGENCE FROM PHASE 2 (this is
         the single most important finding of Phase 3's own

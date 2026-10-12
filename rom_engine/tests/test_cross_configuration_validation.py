@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_wave13_validation.py -- Wave 13 item 120 (docs/consolidated_
-future_roadmap.md): validates the cross-configuration harness that
+test_cross_configuration_validation.py -- validates the cross-configuration harness that
 ties items 117/118/119 together on ONE real fea_engine fixture pair
 (`clamped_clamped_nonlinear_beam_system`, n_elem=10 for training /
 n_elem=20 for cross-resolution validation), rather than re-proving any
@@ -30,7 +29,7 @@ __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
 import pytest
 
-from rom_engine.wave13_validation import (
+from rom_engine.cross_configuration_validation import (
     cross_check_reduced_dynamics, cross_check_basis_generalization,
     run_cross_configuration_validation, _HAS_TORCH,
 )
@@ -108,6 +107,6 @@ def test_run_cross_configuration_validation_returns_both_reports(fix10, fix20):
 # =====================================================================
 @pytest.mark.skipif(not _HAS_TORCH, reason="PyTorch not installed in this environment")
 def test_operator_generalizes_to_unseen_frequency_on_real_fixture(fix10):
-    from rom_engine.wave13_validation import cross_check_operators_torch
+    from rom_engine.cross_configuration_validation import cross_check_operators_torch
     rep = cross_check_operators_torch(fix10, n_train_freqs=4, n_time=64, seed=0)
     assert rep["r2_unseen_frequency"] > 0.0

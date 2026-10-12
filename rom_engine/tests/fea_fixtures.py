@@ -122,7 +122,7 @@ def reissner_cantilever_system(n_elem=6, L=1.0, E=210e9, nu=0.3, rho=7800.0,
     fully clamped (u1=u2=theta=0). Used by
     rom_engine/tests/test_intrusive_nonlinear_rom.py as the real,
     genuinely nonlinear full-order model `IntrusiveNonlinearROM`
-    (item 144) is validated against -- unlike
+    is validated against -- unlike
     `clamped_clamped_nonlinear_beam_system()` above (built on
     `Beam2DCorotational`, no independent rotation field / rotary
     inertia), this fixture exists specifically so item 144's own

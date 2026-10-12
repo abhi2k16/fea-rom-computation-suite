@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-wave13_validation.py -- Wave 13 item 120 (fea_engine/docs/consolidated_
-future_roadmap.md): a cross-configuration validation harness tying
+cross_configuration_validation.py -- a cross-configuration validation harness tying
 items 117 (`neural_operator.reduced_eom_residual_trajectory`), 118
 (`reduced_basis_operator.RegularizedProjectionEncoder`), and 119
 (`parameterized_latent_ode.integrate_rk4`/`ParameterizedLatentODE`)

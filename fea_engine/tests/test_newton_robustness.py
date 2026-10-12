@@ -1,8 +1,8 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_wave1_newton_robustness.py -- Wave 1 (docs/consolidated_future_
-roadmap.md, source nonlinear_fem_lessons.md's appendix), items 9/10:
+test_newton_robustness.py -- Newton robustness (source:
+nonlinear_fem_lessons.md's appendix):
 displacement-increment/energy-error convergence criteria and Armijo
 line search, added to solve_nonlinear_static(), solve_nonlinear_
 displacement_control(), solve_nonlinear_arc_length(), and solve_
