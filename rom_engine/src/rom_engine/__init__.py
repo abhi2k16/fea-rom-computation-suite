@@ -793,6 +793,33 @@ from .slow_fast import SlowFastROM
 from .subspace_nnm import diagonalize_basis, nnm_backbone_in_subspace
 from .parametric_modes import mode_sensitivities, updated_modes
 
+from .complementarity import lcp_lemke, lcp_active_set, solve_lcp, solve_reduced_contact, complementarity_violation
+from .contact_dual_basis import (nonneg_dual_basis, svd_dual_basis, active_snapshot_columns, ContactROM,
+                                 ContactROMResult, NMFBasis, sparse_dictionary_fit)
+from .contact_greedy import contact_condition_indicator, GreedyContactHistory, greedy_contact_sampling
+from .contact_hyper_reduction import (ecsw_weights_with_required, fit_contact_aware_ecsw, complete_constraint_elements,
+                                      reconstruct_contact_forces, rank_deficiency, enrich_basis_for_constraints,
+                                      solve_reduced_contact_newton, ReducedContactNewtonResult)
+from .domain_partition import nonlinearity_indicator, select_nonlinear_elements, PartitionedModel
+from .contact_validation import max_normalised_error, contact_errors, ContactErrors, contact_set_agreement
+
+from .friction_contact_models import JenkinsContact, jenkins_hysteresis_energy
+from .forced_response_hbm import (ForcedHBM, PolynomialForce, ForcedResponse, forced_response_continuation,
+                                  equivalent_resonance, equivalent_properties_vs_force)
+from .interface_reduction import (DualCraigBamptonModel, dual_craig_bampton, couple_dual, joint_interface_modes,
+                                  jim_craig_bampton, gram_schmidt_interface_modes, interface_reduced_craig_bampton,
+                                  fourier_interface_basis, multistage_fourier_basis, trial_vector_derivative_basis,
+                                  natural_frequency_errors, mac_matrix, mac_diagonal, InterfaceReducedBasis)
+from .component_pod import (legendre_interface_parametrisation, component_snapshots, ComponentBasis, ReducedAssembly,
+                            ReducedAssemblyResult)
+from .operator_inference import (static_coupling, lstsq_coupling, craig_bampton_transformation, fit_spd_operators,
+                                 OperatorInferenceModel, infer_contact_operators)
+from .hyper_reduced_hbm import (JointElementSet, harmonic_training_matrix, fit_harmonic_ecsw, HyperReducedJointForce,
+                                residual_error_indicator)
+from .rubin_dual_basis import (rubin_dual_basis, select_by_representation_error, physical_contact_basis,
+                               PolynomialForceFit, reidentify_polynomial_force)
+from .contact_comparison import compare_contact_models, format_contact_comparison
+
 __all__ = [
     "PodBasis", "MultiFieldPOD", "assemble_field_weight_matrix", "trapezoidal_field_gram",
     "GalerkinROM", "AffineDecomposition",
@@ -850,6 +877,8 @@ __all__ = [
     "QuadraticManifold", "fit_quadratic_manifold", "manifold_from_derivatives", "lifted_training_states",
     "ManifoldECSW", "QuadraticManifoldROM", "SlowFastROM", "diagonalize_basis", "nnm_backbone_in_subspace",
     "mode_sensitivities", "updated_modes",
+    "lcp_lemke", "lcp_active_set", "solve_lcp", "solve_reduced_contact", "complementarity_violation", "nonneg_dual_basis", "svd_dual_basis", "active_snapshot_columns", "ContactROM", "ContactROMResult", "NMFBasis", "sparse_dictionary_fit", "contact_condition_indicator", "GreedyContactHistory", "greedy_contact_sampling", "ecsw_weights_with_required", "fit_contact_aware_ecsw", "complete_constraint_elements", "reconstruct_contact_forces", "rank_deficiency", "enrich_basis_for_constraints", "solve_reduced_contact_newton", "ReducedContactNewtonResult", "nonlinearity_indicator", "select_nonlinear_elements", "PartitionedModel", "max_normalised_error", "contact_errors", "ContactErrors", "contact_set_agreement",
+    "JenkinsContact", "jenkins_hysteresis_energy", "ForcedHBM", "PolynomialForce", "ForcedResponse", "forced_response_continuation", "equivalent_resonance", "equivalent_properties_vs_force", "DualCraigBamptonModel", "dual_craig_bampton", "couple_dual", "joint_interface_modes", "jim_craig_bampton", "gram_schmidt_interface_modes", "interface_reduced_craig_bampton", "fourier_interface_basis", "multistage_fourier_basis", "trial_vector_derivative_basis", "natural_frequency_errors", "mac_matrix", "mac_diagonal", "InterfaceReducedBasis", "legendre_interface_parametrisation", "component_snapshots", "ComponentBasis", "ReducedAssembly", "ReducedAssemblyResult", "static_coupling", "lstsq_coupling", "craig_bampton_transformation", "fit_spd_operators", "OperatorInferenceModel", "infer_contact_operators", "JointElementSet", "harmonic_training_matrix", "fit_harmonic_ecsw", "HyperReducedJointForce", "residual_error_indicator", "rubin_dual_basis", "select_by_representation_error", "physical_contact_basis", "PolynomialForceFit", "reidentify_polynomial_force", "compare_contact_models", "format_contact_comparison",
 ]
 
 __version__ = "0.2.0"

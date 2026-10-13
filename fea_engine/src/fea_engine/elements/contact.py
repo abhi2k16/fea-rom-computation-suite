@@ -471,3 +471,125 @@ class NodeToSegmentContact2DFriction(NodeToSegmentContact2D):
         return self.tangent_stiffness(elem_coords, np.zeros(6), mat, thickness,
                                        state=self.init_state())
 
+
+
+def closest_point_on_triangle_3d(p, a, b, c):
+    """Closest point of the triangle (a, b, c) to the point p (all length-3 array-likes), by the region test of
+    Ericson, "Real-Time Collision Detection" (2005). Returns (w, proj): w = (w_a, w_b, w_c) are the barycentric
+    weights of the projection (non-negative, summing to 1, so a projection beyond an edge or corner is clamped
+    onto it) and proj is the point itself. A degenerate (zero-area) triangle returns the closest corner."""
+    p, a, b, c = (np.asarray(x, dtype=float) for x in (p, a, b, c))
+    ab, ac, ap = b - a, c - a, p - a
+    d1, d2 = ab @ ap, ac @ ap
+    if d1 <= 0.0 and d2 <= 0.0:
+        return np.array([1.0, 0.0, 0.0]), a.copy()
+    bp = p - b
+    d3, d4 = ab @ bp, ac @ bp
+    if d3 >= 0.0 and d4 <= d3:
+        return np.array([0.0, 1.0, 0.0]), b.copy()
+    vc = d1 * d4 - d3 * d2
+    if vc <= 0.0 and d1 >= 0.0 and d3 <= 0.0:
+        v = d1 / (d1 - d3)
+        return np.array([1.0 - v, v, 0.0]), a + v * ab
+    cp = p - c
+    d5, d6 = ab @ cp, ac @ cp
+    if d6 >= 0.0 and d5 <= d6:
+        return np.array([0.0, 0.0, 1.0]), c.copy()
+    vb = d5 * d2 - d1 * d6
+    if vb <= 0.0 and d2 >= 0.0 and d6 <= 0.0:
+        w = d2 / (d2 - d6)
+        return np.array([1.0 - w, 0.0, w]), a + w * ac
+    va = d3 * d6 - d5 * d4
+    if va <= 0.0 and (d4 - d3) >= 0.0 and (d5 - d6) >= 0.0:
+        w = (d4 - d3) / ((d4 - d3) + (d5 - d6))
+        return np.array([0.0, 1.0 - w, w]), b + w * (c - b)
+    den = va + vb + vc
+    if abs(den) < 1e-300:
+        return np.array([1.0, 0.0, 0.0]), a.copy()
+    v, w = vb / den, vc / den
+    return np.array([1.0 - v - w, v, w]), a + ab * v + ac * w
+
+
+def find_contact_pairs_3d(slave_node_ids, master_triangles, node_coords, search_radius):
+    """Exhaustive distance filter, the 3-D counterpart of find_contact_pairs_2d (same scope note: O(n_slave *
+    n_triangles), adequate for small contact zones; a spatial hash would be a drop-in replacement).
+    master_triangles: iterable of (node_a, node_b, node_c) index triples, wound so that the right-hand normal
+    (b-a) x (c-a) points AWAY from the master body. Returns a list of (slave_id, (a, b, c)) pairs; feed each to
+    fesystem.add_contact_element(NodeToSurfaceContact3D(), [slave_id, a, b, c], (k_p,))."""
+    pairs = []
+    X = np.asarray(node_coords, dtype=float)
+    for s in slave_node_ids:
+        for tri in master_triangles:
+            _, proj = closest_point_on_triangle_3d(X[s], X[tri[0]], X[tri[1]], X[tri[2]])
+            if np.linalg.norm(X[s] - proj) <= search_radius:
+                pairs.append((s, tuple(tri)))
+    return pairs
+
+
+class NodeToSurfaceContact3D(Element):
+    """Frictionless penalty contact between one SLAVE node and a MASTER TRIANGLE of three mesh nodes, the 3-D
+    counterpart of NodeToSegmentContact2D and the discretisation of Algorithm 1 of Nikiema et al. (2026): closest-
+    point projection, a gap g_n = (x_s - x_proj) . n, a penalty force alpha_p * max(-g_n, 0) and a contact
+    stiffness K_c ~ alpha_p C^T C with the second-derivative term of the gap neglected.
+
+    4 NODES per element, [slave, master_a, master_b, master_c], node-major DOF order (12 entries). mat = (k_p,).
+    The outward normal is n = (b - a) x (c - a) / |...| of the CURRENT triangle and must point away from the master
+    body (wind master_triangles accordingly). Penetration delta = -(p - proj) . n; delta > 0 means penetration.
+    The slave force is -k_p delta n (the direction of increasing penetration, this package's F_int = dU/du
+    convention, as in the 2-D element) and the equal and opposite reaction is split over the master nodes by the
+    barycentric weights of the projection, so the three forces sum to zero identically.
+
+    The consistent tangent is the Gauss-Newton form of the paper, K_c = k_p C^T C with C = d(delta)/d(u_elem)
+    obtained with the projection held fixed (n and the weights frozen). It is symmetric positive semidefinite.
+    `tangent_stiffness(..., consistent=False)` returns a central-difference tangent of internal_force instead; the
+    two differ by the neglected terms and are compared in the tests.
+
+    Scope, as for the 2-D element: a single triangle has no knowledge of its neighbours, so a slave sliding off the
+    edge hands over to the next triangle only if that pair is also registered."""
+    n_nodes, dofs_per_node, dim, gauss_order = 4, 3, 1, 1
+
+    @staticmethod
+    def _geometry(elem_coords, u_elem):
+        X = np.asarray(elem_coords, float).reshape(4, 3) + np.asarray(u_elem, float).reshape(4, 3)
+        p, a, b, c = X
+        w, proj = closest_point_on_triangle_3d(p, a, b, c)
+        nrm = np.cross(b - a, c - a)
+        L = np.linalg.norm(nrm)
+        n_hat = nrm / L if L > 1e-30 else np.array([0.0, 0.0, 1.0])
+        delta = -((p - proj) @ n_hat)
+        return dict(p=p, w=w, proj=proj, n_hat=n_hat, delta=delta, area2=L)
+
+    def internal_force(self, elem_coords, u_elem, mat, thickness=1.0, **kwargs):
+        (k_p,) = mat
+        g = self._geometry(elem_coords, u_elem)
+        if g["delta"] <= 0.0:
+            return np.zeros(12)
+        f_c = k_p * g["delta"]
+        f = np.zeros(12)
+        f[0:3] = -f_c * g["n_hat"]
+        for i in range(3):
+            f[3 + 3 * i:6 + 3 * i] = f_c * g["w"][i] * g["n_hat"]
+        return f
+
+    def tangent_stiffness(self, elem_coords, u_elem, mat, thickness=1.0, consistent=True, **kwargs):
+        (k_p,) = mat
+        if consistent:
+            g = self._geometry(elem_coords, u_elem)
+            if g["delta"] <= 0.0:
+                return np.zeros((12, 12))
+            C = np.zeros(12)                       # d(delta)/d(u_elem), projection frozen
+            C[0:3] = -g["n_hat"]
+            for i in range(3):
+                C[3 + 3 * i:6 + 3 * i] = g["w"][i] * g["n_hat"]
+            return k_p * np.outer(C, C)
+        h = 1e-7 * max(1.0, float(np.linalg.norm(u_elem)))
+        K = np.zeros((12, 12))
+        for j in range(12):
+            du = np.zeros(12)
+            du[j] = h
+            K[:, j] = (self.internal_force(elem_coords, u_elem + du, mat, thickness)
+                       - self.internal_force(elem_coords, u_elem - du, mat, thickness)) / (2 * h)
+        return K
+
+    def stiffness(self, elem_coords, mat, thickness=1.0, **kwargs):
+        return self.tangent_stiffness(elem_coords, np.zeros(12), mat, thickness)

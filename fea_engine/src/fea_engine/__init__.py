@@ -111,6 +111,7 @@ from .elements import (Element, gauss_product, Quad4PlaneStress, Hex8Solid3D,
                         Tri6PlaneStress, Hex8SolidBbar, Quad4PlasticJ2PlaneStress,
                         Hex8PlasticJ2Kinematic,
                         NodeToSegmentContact2D, NodeToSegmentContact2DFriction,
+                        NodeToSurfaceContact3D, closest_point_on_triangle_3d, find_contact_pairs_3d,
                         closest_point_on_segment_2d, find_contact_pairs_2d,
                         ELEMENT_REGISTRY)
 from .solver import FESystem
@@ -132,6 +133,11 @@ from .adaptivity import (
     fixed_fraction_marking, threshold_marking, equidistribution_marking,
     RefinementRecord, refine_triangle_mesh_longest_edge, adaptive_refine_solve,
 )
+
+from .contact_solvers import (lcp_lemke, lcp_active_set, lcp_projected_gauss_seidel, solve_lcp,
+                              contact_complementarity_residual, solve_contact_static, solve_contact_dynamics,
+                              solve_contact_newton, ContactResult)
+from .mortar import dual_mortar_operator, MortarTie2D
 
 __all__ = [
     "material", "damping", "mesh", "grading", "build_mesh", "geometry", "elements",
@@ -164,6 +170,10 @@ __all__ = [
     "Tri6PlaneStress", "Hex8SolidBbar", "Quad4PlasticJ2PlaneStress",
     "Hex8PlasticJ2Kinematic",
     "NodeToSegmentContact2D", "NodeToSegmentContact2DFriction",
+    "lcp_lemke", "lcp_active_set", "lcp_projected_gauss_seidel", "solve_lcp", "contact_complementarity_residual",
+    "solve_contact_static", "solve_contact_dynamics", "solve_contact_newton", "ContactResult",
+    "dual_mortar_operator", "MortarTie2D",
+    "NodeToSurfaceContact3D", "closest_point_on_triangle_3d", "find_contact_pairs_3d",
     "closest_point_on_segment_2d", "find_contact_pairs_2d",
     "ELEMENT_REGISTRY",
     "FESystem", "FEField", "FieldSeries", "NewtonOptions", "batch", "units",

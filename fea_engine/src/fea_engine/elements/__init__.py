@@ -39,6 +39,7 @@ from .beams3d import Beam3DEulerBernoulli, Beam3DCorotational
 from .trusses import TrussTL2D, TrussPlastic2D
 from .contact import (GapContactPenalty, GapContactCurvedFriction,
                        NodeToSegmentContact2D, NodeToSegmentContact2DFriction,
+                       NodeToSurfaceContact3D, closest_point_on_triangle_3d, find_contact_pairs_3d,
                        closest_point_on_segment_2d, find_contact_pairs_2d)
 from .nonlinear_solids import (Hex8PlasticJ2, Tet4NeoHookean, Tet10SolidTL,
                                 Quad4PlasticJ2PlaneStress, Hex8PlasticJ2Kinematic)
@@ -75,6 +76,7 @@ ELEMENT_REGISTRY = {
     "hex8_plastic_j2_kinematic": Hex8PlasticJ2Kinematic,
     "node_to_segment_contact_2d": NodeToSegmentContact2D,
     "node_to_segment_contact_2d_friction": NodeToSegmentContact2DFriction,
+    "node_to_surface_contact_3d": NodeToSurfaceContact3D,
 }
 
 __all__ = [
@@ -87,6 +89,7 @@ __all__ = [
     "TrussTL2D", "TrussPlastic2D",
     "GapContactPenalty", "GapContactCurvedFriction",
     "NodeToSegmentContact2D", "NodeToSegmentContact2DFriction",
+    "NodeToSurfaceContact3D", "closest_point_on_triangle_3d", "find_contact_pairs_3d",
     "closest_point_on_segment_2d", "find_contact_pairs_2d",
     "Quad8PlaneStress", "Hex20Solid3D", "Tet10Solid3D",
     "Hex8PlasticJ2", "Tet4NeoHookean", "Tet10SolidTL",

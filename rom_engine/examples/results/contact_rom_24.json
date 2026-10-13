@@ -1,0 +1,49 @@
+{
+  "n": 24,
+  "p": 12,
+  "n_dof": 576,
+  "n_train": 30,
+  "n_test": 5,
+  "queries": 200,
+  "t_snapshots": 1.9999908999998297,
+  "t_pod": 0.0007260999991558492,
+  "nmf_relative_fit_error": 0.010806620016192044,
+  "table": {
+    "svd dual": {
+      "displacement": 1.0241638638024009,
+      "gap": 1.1185644438453077,
+      "force": 3.580129588977762,
+      "complementarity": 0.30715098887906206,
+      "active_agreement": 0.6067415730337079,
+      "t_online": 0.00022926000056031626,
+      "t_fom": 0.05511936000038986,
+      "speedup": 240.42292534972077,
+      "effective_speedup": 5.379029591828254,
+      "break_even": 37,
+      "size": [
+        12,
+        12
+      ],
+      "n_elements": null,
+      "offline_time": 2.0035644999989017
+    },
+    "nmf dual": {
+      "displacement": 0.013018484960318145,
+      "gap": 0.014217816685837081,
+      "force": 0.1046276708912047,
+      "complementarity": 0.002151050272072269,
+      "active_agreement": 0.2534722222222222,
+      "t_online": 0.00037141999964660497,
+      "t_fom": 0.05511936000038986,
+      "speedup": 148.40170171997815,
+      "effective_speedup": 4.826670853754133,
+      "break_even": 41,
+      "size": [
+        12,
+        12
+      ],
+      "n_elements": null,
+      "offline_time": 2.2096653999979026
+    }
+  }
+}

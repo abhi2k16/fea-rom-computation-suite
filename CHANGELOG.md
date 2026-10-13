@@ -6,6 +6,32 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 
 ## Unreleased
 
+### Added (fea_engine, contact)
+- `contact_solvers.py`: exact multi-node Signorini contact on plain arrays. LCP solvers (`lcp_active_set`, `lcp_lemke`,
+  `lcp_projected_gauss_seidel`, `solve_lcp`), `solve_contact_static`, `solve_contact_dynamics` (implicit two-step scheme)
+  and `solve_contact_newton` (sequential linearisation). Frictionless, constant gap map.
+- `mortar.py`: `dual_mortar_operator` and `MortarTie2D` (tied and unilateral dual-mortar coupling of non-matching meshes,
+  straight 2-D interfaces, linear segments, small displacements).
+- `NodeToSurfaceContact3D` (element `"node_to_surface_contact_3d"`), `closest_point_on_triangle_3d`, `find_contact_pairs_3d`.
+
+### Added (rom_engine, contact)
+- `complementarity.py` (dense LCP copy, `solve_reduced_contact`), `contact_dual_basis.py` (NMF dual basis, `ContactROM`,
+  rank/inf-sup report), `contact_greedy.py` (contact-condition greedy indicator), `contact_hyper_reduction.py`
+  (contact-aware ECSW, constraint-element completion, NNLS force reconstruction, basis enrichment, reduced contact Newton),
+  `domain_partition.py` (static condensation of the linear zone plus an element nonlinearity indicator designed here,
+  since the source paper withholds its own), `contact_validation.py` (max-normalised error metrics).
+- `friction_contact_models.py`: `JenkinsContact` (macro-slip stick/slip/lift-off elements for harmonic balance, exact
+  Jacobian). `forced_response_hbm.py`: `ForcedHBM`, pseudo-arclength `forced_response_continuation`, `equivalent_resonance`,
+  `equivalent_properties_vs_force`.
+- `interface_reduction.py`: dual Craig-Bampton and its assembly, joint interface modes, Gram-Schmidt interface modes,
+  Fourier and multi-stage Fourier interface bases, trial vector derivatives, frequency/MAC metrics.
+- `component_pod.py` (component POD with mortar coupling), `operator_inference.py` (Craig-Bampton-structured SPD
+  operator inference with LCP contact dynamics), `hyper_reduced_hbm.py` (harmonic ECSW and the residual error
+  indicator of Morsy, Kast and Tiso 2022), `rubin_dual_basis.py` (Rubin plus dual modes, `reidentify_polynomial_force`),
+  `contact_comparison.py` (comparison harness) and `examples/contact_rom_comparison.py`.
+- `torch_contact_bases.py` (opt-in, not exported). Its 5 tests (`tests/test_torch_contact_bases.py`) pass against the NumPy
+  originals on the maintainer's PyTorch machine (2026-10-13; 16 of 16 together with `test_torch_system_bases.py`).
+
 ### Added (rom_engine)
 - System-driven bases for geometrically nonlinear structures (`modal_derivatives.py`): `static_modal_derivatives`
   and `dynamic_modal_derivatives` from a tangent-stiffness callable (central differences, one LU factorisation),

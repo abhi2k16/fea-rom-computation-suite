@@ -2081,3 +2081,18 @@ every number above.
   torch-optional switch pattern, and every ROM formulation route in the
   package, including the newer neural-operator-informed routes not
   covered in day-to-day detail here.
+
+### Unilateral contact: solvers, mortar coupling and contact-aware reduction
+
+`fea_engine.solve_contact_static(K, f, B, c)` solves `K u = f + B^T lam`, `B u >= c`, `lam >= 0`, `lam . (B u - c) = 0` for any
+number of constraints (`solve_contact_dynamics` and `solve_contact_newton` cover implicit dynamics and a nonlinear internal
+force). `MortarTie2D` couples non-matching 2-D meshes along a straight interface and gives the weighted normal-gap map
+`(B, c)` for the same solver. `NodeToSurfaceContact3D` is a penalty node-to-triangle element.
+
+On the reduced side, `nonneg_dual_basis` builds a non-negative basis for the contact forces, so reconstructed multipliers cannot
+go negative; `ContactROM(K, B, U, U_lam).solve(f, c)` solves the reduced LCP and `.inf_sup_report()` checks the rank condition.
+`greedy_contact_sampling` picks snapshots by the violation of the contact conditions, `fit_contact_aware_ecsw` keeps the contact
+elements at weight one, and `PartitionedModel` condenses a linear zone onto the interface. Errors are compared with
+`contact_errors`. Scope: frictionless contact, constant gap map, small displacements, straight mortar interfaces.
+
+**Frictional joints, interface reduction and component models.** `JenkinsContact` gives stick/slip/lift-off joint forces for harmonic balance; `ForcedHBM` with `forced_response_continuation` traces the forced damped response through folds, and `equivalent_properties_vs_force` extracts the resonance frequency and half-power damping per force level. `fit_harmonic_ecsw` selects joint elements from the harmonic force components and `residual_error_indicator` scores a reduced orbit without a full-order solve. `dual_craig_bampton`, `jim_craig_bampton`, `gram_schmidt_interface_modes`, `multistage_fourier_basis` and `trial_vector_derivative_basis` build reduced component bases, compared with `natural_frequency_errors` and `mac_diagonal`; `rubin_dual_basis` adds dual modes of the open-contact model. `ComponentBasis` and `ReducedAssembly` reduce non-matching components coupled by a mortar operator, `infer_contact_operators` learns SPD Craig-Bampton operators from data, and `compare_contact_models` tabulates errors and effective speed-up (`examples/contact_rom_comparison.py`).
