@@ -6,6 +6,16 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 
 ## Unreleased
 
+### Added (fea_engine, elements)
+- `Quad4PlaneStressTL` (element `"quad4_plane_stress_tl"`, `elements/nonlinear_solids.py`): 4-node plane-stress quadrilateral with
+  Total-Lagrangian geometric nonlinearity and a St. Venant-Kirchhoff law (`material.D_plane_stress` on the Green-Lagrange strain),
+  analytic tangent `B_nl^T D B_nl + G^T S G` (Nikiema et al. 2026, Eq. 18 in 2-D). Full 2x2 integration, no hourglass control.
+  `tests/test_quad4_tl.py` (7 tests): tangent against central differences at small and large displacement, symmetry, linear limit,
+  zero force under rigid rotation, exact uniform-stretch force, equality with `TrussTL2D` for a nu = 0 strip at 40% stretch, and a
+  cantilever through `solve_nonlinear_static`. Known limit: like `Quad4PlaneStress`, it shear-locks in bending on slender meshes
+  (80x4 mesh of the BE7 cantilever: linear Q4 tip 3.8 against 33.2 analytic), so beam-theory benchmarks are not valid for it.
+  `solve_nonlinear_static` ignores `FESystem(thickness=...)`; pass `thickness=` to the solver call.
+
 ### Added (fea_engine, visualization)
 - `visualization/pyvista_plot.py` (optional `pip install fea_engine[viz]`, PyVista): `to_pyvista` (Mesh / MultiBlockMesh to
   `pyvista.UnstructuredGrid`, nine cell types), `displacement_vectors`, `add_displacement`, `deformed_grid`, `plot_field`

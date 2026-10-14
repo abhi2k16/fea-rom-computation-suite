@@ -394,7 +394,7 @@ pip install -e ".[fea,dev]"
 pytest tests/ -v
 ```
 
-Without PyTorch, 458 tests pass and 57 skip (515 in total); with PyTorch installed, 514 pass and 1 skips (the skip checks the no-torch error path, so it can only run without torch). The intrusive modules (below) are validated against
+The suite has 593 tests. With PyTorch installed (2.7.0+cu126), 590 pass, 1 skips (it checks the no-torch error path, so it can only run without torch) and 2 currently fail (`test_domain_partition.py::test_indicator_separates_linear_and_hardening_elements` and `test_operator_inference.py::test_static_coupling_is_more_accurate_than_the_data_fitted_coupling`, both threshold assertions, under investigation); without PyTorch the torch-backend tests skip instead. The intrusive modules (below) are validated against
 real fea_engine models (not synthetic matrices); the non-intrusive
 `loewner`/`screening` modules are validated against BOTH a synthetic
 mass-spring fixture and two real, materially different structural

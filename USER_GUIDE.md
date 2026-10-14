@@ -233,7 +233,7 @@ python examples/main.py     # runs 8 problems end to end against closed-form ref
 
 ```bash
 python -c "import rom_engine; print(rom_engine.__version__)"
-pip install -e ".[fea,dev]" && pytest tests/ -q      # 462 tests, validated against real fea_engine models
+pip install -e ".[fea,dev]" && pytest tests/ -q      # ~590 tests, validated against real fea_engine models
 ```
 
 To run a package's full test suite, from inside its folder (`pytest-xdist` runs the tests in parallel and
@@ -241,8 +241,8 @@ is optional; drop `-n auto` without it):
 
 ```bash
 pip install pytest-xdist
-cd fea_engine && python -m pytest tests -q -rs -n auto     # ~1100 tests, about 10 minutes on a laptop
-cd ../rom_engine && python -m pytest tests -q -rs -n auto  # ~460 tests, about 2 minutes
+cd fea_engine && python -m pytest tests -q -rs -n auto     # ~1250 tests, about 10 minutes on a laptop
+cd ../rom_engine && python -m pytest tests -q -rs -n auto  # ~590 tests, about 4 minutes
 ```
 
 A few tests skip when an optional dependency is missing (for example `meshio`); `-rs` lists them with the reason.
@@ -402,6 +402,7 @@ m4 = rectangle_with_hole_mesh_quarter(a=2.0, b=1.0, R=0.3, nr=8, ntheta=12)  # m
 | `Shell4MITC` | `elements.shells` | 2-D→3-D | 6 | Combined membrane + bending (curved shells) |
 | `Tet4Solid3D`, `Tet10Solid3D`, `Hex8Solid3D`, `Hex20Solid3D` | `elements.solids` | 3-D | 3 | General 3-D solids |
 | `Hex8PlasticJ2`, `Tet4NeoHookean` | `elements.nonlinear_solids` | 3-D | 3 | Elastoplastic / hyperelastic solids |
+| `Quad4PlaneStressTL` | `elements.nonlinear_solids` | 2-D | 2 | Large-displacement plane-stress plates (St. Venant-Kirchhoff, Total Lagrangian); shear-locks in bending like `Quad4PlaneStress`, and `solve_nonlinear_static` needs `thickness=` passed to the call |
 | `GapContactPenalty`, `GapContactCurvedFriction` | `elements.contact` | — | — | Contact/boundary constraints |
 
 Every registered element is also available by string name via

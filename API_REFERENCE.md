@@ -4,7 +4,7 @@
 
 ### `fea_engine` &nbsp;·&nbsp; `rom_engine`
 
-![fea_engine](https://img.shields.io/badge/fea__engine-61_classes_%C2%B7_158_functions-2563eb?style=for-the-badge)
+![fea_engine](https://img.shields.io/badge/fea__engine-62_classes_%C2%B7_158_functions-2563eb?style=for-the-badge)
 ![rom_engine](https://img.shields.io/badge/rom__engine-43_classes_%C2%B7_77_functions-7c3aed?style=for-the-badge)
 ![python](https://img.shields.io/badge/python-3.9+-3776ab?style=for-the-badge)
 ![torch](https://img.shields.io/badge/torch-optional-ee4c2c?style=for-the-badge)
@@ -641,6 +641,9 @@ Nonlinear continuum elements: J2 plasticity (hexahedron), Neo-Hookean tetrahedro
   - `.internal_force(elem_coords, u_elem, mat, thickness=1.0, **kwargs)` — f_int = sum_gp w_gp * (V0 weight) * (F @ S @ dN/dX), the same per-Gauss-point virtual-work expression Tet4NeoHookean.
   - `.tangent_stiffness(elem_coords, u_elem, mat, thickness=1.0, **kwargs)` — Analytic Total-Lagrangian/St.
   - `.stiffness(elem_coords, mat, thickness=1.0)` — Initial (zero-displacement) tangent -- interface completeness only, matching Tet4NeoHookean/TrussTL2D's own stiffness().
+- 🧱 **`class Quad4PlaneStressTL()`** ★ (extends `Quad4PlaneStress`) — Quad4PlaneStress + Total-Lagrangian geometric nonlinearity, St. Venant-Kirchhoff law (`D_plane_stress` on the Green-Lagrange strain); `mat` is the 3x3 plane-stress matrix. Full 2x2 integration, no hourglass control; shear-locks in bending like its parent.
+  - `.internal_force(elem_coords, u_elem, D, thickness=1.0, **kwargs)` — f_int = sum_gp w * detJ * t * B_nl(F)^T S, with F = I + du/dX and S = D E(F) (Voigt, engineering shear).
+  - `.tangent_stiffness(elem_coords, u_elem, D, thickness=1.0, **kwargs)` — Analytic K_T = sum_gp (B_nl^T D B_nl + (dN_a . S dN_b) I_2) w detJ t; symmetric, matches central differences of internal_force().
 
 </details>
 
