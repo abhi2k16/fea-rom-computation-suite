@@ -689,3 +689,65 @@ class Tet10SolidTL(Tet10Solid3D):
         displacement F=I, E=0, and the St. Venant-Kirchhoff tangent
         reduces exactly to the linear elastic one."""
         return self.tangent_stiffness(elem_coords, np.zeros(30), mat, thickness)
+
+
+# =====================================================================
+# Quad4PlaneStressTL -- Total-Lagrangian, St. Venant-Kirchhoff, 4-node plane-stress quadrilateral.
+# Geometric nonlinearity only (linear elastic law on the Green-Lagrange strain), the 2-D counterpart of Tet10SolidTL
+# and the element of Nikiema et al. (2026), Sections 2.3 and 6.1.
+#     E = 0.5 (F^T F - I),  S = D E (Voigt, engineering shear),  f_a = int B_nl,a^T S t dV0,
+#     K_T = int (B_nl^T D B_nl) t dV0 + int (dN_a . S dN_b) I_2 t dV0     (Eq. 18, 2-D).
+# `mat` is the 3x3 plane-stress matrix (material.D_plane_stress), exactly as for Quad4PlaneStress. Full 2x2
+# integration; no hourglass control (as in the paper's 4-node plane-stress mesh).
+# =====================================================================
+class Quad4PlaneStressTL(Quad4PlaneStress):
+    """Quad4PlaneStress with Total-Lagrangian geometric nonlinearity (see the block comment above)."""
+
+    def _gp_kinematics(self, nat, elem_coords, u_elem):
+        _, dN_nat = self._cached_shape_and_derivs(nat)
+        J, detJ = jacobian(dN_nat, elem_coords)
+        dN = np.linalg.solve(J, dN_nat)                      # (2,4) = dN/dX
+        F = np.eye(2) + np.asarray(u_elem, float).reshape(4, 2).T @ dN.T
+        return dN, detJ, F
+
+    @staticmethod
+    def _B_nl(dN, F):
+        B = np.zeros((3, 8))
+        for a in range(4):
+            nx, ny = dN[0, a], dN[1, a]
+            B[0, 2 * a], B[0, 2 * a + 1] = F[0, 0] * nx, F[1, 0] * nx
+            B[1, 2 * a], B[1, 2 * a + 1] = F[0, 1] * ny, F[1, 1] * ny
+            B[2, 2 * a] = F[0, 0] * ny + F[0, 1] * nx
+            B[2, 2 * a + 1] = F[1, 0] * ny + F[1, 1] * nx
+        return B
+
+    @staticmethod
+    def _green_lagrange_voigt(F):
+        E = 0.5 * (F.T @ F - np.eye(2))
+        return np.array([E[0, 0], E[1, 1], 2.0 * E[0, 1]])
+
+    def internal_force(self, elem_coords, u_elem, D, thickness=1.0, **kwargs):
+        pts, wts = gauss_product(self.gauss_order, 2)
+        f = np.zeros(8)
+        for nat, w in zip(pts, wts):
+            dN, detJ, F = self._gp_kinematics(nat, elem_coords, u_elem)
+            S = D @ self._green_lagrange_voigt(F)
+            f += self._B_nl(dN, F).T @ S * (detJ * w * thickness)
+        return f
+
+    def tangent_stiffness(self, elem_coords, u_elem, D, thickness=1.0, **kwargs):
+        pts, wts = gauss_product(self.gauss_order, 2)
+        K = np.zeros((8, 8))
+        for nat, w in zip(pts, wts):
+            dN, detJ, F = self._gp_kinematics(nat, elem_coords, u_elem)
+            S = D @ self._green_lagrange_voigt(F)
+            S2 = np.array([[S[0], S[2]], [S[2], S[1]]])
+            B = self._B_nl(dN, F)
+            Kg = dN.T @ S2 @ dN                              # (4,4): dN_a . S dN_b
+            c = detJ * w * thickness
+            K += (B.T @ D @ B) * c
+            for a in range(4):
+                for b in range(4):
+                    K[2 * a, 2 * b] += Kg[a, b] * c
+                    K[2 * a + 1, 2 * b + 1] += Kg[a, b] * c
+        return K
