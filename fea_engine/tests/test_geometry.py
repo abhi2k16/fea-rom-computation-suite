@@ -21,7 +21,7 @@ def test_geometry():
         vector in any single direction. Since K is symmetric, this forces
         sum_i(applied F)_i + sum_i(reaction)_i = 0 in that direction, for
         the EQUILIBRIUM U specifically (derivation in this script's
-        accompanying chat message / README Module 11 section). This holds
+        accompanying chat message / README section). This holds
         regardless of mesh refinement or element locking, so it validates
         that geometry.build_system()'s mesh+element+FESystem plumbing is
         wired correctly even where a tight closed-form comparison isn't
@@ -64,7 +64,7 @@ def test_geometry():
 
     print()
     print("=" * 70)
-    print("CHECK 2: dim=1, physics='truss' -- composes with Module 8's TrussTL2D")
+    print("CHECK 2: dim=1, physics='truss' -- composes with TrussTL2D")
     print("=" * 70)
     sys2, mesh2, elem2 = geo.build_system(dim=1, physics="truss", L=L, n=1)
     assert isinstance(elem2, elmod.TrussTL2D)

@@ -1,8 +1,8 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-nonlinear_solver.py -- Module 8: incremental Newton-Raphson drivers for
-geometric nonlinearity (large displacement / large rotation).
+nonlinear_solver.py -- incremental Newton-Raphson drivers for geometric nonlinearity (large displacement / large
+rotation), material nonlinearity, and contact/boundary nonlinearity, plus Koiter-Newton and transient drivers.
 
 This module knows NOTHING about trusses, beams, or continua -- it only
 calls fesystem.assemble_internal_force(u, mat) and
@@ -37,27 +37,20 @@ solve_nonlinear_displacement_control()
     arbitrary structure -- see solve_nonlinear_arc_length() below).
 
 solve_nonlinear_arc_length()
-    Module 19 (general-purpose extensions roadmap Phase 5): Crisfield's
-    cylindrical arc-length method. Neither the load NOR one displacement
-    component is prescribed directly -- instead BOTH the displacement
-    increment Delta_u and the load-factor increment Delta_lambda for a
-    step are solved for TOGETHER, constrained to a fixed "arc length"
-    radius ||Delta_u|| = delta_L. This traces the full equilibrium path
-    through limit points AND snap-back (where even the loaded DOF's own
-    displacement reverses direction, the one case displacement control
-    cannot handle -- see that driver's docstring) without needing to
-    know in advance where any of that happens, at the cost of one new
-    piece of math per Newton iteration: with the linearized update
-    du = du_r + dlambda*du_t (du_r: correction from the current residual,
-    du_t: response to a unit load, both K_T^-1 solves against the SAME
-    tangent), the arc-length constraint becomes a QUADRATIC equation in
-    dlambda -- solve it, then pick whichever of its two roots keeps the
-    new increment most aligned with the step's own predictor direction
-    (the standard root-selection criterion; the other root would double
-    back on the path just traced).
+      Crisfield's cylindrical arc-length method. Neither the load NOR one displacement component is prescribed
+      directly: BOTH the displacement increment Delta_u and the load-factor increment Delta_lambda for a step are
+      solved for TOGETHER, constrained to a fixed "arc length" radius ||Delta_u|| = delta_L. This traces the full
+      equilibrium path through limit points AND snap-back (where even the loaded DOF's own displacement reverses
+      direction, the one case displacement control cannot handle; see that driver's docstring) without knowing in
+      advance where any of that happens, at the cost of one extra piece of math per Newton iteration: with the
+      linearized update du = du_r + dlambda*du_t (du_r: correction from the current residual, du_t: response to a
+      unit load, both K_T^-1 solves against the SAME tangent), the arc-length constraint becomes a QUADRATIC equation
+      in dlambda. It is solved, then whichever of its two roots keeps the new increment most aligned with the step's
+      predictor direction is picked (the standard root-selection criterion; the other root would double back on the
+      path just traced).
 
 solve_nonlinear_koiter_newton()
-    Module 21: single-branch Koiter-Newton predictor/corrector
+    Single-branch Koiter-Newton predictor/corrector
     continuation (Liang & Sun, "A reduced-order modeling technique for
     nonlinear buckling analysis," ICCM2017; Liang, Abdalla & Gurdal,
     "A Koiter-Newton approach for nonlinear structural analysis," IJNME
@@ -71,167 +64,113 @@ solve_nonlinear_koiter_newton()
     buckling-mode perturbation directions, primary path only).
 
 solve_nonlinear_static_koiter_newton()
-    Module 22: Koiter-Newton solve to a SINGLE prescribed target load
-    (F_ext = 1.0*fesystem.F), NOT a path tracer -- the actual usage
-    pattern Yang et al. 2019's Fig. 1 flowchart and Section 4.1 describe
-    for generating nonlinear-static ROM-training data (one static test
-    per prescribed modal-load combination), as opposed to
-    solve_nonlinear_koiter_newton()'s open-ended continuation. Reuses
-    the SAME cubic asymptotic predictor machinery, but aims each
-    expansion's perturbation parameter DIRECTLY at the remaining gap to
-    the target load (the real root of the reduced cubic polynomial
-    closest to the linear estimate), shrinking only if that lands
-    somewhere the model doesn't trust -- it NEVER grows past the
-    target, unlike the continuation driver's open-ended growth (which,
-    tried here first, was found to overshoot arbitrarily -- up to 14x
-    the target load in one test -- and could drive the full model into
-    a floating-point overflow, since nothing bounds a free-running
-    predictor's growth toward a caller's actual target). Because the
-    target load is externally KNOWN (not a free unknown the way
-    continuation's lambda is), the corrector needs no bordering trick --
-    just ordinary frozen-tangent Newton at the fixed target load.
+      Koiter-Newton solve to a SINGLE prescribed target load (F_ext = 1.0*fesystem.F), NOT a path tracer: the usage
+      pattern described by Yang et al. 2019 (Fig. 1 flowchart, Section 4.1) for generating nonlinear-static
+      ROM-training data (one static test per prescribed modal-load combination), as opposed to
+      solve_nonlinear_koiter_newton()'s open-ended continuation. It reuses the same cubic asymptotic predictor
+      machinery, but aims each expansion's perturbation parameter DIRECTLY at the remaining gap to the target load
+      (the real root of the reduced cubic polynomial closest to the linear estimate), shrinking only if that lands
+      somewhere the model does not trust. It NEVER grows past the target, unlike the continuation driver's
+      open-ended growth, which was found to overshoot arbitrarily (up to 14x the target load in one test) and could
+      drive the full model into a floating-point overflow, since nothing bounds a free-running predictor's growth
+      toward a caller's target. Because the target load is externally KNOWN (not a free unknown the way
+      continuation's lambda is), the corrector needs no bordering trick, just ordinary frozen-tangent Newton at the
+      fixed target load.
 
 solve_nonlinear_koiter_newton_generic()
-    Module 24: the GENERIC (m>=1) Koiter-Newton continuation driver --
-    lifts solve_nonlinear_koiter_newton()'s disclosed m=0 scope
-    reduction (see that function's own "SCOPE" section) by adding
-    automatic detection of a near-critical tangent-stiffness mode at
-    each step (a relative smallest-eigenvalue check on K_T) and, when
-    one is found, a SECOND perturbation direction built from that
-    mode -- the actual multi-direction reduced basis the published
-    method's own m>=1 case describes, including the genuine
-    mode-interaction/branch-selection behavior (the reduced
-    equilibrium equation for the extra direction becomes a cubic
-    polynomial with up to 3 real roots, not a single predicted value).
-    A brand-new function, not a modification of
-    solve_nonlinear_koiter_newton() above -- that driver is unchanged
-    and remains the one NonLin-HyROM's existing training pipeline
-    depends on; see this function's own docstring for the full
-    derivation, and docs/general_purpose_extensions_roadmap.md Section
-    11 for the correctness-review finding (no bugs in the m=0 driver,
-    only its disclosed scope was incomplete) and the fea_engine-vs-
-    rom_engine placement reasoning.
+      The GENERIC (m>=1) Koiter-Newton continuation driver. It lifts solve_nonlinear_koiter_newton()'s m=0 scope
+      reduction (see that function's "SCOPE" section) by automatically detecting a near-critical tangent-stiffness
+      mode at each step (a relative smallest-eigenvalue check on K_T) and, when one is found, building a SECOND
+      perturbation direction from that mode: the multi-direction reduced basis of the published method's m>=1 case,
+      including the mode-interaction/branch-selection behavior (the reduced equilibrium equation for the extra
+      direction becomes a cubic polynomial with up to 3 real roots, not a single predicted value). It is a separate
+      function; solve_nonlinear_koiter_newton() is unchanged and remains the one NonLin-HyROM's training pipeline
+      depends on. See this function's docstring for the derivation, and docs/ (Section 11 of the general-purpose extensions notes) for the correctness-review finding (no bugs in the m=0 driver, only its disclosed scope was
+      incomplete) and the fea_engine-vs-rom_engine placement reasoning.
 
 solve_nonlinear_transient()
-    Newmark-beta implicit TIME integration for a geometrically (or
-    materially) nonlinear structure -- the dynamic counterpart to the
-    four STATIC drivers above. `FESystem.solve_transient_implicit()`
-    factors one effective stiffness ONCE, before the time loop, and
-    reuses it unchanged at every step: correct for a linear,
-    time-invariant system, silently wrong the moment the internal
-    force/tangent should depend on the current displacement (which for
-    ANY of this module's other four drivers, or any nonlinear element,
-    it does). This driver instead runs Newton-Raphson to convergence
-    EVERY step, using the current assemble_internal_force()/
-    assemble_tangent_stiffness() exactly as the static drivers above
-    do -- the residual is the standard Newmark-implicit dynamic
-    residual R(d) = M @ a(d) + C @ v(d) + F_int(d) - F_ext(t+dt), with
-    a(d)/v(d) affine in the unknown trial displacement d via the same
-    Newmark predictor constants FESystem.solve_transient_implicit()
-    already uses, so K_eff(d) = K_T(d) + a0c*M + a1c*C is the exact
-    Newton tangent, not an approximation. See docs/
-    nonlinear_transient_dynamics_roadmap.md for the full design
-    rationale and validation plan this implements.
+      Newmark-beta implicit TIME integration for a geometrically (or materially) nonlinear structure, the dynamic
+      counterpart to the four STATIC drivers above. `FESystem.solve_transient_implicit()` factors one effective
+      stiffness ONCE, before the time loop, and reuses it at every step: correct for a linear, time-invariant
+      system, silently wrong as soon as the internal force/tangent depends on the current displacement (as it does
+      for any nonlinear element). This driver instead runs Newton-Raphson to convergence EVERY step, using the
+      current assemble_internal_force()/assemble_tangent_stiffness() exactly as the static drivers do. The residual
+      is the standard Newmark-implicit dynamic residual R(d) = M @ a(d) + C @ v(d) + F_int(d) - F_ext(t+dt), with
+      a(d)/v(d) affine in the unknown trial displacement d via the same Newmark predictor constants
+      FESystem.solve_transient_implicit() uses, so K_eff(d) = K_T(d) + a0c*M + a1c*C is the exact Newton tangent,
+      not an approximation. See docs/ (nonlinear transient dynamics notes) for the design rationale and validation plan.
 
 solve_transient_explicit_nonlinear()
-    Wave 6 item 31 (docs/consolidated_future_roadmap.md): the EXPLICIT
-    counterpart to solve_nonlinear_transient() above -- same idea
-    (generalize a LINEAR FESystem transient driver by substituting the
-    real nonlinear internal-force vector for the linear Kff@d term),
-    applied to FESystem.solve_transient_explicit()'s central-difference
-    recursion instead of solve_transient_implicit()'s Newmark-average-
-    acceleration one. The two generalizations differ in one important
-    way: central difference already has d_new in closed form (it never
-    appears inside the unknown-implicit F_int(d_new) term the way
-    Newmark's a(d)/v(d) do), so NO Newton loop, and hence no tangent
-    stiffness assembly at all, is needed here -- this driver's entire
-    per-step cost is one assemble_internal_force() call plus either an
-    elementwise divide (diagonal/no damping, the common case) or one
-    CONSTANT-matrix linear solve (general C), mirroring FESystem.
-    solve_transient_explicit()'s own diag_fast split exactly. See that
-    method's docstring for the underlying difference-equation algebra;
-    see this function's own docstring below for why it lives in this
-    module (not as a FESystem method) despite needing no Newton loop.
+      The EXPLICIT counterpart to solve_nonlinear_transient() above: it generalizes a LINEAR FESystem transient
+      driver by substituting the real nonlinear internal-force vector for the linear Kff@d term, applied to
+      FESystem.solve_transient_explicit()'s central-difference recursion instead of
+      solve_transient_implicit()'s Newmark-average-acceleration one. The two differ in one important way: central
+      difference already has d_new in closed form (it never appears inside the implicit F_int(d_new) term the way
+      Newmark's a(d)/v(d) do), so NO Newton loop, and hence no tangent stiffness assembly, is needed. The entire
+      per-step cost is one assemble_internal_force() call plus either an elementwise divide (diagonal/no damping,
+      the common case) or one CONSTANT-matrix linear solve (general C), mirroring
+      FESystem.solve_transient_explicit()'s diag_fast split. See that method's docstring for the difference-equation
+      algebra, and this function's docstring for why it lives in this module (not as a FESystem method) despite
+      needing no Newton loop.
 
 solve_transient_displacement_control()
-    Wave 6 item 34 (docs/consolidated_future_roadmap.md: "Arc-length /
-    displacement-control transient variant (dynamic snap-through)"):
-    the dynamic (Newmark-implicit) counterpart to solve_nonlinear_
-    displacement_control() above, generalized the same way solve_
-    nonlinear_transient() generalized solve_nonlinear_static() -- one
-    DOF's motion is prescribed directly (via a plain t -> float
-    callable, not a load object) instead of solved for, every other
-    free dof is solved via the SAME trust-region/line-search Newton
-    ladder every implicit driver in this module uses, and the actuator
-    force needed to hold the prescribed motion is recorded as a
-    reaction at every step. See this function's own docstring for why
-    displacement control (not literal arc-length) is what this item
-    actually builds: a transient problem's Newmark effective stiffness
-    carries a mass term that stays positive definite straight through
-    a static limit point, so the singular-Jacobian failure mode that
-    motivates arc-length continuation in the STATIC case does not
-    transfer to the dynamic one the same way.
+      The dynamic (Newmark-implicit) counterpart to solve_nonlinear_displacement_control() above, generalized the
+      same way solve_nonlinear_transient() generalized solve_nonlinear_static(): one DOF's motion is prescribed
+      directly (via a plain t -> float callable, not a load object) instead of solved for, every other free dof is
+      solved via the SAME trust-region/line-search Newton ladder every implicit driver in this module uses, and the
+      actuator force needed to hold the prescribed motion is recorded as a reaction at every step. See this
+      function's docstring for why displacement control (not literal arc-length) is what is built: a transient
+      problem's Newmark effective stiffness carries a mass term that stays positive definite straight through a
+      static limit point, so the singular-Jacobian failure mode that motivates arc-length continuation in the
+      STATIC case does not transfer to the dynamic one the same way.
 
-Wave 1 (docs/consolidated_future_roadmap.md, source nonlinear_fem_
-lessons.md's appendix): two globalization/convergence upgrades, added
-to solve_nonlinear_static(), solve_nonlinear_displacement_control(),
-solve_nonlinear_arc_length(), and solve_nonlinear_static_koiter_
-newton()'s frozen-tangent corrector -- see _extra_convergence_ok() and
-_armijo_line_search_step() just below for the two shared helpers every
-one of those drivers now calls, so the algorithm is written ONCE and
-reused, not re-derived per driver. Both upgrades are OFF (du_tol/
-energy_tol=None) or a FALLBACK-ONLY retry (line_search=True, tried
-only after plain Newton exhausts max_iter) by default, so every
-existing caller of every driver above gets IDENTICAL behavior, cost,
-and results to before this wave -- this is the same "add it as an
-explicit, opt-in choice, never silently replace the existing path"
-principle the backend= parameter on FESystem (solver.py) established
-for the SciPy-vs-PyTorch solve choice.
+Convergence and globalization. Two upgrades are available in solve_nonlinear_static(),
+solve_nonlinear_displacement_control(), solve_nonlinear_arc_length(), and solve_nonlinear_static_koiter_newton()'s
+frozen-tangent corrector; see _extra_convergence_ok() and _armijo_line_search_step() just below for the two shared
+helpers every one of those drivers calls, so the algorithm is written ONCE and reused. Both upgrades are OFF
+(du_tol/energy_tol=None) or a FALLBACK-ONLY retry (line_search=True, tried only after plain Newton exhausts
+max_iter) by default, so existing callers get identical behavior, cost and results: an explicit, opt-in choice,
+never a silent replacement of the existing path (the same principle as the backend= parameter on FESystem in
+solver.py).
 
-  Item 9 -- displacement-increment / energy-error convergence
-  criteria: the force-residual-norm check above was, until this wave,
-  the ONLY convergence criterion anywhere in this module -- adequate
+  Displacement-increment / energy-error convergence
+  criteria: a force-residual-norm check alone is adequate
   for the smooth (linear-tangent, e.g. TrussTL2D) elements this
-  package's tests mostly exercise, but nonlinear_fem_lessons.md's own
-  Sec.6.3.9 warns a residual-only check can be satisfied prematurely
+  package's tests mostly exercise, but can be satisfied prematurely
   for non-smooth constitutive laws (plasticity yielding, contact) where
-  the Jacobian itself loses regularity. `du_tol`/`energy_tol` add the
+  the Jacobian itself loses regularity (Belytschko et al., Nonlinear Finite Elements for Continua and Structures, Sec. 6.3.9). `du_tol`/`energy_tol` add the
   book's other two named criteria as OPTIONAL, ADDITIONAL (AND-
   combined, never a replacement for) requirements -- see
   _extra_convergence_ok() below for the exact formulas.
 
-  Item 10 -- line search in the static/arc-length drivers: Armijo
-  backtracking already existed (2026-09-01) as a last-resort fallback
-  inside solve_nonlinear_transient() (see that function's own
-  extensive "Line search" docstring section for the full derivation
-  and the real Tet10SolidTL wing-cantilever failure that motivated it)
-  but was absent from every static/arc-length driver. _armijo_line_
-  search_step() below is that SAME algorithm, factored out into a
-  reusable, mode-agnostic helper (residual_fn callback instead of a
-  hardcoded Newmark residual) so each driver's own Newton loop can
-  retry through it without re-deriving or duplicating the logic.
+    Line search in the static/arc-length drivers: Armijo backtracking exists as a last-resort fallback inside
+    solve_nonlinear_transient() (see that function's "Line search" docstring section for the derivation and the
+    Tet10SolidTL wing-cantilever failure that motivated it). _armijo_line_search_step() below is that SAME
+    algorithm, factored into a reusable, mode-agnostic helper (residual_fn callback instead of a hardcoded Newmark
+    residual) so each driver's Newton loop can retry through it without duplicating the logic.
 
-  SCOPE NOTE on the Koiter-Newton family specifically: item 10 was
-  added to solve_nonlinear_static_koiter_newton()'s corrector because
-  that corrector is, by its own docstring, "ORDINARY frozen-tangent
-  (chord) Newton" -- structurally identical to this module's other
-  plain-Newton loops, so the same helper applies directly. It was
-  DELIBERATELY NOT added to solve_nonlinear_koiter_newton()'s or
-  solve_nonlinear_koiter_newton_generic()'s continuation correctors:
-  those solve a BORDERED system for (du, dlambda) TOGETHER against a
-  frozen tangent already reused, unmodified, across every iteration
-  and retry of a step (see solve_nonlinear_koiter_newton()'s own
-  "CORRECTOR" docstring section) -- a real, previously-debugged sign-
-  error war story lives in that exact code path, and it already has
-  its own, different globalization (shrinking the predictor's
-  perturbation parameter `a`, not backtracking a Newton step). Bolting
-  a second, structurally different globalization mechanism onto
-  already-delicate, already-validated math was judged a materially
-  riskier change than what item 10 actually asks for, so it is left as
-  documented future work rather than attempted here -- item 9's
-  convergence-criteria addition, being purely additive (an extra CHECK,
-  no change to the update math itself), was judged safe and IS applied
-  to those two drivers as well.
+    SCOPE NOTE on the Koiter-Newton family: line search is applied to solve_nonlinear_static_koiter_newton()'s
+    corrector because that corrector is "ORDINARY frozen-tangent (chord) Newton", structurally identical to this
+    module's other plain-Newton loops. It is DELIBERATELY NOT applied to solve_nonlinear_koiter_newton()'s or
+    solve_nonlinear_koiter_newton_generic()'s continuation correctors: those solve a BORDERED system for
+    (du, dlambda) TOGETHER against a frozen tangent reused, unmodified, across every iteration and retry of a step
+    (see solve_nonlinear_koiter_newton()'s "CORRECTOR" docstring section), a code path that has had a
+    sign-error bug fixed, and that already has its own, different globalization (shrinking the predictor's
+    perturbation parameter `a`, not backtracking a Newton step). Adding a second, structurally different
+    globalization to already-validated math was judged riskier than useful, so it is left as future work. The
+    additional convergence-criteria checks (an extra CHECK, no change to the update math) ARE applied to those two
+    drivers as well.
+
+References (methods in this module are adopted from):
+  - E. Riks (1979), "An incremental approach to the solution of snapping and buckling problems", Int. J. Solids Struct. 15(7)
+  - M. A. Crisfield (1981), "A fast incremental/iterative solution procedure that handles snap-through", Comput. Struct. 13
+  - N. M. Newmark (1959), "A method of computation for structural dynamics", J. Eng. Mech. Div. ASCE 85(3)
+  - T. Belytschko, D. Y. Schoeberle (1975), "On the unconditional stability of an implicit algorithm for nonlinear structural dynamics", J. Appl. Mech. 42(4)
+  - K. Liang, M. Abdalla, Z. Gurdal (2013), "A Koiter-Newton approach for nonlinear structural analysis", Int. J. Numer. Meth. Engng, doi:10.1002/nme.4581
+  - K. Liang, M. Ruess, M. Abdalla (2014), "The Koiter-Newton approach using von Karman kinematics for buckling analyses of imperfection sensitive structures", Comput. Methods Appl. Mech. Engrg. 279:440-468
+  - C. Yang, K. Liang, Y. Rong, Q. Sun (2019), "A hybrid reduced-order modeling technique for nonlinear structural dynamic simulation", Aerosp. Sci. Technol. 84:724-733
+  - J. C. Simo, T. A. Laursen (1992), "An augmented Lagrangian treatment of contact problems involving friction", Comput. Struct. 42(1)
+  - P. Wriggers (2006), "Computational Contact Mechanics", 2nd ed., Springer
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import copy
@@ -242,8 +181,8 @@ from scipy.linalg import lu_factor, lu_solve, eigh
 
 def _extra_convergence_ok(R_free, du_free, u_free, F_ext_free, F_int_free,
                            du_tol, energy_tol):
-    """Wave 1 item 9 (nonlinear_fem_lessons.md Sec.6.3.9, Belytschko &
-    Schoeberle 1975): the displacement-increment and energy-error
+    """The displacement-increment criterion (Belytschko &
+    Schoeberle 1975) and the displacement-increment and energy-error
     convergence criteria, evaluated ONLY for whichever of du_tol/
     energy_tol is not None (None means "this criterion is off" -- the
     caller's own force-residual check stays the primary/default
@@ -279,7 +218,7 @@ def _extra_convergence_ok(R_free, du_free, u_free, F_ext_free, F_int_free,
 def _armijo_line_search_step(residual_fn, u_free, du_newton, Rn, tol, ref,
                               c1=1e-4, max_backtrack=19, verbose=False,
                               verbose_prefix=""):
-    """Wave 1 item 10: ONE Armijo-backtracked Newton correction from
+    """ONE Armijo-backtracked Newton correction from
     u_free along the (already-computed) Newton direction du_newton --
     the exact algorithm solve_nonlinear_transient() validated as its
     own 'line_search' mode (see that function's docstring for the full
@@ -349,7 +288,7 @@ def _armijo_line_search_step(residual_fn, u_free, du_newton, Rn, tol, ref,
 def solve_contact_lagrange_static(fesystem, mat, contact_node, n_hat, g0,
                                    n_steps=10, tol=1e-10, max_iter=50,
                                    verbose=False, load_factors=None, **kwargs):
-    """Module 10, Lagrange-multiplier contact: EXACT (not approximate)
+    """Lagrange-multiplier contact: EXACT (not approximate)
     enforcement of zero penetration at a single contact node, via one
     extra scalar unknown lambda (the contact reaction magnitude) --
     the "extra equation in the global matrix" that distinguishes this
@@ -488,7 +427,7 @@ def solve_contact_augmented_lagrange_static(fesystem, mat, contact_node, n_hat, 
                                              n_steps=10, tol=1e-10, max_iter=50,
                                              al_tol=1e-9, al_max_iter=30,
                                              verbose=False, load_factors=None, **kwargs):
-    """Wave 3 item 15 (docs/consolidated_future_roadmap.md): augmented-
+    """Augmented-
     Lagrangian contact enforcement -- the third contact-enforcement
     option this module now offers, sitting alongside (never replacing)
     the pure penalty method (element.GapContactPenalty, added via
@@ -532,8 +471,7 @@ def solve_contact_augmented_lagrange_static(fesystem, mat, contact_node, n_hat, 
     otherwise element-agnostic module) evaluated at g0_eff: reusing an
     already-validated closed form as a black box, rather than writing
     new contact-force math, is the deliberate choice here, the same
-    "minimize new/untested math" principle used throughout this
-    project's Wave 2 additions.
+    "minimize new/untested math" principle used throughout the contact solvers.
 
     ALGORITHM per load step: an outer Uzawa loop --
       1. With lambda_bar fixed, Newton-solve the structural problem to
@@ -562,8 +500,7 @@ def solve_contact_augmented_lagrange_static(fesystem, mat, contact_node, n_hat, 
     MAGNITUDE smaller than plain penalty needs for comparable accuracy
     (see solve_contact_lagrange_static()'s CHECK 5 for the penalty
     baseline this is compared against) -- the concrete "better
-    conditioning than pure penalty" payoff this item's roadmap entry
-    names."""
+    conditioning than pure penalty" payoff of the Lagrange formulation."""
     free = list(fesystem.free_dofs)
     F_total = fesystem.F.copy()
     n_dof = fesystem.n_dof
@@ -677,14 +614,14 @@ def solve_nonlinear_static(fesystem, mat, n_steps=10, tol=1e-8, max_iter=30,
     for TrussPlastic2D). After EVERY converged step, calls
     fesystem.commit_all_states(u, mat, **kwargs) -- a no-op unless
     fesystem.init_state() was called first, so this is transparent to
-    every element from before Module 9. After EVERY Newton CORRECTION
+    every element without internal state. After EVERY Newton CORRECTION
     (not just converged steps), also calls fesystem.update_iter_states()
-    with the REALIZED correction (Module 23, mixed-formulation internal
+    with the REALIZED correction (mixed-formulation internal
     state, e.g. Shell4MITCCorotational's von Karman coupling stress) --
     likewise a no-op unless fesystem.init_iter_state() was called first.
 
-    du_tol/energy_tol/line_search (Wave 1 items 9/10 -- see this
-    module's own docstring, "Wave 1" section, for the shared helpers
+    du_tol/energy_tol/line_search (see this
+    module's docstring, "Convergence and globalization" section, for the shared helpers
     both of these call and the full design rationale). All three
     default to their original-behavior values (du_tol=energy_tol=None,
     line_search=True but never invoked unless plain Newton actually
@@ -805,10 +742,10 @@ def solve_nonlinear_displacement_control(fesystem, mat, control_dof,
     the potential-energy derivation dU/ddelta = P this reaction
     reduces to for the validated single-DOF truss benchmark).
 
-    du_tol/energy_tol/line_search: Wave 1 items 9/10, identical
+    du_tol/energy_tol/line_search: identical
     meaning and IDENTICAL-cost-when-unused convention as
     solve_nonlinear_static()'s own parameters of the same name -- see
-    this module's own docstring ("Wave 1" section) and
+    this module's docstring ("Convergence and globalization" section) and
     _extra_convergence_ok()/_armijo_line_search_step() for the shared
     algorithm. This driver's own convergence check stays the ABSOLUTE
     `Rn < tol` it always used (no `ref`-relative form, unlike the other
@@ -914,7 +851,7 @@ def solve_nonlinear_arc_length(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
                                 max_iter=30, verbose=False,
                                 du_tol=None, energy_tol=None, line_search=True,
                                 **kwargs):
-    """Module 19 (general-purpose extensions roadmap Phase 5): Crisfield
+    """Crisfield
     cylindrical arc-length continuation -- see the module docstring
     above for the method. F_ext = lambda * fesystem.F, same reference-
     load convention as solve_nonlinear_static(); lambda is now a SOLVED
@@ -944,14 +881,14 @@ def solve_nonlinear_arc_length(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
     iteration after that it discourages the large, spurious jumps a
     naive root choice can produce.
 
-    du_tol/energy_tol (Wave 1 item 9): same meaning as
+    du_tol/energy_tol: same meaning as
     solve_nonlinear_static()'s parameters of the same name, evaluated
     against whatever CORRECTION (du_iter, the Crisfield-quadratic root
     already selected above) a given iteration is about to apply --
     None (default) for both means the force-residual check above stays
     the ONLY criterion, identical to before this wave.
 
-    line_search (Wave 1 item 10, default True): the predictor above is
+    line_search (default True): the predictor above is
     NEVER retried (mirrors solve_nonlinear_transient(), where line
     search only ever retries the corrector, not the Newmark predictor)
     -- only the CORRECTOR loop is retried, from the SAME predicted
@@ -1129,14 +1066,14 @@ def solve_nonlinear_koiter_newton(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
                                    shrink_factor=0.5, max_shrink_iters=8,
                                    verbose=False, du_tol=None, energy_tol=None,
                                    **kwargs):
-    """Module 21 (Koiter-Newton continuation): single-branch predictor/
+    """Koiter-Newton continuation: single-branch predictor/
     corrector path-following, replacing solve_nonlinear_arc_length()'s
     LINEAR tangent predictor with a CUBIC one built from a genuine
     Koiter asymptotic expansion of the equilibrium path at the current
     point -- the actual method Liang, Abdalla & Gurdal published as
     "the Koiter-Newton (KN) approach" (IJNME 2013, 10.1002/nme.4581),
-    reproduced here to match the SPECIFIC formulation of the paper this
-    solver was written for: Yang, Liang, Rong & Sun, "A hybrid reduced-
+    reproduced here to match the SPECIFIC formulation of
+    Yang, Liang, Rong & Sun, "A hybrid reduced-
     order modeling technique for nonlinear structural dynamic
     simulation," Aerospace Science and Technology 84 (2019), Section
     4.2 (their own related-work section cites the KN method [44]-[46]
@@ -1144,7 +1081,7 @@ def solve_nonlinear_koiter_newton(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
     16-22 there are what the predictor/corrector below reproduce almost
     verbatim -- NOT the shorter, more generic derivation in Liang & Sun,
     ICCM2017, which an earlier draft of this docstring/implementation
-    followed before the exact target paper's own Eqs. 16-22 were
+    followed before Eqs. 16-22 of Yang et al. were
     re-examined directly, see the "CORRECTOR" section below for the one
     place this changed something real, not just cosmetic).
 
@@ -1160,7 +1097,7 @@ def solve_nonlinear_koiter_newton(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
     F_int(u_n + w) - F_int(u_n)'s own Taylor series -- exactly the
     paper's Eq. 1 specialized to ONE sub-load F_ref, i.e. m+1=1). Both
     w and lambda_rel are expanded in a SINGLE scalar perturbation
-    parameter a (the paper's Eq. 3-4 with every index collapsed to 1):
+    parameter a (Eq. 3-4 of Yang et al. with every index collapsed to 1):
 
         w(a)      = a*u1 + a^2*u11 + O(a^3)
         lambda(a) = Lbar1*a + Qbar11*a^2 + Cbar1111*a^3 + O(a^4)
@@ -1174,12 +1111,12 @@ def solve_nonlinear_koiter_newton(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
       Eq.6:  K_T u11 - F_ref*Qbar11 = -Q(u1,u1), F_ref^T u11 = 0
       Eq.7:  Cbar1111 = u1.C(u1,u1,u1) - 2*u11.(K_T @ u11)
 
-    (Eq.7 collapses to this simple form because the paper's general
+    (Eq.7 collapses to this simple form because the general
     "-2/3*(u_ij.L(u_pk) + u_jk.L(u_pi) + u_ki.L(u_pj))" correction has
     all three terms identical, i,j,k,p all being the same single index
     -- a direct simplification of the published formula, not a
-    different one.) Eq.5's F_ref^T u1 = 1 normalization is the paper's
-    own convention, not an arbitrary choice -- it fixes what "a" means
+    different one.) Eq.5's F_ref^T u1 = 1 normalization is the
+    convention of Yang et al., not an arbitrary choice -- it fixes what "a" means
     (roughly, a generalized arc-length along the load direction) and
     is exactly what makes u1 -- and therefore a itself -- shrink
     automatically near a limit point (K_T nearly singular -> u1 blows
@@ -1212,11 +1149,11 @@ def solve_nonlinear_koiter_newton(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
     than an absolute floor), independent of u1's own (normalization-
     dependent, potentially large or tiny) magnitude.
 
-    ADAPTIVE STEP SIZE ("the unbalanced-force criterion", paper's own
-    Section on the KN algorithm): unlike solve_nonlinear_arc_length's
+    ADAPTIVE STEP SIZE ("the unbalanced-force criterion", the
+    KN algorithm section of Yang et al.): unlike solve_nonlinear_arc_length's
     FIXED delta_L, this driver grows/shrinks the perturbation parameter
     a directly from how well the cubic ROM predicts the TRUE (full
-    finite-element) residual -- exactly the paper's own description
+    finite-element) residual -- exactly the description of Yang et al.
     ("the exact unbalanced force is calculated using the full finite
     element model... if the criterion is not satisfied, the initial
     prediction will be stopped"). Each trial costs only ONE
@@ -1251,8 +1188,8 @@ def solve_nonlinear_koiter_newton(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
     where r = lambda_c*F_total - F_int(u_c). This is exactly the
     first-order (frozen-Jacobian) Newton linearization of that
     residual -- re-derived directly rather than trusted verbatim from
-    the source PDF's own equation (21), whose image-based OCR
-    transcription of a sign inside the unknown vector (the paper prints
+    equation (21) of the source, whose image-based OCR
+    transcription of a sign inside the unknown vector (the source prints
     the second unknown as "-Delta phi-tilde," which would flip the sign
     on the F_ref@dphi_tilde term above and turn this into a DIVERGING,
     not converging, fixed-point map -- confirmed directly: implementing
@@ -1263,17 +1200,17 @@ def solve_nonlinear_koiter_newton(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
     factored for u1/u11, reused UNCHANGED (never re-assembled at the
     trial state, unlike solve_nonlinear_arc_length's corrector) for
     every iteration of every retry this whole step -- this part of the
-    paper's own description IS implemented verbatim: "the coefficient
+    description of Yang et al. IS implemented verbatim: "the coefficient
     matrix is exactly the same as that used for construction of the
     reduced-order model[.] This indicates that no new matrix
     factorizations are produced in the correction phase." Trading fresh-tangent quadratic Newton
     convergence for a frozen-tangent linear (chord) one is the
     deliberate cost/accuracy trade this driver's whole efficiency case
-    rests on -- consistent with the paper's own claim that per-step
+    rests on -- consistent with the claim of Yang et al. that per-step
     cost is "roughly the same" between the two methods, with the actual
     speedup coming entirely from needing FEWER, LARGER steps (the cubic
     predictor), not cheaper correction inside each step. A failed
-    correction (paper: "if the iteration number exceeds a given
+    correction (Yang et al.: "if the iteration number exceeds a given
     threshold (such as 15)...") is handled here by SHRINKING the step a
     and retrying from the SAME frozen factorization -- no new tangent
     assembly even on retry, since the frozen matrix doesn't depend on a
@@ -1303,13 +1240,13 @@ def solve_nonlinear_koiter_newton(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
     across those extra directions. Left as a documented extension, not
     attempted here.
 
-    du_tol/energy_tol (Wave 1 item 9 -- see this module's own docstring
-    "Wave 1" section): applied to the corrector below (_run_corrector)
+    du_tol/energy_tol (see this module's docstring
+    "Convergence and globalization" section): applied to the corrector below (_run_corrector)
     as an ADDITIONAL, AND-combined requirement on top of the force-
     residual check it already had, via the SAME _extra_convergence_ok()
     helper every other driver in this module now uses. Deliberately
-    NOT given a line_search parameter (item 10) -- see this module's
-    own docstring for why bolting Armijo backtracking onto this
+    NOT given a line_search parameter -- see this module's
+    docstring for why bolting Armijo backtracking onto this
     specific bordered (du, dlambda) corrector was judged a materially
     riskier change than the shrink-`a` retry it already has; both
     default to None (off), so an existing caller's results/cost are
@@ -1343,7 +1280,7 @@ def solve_nonlinear_koiter_newton(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
         # ONE factorization, reused for u1/u11 below AND for every
         # corrector iteration/retry this whole step -- see the
         # corrector's own comment for why this matters (it is literally
-        # what the paper's "no new matrix factorizations... in the
+        # what the "no new matrix factorizations... in the
         # correction phase" claim refers to).
         lu_and_piv = lu_factor(A_aug)
 
@@ -1384,7 +1321,7 @@ def solve_nonlinear_koiter_newton(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
 
         # ---- adaptive predictor sizing: grow/shrink 'a' from the true
         # (full finite-element) residual the cubic ROM predicts -- the
-        # paper's own "unbalanced force" validity criterion ----
+        # the "unbalanced force" validity criterion of Yang et al. ----
         a0 = delta_L / max(u1_norm, 1e-300)
         u_ok, lam_ok = _predict(a0)
         ratio0 = _residual_ratio(u_ok, lam_ok)
@@ -1429,10 +1366,10 @@ def solve_nonlinear_koiter_newton(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
         # r = lam_c*F_total - F_int(u_c) -- "the coefficient matrix is
         # exactly the same as that used for construction of the
         # reduced-order model[,] no new matrix factorizations are
-        # produced in the correction phase" (paper, verbatim). This is
+        # produced in the correction phase" (Yang et al., verbatim). This is
         # a genuine chord/modified-Newton iteration (linear, not
-        # quadratic, convergence rate), matching the paper's own
-        # documented threshold (verbose text below cites 15 as their
+        # quadratic, convergence rate), matching the
+        # documented threshold of Yang et al. (verbose text below cites 15 as their
         # example cutoff) -- and is the reason a FAILED correction is
         # handled by SHRINKING THE STEP AND RETRYING (bringing the
         # trial state back closer to the expansion point, where the
@@ -1462,7 +1399,7 @@ def solve_nonlinear_koiter_newton(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
                 du_tilde, dphi_tilde = x3[:nf], x3[nf]
 
                 if residual_ok:
-                    # Wave 1 item 9 -- displacement/energy criteria,
+                    # displacement/energy criteria,
                     # ADDITIONAL to the residual check above (see this
                     # function's own docstring). No line_search here --
                     # see the docstring's own explanation.
@@ -1482,7 +1419,7 @@ def solve_nonlinear_koiter_newton(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
 
         a_corr = a_ok
         converged = False
-        # snapshot iter_state (Module 23) BEFORE each retry attempt and
+        # snapshot iter_state BEFORE each retry attempt and
         # restore it on failure -- _run_corrector mutates iter_state as
         # it goes (every accepted correction, including the predictor's
         # own jump), and a REJECTED attempt's mutations must not leak
@@ -1517,7 +1454,7 @@ def solve_nonlinear_koiter_newton(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
 
 
 # ---------------------------------------------------------------------------
-# Module 24 helpers: shared by solve_nonlinear_koiter_newton_generic() only.
+# Helpers shared by solve_nonlinear_koiter_newton_generic() only.
 # Kept private (leading underscore) and separate from the m=0 driver above,
 # which is deliberately left untouched -- see that function's own docstring
 # for why (NonLin-HyROM's existing training pipeline depends on it exactly
@@ -1663,24 +1600,22 @@ def solve_nonlinear_koiter_newton_generic(fesystem, mat, delta_L, n_steps=50, to
                                            enable_mode_interaction=True,
                                            u0=None, lam0=0.0,
                                            verbose=False, **kwargs):
-    """Wave 1 items 9/10 (docs/consolidated_future_roadmap.md) SCOPE
-    NOTE: neither was added to this function's correctors. This is the
+    """SCOPE NOTE: neither the du_tol/energy_tol criteria nor line search is available in this function's correctors. This is the
     most delicate driver in the module -- two corrector branches
     (single- and mode-interaction), the latter solving a cubic with up
     to 3 real roots per step, on top of an already-real sign-error war
     story in the closely related solve_nonlinear_koiter_newton()'s own
-    corrector (see this module's own docstring "Wave 1" section for
+    corrector (see this module's docstring "Convergence and globalization" section for
     the full reasoning that also excluded THAT function's corrector
-    from item 10). Touching this one under the same time budget was
+    from line search). Touching this one was
     judged the higher-risk choice for the lower-confidence payoff, so
     it is left as documented future work rather than attempted here --
     a caller who needs either convergence criterion or line-search
     globalization on the m>=1 case should use solve_nonlinear_koiter_
-    newton() (m=0, both item 9 and, via its own docstring's
-    explanation, NOT item 10) or solve_nonlinear_arc_length() (item 9
-    AND item 10) instead for now.
+    newton() (m=0, convergence criteria only, no line search) or solve_nonlinear_arc_length() (convergence
+    criteria AND line search) instead for now.
 
-    Module 24 (generic Koiter-Newton continuation, m>=1): lifts
+    Generic Koiter-Newton continuation (m>=1): lifts
     solve_nonlinear_koiter_newton()'s disclosed m=0 scope reduction by
     adding, at each step, an automatic check for a near-critical
     tangent-stiffness mode and -- when one is found -- a SECOND
@@ -1739,8 +1674,8 @@ def solve_nonlinear_koiter_newton_generic(fesystem, mat, delta_L, n_steps=50, to
     simplification, not a claimed-away limitation (see "SCOPE" below).
 
     THE EXTRA PERTURBATION LOAD: once a critical mode phi_crit is found
-    (the eigenvector for lambda_min, unit-normalized), the paper's own
-    prescription is to add ANOTHER sub-load and expand in a second
+    (the eigenvector for lambda_min, unit-normalized), the
+    prescription of Yang et al. is to add ANOTHER sub-load and expand in a second
     scalar parameter for it (Eq. 2's F = sum_p lambda_p*f_p generalized
     to p=0,1). This driver's own choice of that second sub-load is
     f_1 := (K_ff @ phi_crit), rescaled to the same norm as ||F_ref|| --
@@ -1859,19 +1794,19 @@ def solve_nonlinear_koiter_newton_generic(fesystem, mat, delta_L, n_steps=50, to
     post-buckling branches. (3) no hysteresis on the detection check
     (see above). These are documented simplifications of an already
     substantial generalization, not silent gaps -- see
-    docs/general_purpose_extensions_roadmap.md Section 11 for the
+    docs/ (Section 11 of the general-purpose extensions notes) for the
     validation this rests on and what remains open.
 
     u0/lam0 (restart support): a converged (displacement, load-factor)
     state to re-expand from, instead of the undeformed state -- directly
-    implements the paper's own remedy for a step this driver can't resolve
+    implements the remedy of Yang et al. for a step this driver can't resolve
     (Section 4: "we stop the current expansion step and reconstruct the
     reduced-order model at the obtained equilibrium state to initiate a
     new expansion step"). A caller that catches this function's own
     RuntimeError can restart it with u0/lam0 set to the LAST state it
     itself successfully committed (U_hist[i], load_factors[i] for the
     last converged i), chaining several calls into one longer trace one
-    re-expansion at a time -- exactly the paper's own multi-expansion-step
+    re-expansion at a time -- exactly the multi-expansion-step
     procedure, e.g. Section 5.2.1's "three numerical steps". Both default
     to None/0.0, which reproduces this function's PRE-EXISTING behavior
     (start from the undeformed state) exactly -- every existing caller is
@@ -2265,7 +2200,7 @@ def solve_nonlinear_static_koiter_newton(fesystem, mat, tol=1e-8, max_iter=30,
                                           du_tol=None, energy_tol=None,
                                           line_search=True, full_tangent_fallback=True,
                                           **kwargs):
-    """Module 22: Koiter-Newton solve to the SINGLE prescribed target load
+    """Koiter-Newton solve to the SINGLE prescribed target load
     F_ext = 1.0*fesystem.F (same load-scale convention as
     solve_nonlinear_static()) -- NOT a path tracer like
     solve_nonlinear_koiter_newton() above. Use this one when what you
@@ -2321,7 +2256,7 @@ def solve_nonlinear_static_koiter_newton(fesystem, mat, tol=1e-8, max_iter=30,
     expansion point for the cubic model to trust), shrink a TOWARD ZERO
     from a_target (never past it, and never in a different direction)
     until it does, accept that PARTIAL step, and re-expand from the new
-    corrected point -- exactly the paper's own multi-step behavior
+    corrected point -- exactly the multi-step behavior of Yang et al.
     (Fig. 3's star markers: each star is a `predictor_tol`-limited
     partial step toward the eventual target, not an attempt to overshoot
     it), just applied toward a caller-known target instead of an
@@ -2337,15 +2272,15 @@ def solve_nonlinear_static_koiter_newton(fesystem, mat, tol=1e-8, max_iter=30,
     FIXED load F_ext = lambda_used*fesystem.F, reusing the plain
     (non-bordered) K_T(u_n) factorization -- simpler, and a genuine
     simplification of Eq. 21 for the case where phi is already known,
-    not a deviation from the paper's method.
+    not a deviation from the published method.
 
     Raises RuntimeError if no trustworthy step can be found within
     max_shrink_iters at some expansion, or if max_expansions is
     exhausted without reaching lambda=1.0 -- in both cases, try a
     looser predictor_tol or more max_expansions/max_shrink_iters.
 
-    du_tol/energy_tol/line_search (Wave 1 items 9/10 -- see this
-    module's own docstring "Wave 1" section): applied to THIS
+    du_tol/energy_tol/line_search (see this
+    module's docstring "Convergence and globalization" section): applied to THIS
     corrector specifically, because -- unlike solve_nonlinear_koiter_
     newton()'s continuation corrector below, deliberately left alone
     -- it reduces to "ORDINARY frozen-tangent (chord) Newton" (see
@@ -2597,7 +2532,7 @@ def solve_nonlinear_static_koiter_newton(fesystem, mat, tol=1e-8, max_iter=30,
 
         a_try = a_target
         u_c, lam_used, reached_target = None, None, False
-        # snapshot/restore iter_state (Module 23) around each attempt --
+        # snapshot/restore iter_state around each attempt --
         # same "a rejected trial must not leak into the next, smaller
         # a_try" reasoning as solve_nonlinear_koiter_newton's corrector.
         iter_state_at_expansion_start = copy.deepcopy(fesystem.iter_state)
@@ -2644,7 +2579,7 @@ def solve_nonlinear_transient(fesystem, mat, load, T_total, dt, beta=0.25, gamma
                                backend="scipy", device="cpu", **kwargs):
     """Newmark-beta implicit time integration for a GEOMETRICALLY (or
     materially) NONLINEAR structure -- see the module docstring above
-    and docs/nonlinear_transient_dynamics_roadmap.md for the full design
+    and docs/ (nonlinear transient dynamics notes) for the full design
     rationale. At every step, predicts d/v/a exactly as
     FESystem.solve_transient_implicit() does, then runs Newton-Raphson
     to convergence using the CURRENT tangent stiffness
@@ -2857,8 +2792,7 @@ def solve_nonlinear_transient(fesystem, mat, load, T_total, dt, beta=0.25, gamma
     conditions, same assumption every driver in this module makes).
 
     backend="scipy" (default, UNCHANGED behavior) / backend="torch"
-    (opt-in, PyTorch side-by-side extension item 94, docs/
-    consolidated_future_roadmap.md "Wave 9"): dispatches ONLY the
+    (opt-in, PyTorch side-by-side extension): dispatches ONLY the
     per-Newton-iteration linear solve `du_newton = solve(K_eff, -R)`
     inside _newton_attempt() (every one of "plain"/"trust_region"/
     "line_search" mode goes through this same single call site) through
@@ -2883,7 +2817,7 @@ def solve_nonlinear_transient(fesystem, mat, load, T_total, dt, beta=0.25, gamma
     via torch_sparse_solver's own _require_torch(), not mid-solve.
     Validated (tests/test_torch_transient_backend.py) against the
     scipy path to near machine precision on a linear-limit case, same
-    validation strategy solve_transient_explicit_nonlinear() (item 31)
+    validation strategy solve_transient_explicit_nonlinear()
     used against solve_transient_explicit()."""
     if backend not in ("scipy", "torch"):
         raise ValueError(
@@ -3188,7 +3122,7 @@ def solve_nonlinear_transient(fesystem, mat, load, T_total, dt, beta=0.25, gamma
 
 def solve_transient_explicit_nonlinear(fesystem, mat, load, T_total, dt,
                                         u0=None, v0=None, **kwargs):
-    """Wave 6 item 31 (docs/consolidated_future_roadmap.md): nonlinear
+    """Nonlinear
     generalization of FESystem.solve_transient_explicit() -- the SAME
     central-difference recursion on a LUMPED (diagonal) mass matrix,
     with the linear Kff @ d term replaced everywhere by the current
@@ -3210,7 +3144,7 @@ def solve_transient_explicit_nonlinear(fesystem, mat, load, T_total, dt,
     d_new left to iterate on, hence no residual/tangent/Newton machinery
     at all -- this driver's entire per-step cost is exactly ONE
     assemble_internal_force() call, never assemble_tangent_stiffness().
-    This is the actual content of item 31's stated formula a = (F_ext -
+    This is the actual content of the formula a = (F_ext -
     F_int(d) - C@v) / m_diag: nothing about that formula is implicit in
     the unknown new state, so nothing about solving it needs Newton.
 
@@ -3235,16 +3169,15 @@ def solve_transient_explicit_nonlinear(fesystem, mat, load, T_total, dt,
     explicit(): dt must be below the mesh's critical time step or the
     solution blows up -- no automatic check is done here (an expensive
     one for a large system), call fesystem.critical_timestep() (global
-    spectral estimate) or the cheaper per-element estimate (Wave 6 item
-    32) once yourself and pick dt as a safe fraction of it.
+    spectral estimate) or the cheaper per-element estimate
+    (critical_timestep_local()) once yourself and pick dt as a safe fraction of it.
 
     NOTE on tangent stiffness NOT being required at all: this means an
     element formulation only needs a correct internal_force() (mass
     matrix + internal_force(), specifically -- no tangent_stiffness())
     to run under this driver, unlike every implicit/static driver in
-    this module. This is item 33's actual content for the corotational
-    shell family (Wave 6) -- see that item's notes for what "explicit
-    dynamics for the corotational shell" really requires verifying.
+    this module. This is what makes explicit dynamics available for the corotational
+    shell family; what "explicit dynamics for the corotational shell" requires verifying is documented with that element.
 
     Returns (t, U_hist), same shape/convention as every other transient
     driver in this module: U_hist shape (n_steps+1, n_dof), zero at
@@ -3322,8 +3255,7 @@ def solve_transient_displacement_control(fesystem, mat, control_dof, u_target_fn
                                           verbose=False, line_search=True,
                                           trust_region=True,
                                           backend="scipy", device="cpu", **kwargs):
-    """Item 34 (Wave 6, docs/consolidated_future_roadmap.md: "Arc-length
-    / displacement-control transient variant (dynamic snap-through)"):
+    """Displacement-control transient driver (dynamic snap-through):
     the dynamic (Newmark-implicit) counterpart to solve_nonlinear_
     displacement_control() above -- exactly the same generalization
     solve_nonlinear_transient() already made for load-controlled
@@ -3351,9 +3283,8 @@ def solve_transient_displacement_control(fesystem, mat, control_dof, u_target_fn
     than lambda -- there is no free load-factor unknown once load.
     force_at(t) is fully prescribed at every t the way every other
     driver in this module assumes -- so it is a real but separate
-    problem, left for a future item if an actual use case needs it
-    (matching the roadmap's own framing of this item as low-priority
-    and deferred; nothing in this package's own reference cases does).
+    problem, left for future work if an actual use case needs it
+    (nothing in this package's reference cases does).
 
     control_dof: prescribed via u_target_fn (a plain callable t ->
     float, NOT a fesystem-wide load.force_at(t, n_dof, npn) object --
@@ -3427,8 +3358,7 @@ def solve_transient_displacement_control(fesystem, mat, control_dof, u_target_fn
     just hold its static equilibrium.
 
     backend="scipy" (default, UNCHANGED behavior) / backend="torch"
-    (opt-in, PyTorch side-by-side extension item 95, docs/
-    consolidated_future_roadmap.md "Wave 9"): dispatches ONLY the
+    (opt-in, PyTorch side-by-side extension): dispatches ONLY the
     per-Newton-iteration linear solve inside this driver's own Newton
     loop (the same "plain"/"trust_region"/"line_search" ladder solve_
     nonlinear_transient() uses) through torch_sparse_solver.

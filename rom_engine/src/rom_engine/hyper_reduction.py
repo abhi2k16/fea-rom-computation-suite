@@ -37,6 +37,11 @@ HONEST LIMITS.
 
 This module never imports fea_engine. Callers pass plain arrays and callbacks (see the tests for a
 fea_engine-based wiring).
+
+References (methods in this module are adopted from):
+  - S. Chaturantabut, D. C. Sorensen (2010), "Nonlinear model reduction via discrete empirical interpolation", SIAM J. Sci. Comput. 32(5)
+  - Z. Drmac, S. Gugercin (2016), "A new selection operator for the discrete empirical interpolation method -- improved a priori error bound and extensions", SIAM J. Sci. Comput. 38(2)
+  - C. Farhat, P. Avery, T. Chapman, J. Cortial (2014), "Dimensional reduction of nonlinear finite element dynamic models with finite rotations and energy-based mesh sampling and weighting for computational efficiency", Int. J. Numer. Meth. Engng 98(9)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

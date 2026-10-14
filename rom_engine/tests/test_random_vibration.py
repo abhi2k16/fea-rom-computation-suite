@@ -8,7 +8,7 @@ FESystem.solve_random_vibration() (already-validated, already-shipped
 full-order functionality) as ground truth throughout -- the same
 fixture and ground-truth convention test_frequency.py already uses for
 FrequencyROM itself, since psd_response() is built directly on top of
-it (see docs/frequency_domain_rom_roadmap.md Phase 6).
+it.
 
 Checks:
   1. Off resonance: S_out/sigma_out match fea_engine's own full-order

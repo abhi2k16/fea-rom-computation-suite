@@ -1,9 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_tri6_element.py -- validates Tri6PlaneStress (Wave 0 item 7,
-docs/consolidated_future_roadmap.md, source geometry_meshing_
-alternatives_research.md item 4): the quadratic-triangle plane-stress
+test_tri6_element.py -- validates Tri6PlaneStress: the quadratic-triangle plane-stress
 element added for row-3 parity with the existing Quad8PlaneStress.
 
 Same validation depth as test_higher_order_elements.py's Quad8 checks

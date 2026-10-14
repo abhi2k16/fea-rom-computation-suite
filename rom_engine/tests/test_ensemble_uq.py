@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-Tests for ensemble_uq.py (Wave 10 item 105). EnsembleUQ itself is
+Tests for ensemble_uq.py. EnsembleUQ itself is
 tested UNCONDITIONALLY (no torch needed) via a hand-built, seed-
 dependent toy model (`_RandomOffsetToyModel` below) that validates the
 actual aggregation machinery (does fitting N seeds give N distinct

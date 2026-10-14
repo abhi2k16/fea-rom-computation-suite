@@ -1,35 +1,21 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-membrane_expansion.py -- Wave 12 item 112 (docs/consolidated_future_
-roadmap.md, ICE-ROM/GAP_ANALYSIS.md gap #1): the paper's own membrane-
-basis estimation + expansion step (Hollkamp & Gordon 2008, Sec. 2.2,
-Eqs. 9-16, Table 1 steps 6-8), which `nonlinear_rom.py` does not
-provide (its own module docstring already flags this: "(e.g. membrane
-augmentation) this module does not yet implement").
+membrane_expansion.py -- membrane-basis estimation and expansion for implicit condensation and expansion (ICE) ROMs
+(Hollkamp and Gordon 2008, Sec. 2.2, Eqs. 9-16, Table 1 steps 6-8), which `nonlinear_rom.py` does not provide (its
+module docstring flags: "(e.g. membrane augmentation) this module does not yet implement").
 
-Why this exists at all: a bending-only ICE-ROM predicts the physical
-transverse displacement via `w_b = Phi_b @ p` (Eq. 8) using ONLY the
-retained bending modes. For a straight (flat) beam or plate, those
-bending mode shapes have ZERO in-plane/axial component by construction
-(a linear bending mode is, to first order, a pure transverse shape),
-so `w_b`'s own in-plane prediction is identically zero -- the paper's
-actual title ("implicit condensation AND EXPANSION") names this
-missing piece directly, and it is the prerequisite for any fiber-level
-stress recovery (Wave 12 item 115, `fea_engine.elements.beams.
-Beam2DCorotational.recover_stress`): you cannot recover a membrane
-stress from a displacement field that has no membrane component.
+Why it exists: a bending-only ICE-ROM predicts the physical transverse displacement via `w_b = Phi_b @ p` (Eq. 8)
+using ONLY the retained bending modes. For a straight (flat) beam or plate, those bending mode shapes have ZERO
+in-plane/axial component by construction (a linear bending mode is, to first order, a pure transverse shape), so
+`w_b`'s in-plane prediction is identically zero. The expansion step supplies that missing membrane component, which
+fiber-level stress recovery (`fea_engine.elements.beams.Beam2DCorotational.recover_stress`) needs: a membrane stress
+cannot be recovered from a displacement field that has no membrane component.
 
-Generalizes an n_modes=1-only ad hoc prototype already validated in
-this project's own `ICE-ROM/validation/membrane_expansion.py`
-(restricted there to the single retained mode used throughout that
-project's reproduction) to any number of retained modes, by reusing
-`nonlinear_rom._monomial_indices(n_modes, 2)` -- the SAME quadratic-
-monomial enumeration `PolynomialModalROM` already uses for its own
-`quad_idx`, since Eq. 16's "quadratic combinations of modal bending
-amplitudes" (p1^2, p1*p2, p2^2, ...) is exactly that same combinatorial
-object, just used here to predict a MEMBRANE SHAPE coefficient instead
-of a nonlinear force.
+Generalises an n_modes=1-only prototype to any number of retained modes, by reusing
+`nonlinear_rom._monomial_indices(n_modes, 2)`, the same quadratic-monomial enumeration `PolynomialModalROM` uses for
+its own `quad_idx`: Eq. 16's "quadratic combinations of modal bending amplitudes" (p1^2, p1*p2, p2^2, ...) is that
+same combinatorial object, used here to predict a MEMBRANE SHAPE coefficient instead of a nonlinear force.
 
 Orientation convention, matching every other array this package hands
 around: `q_nl`/`p_hist` are (n_samples_or_steps, n_modes) -- SAMPLES-
@@ -40,6 +26,10 @@ transpose. `W`/`V` stay DOF-major ((n_free, n_samples) / (n_free,
 n_modes)), matching every mode-shape and snapshot-matrix convention
 already established elsewhere in this package (`pod.py`, `galerkin.py`,
 `AppliedLoadStrategy`'s own `V` parameter).
+
+References (methods in this module are adopted from):
+  - S. A. Hollkamp, R. W. Gordon (2008), "Reduced-order models for nonlinear response prediction: Implicit condensation and expansion", J. Sound Vib. 318(4-5)
+  - M. P. Mignolet, A. Przekop, S. A. Rizzi, S. M. Spottswood (2013), "A review of indirect/non-intrusive reduced order modeling of nonlinear geometric structures", J. Sound Vib. 332(10):2437-2460
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -59,7 +49,7 @@ class MembraneBasis:
     step layered on top of an already-fit `PolynomialModalROM`/
     `MultiFidelitySurrogate`'s own bending prediction, not an
     alternative regression of the nonlinear restoring force itself
-    (the paper's own Table 1 treats bending-force fitting, steps 2-4,
+    (Table 1 of Hollkamp & Gordon treats bending-force fitting, steps 2-4,
     and membrane-basis estimation, steps 6-8, as two SEPARATE stages
     for exactly this reason).
     """
@@ -79,7 +69,7 @@ class MembraneBasis:
         ----------
         V : ndarray, shape (n_free, n_modes)
             Mass-normalized retained BENDING mode shapes (`Phi_b` in
-            the paper's own notation) -- the SAME `V` a bending-only
+            Hollkamp & Gordon's notation) -- the SAME `V` a bending-only
             `PolynomialModalROM`/`MultiFidelitySurrogate` was fit
             against.
         q_nl : ndarray, shape (n_samples, n_modes)

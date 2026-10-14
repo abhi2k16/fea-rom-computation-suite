@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_neural_operator.py -- Wave 13 item 117 (docs/consolidated_future_
-roadmap.md): validates `reduced_eom_residual_trajectory()` (pure NumPy,
+test_neural_operator.py -- validates `reduced_eom_residual_trajectory()` (pure NumPy,
 unconditional) and `ExcitationResponseOperator` (torch-gated, following
 this package's standing sandbox-review/user-machine-confirmation split
 -- see `nonlinear_rom.NeuralSurrogate`'s own test file for the same
@@ -189,7 +188,7 @@ class TestExcitationResponseOperator:
         assert r2 > 0.9
 
     def test_generalizes_to_an_unseen_excitation_frequency(self):
-        """The actual claim this item exists to support: ONE trained
+        """The claim this operator exists to support: ONE trained
         model, evaluated on an excitation waveform NOT in its training
         sweep, without retraining.
 

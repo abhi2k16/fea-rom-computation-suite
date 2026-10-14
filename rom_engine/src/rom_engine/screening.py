@@ -4,17 +4,11 @@
 screening.py -- automated cross-ROM stability screening for
 non-intrusive Loewner-pencil modal identification.
 
-A single LoewnerROM.fit() call (loewner.py) with an interpolation order
-`n_interp` larger than the true number of modes in-band -- deliberately
-oversized, per the reference paper's own guidance, since undersizing it
-risks MISSING a genuine mode entirely -- generically returns some
-NUMBER of extra, non-physical eigenpairs alongside the genuine ones.
-Those spurious eigenpairs are artifacts of that one particular
-interpolation-point choice, not of the underlying structure: a
-DIFFERENT random choice of interpolation points produces a DIFFERENT
-set of spurious eigenpairs, while the genuine physical modes show up
--- at very nearly the same (f, eta) -- in every ROM, regardless of
-which interpolation points were used to build it.
+A single LoewnerROM.fit() call (loewner.py) with an interpolation order `n_interp` larger than the true number of
+modes in-band (deliberately oversized, since undersizing risks MISSING a genuine mode) generally returns some
+extra, non-physical eigenpairs alongside the genuine ones. Those spurious eigenpairs are artifacts of one
+particular interpolation-point choice: a DIFFERENT random choice produces a DIFFERENT set of spurious eigenpairs,
+while genuine physical modes appear at very nearly the same (f, eta) in every ROM.
 
 This module turns that observation into an automated filter (Eqs.
 30-32 of the reference paper's "Automated Screening of Physical Modes"
@@ -27,16 +21,9 @@ variation in both f and eta) and recur in a large fraction of the ROMs
 -- exactly the two properties a numerical artifact of one specific
 interpolation choice would NOT have.
 
-Reference: Liu, J. & Li, S. (2026), J. Vib. Eng. Technol. 14:335,
-Eqs. (30)-(32). Direct, from-scratch port of the working prototype
-`rom_modal_identification.py`'s `multi_rom_screening()`, with ONE
-deliberate change: `rng` is a required, explicit parameter here, not a
-hidden module-global default (see
-docs/loewner_modal_identification_roadmap.md Section 2) -- every other
-randomized construction in this package (there are none yet outside
-this module, but the convention is set here for any future one) should
-follow the same pattern: no function silently reads global RNG state a
-caller cannot see or control.
+Reference: Liu, J. and Li, S. (2026), J. Vib. Eng. Technol. 14:335, Eqs. (30)-(32). `rng` is a required, explicit
+parameter (no hidden module-global default), so no
+function silently reads global RNG state a caller cannot see or control.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 from typing import NamedTuple

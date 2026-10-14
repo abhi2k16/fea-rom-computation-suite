@@ -20,6 +20,9 @@ orthogonal to the secant (Keller), step size adapted to the corrector's behaviou
 Scope, stated honestly: dense linear algebra (reduced models of tens of DOFs, a few harmonics), full (non
 diagonal) M, C, K allowed, one forcing frequency (no quasi-periodic response) and no subharmonics; stability
 (Floquet) is not computed, so unstable branches are traced but not labelled.
+
+References (methods in this module are adopted from):
+  - M. Krack, J. Gross (2019), "Harmonic Balance for Nonlinear Vibration Problems", Springer
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

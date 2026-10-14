@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_adaptivity.py -- Wave 8 items 41-45 (docs/consolidated_future_
-roadmap.md): a posteriori error estimators, marking strategies,
+test_adaptivity.py -- a posteriori error estimators, marking strategies,
 conforming (Rivara longest-edge) local refinement, mesh-hierarchy
 tracking, and the solution-driven adaptive refinement loop
 (adaptivity.py). Scoped to Tri3PlaneStress throughout -- see that

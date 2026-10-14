@@ -25,7 +25,7 @@ def test_contact():
 
     def N_truss(u1):
         """Closed-form TrussTL2D axial force at node 1 (x-displacement u1),
-        already validated in Module 8 (validate_nonlinear.py CHECK 1)."""
+        already validated in (validate_nonlinear.py CHECK 1)."""
         E_GL = ((L0 + u1) ** 2 - L0 ** 2) / (2 * L0 ** 2)
         S = E * E_GL
         return S * A * (L0 + u1) / L0

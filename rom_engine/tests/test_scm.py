@@ -23,8 +23,7 @@ Checks:
   4. An HONEST characterization of the bound's practical looseness for
      a real FE stiffness matrix: the "useful radius" around a
      reference point is measured and reported directly, not glossed
-     over -- see docs/error_bounds_greedy_roadmap.md's Phase 4d
-     status note for why this is expected (a real, large scale
+     over; it is expected (a real, large scale
      mismatch between ||K||_2 and sigma_min(A(omega)) for this model,
      not an implementation bug), and why the classical natural-norm
      SCM exists to address exactly this.
@@ -169,8 +168,7 @@ def test_useful_radius_is_narrow_for_this_model_and_is_reported_honestly():
     this test MEASURES that radius directly and reports it, rather
     than asserting a specific "should be at least this wide" value
     (which would misrepresent this simplified method's real, literature-
-    anticipated limitation -- see docs/phase4_error_bounds_greedy_
-    roadmap.md's Phase 4d status note)."""
+    anticipated limitation)."""
     fx = ff.damped_cantilever_beam_system(n=20)
     free = fx["free_dofs"]
     Kff = fx["K"][np.ix_(free, free)]

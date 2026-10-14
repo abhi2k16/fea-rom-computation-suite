@@ -22,6 +22,9 @@ Nothing in this module claims a speed-up: that is measured on a given model.
 WHAT IS NOT CLAIMED. The inertia of the fast coordinates is dropped (quasi-static assumption); it is valid when
 the membrane frequencies are far above the slow ones. `fast_response` reports Newton convergence so a failed
 condensation is visible, never silent.
+
+References (methods in this module are adopted from):
+  - P. Tiso, M. Karamooz Mahdiabadi, J. Marconi (2021), "Modal methods for reduced order modeling", Chapter 4, ETH Research Collection, doi:10.3929/ethz-b-000526692
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

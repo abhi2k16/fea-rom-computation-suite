@@ -1,19 +1,16 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-tests/test_build_mesh_dispatcher.py -- Phase 4 validation: build_mesh()'s
-complexity-driven dispatch and the rotational-DOF safety gate (docs/
-generalized_mesh_grading_roadmap.md, Section 3c/Section 4's "Safety gate"
-validation item).
+tests/test_build_mesh_dispatcher.py -- validation of build_mesh()'s
+complexity-driven dispatch and the rotational-DOF safety gate.
 
-The gate test is deliberately two-directional (roadmap doc's own
-requirement): confirm the restricted path is actually exercised in both
+The gate test is deliberately two-directional: confirm the restricted path is actually exercised in both
 directions, not just assumed to work because the code "looks right".
 
 Gmsh-backed unstructured meshing (the former translational-DOF/"Gmsh
 path" direction of this gate) was later removed from the package
 entirely (system libGLU dependency; see build_mesh.py's own docstring
-and docs/generalized_mesh_grading_roadmap.md) -- that direction's tests
+and docs/) -- that direction's tests
 below now confirm build_mesh() raises MeshGradingError instead of
 confirming it reached a (now nonexistent) Gmsh code path.
 """
@@ -47,7 +44,7 @@ def test_plain_rectangle_no_features_uses_uniform_mesh():
 # =====================================================================
 # Safety gate (rotational-DOF -> structured path; translational-DOF ->
 # was the Gmsh path, now removed -- see build_mesh.py's own docstring
-# and docs/generalized_mesh_grading_roadmap.md for the removal note)
+# and docs/ for the removal note)
 # =====================================================================
 def test_rotational_dof_element_routed_to_structured_path_only():
     """A Shell4MITCCorotational request on a featured (hole) geometry
@@ -137,12 +134,12 @@ def test_check_grading_detects_growth_ratio_violation():
 
 
 def test_check_grading_3d_hex_mesh_now_supported():
-    """Wave 0 item 8 (docs/consolidated_future_roadmap.md) extended
+    """extended
     check_grading() to 3-D -- this used to unconditionally raise
     NotImplementedError for ANY 3-D mesh; now a Hex8 mesh (extrude_mesh's
     output) is one of the two supported 3-D topologies and gets a real
-    answer instead. See tests/test_grading_3d.py for the full Wave 0
-    item 8 validation (face-table correctness, Tet4 support, growth-
+    answer instead. See tests/test_grading_3d.py for the full
+    validation (face-table correctness, Tet4 support, growth-
     ratio detection, and the still-correctly-raising unsupported case)."""
     from fea_engine.mesh import rectangle_mesh, extrude_mesh
     m2d = rectangle_mesh(1.0, 1.0, 3, 3)

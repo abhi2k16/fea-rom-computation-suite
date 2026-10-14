@@ -15,6 +15,10 @@ enforced displacement (`nonlinear_rom.enhanced_enforced_displacement_rom`, tange
 WHAT IS NOT CLAIMED. The backbone is for the identified polynomial force, so it is valid only inside the
 amplitude range the identification used. Agreement with a full-order backbone is a property to be checked on each
 model (the test suite does so for one beam), not guaranteed.
+
+References (methods in this module are adopted from):
+  - G. Kerschen, M. Peeters, J. C. Golinval, A. F. Vakakis (2009), "Nonlinear normal modes, Part I: A useful framework for the structural dynamicist", Mech. Syst. Signal Process. 23(1)
+  - P. Tiso, M. Karamooz Mahdiabadi, J. Marconi (2021), "Modal methods for reduced order modeling", Chapter 4, ETH Research Collection, doi:10.3929/ethz-b-000526692
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

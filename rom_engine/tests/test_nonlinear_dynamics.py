@@ -406,12 +406,10 @@ def _reference_newton_newmark(Lambda, C_r, force_model, F_ext_fn, q0, qdot0, dt,
 
 
 class TestNewtonCorrection:
-    """Wave 12 item 114 (docs/consolidated_future_roadmap.md,
-    ICE-ROM/GAP_ANALYSIS.md gap #3)-specific behavior:
-    correction="newton"'s domain restriction, q_bound clamp, and
+    """correction="newton"'s domain restriction, q_bound clamp, and
     agreement with the independent hand-rolled reference above (which
     is itself a direct transcription of the validated ad hoc prototype
-    this item promotes)."""
+    this correction mode is based on)."""
 
     def test_rejects_domain_q_l(self):
         with pytest.raises(ValueError, match="domain='q_nl'"):
@@ -456,7 +454,7 @@ class TestNewtonCorrection:
         assert np.all(np.abs(q_nl_hist) <= q_bound[0] + 1e-12)
 
     def test_more_accurate_than_lagged_corrections_for_a_stiff_polynomial_fit(self):
-        # The item's own headline motivation: a stiff cubic-spring model
+        # The headline motivation: a stiff cubic-spring model
         # driven by a strong external force should stay CLOSER to a
         # high-accuracy scipy ODE reference under exact Newton
         # convergence than under any of the three Newton-free lagged

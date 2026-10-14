@@ -1,9 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_hourglass_stabilization.py -- Wave 2 item 12 (docs/consolidated_
-future_roadmap.md, source nonlinear_fem_lessons.md's appendix Sec.
-8.7.3-8.7.6): validates Element.hourglass_stabilized_stiffness()
+test_hourglass_stabilization.py -- validates Element.hourglass_stabilized_stiffness()
 (elements/base.py) and FESystem.assemble_stiffness(method=
 "hourglass_stabilized") (solver.py), on Hex8Solid3D -- the element
 examples/main.py's own "Full vs. reduced integration" section already

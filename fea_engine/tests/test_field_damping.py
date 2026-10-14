@@ -1,19 +1,17 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_field_damping.py -- Wave 17 item 141 (docs/consolidated_future_
-roadmap.md, source: Georgiou 2005 "Advanced Proper Orthogonal
-Decomposition Tools...", Eqs. 1-3, 24, 35): validates
+test_field_damping.py -- validates
 damping.FieldDamping, a field-wise ("per DOF-type") consistent viscous
 damping matrix built with the SAME shape-function/quadrature structure
 element.Element.mass() already uses, with a damping coefficient D_i
 substituted for the density-like quantity rho_i -- structurally
 parallel to how the mass matrix is assembled from rho, NOT a Rayleigh
 (mass/stiffness-proportional) model, which is what fea_engine.damping
-already had (RayleighDamping) before this item.
+already had (RayleighDamping) before this change.
 
-Two decisive checks, matching the roadmap's own stated validation
-criteria for item 141:
+Two decisive checks, matching the stated validation
+criteria:
 
 1. test_field_damping_matches_mass_with_density_replaced -- C from
    FieldDamping(coefficients=D) must be produced by literally the same
@@ -32,13 +30,9 @@ criteria for item 141:
    solve_transient_implicit(), independent numerical evidence rather
    than a restatement of (a).
 
-Deviation from the literal roadmap text, honestly noted: the roadmap's
-item 141 row names Beam2DReissner (Wave 17 item 140, a 3-field
-geometrically-exact rod element with genuine rotary inertia) as the
-target for check 2, with target ratios ~0.080 (mode 1) and ~0.0099
-(mode 3). Beam2DReissner is a SEPARATE, parallel roadmap item and was
-NOT present in this codebase when this file was written and run (see
-this module's own report). Per this item's own explicit fallback
+Note on the benchmark: the original target for check 2 was Beam2DReissner, with target ratios ~0.080 (mode 1) and ~0.0099
+(mode 3). Beam2DReissner is a separate element and was
+not available when this file was written. Following the fallback
 instruction ("construct an equivalent check with whatever damped
 element/system is available... and derive the matching closed-form
 ratio yourself"), Beam2DEulerBernoulli (already in the package, 2
@@ -67,8 +61,7 @@ N_ELEM = 10
 
 def _pinned_beam():
     """A pinned-pinned (v=0 at both ends, rotation free) Euler-Bernoulli
-    beam -- transverse-bending-dominated modes, matching the roadmap's
-    own "translational/bending-dominated" qualifier for the closed-form
+    beam -- transverse-bending-dominated modes, matching the "translational/bending-dominated" qualifier for the closed-form
     check."""
     mesh = line_mesh(L, N_ELEM)
     fs = FESystem(mesh, Beam2DEulerBernoulli())
@@ -219,7 +212,7 @@ def test_damping_ratio_matches_closed_form_free_decay():
 
 # ---------------------------------------------------------------------
 # assemble_damping() wiring: additive combination + raw-matrix escape
-# hatch, both explicitly required by the roadmap ("Accept it in
+# hatch, both explicitly required ("Accept it in
 # assemble_damping() next to RayleighDamping... and also accept a raw
 # matrix for full generality").
 # ---------------------------------------------------------------------
@@ -242,7 +235,7 @@ def test_assemble_damping_is_additive_across_damping_types():
 
 def test_assemble_damping_accepts_raw_matrix():
     """fesystem.C can still be built (additively) from a raw ndarray,
-    the pre-existing 'set it by hand' escape hatch the roadmap says
+    the pre-existing 'set it by hand' escape hatch that
     must remain available."""
     fs = _pinned_beam()
     raw = np.eye(fs.n_dof) * 5.0

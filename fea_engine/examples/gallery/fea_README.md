@@ -24,9 +24,9 @@ package's reduced-order-modeling tools instead (see that folder's own
 | 1 | `fea_01_cantilever_beam.py` | Linear-elastic cantilever (Quad4PlaneStress): deformed shape colored by von Mises stress, mesh-refinement convergence | FE tip deflection converges to the Euler-Bernoulli analytical value (0.29% at nx=128) |
 | 2 | `fea_02_hyperelastic_neo_hookean.py` | Large-strain Neo-Hookean hyperelasticity (Tet4NeoHookean): deformed tet, load-deflection curve | Diverges from a linear-elastic reference (same tet/material) as load grows -- the real hyperelastic signature, not asserted |
 | 3 | `fea_03_hertzian_contact.py` | An elastic block pressed onto a rigid circular obstacle (GapContactCurvedFriction, one contact element per bottom node) | Contact pressure distribution is checked for the expected bell shape (peaked under the obstacle, zero outside the patch), not a quantitative Hertz-theory match (different formulation) |
-| 4 | `fea_04_plasticity_strip.py` | J2 plasticity with isotropic hardening on a plate-with-a-hole (Quad4PlasticJ2PlaneStress + Wave 5's `hole_in_rectangle_mesh`) | Permanent plastic strain localizes at the hole boundary (stress-concentration-driven local yield well below nominal sigma_y) -- shown via the hardening variable `state["alpha"]`, not assumed |
+| 4 | `fea_04_plasticity_strip.py` | J2 plasticity with isotropic hardening on a plate-with-a-hole (Quad4PlasticJ2PlaneStress + the `hole_in_rectangle_mesh`) | Permanent plastic strain localizes at the hole boundary (stress-concentration-driven local yield well below nominal sigma_y) -- shown via the hardening variable `state["alpha"]`, not assumed |
 | 5 | `fea_05_modal_analysis.py` | Generalized eigenproblem modal analysis (`FESystem.solve_modal()`) on a steel cantilever: first four mode shapes | First two bending-mode frequencies checked against the closed-form Euler-Bernoulli cantilever formula (agreement within ~2-3%) |
-| 6 | `fea_06_topology_optimization.py` | SIMP density-based compliance topology optimization (`topopt.py`, Wave 11 item 111) on the short-cantilever benchmark: density evolution + compliance history | 86.8% compliance reduction at an exactly-held volume fraction -- the same signature `test_topopt.py`'s own end-to-end test validates |
+| 6 | `fea_06_topology_optimization.py` | SIMP density-based compliance topology optimization (`topopt.py`) on the short-cantilever benchmark: density evolution + compliance history | 86.8% compliance reduction at an exactly-held volume fraction -- the same signature `test_topopt.py`'s own end-to-end test validates |
 
 ## Related: solver-backend benchmark
 
@@ -48,9 +48,7 @@ was found and fixed while developing this script), and how to run it.
   physics reimplemented for the plot.
 - `fea_engine` is a structural-mechanics-only package (no Poisson,
   diffusion, wave, Helmholtz, or fluid-mechanics element types), so
-  this gallery does not attempt those TensorMesh categories. See
-  `docs/consolidated_future_roadmap.md`'s Wave 16 entries for the
-  page-by-page TensorMesh comparison this gallery followed from.
+  this gallery does not attempt those TensorMesh categories. 
 - Material properties are chosen per-example to make the physics
   visually legible (e.g. a softer "rubber-like" modulus for the
   contact and plasticity examples so the deformation/plastic zone is

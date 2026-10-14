@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_arc_length.py -- validation for Module 19 (general-purpose
-extensions roadmap Phase 5): nonlinear_solver.solve_nonlinear_arc_length()
+test_arc_length.py -- validation for  nonlinear_solver.solve_nonlinear_arc_length()
 (Crisfield cylindrical arc-length continuation).
 
 Reuses the SAME von Mises (two-bar) snap-through truss benchmark
@@ -17,7 +16,7 @@ closed forms that might quietly disagree with each other.
 Three lines of evidence:
 
 1. test_load_control_fails_past_limit_point -- the genuine regression/
-   contrast test the roadmap's own validation plan calls for:
+   contrast test the validation plan calls for:
    solve_nonlinear_static() (load control) is confirmed to fail
    EXACTLY as its own docstring predicts, at a load past the limit
    point on this truss -- establishing that this problem really does
@@ -29,7 +28,7 @@ Three lines of evidence:
    inverted state (delta=2*h0) and matches the closed-form P(delta) at
    every recorded point along the way, through BOTH sign changes of
    dP/ddelta (the ascending branch's peak, and the descending
-   branch's trough) -- this is "the reversal" the roadmap's validation
+   branch's trough) -- this is "the reversal" the validation
    plan asks to see traced, not just approached.
 3. test_arc_length_matches_displacement_control_where_both_apply -- an
    independent cross-check between two DIFFERENT solution strategies

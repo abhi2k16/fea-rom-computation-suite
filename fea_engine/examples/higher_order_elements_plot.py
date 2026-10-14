@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-higher_order_elements_plot.py -- Phase 1 (general-purpose extensions
-roadmap) worked example: visual verification companion to
+higher_order_elements_plot.py -- worked example: visual verification companion to
 higher_order_elements_demo.py.
 
 Reuses that script's exact coarse pure-bending setup (2 elements long,

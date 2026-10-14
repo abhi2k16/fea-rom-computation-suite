@@ -7,7 +7,7 @@ helpers for validating rom_engine.loewner / rom_engine.screening.
 This mirrors the working prototype (rom_modal_identification.py)'s
 build_system()/frf()/ground_truth_modes() functions, with ONE
 deliberate change: `rng` is an explicit parameter here (not a hidden
-module-global default), matching the roadmap's Section 2 deviation and
+module-global default), and following
 the "no hidden state" convention every other rom_engine module already
 follows.
 

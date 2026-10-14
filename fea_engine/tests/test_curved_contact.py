@@ -119,7 +119,7 @@ def test_curved_contact():
     print("  PASS -- tangential force ramps linearly (stick, tt=k_t*e_t) then "
           "clamps exactly at the Coulomb limit mu*pn (slip plateau), matching "
           "the closed-form return-mapping prediction at every step, via the "
-          "SAME state/commit_state mechanism as TrussPlastic2D (Module 9).")
+          "SAME state/commit_state mechanism as TrussPlastic2D.")
 
     print()
     print("=" * 70)

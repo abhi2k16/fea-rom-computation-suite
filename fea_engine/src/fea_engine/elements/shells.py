@@ -1,12 +1,9 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-shells.py -- Module 20 (general-purpose extensions roadmap Phase 7):
-Shell4MITC, a 4-node general shell element carrying MEMBRANE (in-plane
-stretching) stiffness coupled to bending, unlike Quad4MindlinPlate
-(plates.py) which is bending-only. Needed for curved or folded
-thin-walled structures (a cylindrical tank, a car body panel) where
-plate theory alone can't represent the geometry.
+shells.py -- Shell4MITC, a 4-node general shell element carrying MEMBRANE (in-plane stretching) stiffness coupled
+to bending, unlike Quad4MindlinPlate (plates.py) which is bending-only. Used for curved or folded thin-walled
+structures (a cylindrical tank, a car body panel) where plate theory alone cannot represent the geometry.
 
 Formulation: MITC4 (Mixed Interpolation of Tensorial Components,
 4-node), Dvorkin & Bathe's 1984 element ("A continuum mechanics based
@@ -81,44 +78,35 @@ the assumed strain is transformed BACK to Cartesian at the actual
 integration point via J^-1, exactly mirroring how B_matrix() elsewhere
 in this package turns natural derivatives into Cartesian ones.
 
-Known limitations (by design, matching classic MITC4, not this
-package's oversight):
-  - Flat-facet approximation: each element uses ONE local frame (built
-    from its own 4 corners' geometry, see _local_frame_and_coords()),
-    projecting nodal coordinates onto that single flat plane. A warped
-    (non-planar) quadrilateral is approximated by its best-fit flat
-    facet, not exactly represented -- fine for a shell mesh fine enough
-    that individual elements are nearly flat (the standard assumption
-    for a flat-facet shell), not a genuinely curved-surface (degenerate-
-    shell, per-node director vector) formulation. See the roadmap doc's
-    Section 1 for why the full per-node-director formulation was scoped
-    out of this phase.
-  - Membrane locking (distinct from transverse SHEAR locking) is NOT
-    addressed -- classic MITC4, as implemented here, only fixes shear
-    locking. Membrane locking shows up specifically in curved geometries
-    under coarse/distorted meshes; MITC4+ (Ko, Lee & Bathe 2017, the
-    same paper this module's formula citation is drawn from) is the
-    documented fix, out of scope for this phase.
+Known limitations (by design, as in classic MITC4):
+    - Flat-facet approximation: each element uses ONE local frame (built from its own 4 corners' geometry, see
+      _local_frame_and_coords()), projecting nodal coordinates onto that single flat plane. A warped (non-planar)
+      quadrilateral is approximated by its best-fit flat facet, not exactly represented. This is fine for a shell
+      mesh fine enough that elements are nearly flat (the standard flat-facet assumption); it is not a
+      curved-surface (degenerate-shell, per-node director vector) formulation, which is provided separately in
+      shells_director.py.
+    - Membrane locking (distinct from transverse SHEAR locking) is NOT addressed: classic MITC4 as implemented
+      here only fixes shear locking. Membrane locking shows up in curved geometries under coarse/distorted
+      meshes; MITC4+ (Ko, Lee & Bathe 2017, the same reference as this module's formula citation) is the
+      documented fix and is not implemented.
 
-  Wave 4 investigation note (2026-09-08, item 22): a MITC4+ membrane
-  fix was investigated and a working implementation was built and
-  numerically verified against the paper's own flat-geometry
-  equivalence guarantee -- but on closer analysis it was found to be
-  PROVABLY INERT for warped (non-flat) elements too, not just flat
-  ones, as long as displacement is kept purely in-plane (u, v only):
-  the paper's membrane strain is built from dot products of reference
-  geometry vectors with displacement vectors, and every quantity that
-  could carry a warped element's out-of-plane geometric content (x_d's
-  n-component, reached only via dot products against in-plane-only
-  m_r/m_s or displacement) gets annihilated when displacement has no
-  out-of-plane (w) component -- confirmed numerically: assembled
-  stiffness was unchanged to floating-point precision even at a warp
-  1.0 units on a ~1.5-unit element. A REAL fix needs w to enter the
-  membrane strain calculation, which reintroduces membrane-bending DOF
-  coupling -- the same class of risk that produced 3 of
-  Shell4MITCCorotational's own documented dead ends (see that class's
-  "Design history" below) -- so this was deferred rather than shipped
-  as an always-inert "fix". Not attempted further this wave.
+    MITC4+ membrane fix, investigated and not shipped: a working implementation was built and numerically verified
+    against the MITC4+ flat-geometry equivalence guarantee, but it was found to be PROVABLY INERT for warped
+    (non-flat) elements too, as long as displacement is purely in-plane (u, v only): the MITC4+ membrane strain is
+    built from dot products of reference geometry vectors with displacement vectors, and every quantity that could
+    carry a warped element's out-of-plane geometric content gets annihilated when displacement has no out-of-plane
+    (w) component. This was confirmed numerically: the assembled stiffness was unchanged to floating-point
+    precision even at a warp of 1.0 units on a ~1.5-unit element. A real fix needs w to enter the membrane strain
+    calculation, which reintroduces membrane-bending DOF coupling, the class of risk behind 3 of
+    Shell4MITCCorotational's documented dead ends (see that class's "Design history"); an always-inert "fix" was
+    not shipped.
+
+References (methods in this module are adopted from):
+  - E. N. Dvorkin, K. J. Bathe (1984), "A continuum mechanics based four-node shell element for general non-linear analysis", Eng. Comput. 1(1)
+  - Y. Ko, P.-S. Lee, K.-J. Bathe (2017), "A new MITC4+ shell element", Comput. Struct. 182
+  - M. A. Crisfield (1990), "A consistent co-rotational formulation for non-linear, three-dimensional, beam-elements", Comput. Methods Appl. Mech. Engrg. 81(2)
+  - C. Yang, K. Liang, Y. Rong, Q. Sun (2019), "A hybrid reduced-order modeling technique for nonlinear structural dynamic simulation", Aerosp. Sci. Technol. 84:724-733
+  - T. Belytschko, W. K. Liu, B. Moran, K. Elkhodary (2014), "Nonlinear Finite Elements for Continua and Structures", 2nd ed., Wiley
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -394,9 +382,8 @@ class Shell4MITC(Element):
         """Not implemented -- shell buckling needs a genuinely different
         (2-D, membrane-stress-dependent) geometric stiffness formulation
         than the reference-axial-force convention Element.
-        geometric_stiffness()'s scalar N expects; out of this phase's
-        scope (see docs/general_purpose_extensions_roadmap.md Section 1
-        -- shell elements were scoped for static/dynamic linear analysis
+        geometric_stiffness()'s scalar N expects; out of scope
+        (shell elements are scoped for static/dynamic linear analysis
         only). Inherits Element's NotImplementedError, which already
         describes this correctly ("this element only has linear
         kinematics" -- true of Shell4MITC's IN-PLANE strain measures;
@@ -405,7 +392,7 @@ class Shell4MITC(Element):
 
 
 # =====================================================================
-# Shell4MITCCorotational -- Phase A of
+# Shell4MITCCorotational -- first stage of
 # docs/shells.md Section 4.2: geometric nonlinearity
 # (large displacement / large rotation, small local strain) for
 # Shell4MITC, via a co-rotational wrapper -- the same category of
@@ -416,7 +403,7 @@ class Shell4MITC(Element):
 # implementation follows; this docstring also records the real,
 # numerically-traced dead ends this class's own validation ran into
 # before landing on the construction actually used below -- see "Design
-# history" -- since the roadmap's own Section 2.2 explicitly flagged
+# history" -- since docs/shells.md Section 2.2 explicitly flagged
 # this exact difficulty as likely, and the dead ends are the concrete
 # version of that warning, not a hypothetical one.
 #
@@ -442,7 +429,7 @@ class Shell4MITC(Element):
 # RATIO into a spurious force thousands of times larger than the real
 # bending force the state should have produced -- see dead end 2/3).
 #
-# Kinematics (roadmap Section 2.1/2.2): at every call, elem_coords is
+# Kinematics (docs/shells.md Section 2.1/2.2): at every call, elem_coords is
 # the REFERENCE (undeformed) nodal geometry and u_elem is the TOTAL
 # global displacement/rotation history to date -- the same convention
 # every other nonlinear element in this package uses (TrussTL2D,
@@ -506,7 +493,7 @@ class Shell4MITC(Element):
 # level, not a modeling approximation).
 #
 # Design history (three dead ends plus one abandoned variant, kept here
-# because the roadmap's own Section 2.2 anticipated this class of
+# because docs/shells.md Section 2.2 anticipated this class of
 # difficulty and this is the concrete account of it, not a
 # hypothetical):
 #   1. First attempt tracked the CURRENT frame from corner POSITIONS
@@ -564,12 +551,12 @@ class Shell4MITC(Element):
 #      single frame to all 6 DOFs/node, and all three leak precisely
 #      because of that.
 #
-# Known remaining limitation (Phase A's honestly-scoped gap; UPDATED
-# 2026-09-08, Wave 4 item 18): originally, neither block's frame
+# Known remaining limitation (an honestly-scoped gap; UPDATED
+# 2026-09-08): originally, neither block's frame
 # correction was exact for a LARGE single-element rigid motion -- the
 # drilling frame was a first-order (not exact Rodrigues) update, and
 # the bending block has no frame correction at all. The DRILLING half
-# of this is now CLOSED (item 18): _local_relative_dofs()'s R_drill
+# of this is now CLOSED: _local_relative_dofs()'s R_drill
 # uses _exact_drill_rotation(theta_z_mean), the EXACT single-axis
 # rotation, not a first-order truncation -- safe to make exact
 # specifically BECAUSE drilling is always a rotation about the single
@@ -578,7 +565,7 @@ class Shell4MITC(Element):
 # everywhere with no norm/branching singularity at zero rotation (the
 # exact issue that ruled out a general exact-SO(3) treatment for a
 # general 3-vector tilt frame -- see "Design history" dead ends 1-3,
-# and items 20/22's own investigation, both of which needed a general
+# and later investigations of the bending block, both of which needed a general
 # 3-vector or out-of-plane-coupled treatment and hit real structural
 # obstacles this narrower, single-axis case does not). Measured
 # single-element rigid-motion error (internal-force norm relative to
@@ -588,20 +575,19 @@ class Shell4MITC(Element):
 # in tests/test_shell_corotational_exact_drill.py -- versus the
 # ORIGINAL first-order update's ~4e-6 at 0.5 degrees, ~6e-4 at 6
 # degrees, ~1.6% at 30 degrees. The BENDING block's error is UNCHANGED
-# by this fix (still uncorrected, deliberately -- item 18 only touches
+# by this fix (still uncorrected, deliberately -- the drilling fix only touches
 # the drilling/membrane frame): out-of-plane tilt ~0.03% at 0.5 degrees,
 # ~0.33% at 6 degrees, ~1.8% at 30 degrees, still notably better than
 # dead end 2's already-accepted 12-25%-at-30-degrees figure. Closing the
 # BENDING block's residual large-rotation drift needs a position-tracked
-# extraction for that block too (item 20) -- investigated 2026-09-08 and
+# extraction for that block too -- investigated 2026-09-08 and
 # found to require a genuinely novel construction (a literal reading
 # reusing R_drill's own frame produces zero new nonlinearity, since
 # R_drill's z-row is fixed at [0,0,1] regardless of drilling angle);
 # deferred, not attempted, given the dead-end risk documented for
-# adjacent frame-coupling attempts (see docs/consolidated_future_
-# roadmap.md Wave 4 item 20 for the finding).
+# adjacent frame-coupling attempts (see docs/shells.md for the finding).
 #
-# Phase C finding (bigger consequence of the same limitation, EXACT not
+# Elastica finding (bigger consequence of the same limitation, EXACT not
 # approximate -- tests/test_shell_corotational_elastica.py): R_drill
 # only ever rotates about the local z-axis, so its own z-row/column is
 # [0,0,1] IDENTICALLY -- meaning the membrane (u,v) block's position-
@@ -632,10 +618,10 @@ class Shell4MITC(Element):
 # this element is quantitatively trustworthy for SMALL-TO-MODERATE tip
 # rotation (order 10-15 degrees or less), not the fully general large-
 # rotation regime "co-rotational" might suggest without this caveat.
-# This is exactly the risk the roadmap's own Section 2.2
+# This is exactly the risk docs/shells.md Section 2.2
 # flagged in advance ("a real possibility... should be budgeted as a
-# likely... requirement") for the small-rotation approximation Phase A
-# adopted.
+# likely... requirement") for the small-rotation approximation the first
+# stage adopted.
 #
 # PARTIAL FIX (2026-09-03, _bending_membrane_coupling_force() below):
 # added a von Karman-type membrane strain correction driven by each
@@ -865,7 +851,7 @@ class Shell4MITC(Element):
 # displacement-only version). This confirmed the METHOD works before
 # any real element was touched.
 #
-# ARCHITECTURE ADDED (Module 23, `solver.py`/`nonlinear_solver.py`,
+# ARCHITECTURE ADDED (the iter_state mechanism, `solver.py`/`nonlinear_solver.py`,
 # KEPT, working, validated -- see FESystem.init_iter_state()/
 # update_iter_states()'s own docstrings and tests/test_iter_state.py):
 # a genuinely new, general-purpose per-element internal-unknown
@@ -941,7 +927,7 @@ class Shell4MITC(Element):
 # at the cost of being the heaviest option (global DOF-count/assembly
 # changes, not just a per-element addition).
 #
-# What was kept, deliberately, not reverted: the Module 23
+# What was kept, deliberately, not reverted: the iter_state
 # infrastructure itself (`solver.py`'s iter_state mechanism,
 # `nonlinear_solver.py`'s wiring into five drivers) is real, tested,
 # working, general-purpose capability, useful for the next attempt at
@@ -959,7 +945,7 @@ class Shell4MITC(Element):
 # unaffected by any of this.
 #
 # DEAD END 8, ELEMENT-CONSTANT ABSOLUTE ROTATION (tried and REJECTED
-# 2026-09-08, Wave 4 item 21 -- code NOT kept, this was a standalone
+# 2026-09-08 -- code NOT kept, this was a standalone
 # experiment, never merged into this method). Direction (b) from dead
 # end 4's own docstring ("a fundamentally different, better-conditioned
 # discretization of the coupling term itself... mirroring how MITC
@@ -1017,8 +1003,8 @@ class Shell4MITC(Element):
 # Read this whole "Design history" (8 dead ends now) before proposing
 # a 9th.
 #
-# ITEM 19 ANALYSIS (2026-09-08, Wave 4 -- an analytical argument, not a
-# new experiment; no code changed here): item 19 names the two paths
+# N_ADD ANALYSIS (2026-09-08 -- an analytical argument, not a
+# new experiment; no code changed here): this analysis considers the two paths
 # dead end 7 left open -- (a) sub-iterate N_add to real convergence
 # within a load step (a properly-converged staggered/block Gauss-Seidel
 # scheme), or (b) give N_add true joint-DOF status, solved
@@ -1072,19 +1058,19 @@ class Shell4MITC(Element):
 # remaining candidate worth the effort; (a) is not, per the argument
 # above.
 #
-# Tangent (Phase B, DONE -- roadmap Section 2.2's recommended
+# Tangent (DONE -- docs/shells.md Section 2.2's recommended
 # ordering: "implement internal_force() first... get a numerically
 # CONSISTENT tangent for free via complex-step differentiation... THEN
 # hand-derive the analytic geometric tangent as a follow-up speed
 # optimization"): tangent_stiffness() is now the analytic material-
 # plus-geometric split T.T @ K_local0 @ J + K_geo (see
 # _dof_local_jacobian_and_geo()'s own docstring for the full
-# derivation), matching Tet10SolidTL's own Phase A -> Phase B path
-# exactly -- the ORIGINAL Phase A complex-step implementation is kept,
+# derivation), matching Tet10SolidTL's complex-step -> analytic path
+# exactly -- the ORIGINAL complex-step implementation is kept,
 # renamed _tangent_stiffness_complex_step(), as the independent
 # reference the analytic version was validated against (~1e-16
 # relative at u=0, random small/large states, the bending-dominated
-# state that broke the rejected Phase A dof-extraction designs, and
+# state that broke the rejected dof-extraction designs, and
 # rigid rotations up to 30 degrees -- tests/test_shell_corotational.py)
 # and as a debugging fallback if this class's kinematics ever change
 # again. f_int(u) = T(u).T @ K_local0 @ dof_local(u) is not exactly the
@@ -1095,7 +1081,7 @@ class Shell4MITC(Element):
 # version does (confirmed: the two match to ~1e-16 BEFORE either is
 # symmetrized, so this is not a Phase-A-vs-Phase-B discrepancy, it is
 # a genuine property of f_int itself); tangent_stiffness() symmetrizes
-# it (0.5*(K+K.T)) before returning, same as Phase A -- Newton-Raphson
+# it (0.5*(K+K.T)) before returning, same as the complex-step version -- Newton-Raphson
 # only needs a good-enough linearization to converge, not an exact
 # Hessian.
 # =====================================================================
@@ -1135,7 +1121,7 @@ class Shell4MITCCorotational(Element):
         elsewhere in this package -- see Tet10SolidTL's own
         internal_force() docstring on avoiding abs()/branching). The
         small-rotation truncation has no such singularity and matches
-        this class's already-declared MVP scope (roadmap Section 2.2)."""
+        this class's already-declared MVP scope (docs/shells.md Section 2.2)."""
         z = 0.0 * v[0]
         return np.array([
             [z, -v[2], v[1]],
@@ -1145,7 +1131,7 @@ class Shell4MITCCorotational(Element):
 
     @staticmethod
     def _exact_drill_rotation(theta):
-        """Wave 4 item 18 (docs/consolidated_future_roadmap.md): EXACT
+        """EXACT
         replacement for _skew()'s first-order-truncated drilling update,
         used by _local_relative_dofs()/_dof_local_jacobian_and_geo() as
         R_drill = R0 @ _exact_drill_rotation(theta_z_mean).
@@ -1163,8 +1149,7 @@ class Shell4MITCCorotational(Element):
         general 3-vector axis-angle machinery _skew()'s docstring
         correctly avoided for the bending block.
 
-        Verified (docs/consolidated_future_roadmap.md Wave 4 item 18
-        investigation): matches _skew()-based (I - skew([0,0,theta]))
+        Verified: matches _skew()-based (I - skew([0,0,theta]))
         to O(theta^2) as theta->0 (confirmed numerically: the SIGN
         convention here is Rz(-theta), i.e. this element's original
         first-order code was linearizing a CLOCKWISE (about local +z)
@@ -1189,7 +1174,7 @@ class Shell4MITCCorotational(Element):
         is never itself complex-stepped -- unlike _exact_drill_rotation()
         above, this does not need to stay holomorphic). Closed form,
         cross-checked against central finite-difference to ~1e-11
-        relative at theta=0.37 (see Wave 4 item 18 investigation)."""
+        relative at theta=0.37 (see the exact drilling update investigation)."""
         c = np.cos(theta)
         s = np.sin(theta)
         return np.array([
@@ -1199,9 +1184,8 @@ class Shell4MITCCorotational(Element):
         ])
 
     # =================================================================
-    # Wave 4 item 46, building block A (docs/shell_rotation_coupling_
-    # fix_roadmap.md): general exact SO(3) rigid-rotation extraction,
-    # generalizing item 18's exact single-axis drilling update
+    # building block A (see docs/shells.md): general exact SO(3) rigid-rotation extraction,
+    # generalizing the exact single-axis drilling update
     # (_exact_drill_rotation above) to a genuine 3-vector rotation. This
     # is intentionally scoped NARROWLY and is NOT yet wired into
     # _local_relative_dofs()/internal_force() -- see the "NOT wired in"
@@ -1210,7 +1194,7 @@ class Shell4MITCCorotational(Element):
     #
     # WHY THIS IS SCOPED THE WAY IT IS (re-derived 2026-09-08, before
     # writing any of this code, specifically to avoid reproducing a 9th
-    # dead end): the roadmap's own "building block A" description
+    # dead end): the original "building block A" description
     # sketched extracting ONE rigid rotation R_e and using it uniformly
     # to re-derive BOTH the membrane block (translation, via the same
     # position-rotate-and-subtract trick R_drill already uses) AND the
@@ -1224,8 +1208,8 @@ class Shell4MITCCorotational(Element):
     # direction)". R_drill's z-row is EXACTLY [0,0,1] identically (a
     # single-axis, local-z-only rotation cannot tilt out of plane by
     # construction) -- which is exactly why R_drill's position-based
-    # membrane extraction is safe (see item 20's own "found to require a
-    # genuinely novel construction" conclusion) and exactly why a
+    # membrane extraction is safe (the bending-block extraction study found it "requires a
+    # genuinely novel construction") and exactly why a
     # GENERAL 3-vector R_e (whose z-row is generally NOT [0,0,1] the
     # moment any real bending is present) is NOT safe to use the same
     # way for translation.
@@ -1236,7 +1220,7 @@ class Shell4MITCCorotational(Element):
     # exactly as `_local_relative_dofs()` already computes it, projected
     # onto the FIXED reference frame, untouched). This closes a
     # DIFFERENT, smaller, already-quantified gap than the membrane-
-    # bending coupling/foreshortening problem: item 18's own "Known
+    # bending coupling/foreshortening problem: the "Known
     # remaining limitation" note left the BENDING block's single-element
     # large-RIGID-TILT error explicitly unclosed after fixing drilling
     # ("out-of-plane tilt ~0.03% at 0.5 degrees,... ~1.8% at 30
@@ -1246,10 +1230,9 @@ class Shell4MITCCorotational(Element):
     # mean rotation. Using this block's `_mean_rigid_rotation()` to
     # extract theta_x_local/theta_y_local as an EXACT (any-magnitude,
     # not small-angle-truncated) relative rotation should close that
-    # residual to exact zero, the same way item 18 closed drilling's
+    # residual to exact zero, the same way the exact drilling update closed drilling's
     # analogous gap -- but does NOT, by itself, touch the membrane-
-    # bending coupling/foreshortening problem (items 19/21, dead ends
-    # 4-8), which needs building block B's additive Koiter-Sanders
+    # bending coupling/foreshortening problem (dead ends 4-8), which needs building block B's additive Koiter-Sanders
     # strain redesign, not this rotation-only extraction. Wiring even
     # this narrower rotation-only use into `_local_relative_dofs()` is
     # left for a follow-up validation pass (needs its own single-element
@@ -1267,7 +1250,7 @@ class Shell4MITCCorotational(Element):
         , see the comment above). Same exact Rodrigues construction, and
         the same norm-based (not naive) small-angle branch, that
         `beams3d.py`'s `Beam3DCorotational._axis_rotation()`/`_slerp()`
-        already use and validated (item 23) -- reused here rather than
+        already use and validated -- reused here rather than
         re-derived from scratch."""
         v = np.asarray(theta_vec, dtype=float)
         angle = float(np.linalg.norm(v))
@@ -1317,7 +1300,7 @@ class Shell4MITCCorotational(Element):
         Algorithm: Newton/fixed-point iteration on SO(3), NOT a naive
         arithmetic mean of rotation VECTORS (which is only correct to
         first order and is exactly the kind of small-rotation
-        approximation item 18 replaced for drilling). Initialize R_e
+        approximation the exact drilling update replaced). Initialize R_e
         from the arithmetic mean rotation vector (a good starting guess
         for nodes whose rotations are all close together, the normal
         case for one element), then repeatedly: (1) map every node's
@@ -1458,7 +1441,7 @@ class Shell4MITCCorotational(Element):
         # whenever the element's own local frame is not trivially
         # aligned with the global axes (a rotated-in-plane element, or
         # one whose corner winding gives e3_0 pointing along -global-z
-        # rather than +global-z). Every test mesh through Phase C used
+        # rather than +global-z). Every test mesh through the elastica benchmark used
         # axis-aligned CCW rectangle_mesh() strips, where R0 IS the
         # identity, so raw global components and this projection are
         # numerically identical there -- this generalization is a
@@ -1479,11 +1462,10 @@ class Shell4MITCCorotational(Element):
         return dof_local, e1, e2, e3
 
     def _local_relative_dofs_exact_rotation(self, elem_coords, u_elem):
-        """Wave 4 item 46, building block A, step 3 (docs/shell_rotation_
-        coupling_fix_roadmap.md Section 4.1): a NEW, OPT-IN dof_local
+        """A NEW, OPT-IN dof_local
         extraction that replaces `_local_relative_dofs()`'s rotational
         DOF treatment with `_mean_rigid_rotation()`'s exact SO(3)
-        extraction, closing item 18's own left-open "Known remaining
+        extraction, closing the left-open "Known remaining
         limitation" for the bending block's single-element large-rigid-
         TILT error (~1.8% at 30 degrees).
 
@@ -1501,7 +1483,7 @@ class Shell4MITCCorotational(Element):
            branching) -- exactly the kind of norm/branching singularity
            `_skew()`'s own docstring already flagged as the reason a
            general 3-vector exact update was ruled out for the
-           complex-step path when item 18 was scoped to drilling only.
+           complex-step path when the exact update was scoped to drilling only.
            Making `_exp_map` holomorphic is tractable (sin(theta)/theta
            and (1-cos(theta))/theta^2 are entire functions of
            theta^2=v.v, a polynomial in v, so they can be evaluated
@@ -1514,10 +1496,10 @@ class Shell4MITCCorotational(Element):
         2. Consequently, this method is REAL-valued only and is NOT
            safe to call from the existing complex-step-differentiated
            `internal_force()`. Using it there would require either (a)
-           the holomorphic redesign above (item 1's harder half still
+           the holomorphic redesign above (the harder half of the first problem still
            open), or (b) switching this element's tangent strategy to
            REAL central finite-difference, following the EXACT precedent
-           `Beam3DCorotational` (item 23) already established for a
+           `Beam3DCorotational` already established for a
            closely related reason -- not done here, left as the
            concrete next step.
 
@@ -1581,7 +1563,7 @@ class Shell4MITCCorotational(Element):
         return dof_local, e1, e2, e3
 
     # =================================================================
-    # Wave 4 item 46, BUILDING BLOCK B FINDING (2026-09-08,
+    # BUILDING BLOCK B FINDING (2026-09-08,
     # docs/shells.md Section 4.5, "Building block B"): before
     # implementing "re-derive strain as an additive Koiter-Sanders split
     # reusing K_local0" as originally sketched, derived (then confirmed
@@ -1613,12 +1595,11 @@ class Shell4MITCCorotational(Element):
     # standalone content, BEFORE spending effort building and
     # benchmarking it against the elastica case -- the same "derive,
     # confirm once analytically-then-numerically, don't guess"
-    # discipline item 19's own implicit-function-theorem argument used.
+    # discipline used in the implicit-function-theorem argument.
     # It does NOT mean building block B's underlying IDEA (an additive,
     # non-quadratic strain split, avoiding dead ends 4-8's indefinite
     # coupling FORCE) is wrong -- it means that idea's actual content,
-    # per Abaqus's own derivation (docs/shell_rotation_coupling_fix_
-    # roadmap.md Section 2.4), is inseparable from building block C:
+    # per Abaqus's own derivation (docs/shells.md), is inseparable from building block C:
     # Abaqus's own membrane strain (f_ab = t_a . dx/ds_b, a GRADIENT
     # measure) is evaluated using a TANGENT FRAME that is itself
     # committed, incrementally-updated state, re-derived EXACTLY every
@@ -1644,9 +1625,8 @@ class Shell4MITCCorotational(Element):
     # =================================================================
 
     # =================================================================
-    # Wave 4 item 46, BUILDING BLOCK C (2026-09-08, docs/shell_rotation_
-    # coupling_fix_roadmap.md Section 4.3): committed, incrementally-
-    # updated bending-membrane coupling, via this project's EXISTING
+    # BUILDING BLOCK C (2026-09-08, docs/shells.md): committed, incrementally-
+    # updated bending-membrane coupling, via this package's EXISTING
     # init_state()/commit_state()/commit_all_states() extension point
     # (solver.py, "Path-dependent element state" -- the same mechanism
     # Hex8PlasticJ2/Quad4PlasticJ2PlaneStress already use for plasticity
@@ -1697,12 +1677,11 @@ class Shell4MITCCorotational(Element):
     # commit's own contribution (a small quadratic strain increment,
     # since the rotation it's built from is small) is accumulated into
     # a per-Gauss-point ADD-ON STRESS RESULTANT, `N_add_history` -- the
-    # SAME (Nxx,Nyy,Nxy) DATA STRUCTURE Module 23's `iter_state`
+    # SAME (Nxx,Nyy,Nxy) DATA STRUCTURE the `iter_state`
     # mechanism already uses for a different (iteration-level, not
-    # step-level) purpose, confirming the "Open risk" section of this
-    # project's own roadmap doc ("that existing, validated
-    # infrastructure may be directly reusable for STEP-level
-    # commitment here").
+    # step-level) purpose, confirming that this existing, validated
+    # infrastructure is directly reusable for STEP-level
+    # commitment.
     #
     # HOLOMORPHY: unlike the reverted first attempt (and unlike building
     # block A's own `_local_relative_dofs_exact_rotation()`), this
@@ -1804,7 +1783,7 @@ class Shell4MITCCorotational(Element):
     # =================================================================
 
     def init_state(self):
-        """Wave 4 item 46, building block C: the "nothing committed
+        """The "nothing committed
         yet" baseline -- zero accumulated add-on stress, committed
         rotation equal to the u=0 reference. Passing this state into
         internal_force()/tangent_stiffness() at u_elem=0 gives exactly
@@ -1821,7 +1800,7 @@ class Shell4MITCCorotational(Element):
 
     def _bending_membrane_coupling_force_committed(self, elem_coords, dof_local, D,
                                                      theta, theta_committed, N_add_history):
-        """Wave 4 item 46, building block C: NOT VALIDATED AS A FIX --
+        """NOT VALIDATED AS A FIX --
         see the class-level "BUILDING BLOCK C" comment's "SECOND
         FINDING" paragraph before using or extending this. `wx_incr`/
         `wy_incr` are the SINCE-COMMIT increment of a quantity (`theta @
@@ -1924,7 +1903,7 @@ class Shell4MITCCorotational(Element):
         return f_local_add, N_add_trial
 
     def _internal_force_committed(self, elem_coords, u_elem, D, state, thickness=1.0, iter_state=None):
-        """Wave 4 item 46, building block C: the state-aware trial
+        """The state-aware trial
         internal force. dof_local (translation AND rotation) comes from
         the EXISTING, unmodified, single-shot `_local_relative_dofs()`
         -- see the class-level comment block above for why translation
@@ -1951,7 +1930,7 @@ class Shell4MITCCorotational(Element):
         return T.T @ (f_local_orig + f_local_committed)
 
     def commit_state(self, elem_coords, u_elem, mat, state, thickness=1.0, **kwargs):
-        """Wave 4 item 46, building block C: advance the committed
+        """Advance the committed
         baseline to u_elem -- call once per CONVERGED load step, never
         mid-Newton-iteration (same contract as Hex8PlasticJ2.commit_
         state() et al.). `mat` plays the same role `D` plays in
@@ -1979,12 +1958,12 @@ class Shell4MITCCorotational(Element):
         }
 
     def _bending_membrane_coupling_force(self, elem_coords, dof_local, D, N_add=None):
-        """Phase B (docs/shells.md Section 4.2, "closing
+        """Analytic tangent stage (docs/shells.md Section 4.2, "closing
         this residual... giving the bending block its own position-
         tracked extraction, symmetric to what the membrane block
         already has"): the ADDITIONAL local force, on top of
         K_local0 @ dof_local, from genuine bending-induced membrane
-        strain -- the physics this module's "Phase C finding" comment
+        strain -- the physics this module's "Elastica finding" comment
         documents as EXACTLY missing (K_local0's membrane and bending
         blocks are exactly decoupled; a bent cantilever predicts zero
         axial foreshortening at any rotation).
@@ -2011,7 +1990,7 @@ class Shell4MITCCorotational(Element):
         so the deviation -- and hence this entire coupling force -- is
         EXACTLY zero for a rigid tilt, matching K_local0's own bending
         block (already a near-exact null space for rigid tilt, see the
-        class-level comment's item 3(a)); only genuine WITHIN-ELEMENT
+        class-level comment's 3(a)); only genuine WITHIN-ELEMENT
         curvature (nodes disagreeing on betax/betay) triggers the
         coupling. This is what avoids reproducing dead ends 1-3's
         failure mode (a uniform frame update leaking a node's ABSOLUTE
@@ -2063,7 +2042,7 @@ class Shell4MITCCorotational(Element):
         dof_local -- safe for complex-step differentiation (see
         _coupling_tangent_local() below).
 
-        MIXED-FORMULATION MODE (Module 23, added to actually close the
+        MIXED-FORMULATION MODE (added to actually close the
         D5 gap this docstring's "REJECTED ALTERNATIVE, dead end 4"
         paragraph documents): pass N_add (the (n_gauss, 3) per-Gauss-
         point add-on stress resultant tracked in this element's
@@ -2147,7 +2126,7 @@ class Shell4MITCCorotational(Element):
         return f_local_add
 
     def _bending_membrane_coupling_force_for_tangent(self, elem_coords, dof_local, D, N_add):
-        """Module 23: NOT the real force (see _bending_membrane_coupling_
+        """NOT the real force (see _bending_membrane_coupling_
         force()'s own "IMPORTANT CORRECTION" note) -- a separate function
         used ONLY to build the mixed formulation's TANGENT, evaluating
         the bending-side stress as sigma_lin + N_add (N_add's OWN
@@ -2192,7 +2171,7 @@ class Shell4MITCCorotational(Element):
         return f_local_add
 
     def init_iter_state(self):
-        """Module 23: one (Nxx, Nyy, Nxy) add-on membrane-stress
+        """One (Nxx, Nyy, Nxy) add-on membrane-stress
         resultant per Gauss point, initialized to zero -- the mixed-
         formulation internal unknown this element's own coupling
         machinery uses when iter_state is provided. Opt-in only: a
@@ -2220,7 +2199,7 @@ class Shell4MITCCorotational(Element):
         return np.zeros((n_gauss, 3))
 
     def update_iter_state(self, elem_coords, u_elem, delta_u_elem, D, iter_state, **kwargs):
-        """Module 23: advance each Gauss point's N_add by ONLY its own
+        """Advance each Gauss point's N_add by ONLY its own
         share of a joint-linearized Newton step, using the REALIZED
         correction delta_u_elem this Newton iteration actually took --
         NOT by re-solving N_add exactly from the current displacement
@@ -2299,7 +2278,7 @@ class Shell4MITCCorotational(Element):
         return N_add_new
 
     def _coupling_schur_correction(self, elem_coords, dof_local, D):
-        """Module 23: K_dN @ K_NN^-1 @ K_Nd, the piece of the mixed
+        """K_dN @ K_NN^-1 @ K_Nd, the piece of the mixed
         formulation's condensed tangent that _coupling_tangent_local()
         ALONE (a PARTIAL derivative of the coupling force at FIXED
         N_add) does not include -- N_add's own governing equation
@@ -2380,7 +2359,7 @@ class Shell4MITCCorotational(Element):
 
         N_add=None (default mode): differentiates the REAL force,
         _bending_membrane_coupling_force() itself (deviation-from-mean
-        rotation, unchanged from before Module 23).
+        rotation, unchanged from before the iter_state mechanism).
 
         N_add provided (mixed mode): differentiates
         _bending_membrane_coupling_force_for_tangent() instead -- NOT
@@ -2416,15 +2395,14 @@ class Shell4MITCCorotational(Element):
         stays holomorphic in u_elem end to end -- required for
         _tangent_stiffness_complex_step()'s complex-step differentiation
         below, mirroring Tet10SolidTL.internal_force()'s own requirement
-        (see that method's docstring). iter_state (Module 23), when
+        (see that method's docstring). iter_state (the iter_state mechanism), when
         FESystem.init_iter_state() has been called, is this element's
         current (Nxx,Nyy,Nxy)-per-Gauss-point mixed-formulation internal
         state -- passed straight through to _bending_membrane_coupling_
         force() as N_add; None (the default) reproduces the original
         deviation-from-mean formula exactly.
 
-        state (Wave 4 item 46, building block C -- docs/shell_rotation_
-        coupling_fix_roadmap.md Section 4.3), when FESystem.init_state()
+        state (building block C -- docs/shells.md), when FESystem.init_state()
         has been called, is this element's last-COMMITTED frame/
         accumulated-local-dof state (see init_state()/commit_state()).
         None (the default -- the ONLY path every one of the 165+
@@ -2453,7 +2431,7 @@ class Shell4MITCCorotational(Element):
         return T.T @ f_local
 
     def _dof_local_jacobian_and_geo(self, elem_coords, u_elem, K_local0, D, iter_state=None):
-        """Returns (J, K_geo, R_drill, f_local): the two pieces Phase B's
+        """Returns (J, K_geo, R_drill, f_local): the two pieces the analytic tangent's
         analytic tangent_stiffness() needs beyond what internal_force()
         already computes. f_local here is the TOTAL local force
         (K_local0 @ dof_local PLUS _bending_membrane_coupling_force()),
@@ -2491,7 +2469,7 @@ class Shell4MITCCorotational(Element):
                 regardless of which one), hence J's (i, *) theta_z
                 columns are all identical 2-vectors, one per node i.
               d(R_drill)/d(theta_z_mean) = R0 @ _exact_drill_rotation_
-              deriv(theta_z_mean) (Wave 4 item 18 -- EXACT single-axis
+              deriv(theta_z_mean) (EXACT single-axis
               rotation, replacing the first-order truncation this
               docstring originally described; no longer a fixed
               constant, since the exact update is nonlinear in
@@ -2522,7 +2500,7 @@ class Shell4MITCCorotational(Element):
         Verified (tests/test_shell_corotational.py): T.T @ K_local0 @ J
         + K_geo matches _tangent_stiffness_complex_step()'s output to
         ~1e-16 relative at u=0, at random small/large states, at the
-        bending-dominated state that broke the rejected Phase A designs
+        bending-dominated state that broke the rejected designs
         (see "Design history"), and at rigid rotations up to 30 degrees
         -- i.e. this is a genuine closed-form derivative of
         internal_force(), not merely a plausible-looking approximation
@@ -2544,7 +2522,7 @@ class Shell4MITCCorotational(Element):
 
         theta_z_mean = theta[:, 2].mean()
         R_drill = R0 @ self._exact_drill_rotation(theta_z_mean)
-        # Wave 4 item 18: d(R_drill)/d(theta_z_mean) is no longer the
+        # d(R_drill)/d(theta_z_mean) is no longer the
         # CONSTANT -R0@S_z the first-order update gave -- it's now
         # R0 @ _exact_drill_rotation_deriv(theta_z_mean), evaluated at
         # the CURRENT state, since the exact rotation is nonlinear in
@@ -2600,7 +2578,7 @@ class Shell4MITCCorotational(Element):
 
     def _tangent_stiffness_committed_complex_step(self, elem_coords, u_elem, D, state, thickness=1.0,
                                                     iter_state=None, h=1e-20):
-        """Wave 4 item 46, building block C: complex-step tangent for
+        """Complex-step tangent for
         the state=... path -- NOT real finite-difference, unlike the
         reverted first attempt at this building block (see the class-
         level "BUILDING BLOCK C" comment's "FIRST ATTEMPT, REVISED IN
@@ -2632,12 +2610,12 @@ class Shell4MITCCorotational(Element):
 
     def tangent_stiffness(self, elem_coords, u_elem, D, thickness=1.0, iter_state=None, state=None,
                            method="complex_step", **kwargs):
-        """Analytic tangent (added as Phase B of
+        """Analytic tangent (added as the second stage of
         docs/shells.md Section 4.2, replacing complex-
         step differentiation as the default -- see
         _tangent_stiffness_complex_step() below, KEPT as the validation
         reference this was checked against, not dead code, exactly
-        Tet10SolidTL's own Phase A -> Phase B naming convention).
+        Tet10SolidTL's complex-step -> analytic naming convention).
 
         d(f_global)/du = T.T @ (K_local0 + K_add_local) @ J + K_geo, a
         standard material-plus-geometric split (Bathe, "Finite Element
@@ -2661,7 +2639,7 @@ class Shell4MITCCorotational(Element):
         exactly the gradient of a scalar energy in this construction, so
         the raw Jacobian is not exactly symmetric.
 
-        state (Wave 4 item 46, building block C), when not None,
+        state (building block C), when not None,
         bypasses this whole analytic derivation (which is hand-derived
         specifically for the state=None extraction's own force/Jacobian
         structure -- J, K_geo above are not what `_internal_force_
@@ -2670,8 +2648,7 @@ class Shell4MITCCorotational(Element):
         why complex-step (not real finite-difference) is safe and
         correct here.
 
-        method (only consulted when state is not None -- Wave 9 item 96,
-        docs/consolidated_future_roadmap.md, PyTorch side-by-side
+        method (only consulted when state is not None; PyTorch side-by-side
         extension): "complex_step" (default, UNCHANGED behavior) keeps
         using _tangent_stiffness_committed_complex_step() above.
         "autograd" (opt-in) routes through autograd_tangent.
@@ -2679,8 +2656,8 @@ class Shell4MITCCorotational(Element):
         an INDEPENDENTLY reimplemented (in torch) version of the exact
         same state=... force computation, differentiated via
         torch.autograd.grad rather than complex-step. NOTE: unlike
-        Tet4NeoHookean's method="autograd" (elements/nonlinear_solids.py,
-        Wave 9 item 93), this is NOT a truncation-error fix -- complex-
+        Tet4NeoHookean's method="autograd" (elements/nonlinear_solids.py),
+        this is NOT a truncation-error fix -- complex-
         step already recovers the exact derivative here (see that
         method's own docstring) -- so this option exists for the same
         "keep every valid implementation available, an independent
@@ -2719,7 +2696,7 @@ class Shell4MITCCorotational(Element):
 
     def _tangent_stiffness_complex_step(self, elem_coords, u_elem, D, thickness=1.0, h=1e-20, **kwargs):
         """Complex-step differentiation of internal_force() -- the
-        ORIGINAL tangent_stiffness() implementation (Phase A), RENAMED
+        ORIGINAL tangent_stiffness() implementation (the original), RENAMED
         (not removed) when the analytic tangent above replaced it as
         the default: kept as the independent validation reference the
         analytic tangent was checked against (tests/

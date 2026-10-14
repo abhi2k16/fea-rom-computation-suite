@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_singular_system.py -- Wave 0 item 6 (docs/consolidated_future_
-roadmap.md, source fem_implementation_lessons.md): validates
+test_singular_system.py -- validates
 FESystem._singular_regularized_solve() / the automatic fallback
 solve_static() now takes for a genuinely SINGULAR free-dof stiffness
 matrix, i.e. a pure-Neumann / floating-structure model with no
@@ -16,7 +15,7 @@ fixed dofs:
    left and right edges (net force AND net moment both exactly zero by
    construction -- see the docstring below for why). This is the
    textbook "free-floating body under self-equilibrated load" case the
-   roadmap item is about; solve_static() must not raise, and the
+   regularized solve is about; solve_static() must not raise, and the
    resulting displacement field must actually satisfy the ORIGINAL
    (unconstrained, full) K @ U = F to good accuracy -- proof that the
    regularization recovered the real physics rather than a numerically

@@ -1,52 +1,38 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-neural_operator.py -- Wave 13 item 117 (fea_engine/docs/consolidated_
-future_roadmap.md): an excitation-to-response operator for the
-NONLINEAR reduced dynamics, adapting FRINO's (Yang et al. 2025,
-"FE reduced-order model-informed neural operator for structural
-dynamic response prediction") architectural pattern -- train ONE
-operator mapping a reduced excitation time series directly to a
-predicted response trajectory, so a single trained model generalizes
-to excitation WAVEFORMS it never saw in training, unlike every
-existing `ReducedForceModel` in this package (each of which is an
-instantaneous state->force map, re-time-marched by
-`nonlinear_dynamics.integrate_newmark_surrogate` for every new load
-case).
+neural_operator.py -- an excitation-to-response operator for NONLINEAR reduced dynamics, following the architectural
+pattern of FRINO (Yang et al. 2025, "FE reduced-order model-informed neural operator for structural dynamic response
+prediction"): train ONE operator mapping a reduced excitation time series directly to a predicted response
+trajectory, so a single trained model generalises to excitation WAVEFORMS it never saw in training. Every
+`ReducedForceModel` in this package is instead an instantaneous state-to-force map, re-time-marched by
+`nonlinear_dynamics.integrate_newmark_surrogate` for every new load case.
 
-WHY THIS IS NOT A DIRECT PORT OF FRINO (see the roadmap's own "Key
-mismatches" note for Wave 13): FRINO's own physics loss (its Eqs.
-15-19) is a closed-form FREQUENCY-DOMAIN relation between excitation
-and modal response that only holds for a LINEAR, non-state-dependent
-M/C/K -- it has no nonlinear force term at all. This package's whole
-reason for existing is nonlinear structural response, so the physics
-loss here is instead a direct finite-difference residual of the real
-reduced equation of motion already used throughout this package
-(`nonlinear_dynamics.py`'s own mass-normalized convention,
-`qddot + C_r@qdot + Lambda*q + F_nl(q) = F_ext(t)`), evaluated on the
-predicted trajectory itself -- not a linear frequency-response
-formula. What IS kept from FRINO: (a) the excitation-in/response-out
-operator framing (as opposed to a state->force map needing external
-time-marching), and (b) the "Fourier layer" architecture itself
-(spectral convolution truncated to a fixed number of Fourier modes,
-FRINO's Eq. 12-15) as the operator's core building block -- a genuine,
-if compact, from-scratch FNO1d, not a stand-in dense network, since
-FRINO's own name and contribution centers specifically on that layer.
+HOW IT DIFFERS FROM FRINO. FRINO's physics loss is a closed-form FREQUENCY-DOMAIN relation between excitation and
+modal response that only holds for a LINEAR, non-state-dependent M/C/K; it has no nonlinear force term. This
+package targets nonlinear structural response, so the physics loss here is a direct finite-difference residual of
+the real reduced equation of motion used throughout the package (`nonlinear_dynamics.py`'s mass-normalised
+convention, `qddot + C_r@qdot + Lambda*q + F_nl(q) = F_ext(t)`), evaluated on the predicted trajectory itself. What
+is kept from FRINO: (a) the excitation-in/response-out operator framing (as opposed to a state-to-force map that
+needs external time-marching), and (b) the "Fourier layer" (spectral convolution truncated to a fixed number of
+Fourier modes) as the operator's core building block, implemented from scratch as an FNO1d rather than a stand-in
+dense network.
 
 Two independently useful pieces, split the same numpy-core/torch-
 optional way every other trainable component in this package is
 (`nonlinear_rom.NeuralSurrogate`, `differentiable_correction.py`):
 
-  - `reduced_eom_residual_trajectory()`: PURE NUMPY. Central-difference
-    residual of the real reduced EOM along a whole (n_steps, n_modes)
-    trajectory. Needs no torch at all, and is the actual physics-
-    fidelity claim this item makes -- tested directly against known
-    closed-form and `nonlinear_dynamics`-integrated references.
-  - `SpectralConv1d` / `FNO1dBlock` / `ExcitationResponseOperator`:
-    torch-optional (only instantiating `ExcitationResponseOperator`
-    needs torch; importing this module never does -- the same
-    `_HAS_TORCH`/`_require_torch()` convention `nonlinear_rom.py`
-    already establishes).
+    - `reduced_eom_residual_trajectory()`: PURE NUMPY. Central-difference residual of the real reduced EOM along a
+    whole (n_steps, n_modes) trajectory. Needs no torch; tested against known closed-form and
+    `nonlinear_dynamics`-integrated references.
+  - `SpectralConv1d` / `FNO1dBlock` / `ExcitationResponseOperator`: torch-optional (only instantiating
+    `ExcitationResponseOperator` needs torch; importing this module never does -- the `_HAS_TORCH`/
+    `_require_torch()` convention of `nonlinear_rom.py`).
+
+References (methods in this module are adopted from):
+  - L.-H. Yang, X.-L. Luo, Z.-B. Yang, C.-F. Nan, X.-F. Chen, Y. Sun (2025), "FE reduced-order model-informed neural operator for structural dynamic response prediction", Neural Networks 188:107437
+  - Z. Li et al. (2020), "Fourier neural operator for parametric partial differential equations", arXiv:2010.08895
+  - S. Dummer, D. Ye, C. Brune (2025), "RONOM: Reduced-Order Neural Operator Modeling", arXiv:2507.12814
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -164,7 +150,7 @@ if _HAS_TORCH:
         per mode, not a shared scalar), zero every higher frequency,
         then invert. This is exactly what makes an FNO layer
         discretization-aware in the FOURIER sense (though NOT the same
-        as RONOM's own discretization-ROBUSTNESS property, item 118 --
+        as RONOM's discretization-ROBUSTNESS property (see reduced_basis_operator.py) --
         here the truncation is still tied to a fixed number of time
         steps at both train and inference).
         """
@@ -426,7 +412,7 @@ if _HAS_TORCH:
         def predict(self, t, F_ext_trajectory):
             """t : (n_time,) ; F_ext_trajectory : (n_time, n_modes), a
             SINGLE excitation waveform, possibly one never seen during
-            training (the actual generalization claim this item
+            training (the generalization claim this operator
             exists to support) -> predicted (n_time, n_modes) q_nl."""
             if self.F_mean is None:
                 raise RuntimeError("ExcitationResponseOperator.predict() called before fit()")

@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_beam3d_corotational.py -- validation for Wave 4 item 23
-(docs/consolidated_future_roadmap.md): elements.Beam3DCorotational, the
+test_beam3d_corotational.py -- validation for : elements.Beam3DCorotational, the
 geometric-nonlinear (co-rotational) generalization of
 Beam3DEulerBernoulli, mirroring Beam2DCorotational's own 2-D
 scalar-chord-angle pattern extended to a full 3-D beam (axial +
@@ -51,7 +50,7 @@ structure for the analogous shell element:
    force (by construction); rigid rotation about ANY axis (not just the
    beam's own axis) gives force at the floating-point noise floor, a
    stronger result than Shell4MITCCorotational's own drilling-only
-   exactness (item 18) since this element's bending naturals ALSO use
+   exactness since this element's bending naturals ALSO use
    the frame-subtraction construction, not a raw/uncorrected DOF group.
 
 5. test_mass_matches_linear_beam -- mass() is delegated unmodified to

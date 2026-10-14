@@ -3,8 +3,7 @@
 """
 test_explicit_nonlinear_transient.py -- validates nonlinear_solver.
 solve_transient_explicit_nonlinear(), the nonlinear central-difference
-explicit time integrator (Wave 6 item 31, docs/consolidated_future_
-roadmap.md).
+explicit time integrator.
 
 Mirrors test_nonlinear_transient.py's own validation plan for the
 IMPLICIT nonlinear driver, adapted to the explicit method:

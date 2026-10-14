@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_augmented_lagrangian_contact.py -- Wave 3 item 15 (docs/
-consolidated_future_roadmap.md): validates nonlinear_solver.
+test_augmented_lagrangian_contact.py -- validates nonlinear_solver.
 solve_contact_augmented_lagrange_static(), the third contact-
 enforcement mechanism this package now offers alongside the pure
 penalty method (element.GapContactPenalty) and the exact bordered-KKT
@@ -21,8 +20,8 @@ Four lines of evidence:
    multiplier, and active/inactive history all match
    solve_contact_lagrange_static()'s EXACT answer to near machine
    precision, and the converged penetration is itself near machine-zero
-   -- the concrete "better conditioning than pure penalty" payoff this
-   item's roadmap entry names.
+   -- the concrete "better conditioning than pure penalty" payoff of the
+   augmented-Lagrangian method.
 2. test_al_beats_plain_penalty_at_matched_k_p -- at the SAME k_p, this
    driver's converged answer is dramatically closer to the exact
    Lagrange reaction than plain penalty's own converged contact force

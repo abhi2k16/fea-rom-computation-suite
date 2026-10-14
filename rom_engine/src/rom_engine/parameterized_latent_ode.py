@@ -1,38 +1,22 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-parameterized_latent_ode.py -- Wave 13 item 119 (fea_engine/docs/
-consolidated_future_roadmap.md): a parameterized latent-ODE model,
-`dz/dt = f(t, xi, z)`, trained across a SWEEP of a held-fixed-per-
-trajectory physical parameter `xi` (a load amplitude, a geometric or
-material property, ...) via curriculum learning -- adapted from the
-sibling `generative-prediction-of-laser-induced-dynamic-latent-space-
-representations/L-NeuralODE` repository's architecture, reviewed
-during Wave 13's own scoping pass.
+parameterized_latent_ode.py -- a parameterised latent-ODE model, `dz/dt = f(t, xi, z)`, trained across a SWEEP of a
+physical parameter `xi` held fixed per trajectory (a load amplitude, a geometric or material property, ...) by
+curriculum learning. The architecture follows latent neural ODE models of dynamic latent-space representations.
 
-WHY THIS IS NOT A DIRECT PORT (see the roadmap's own "Key mismatches"
-note for Wave 13): that repository's own `models.py::rk4()` has a real
-bug -- `k2`/`k3` are BOTH evaluated at the un-advanced state `y`
-instead of at the midpoint-corrected states a genuine 4-stage RK4
-step needs, silently degrading the integrator below its claimed
-4th-order accuracy. `rk4_step()`/`integrate_rk4()` below are a
-CORRECTLY implemented, independently-derived generic RK4 (validated
-directly against the exact order-of-convergence a real RK4 step must
-have -- see this module's own tests), not a transcription of the
-buggy version.
+WHY THE RK4 IS IMPLEMENTED HERE. A common pattern in latent-ODE code evaluates the RK4 stages `k2`/`k3` at the
+un-advanced state `y` instead of at the midpoint-corrected states a genuine 4-stage step needs, which silently
+degrades the integrator below 4th-order accuracy. `rk4_step()`/`integrate_rk4()` below are a CORRECT, generic RK4,
+validated against the order of convergence a real RK4 step must have (see this module's tests).
 
-Deliberately does NOT claim to satisfy `nonlinear_rom.
-ReducedForceModel`'s protocol: that protocol is an instantaneous
-state->force map, re-time-marched by `nonlinear_dynamics.
-integrate_newmark_surrogate` for every new load case. This class
-instead predicts a WHOLE TRAJECTORY directly from `(z0, xi)` in one
-forward pass, with no external M/C/K structure imposed on `f` at
-all -- a genuinely different, less physically-constrained trade-off,
-discussed honestly in this module's own docstring and in item 120's
-cross-configuration validation.
+Deliberately does NOT claim to satisfy the `nonlinear_rom.ReducedForceModel` protocol: that protocol is an
+instantaneous state-to-force map, re-time-marched by `nonlinear_dynamics.integrate_newmark_surrogate` for every new
+load case. This class instead predicts a WHOLE TRAJECTORY directly from `(z0, xi)` in one forward pass, with no
+external M/C/K structure imposed on `f`: a less physically constrained trade-off, discussed in
+`cross_configuration_validation.py`.
 
-Two independently useful pieces, split the same numpy-core/torch-
-optional way every other trainable component in this package is:
+Two independently useful pieces, split into a numpy core and a torch-optional part:
 
   - `rk4_step()`/`integrate_rk4()`/`CurriculumSchedule`: PURE NUMPY,
     unconditional. The corrected integrator and the curriculum-
@@ -41,6 +25,9 @@ optional way every other trainable component in this package is:
   - `ParameterizedODEFunc`/`ParameterizedLatentODE`: torch-optional
     (only instantiating `ParameterizedLatentODE` needs torch;
     importing this module never does).
+
+References (methods in this module are adopted from):
+  - R. T. Q. Chen, Y. Rubanova, J. Bettencourt, D. Duvenaud (2018), "Neural ordinary differential equations", Advances in Neural Information Processing Systems 31
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -128,7 +115,7 @@ class CurriculumSchedule:
     reference's own stabilization technique for a fully black-box
     `dz/dt=f(...)` (no M/C/K structure to exploit, unlike every other
     `TrainingStrategy` in this package, which all sample STATES rather
-    than extend TIME horizons -- see the roadmap's own item 119 row).
+    than extend TIME horizons -- see the module docstring).
 
     Reimplemented here as a small, independently-testable state
     machine (not a direct transcription of the reference's own

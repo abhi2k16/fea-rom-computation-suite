@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_mesh_transform.py -- Wave 11 item 106 (docs/consolidated_future_
-roadmap.md): validates MeshTransformation (mesh_transform.py) against
+test_mesh_transform.py -- validates MeshTransformation (mesh_transform.py) against
 the existing, already-validated per-element B_matrix()/jacobian() path
 it precomputes -- the physical gradients and JxW it produces must agree
 EXACTLY (to floating-point solve-vs-solve precision, not merely
@@ -10,8 +9,7 @@ EXACTLY (to floating-point solve-vs-solve precision, not merely
 already compute one element at a time, since it is the SAME formula,
 just batched.
 
-TestSimplexFamily (Wave 15 item 126, docs/consolidated_future_roadmap.
-md, source: TensorMesh's "Elements and Quadrature" documentation page)
+TestSimplexFamily
 extends this same validation to Tri3PlaneStress/Tri6PlaneStress/
 Tet4Solid3D/Tet10Solid3D -- previously explicitly OUT of scope (see
 this file's own now-updated test_tet4_and_tri3_now_in_scope_via_
@@ -91,7 +89,7 @@ def test_out_of_scope_element_raises_clear_error():
     # quadrature_family="tensor" (the default -- it never opted into
     # "simplex") -- still explicitly excluded, see mesh_transform.py's
     # own Scope docstring. (Tet4Solid3D/Tet10Solid3D/Tri3PlaneStress/
-    # Tri6PlaneStress used to be the example here before Wave 15 item
+    # Tri6PlaneStress used to be the example here before item
     # 126 brought the whole simplex family INTO scope -- see
     # TestSimplexFamily below for their own, now-passing coverage.)
     mesh = rectangle_mesh(Lx=1.0, Ly=1.0, nx=2, ny=2)
@@ -110,11 +108,11 @@ def test_unrecognized_quadrature_family_raises_clear_error():
 
 
 class TestSimplexFamily:
-    """Wave 15 item 126 (docs/consolidated_future_roadmap.md): the
+    """The
     generalization of MeshTransformation/vectorized_assembly beyond the
     tensor-product (Quad4/Quad8/Hex8/Hex20) family to Tri3PlaneStress/
-    Tri6PlaneStress/Tet4Solid3D/Tet10Solid3D, once item 125 gave the
-    simplex family a real order-parameterized quadrature rule to
+    Tri6PlaneStress/Tet4Solid3D/Tet10Solid3D, once the
+    simplex family got a real order-parameterized quadrature rule to
     qualify against _check_scope(). The decisive check throughout: the
     batched vectorized_assembly.tensorized_element_stiffness() result
     must match each element's own, already-validated per-element
@@ -187,7 +185,7 @@ class TestSimplexFamily:
     def test_explicit_higher_gauss_order_matches_elements_own_quad_order(self):
         """MeshTransformation's gauss_order= override must dispatch to
         the SAME tri_quadrature(order)/tet_quadrature(order) call the
-        element's own quad_order= parameter (item 125) would use --
+        element's own quad_order= parameter would use --
         confirming the two new item-125/126 surfaces are actually wired
         to the same underlying quadrature, not two independently-
         plausible-looking implementations that happen to agree only by

@@ -2,8 +2,7 @@
 # SPDX-License-Identifier: MIT
 """
 test_shell_corotational_reference_frame.py -- regression coverage for a
-real bug found during the geometric-nonlinear-shell roadmap's Phase D
-(wing-cantilever remesh): Shell4MITCCorotational's bending block
+real bug found during the wing-cantilever remesh: Shell4MITCCorotational's bending block
 ({w, theta_x, theta_y} per node) was used RAW in the GLOBAL frame,
 silently assuming the element's own reference local frame (e1_0, e2_0,
 e3_0) equals the global (x, y, z) frame exactly. Every test in
@@ -81,7 +80,7 @@ def test_u0_tangent_matches_linear_shell_any_orientation(elem_coords):
 
 @pytest.mark.parametrize("elem_coords", [CW_SQUARE, ROTATED_SQUARE])
 def test_analytic_tangent_matches_complex_step_non_identity_frame(elem_coords):
-    """Phase B's analytic-vs-complex-step cross-check, repeated at a
+    """The analytic-vs-complex-step cross-check, repeated at a
     non-identity reference frame -- confirms the fix's J/K_geo edits
     (not just internal_force()) stay consistent."""
     D, h = _material()

@@ -1,42 +1,26 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-mesh_transform.py -- Wave 11 item 106 (docs/consolidated_future_roadmap.md,
-source: tensormesh_analysis_report.md's "Elements and Quadrature" section,
-its `Transformation` object): a mesh-wide reference-element/Jacobian
-precompute cache.
+mesh_transform.py -- a mesh-wide reference-element/Jacobian precompute cache (`MeshTransformation`).
 
-Integration policy (tensormesh_comparative_analysis.md Sec.0, restated
-in the Wave 11 roadmap section): this module takes NO runtime dependency
-on the `tensormesh`/`torch-sla` packages -- `MeshTransformation` below is
-a native NumPy reimplementation of the *idea* TensorMesh's own
-`Transformation` object embodies (cache shape values/gradients/Jacobians
-once per mesh instead of recomputing them from closed-form expressions
-on every stiffness/internal-force call), using only this package's own
-existing quadrature/shape-function machinery (elements/base.py).
+`MeshTransformation` is a native NumPy implementation (no runtime dependency on the `tensormesh`/`torch-sla`
+packages) of the idea of caching shape values/gradients/Jacobians once per mesh instead of recomputing them from
+closed-form expressions on every stiffness/internal-force call, using this package's own quadrature and
+shape-function machinery (elements/base.py).
 
-Where this sits relative to Wave 0 item 4
-------------------------------------------
-Wave 0 item 4 (`Element._cached_shape_and_derivs()`) already removed the
-O(n*i_d**2) -> O(n*i_d) redundant recomputation the fem_implementation_
-lessons.md audit flagged, but that cache is keyed PER ELEMENT TYPE (one
-dict living on the formulation instance, shared by every element that
-instance is called on) -- it captures "the natural-coordinate shape
-values/gradients don't depend on which element we're looking at", but
-NOT "the physical gradients/JxW for a whole mesh can be computed once,
-outside any per-load-step or per-training-sample loop, and reused".
-`MeshTransformation` is that next level: given a Mesh + element
-formulation + Gauss order, it computes and stores the STACKED physical
-gradients and JxW for every element in the mesh in one pass, so that a
-training loop generating many snapshots against the SAME mesh (Wave 7's
-neural-surrogate strategy, Wave 10's dataset-diagnostics utility) never
-has to reconstitute per-Gauss-point Jacobians from scratch on every
-call. It is purely a DATA-LAYOUT addition -- nothing about
-`Element.stiffness()`/`FESystem.assemble_stiffness()`'s existing
-per-element loop is required to use it, and neither is changed by this
-module's existence. It is, however, the direct prerequisite for item
-107's tensorized assembly path (vectorized_assembly.py), which consumes
-a `MeshTransformation` instead of re-deriving Jacobians itself.
+Relation to the per-element-type cache
+--------------------------------------
+`Element._cached_shape_and_derivs()` already removes the O(n*i_d**2) -> O(n*i_d) redundant recomputation, but that
+cache is keyed PER ELEMENT TYPE (one dict on the formulation instance, shared by every element that instance is
+called on): it captures "the natural-coordinate shape values/gradients don't depend on which element we're looking
+at", but NOT "the physical gradients/JxW for a whole mesh can be computed once, outside any per-load-step or
+per-training-sample loop, and reused". `MeshTransformation` is that next level: given a Mesh + element
+formulation + Gauss order, it computes and stores the STACKED physical gradients and JxW for every element in one
+pass, so that a training loop generating many snapshots against the SAME mesh never has to rebuild per-Gauss-point
+Jacobians on every call. It is purely a DATA-LAYOUT addition: `Element.stiffness()`/
+`FESystem.assemble_stiffness()`'s per-element loop does not need it and is not changed by it. It is the
+prerequisite for the tensorized assembly path in vectorized_assembly.py, which consumes a `MeshTransformation`
+instead of re-deriving Jacobians itself.
 
 Scope -- read this before reaching for `MeshTransformation` on a new
 element type
@@ -56,24 +40,15 @@ families (`Element.quadrature_family`, elements/base.py):
       would need its own precompute layout matching its own,
       genuinely different, integration convention, not attempted here.
 
-  (b) `"simplex"` (Wave 15 items 125/126, docs/consolidated_future_
-      roadmap.md) -- `Tri3PlaneStress`, `Tri6PlaneStress`,
-      `Tet4Solid3D`, `Tet10Solid3D`, using `tri_quadrature(order)`/
-      `tet_quadrature(order)` (elements/base.py, the order-
-      parameterized generalization of the package's original fixed
-      `tri_quadrature_3pt()`/`tet_quadrature_4pt()` rules) instead of
-      `gauss_product()`. These elements DO override `stiffness()` --
-      that override is EXPECTED for this family (a triangle/tet isn't
-      mapped from a square/cube, so it was never going to share
-      `gauss_product()`), which is exactly why `quadrature_family` is a
-      class-level, deliberately-self-declared marker (the same "single
-      source of truth on the class" convention `GMSH_NODE_ORDER`
-      already established) rather than an implicit `is Element.
-      stiffness` identity check -- only the four classes above ever
-      set `quadrature_family = "simplex"`, each doing so as a direct,
-      reviewed statement "yes, my own stiffness()/mass() do exactly
-      the sum-over-{tri,tet}_quadrature(order)-points loop this module
-      assumes," not something inferred or guessed at.
+    (b) `"simplex"` -- `Tri3PlaneStress`, `Tri6PlaneStress`, `Tet4Solid3D`, `Tet10Solid3D`, using
+        `tri_quadrature(order)`/`tet_quadrature(order)` (elements/base.py, the order-parameterized generalization
+        of the original fixed `tri_quadrature_3pt()`/`tet_quadrature_4pt()` rules) instead of `gauss_product()`.
+        These elements DO override `stiffness()`; that is expected for this family (a triangle/tet is not mapped
+        from a square/cube, so it never shared `gauss_product()`), which is why `quadrature_family` is a
+        class-level, self-declared marker (the same "single source of truth on the class" convention as
+        `GMSH_NODE_ORDER`) rather than an implicit `is Element.stiffness` identity check. Only the four classes
+        above set `quadrature_family = "simplex"`, each as a reviewed statement that its own `stiffness()`/`mass()`
+        do exactly the sum-over-{tri,tet}_quadrature(order)-points loop this module assumes.
 
       One convention difference to get right at the Jacobian step:
       the simplex element classes' own stiffness()/mass() loops use
@@ -94,38 +69,23 @@ Both families additionally require:
       space) -- the same restriction `elements/base.py`'s own
       `jacobian()` (as opposed to `jacobian_measure()`) already carries.
 
-GPU/torch side-by-side path (Wave 9 addendum item 135, docs/
-consolidated_future_roadmap.md)
--------------------------------------------------------------------
-`MeshTransformation.__init__` accepts `backend="numpy"` (default,
-UNCHANGED behavior -- every attribute is a plain numpy array exactly as
-before this item) or `backend="torch"` (plus `device="cpu"`/`"cuda"`):
-the SAME batched `einsum` + batched linear solve this module has always
-done, re-expressed on `torch` tensors instead of numpy arrays, since
-this whole class was already tensorized/loop-free NumPy (Wave 11 item
-106) -- exactly the shape a GPU tensor op wants, and the one stage of
-the assembly pipeline Wave 9's original four items (93-96) never
-reached (they covered element-tangent autograd and linear-solve
-dispatch, not this geometry precompute feeding both). Mirrors
-`torch_sparse_solver.py`'s own `_HAS_TORCH`/`_require_torch()`
-fail-fast-at-construction convention exactly -- `backend="torch"` with
-torch unavailable raises immediately here, not partway through the
-precompute.
+GPU/torch side-by-side path
+---------------------------
+`MeshTransformation.__init__` accepts `backend="numpy"` (default; every attribute is a plain numpy array) or
+`backend="torch"` (plus `device="cpu"`/`"cuda"`): the same batched `einsum` + batched linear solve, re-expressed
+on `torch` tensors. This class is already tensorized/loop-free NumPy, which is the shape a GPU tensor op wants, and
+it is the geometry precompute that feeds both element-tangent autograd and assembly. It mirrors
+`torch_sparse_solver.py`'s `_HAS_TORCH`/`_require_torch()` fail-fast-at-construction convention:
+`backend="torch"` with torch unavailable raises immediately, not partway through the precompute.
 
-IMPORTANT: unlike `FESystem(backend="torch")` (which always returns a
-plain numpy `U` at the end, since `solve_static()` is a terminal
-operation), `backend="torch"` HERE keeps `shape_val`/`shape_grad`/
-`jac`/`JxW` as live `torch.Tensor`s on `device`, not converted back to
-numpy -- deliberately, so a downstream consumer (item 136,
-`vectorized_assembly.py`'s own torch path, not yet built) can keep the
-whole assembly pipeline GPU-resident instead of paying a copy-back
-this class doesn't need to force. This means the two backends are NOT
-drop-in interchangeable for every existing numpy-only consumer of this
-class's attributes: `interpolate_point_data()`/
-`interpolate_point_data_gradient()` below (Wave 16 item 128) are
-explicitly numpy-only and raise a clear `NotImplementedError` if handed
-a `backend="torch"` instance, rather than silently mishandling a torch
-tensor via `np.einsum`.
+IMPORTANT: unlike `FESystem(backend="torch")` (which returns a plain numpy `U`, since `solve_static()` is a
+terminal operation), `backend="torch"` HERE keeps `shape_val`/`shape_grad`/`jac`/`JxW` as live `torch.Tensor`s on
+`device`, not converted back to numpy, so a downstream consumer (`vectorized_assembly.py`'s torch path) can keep
+the whole assembly pipeline GPU-resident instead of paying a copy-back this class does not need to force. The two
+backends are therefore NOT drop-in interchangeable for every numpy-only consumer of this class's attributes:
+`interpolate_point_data()`/`interpolate_point_data_gradient()` below are numpy-only and raise a clear
+`NotImplementedError` if handed a `backend="torch"` instance, rather than silently mishandling a torch tensor via
+`np.einsum`.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -159,7 +119,7 @@ def _check_scope(formulation):
     if family == "tensor":
         if type(formulation).stiffness is not Element.stiffness:
             raise ValueError(
-                f"MeshTransformation (Wave 11 item 106) does not support "
+                f"MeshTransformation does not support "
                 f"{type(formulation).__name__}: it overrides Element.stiffness() "
                 f"with its own quadrature/integration scheme (selective "
                 f"reduced integration, or a closed-form formula) while still "
@@ -260,19 +220,19 @@ class MeshTransformation:
         The Jacobian matrix itself at every Gauss point of every
         element (kept, not just its determinant, since a caller may
         want it directly -- e.g. for a future strain/stress-recovery
-        feature; item 107 only consumes `shape_grad`/`JxW`).
+        feature; the vectorized assembly only consumes `shape_grad`/`JxW`).
     JxW : (n_elements, n_gauss) ndarray or torch.Tensor
         `det(jac) * gauss_weight` -- ready to contract directly against
         a `B^T D B` integrand, exactly the quantity `Element.stiffness()`'s
         own Gauss loop multiplies by (`detJ * w`) at each point.
     connectivity : (n_elements, n_basis) int ndarray
         Copy of the connectivity this was built from (so a caller
-        building item 107's global scatter doesn't also need to carry
+        building the global scatter doesn't also need to carry
         the Mesh object around separately). Always a plain numpy array,
         regardless of `backend` -- indices, not floating-point compute.
     backend, device : str
         Copies of the constructor arguments, for a downstream consumer
-        (item 136) to introspect without having to be told separately.
+ to introspect without having to be told separately.
     n_elements, n_gauss, n_basis, dim : int
         Convenience shape accessors.
     """
@@ -375,14 +335,13 @@ class MeshTransformation:
             self.JxW = detJ_for_JxW * np.asarray(wts)[None, :]
         else:
             # ---------------------------------------------------------
-            # backend="torch" -- Wave 9 addendum item 135. Identical
+            # backend="torch" -- . Identical
             # math to the numpy path above (same einsum contraction
             # string, same signed-vs-abs(detJ) family distinction, same
             # explicit-broadcast-before-solve fix), re-expressed on
             # torch tensors. Kept as live tensors on `device` rather
             # than converted back to numpy -- see this module's own
-            # docstring for why (item 136, vectorized_assembly.py's own
-            # torch path, consumes these directly).
+            # docstring for why.
             # ---------------------------------------------------------
             import torch
             dN_nat_t = torch.as_tensor(dN_nat_stack, dtype=torch.float64, device=device)
@@ -427,8 +386,7 @@ class MeshTransformation:
 
 
 # ---------------------------------------------------------------------
-# Wave 16 item 128 (docs/consolidated_future_roadmap.md, source:
-# TensorMesh's `Forms` documentation page) -- quadrature-point field
+# -- quadrature-point field
 # interpolation.
 #
 # TensorMesh's Forms page lets any `point_data` key be named directly as
@@ -438,21 +396,20 @@ class MeshTransformation:
 # available for its physical-space gradient, with zero extra plumbing
 # from the user. Adopting that automatic-dispatch-by-parameter-name
 # mechanism wholesale is exactly the generic-weak-form-assembler
-# architecture change Wave 14/15/16 have each independently declined
-# (see this module's own Wave 16 roadmap entry) -- but the underlying
+# architecture change that has been declined here -- but the underlying
 # NEED it serves (get a nodal field's value, and its gradient, at every
 # quadrature point of every element, without hand-rolling that
 # interpolation loop again for every new coefficient) is genuinely
 # useful on its own and does not require that architecture at all: this
 # MeshTransformation instance ALREADY has `shape_val` (per-Gauss-point
 # basis values, shared across elements) and `shape_grad` (per-element,
-# per-Gauss-point PHYSICAL basis gradients) cached from item 106's own
+# per-Gauss-point PHYSICAL basis gradients) cached by the
 # precompute pass. Interpolating a `point_data` field to quadrature
 # points is nothing more than contracting that already-cached basis
 # data against the field's own per-element nodal values -- the two
 # functions below do exactly that and nothing else.
 #
-# Wave 14 item 121 gave `Mesh`/`MultiBlockMesh` the `point_data`
+# `Mesh`/`MultiBlockMesh` provide the `point_data`
 # CONTAINER half of TensorMesh's idea (`mesh.point_data[name]`, an
 # array indexed by GLOBAL node id, `mesh.point_data[name][i]`
 # corresponding to `mesh.nodes[i]`). These two functions are the other
@@ -466,23 +423,23 @@ class MeshTransformation:
 # ---------------------------------------------------------------------
 
 def _require_numpy_backend(mesh_transform, caller_name):
-    """Wave 9 addendum item 135 guard: interpolate_point_data()/
-    interpolate_point_data_gradient() (Wave 16 item 128) are explicitly
+    """guard: interpolate_point_data()/
+    interpolate_point_data_gradient() are explicitly
     numpy-only consumers of a MeshTransformation's shape_val/shape_grad
     -- they were written and validated before backend="torch" existed,
     and np.einsum() would either raise an opaque error or silently
     misbehave (e.g. via numpy's __array__ coercion) if handed a live
     torch.Tensor. Fail loudly and specifically instead, the same
-    principle item 131's own backend="torch" NotImplementedError in
-    fix_dofs() already established for this project."""
+    principle the backend="torch" NotImplementedError in
+    fix_dofs() already follows."""
     backend = getattr(mesh_transform, "backend", "numpy")
     if backend != "numpy":
         raise NotImplementedError(
             f"{caller_name}: mesh_transform was built with "
             f"backend={backend!r}, but this function only supports "
             f"backend='numpy' MeshTransformation instances -- porting "
-            f"the Wave 16 item 128 interpolation helpers to torch was "
-            f"explicitly out of scope for Wave 9 addendum item 135 (see "
+            f"the interpolation helpers to torch was "
+            f"explicitly out of scope for (see "
             f"mesh_transform.py's own module docstring). Build a "
             f"second, backend='numpy' MeshTransformation for this call "
             f"if you need both.")
@@ -498,7 +455,7 @@ def interpolate_point_data(mesh_transform, field):
     field : (n_nodes_total, ...) array-like
         A field indexed by GLOBAL node id -- the same convention
         `Mesh.point_data[name]`/`MultiBlockMesh.point_data[name]`
-        already use (Wave 14 item 121): `field[i]` is the value at
+        already use: `field[i]` is the value at
         `mesh.nodes[i]`, with any number of trailing "field shape"
         dimensions (`()` for a scalar field, `(dim,)` for a vector
         field, etc.) -- exactly TensorMesh's own "per-node, with one
@@ -532,7 +489,7 @@ def interpolate_point_data(mesh_transform, field):
             f"index {int(conn.max())} -- field must be indexed by the "
             f"SAME global node ids as the mesh this MeshTransformation "
             f"was built from (the Mesh.point_data[...] convention, "
-            f"Wave 14 item 121).")
+            f").")
     nodal = field[conn]   # (n_elements, n_basis, ...)
     # value[e,q,...] = sum_n shape_val[q,n] * nodal[e,n,...]
     return np.einsum('qn,en...->eq...', mesh_transform.shape_val, nodal)
@@ -551,7 +508,7 @@ def interpolate_point_data_gradient(mesh_transform, field):
     gradient direction).
 
     Uses `mesh_transform.shape_grad` -- the ALREADY-cached PHYSICAL
-    (post-Jacobian, `J^-T`-chain-rule-applied) gradients item 106's own
+    (post-Jacobian, `J^-T`-chain-rule-applied) gradients the
     precompute pass computed -- so, exactly like TensorMesh's own
     automatic `gradkappa`, no extra Jacobian work happens here at all;
     this is pure contraction against data already sitting in memory.
@@ -566,7 +523,7 @@ def interpolate_point_data_gradient(mesh_transform, field):
             f"node index {int(conn.max())} -- field must be indexed by "
             f"the SAME global node ids as the mesh this MeshTransformation "
             f"was built from (the Mesh.point_data[...] convention, "
-            f"Wave 14 item 121).")
+            f").")
     nodal = field[conn]   # (n_elements, n_basis, ...)
     # grad[e,q,...,d] = sum_n shape_grad[e,q,n,d] * nodal[e,n,...]
     return np.einsum('eqnd,en...->eq...d', mesh_transform.shape_grad, nodal)

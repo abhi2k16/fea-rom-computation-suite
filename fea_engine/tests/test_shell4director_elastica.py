@@ -1,9 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_shell4director_elastica.py -- Wave 4 item 47, Phase 3, roadmap doc
-steps 9-10 (docs/director_based_shell_element_roadmap.md Section 5):
-the actual PAYOFF check for the whole director-based-element effort --
+test_shell4director_elastica.py -- the actual PAYOFF check for the whole director-based-element effort --
 does `Shell4Director` recover the elastica's real, accumulated-rotation
 membrane-bending coupling (axial foreshortening) that every attempt on
 the flat-shell architecture (`Shell4MITCCorotational`, 8 "Design
@@ -23,8 +21,7 @@ elastica test's nx=20) and few load steps -- a full mesh-converged
 elastica benchmark at this file's tangent-evaluation cost would take
 many minutes to hours, well beyond what this test suite can afford.
 This is an explicit, documented scope boundary (an analytic B-matrix,
-avoiding the FD cost entirely, is future work -- see the roadmap doc's
-own Section 4 "Tangent strategy" discussion), not a hidden shortcut:
+avoiding the FD cost entirely, is future work -- see docs/shells.md, "Tangent strategy"), not a hidden shortcut:
 what IS checked below (a clear, monotonic CONVERGENCE TREND toward the
 elastica as elements are added, going from ~49% to ~94% of the true
 foreshortening between 1 and 3 elements) is enough to demonstrate the

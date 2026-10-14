@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-beam3d_space_frame_demo.py -- Module 18 (general-purpose extensions
-roadmap Phase 3): Beam3DEulerBernoulli demo.
+beam3d_space_frame_demo.py -- Beam3DEulerBernoulli demo.
 
 Builds a small L-shaped space frame (one member along global X, one
 along global Z, rigid joint between them), fixes the base, applies a

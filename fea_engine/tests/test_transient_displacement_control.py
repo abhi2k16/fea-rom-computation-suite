@@ -3,9 +3,7 @@
 """
 test_transient_displacement_control.py -- validates nonlinear_solver.
 solve_transient_displacement_control(), the dynamic (Newmark-implicit)
-displacement-control driver (Wave 6 item 34, docs/consolidated_future_
-roadmap.md: "Arc-length / displacement-control transient variant
-(dynamic snap-through)").
+displacement-control driver").
 
 Fixture: the same two-bar (von Mises) truss test_nonlinear.py's own
 "CHECK 3" uses to validate the STATIC displacement-control driver

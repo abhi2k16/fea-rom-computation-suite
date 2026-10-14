@@ -1,18 +1,9 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-mesh_io.py -- Wave 14 item 122 (docs/consolidated_future_roadmap.md),
-scoped directly against TensorMesh's own Meshes documentation page
-(https://docs.tensor-mesh.com/user_guide/meshes.html) and the earlier
-question this project answered about importing an Abaqus/ANSYS/other
-FE mesh (as opposed to CAD geometry, which geometry.gmsh_engine's own
-`generate_from_step()` already handles via STEP/IGES/BREP): a thin
-wrapper around the `meshio` package, opening up the ~30 mesh FILE
-formats it understands (Abaqus INP, Nastran BDF, VTK/VTU, Gmsh MSH,
-UNV, MED, ...) as real mesh-file imports/exports for this package,
-matching this exact mechanism `geometry_meshing_alternatives_research.md`
-already recommended (its own §4, "the practical adapter") but never
-implemented.
+mesh_io.py -- a thin wrapper around the `meshio` package, opening up the ~30 mesh FILE formats it understands
+(Abaqus INP, Nastran BDF, VTK/VTU, Gmsh MSH, UNV, MED, ...) as mesh imports/exports for this package. It is meant
+for importing an Abaqus/ANSYS/other FE mesh, as opposed to CAD geometry.
 
 Requires the `meshio` package (`pip install meshio`, or
 `pip install fea_engine[meshio]`) -- NOT a dependency of the rest of
@@ -65,16 +56,12 @@ format/element-type combination before trusting it, the same safety
 net every other node-ordering claim in this package rests on ultimately
 being checkable against.
 
-Field-data round-tripping (item 121): `mesh_to_meshio()`/`write_mesh()`
-DO carry over `.point_data`/`.cell_data` when saving a `Mesh`/
-`MultiBlockMesh` that has any registered (via `register_point_data()`/
-`register_element_data()`). `read_mesh()`/`mesh_from_meshio()`
-deliberately do NOT populate `.point_data`/`.cell_data` on the mesh
-they return -- reading a file's own field data back onto the (possibly
-node-renumbered, see the orphan-node cleanup below) returned mesh is
-real, scoped-out future work, not silently half-done; attach whatever
-fields you need via `register_point_data()`/`register_element_data()`
-after reading.
+Field-data round-tripping: `mesh_to_meshio()`/`write_mesh()` carry over `.point_data`/`.cell_data` when saving a
+`Mesh`/`MultiBlockMesh` that has any registered (via `register_point_data()`/`register_element_data()`).
+`read_mesh()`/`mesh_from_meshio()` do NOT populate `.point_data`/`.cell_data` on the mesh they return (reading a
+file's field data back onto the possibly node-renumbered returned mesh, see the orphan-node cleanup below, is not
+implemented); attach whatever fields you need via `register_point_data()`/`register_element_data()` after
+reading.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -220,7 +207,7 @@ def read_mesh(filepath, dim, **kwargs):
 def mesh_to_meshio(mesh):
     """Convert a `Mesh` or `MultiBlockMesh` into an in-memory
     `meshio.Mesh`, carrying over `.point_data` and, per-block,
-    `.cell_data` if the mesh has any registered (Wave 14 item 121's
+    `.cell_data` if the mesh has any registered (
     register_point_data()/register_element_data()) -- the reverse
     direction of mesh_from_meshio()."""
     _require_meshio()

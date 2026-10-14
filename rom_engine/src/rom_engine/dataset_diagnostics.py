@@ -1,14 +1,9 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-dataset_diagnostics.py -- Wave 10 item 104 (fea_engine/docs/
-consolidated_future_roadmap.md, source: Saverio, Bucci, Farro, Content
-& Sipp, "An end-to-end PyTorch interface for differentiable PDE
-solvers: A RANS model-correction study," Data-Centric Engineering
-7:e37, 2026, Appendix B). A small, standalone, low-risk utility: given
-a design-of-experiments parameter table (e.g. `rom_engine.sampling.
-optimal_lhs()`'s own output, rescaled to physical units) and the
-resulting converged-case outputs, report
+dataset_diagnostics.py -- a small, standalone utility: given a design-of-experiments parameter table (for example
+`rom_engine.sampling.optimal_lhs()`'s output, rescaled to physical units) and the resulting converged-case outputs,
+report
 
   - per-parameter coverage (histograms + a "has this range got a gap"
     flag) -- `parameter_coverage_report()`
@@ -19,22 +14,19 @@ resulting converged-case outputs, report
     input parameters actually drive output variance -- `GPSurrogate`
     + `sobol_indices()`
 
-Lives in rom_engine (not fea_engine) because a ROM/surrogate TRAINING
-dataset -- exactly what `nonlinear_rom.py`'s `TrainingStrategy`
-subclasses and `sampling.optimal_lhs()` already build -- is this
-item's natural, concrete use case (the paper's own framing: "useful the
-moment any future parameter-sweep training dataset is generated"), not
-an FEA-specific concern; nothing here imports fea_engine or is coupled
-to any particular solver, matching this package's own stated design
-principle (rom_engine never takes fea_engine as a library dependency,
-only as a test/example dependency).
+It lives in rom_engine (not fea_engine) because a ROM/surrogate TRAINING dataset, such as those built by
+`nonlinear_rom.py`'s `TrainingStrategy` subclasses and `sampling.optimal_lhs()`, is its natural use case, not an
+FEA-specific concern. Nothing here imports fea_engine or is coupled to any particular solver (rom_engine never
+takes fea_engine as a library dependency).
 
 Independent of torch entirely -- no optional-dependency gating needed
 here; every function is plain NumPy/SciPy, fully testable in any
 environment.
 
-Not blocking anything else in this wave -- a "nice to have" the next
-time a training dataset is built, per the roadmap item's own framing.
+A convenience for whenever a training dataset is built; nothing else depends on it.
+
+References (methods in this module are adopted from):
+  - A. Saltelli et al. (2010), "Variance based sensitivity analysis of model output. Design and estimator for the total sensitivity index", Comput. Phys. Commun. 181(2); M. J. W. Jansen (1999), "Analysis of variance designs for model output", Comput. Phys. Commun. 117
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

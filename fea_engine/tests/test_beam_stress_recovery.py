@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_beam_stress_recovery.py -- Wave 12 item 115 (docs/consolidated_
-future_roadmap.md, ICE-ROM/GAP_ANALYSIS.md gap #4): validates
+test_beam_stress_recovery.py -- validates
 Beam2DCorotational.recover_stress(), the fiber-level axial-stress
 recovery this element family was missing (internal_force() only ever
 returned nodal forces).

@@ -1,9 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_torch_shell_autograd_tangent.py -- validation for item 96 of the
-PyTorch side-by-side extension (docs/consolidated_future_roadmap.md,
-"Wave 9"): the opt-in method="autograd" path wired into
+test_torch_shell_autograd_tangent.py -- validation of the opt-in method="autograd" path wired into
 Shell4MITCCorotational.tangent_stiffness()'s state=... branch, which
 routes through autograd_tangent.shell4_mitc_corotational_committed_
 tangent_autograd() instead of the default _tangent_stiffness_committed_

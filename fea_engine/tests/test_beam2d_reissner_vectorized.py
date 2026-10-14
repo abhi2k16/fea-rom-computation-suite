@@ -1,19 +1,18 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_beam2d_reissner_vectorized.py -- validates Wave 17 item 147 (docs/
-consolidated_future_roadmap.md): the batched (all-elements-at-once
+test_beam2d_reissner_vectorized.py -- the batched (all-elements-at-once
 NumPy) internal_force()/tangent_stiffness() path for Beam2DReissner,
-built because this item's own runtime benchmark found a single
+built because this runtime benchmark found a single
 representative forced-vibration run (80 elements, dt=T_forcing/100, 80
 forcing periods, through nonlinear_solver.solve_nonlinear_transient())
-took ~4.5 minutes -- over this item's own "a few minutes" threshold --
+took ~4.5 minutes -- over this "a few minutes" threshold --
 while a candidate escape hatch (solve_transient_explicit_nonlinear())
 was measured and found WORSE (~14 min, its much smaller CFL-limited
-timestep costs more than it saves by skipping the Newton loop). See the
-roadmap's item 147 row for the full numbers.
+timestep costs more than it saves by skipping the Newton loop). Full numbers are in the module docstring of
+beam2d_reissner_vectorized.py.
 
-Two checks, matching this item's own stated validation criterion
+Two checks, matching this stated validation criterion
 ("vectorized path matches the looped element to 1e-12"):
 
 (a) Element level: internal_force_batched()/tangent_stiffness_batched()
@@ -103,7 +102,7 @@ def test_check_b_full_transient_trajectory_matches_looped_to_1e12_class():
     E, G, rho, kappa_s = 12000.0, 5000.0, 1.0e-6, 1.0
     mat = (E, G, A, I, kappa_s)
     rhoA = rho * A
-    n_elem = 20   # smaller than the item's own 80-element benchmark mesh,
+    n_elem = 20   # smaller than the 80-element benchmark mesh,
                   # purely to keep this regression test's own runtime small
                   # -- the algebra being checked doesn't depend on mesh size
 

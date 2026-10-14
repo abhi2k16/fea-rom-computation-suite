@@ -26,6 +26,10 @@ substructures that meet a joint, built on `cms.py`.
 
 Scope: dense linear algebra, linear substructures (the joint nonlinearity is added by the caller), and
 substructures with non-singular K (restrain rigid-body motion first).
+
+References (methods in this module are adopted from):
+  - D. J. Rixen (2004), "A dual Craig-Bampton method for dynamic substructuring", J. Comput. Appl. Math. 168
+  - J. Yuan, F. El-Haddad, L. Salles, C. Wong (2019), "Numerical assessment of reduced order modeling techniques for dynamic analysis of jointed structures with contact nonlinearities"
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 from dataclasses import dataclass

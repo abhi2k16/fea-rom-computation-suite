@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_shell.py -- validation for Module 20 (general-purpose extensions
-roadmap Phase 7): material.D_shell()/shell_rho_matrix() and
+test_shell.py -- validation for  material.D_shell()/shell_rho_matrix() and
 elements.Shell4MITC (MITC4 general shell element).
 
 Five lines of evidence, in increasing order of scope:
@@ -39,7 +38,7 @@ Five lines of evidence, in increasing order of scope:
    Quad4MindlinPlate's betax/betay columns when scattering into
    Shell4MITC's local matrix).
 3. test_flat_plate_limit_converges_to_quad4_mindlin_plate -- the
-   roadmap's headline validation requirement: a Shell4MITC mesh with
+   headline validation requirement: a Shell4MITC mesh with
    ZERO curvature should reproduce Quad4MindlinPlate's bending results.
    Found, empirically, that MITC4's assumed-strain shear treatment and
    Quad4MindlinPlate's SRI shear treatment are NOT algebraically
@@ -62,8 +61,7 @@ Five lines of evidence, in increasing order of scope:
    when ADJACENT elements have genuinely different orientations, not
    just correct in isolation (test 1) or under a single rigid rotation
    of one element (test 2).
-5. test_curved_shell_vs_hex8solid3d_convergence -- the roadmap's
-   curved-benchmark validation plan, scoped to a tractable geometry: a
+5. test_curved_shell_vs_hex8solid3d_convergence -- the    curved-benchmark validation plan, scoped to a tractable geometry: a
    shallow cylindrical-arc cantilever strip (radius R, arc angle
    theta_max, straight width direction), meshed independently as (a) a
    Shell4MITC mid-surface mesh and (b) a fully 3-D Hex8Solid3D mesh of

@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_linear_buckling.py -- validation for Module 19 (general-purpose
-extensions roadmap Phase 4): geometric_stiffness() on
+test_linear_buckling.py -- validation for  geometric_stiffness() on
 Beam2DEulerBernoulli/Beam3DEulerBernoulli/TrussTL2D, plus
 FESystem.assemble_geometric_stiffness()/solve_linear_buckling().
 

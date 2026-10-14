@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-euler_column_buckling_plot.py -- Phase 4 (general-purpose extensions
-roadmap) worked example: visual verification companion to
+euler_column_buckling_plot.py -- worked example: visual verification companion to
 euler_column_buckling_demo.py.
 
 Two panels, following this project's established plotting convention

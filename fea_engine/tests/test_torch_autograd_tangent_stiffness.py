@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_torch_autograd_tangent_stiffness.py -- validation for item 93 of the
-PyTorch side-by-side extension (docs/consolidated_future_roadmap.md): the
+test_torch_autograd_tangent_stiffness.py -- validation of the
 opt-in method="autograd" path wired into Tet4NeoHookean.tangent_stiffness()
 (elements/nonlinear_solids.py), which routes through the already-validated
 autograd_tangent.tet4_neo_hookean_tangent_autograd() instead of the default
@@ -52,8 +51,8 @@ for real (`pytest tests/test_torch_autograd_tangent_stiffness.py -v`),
 alongside test_torch_transient_backend.py, test_torch_shell_autograd_
 tangent.py, test_autograd_tangent.py, and test_torch_sparse_solver.py in
 the same run -- 30 passed, 1 benign warning, 0 failed. This is the same
-sandbox-then-user-machine validation path items 2/3 (autograd_tangent.py/
-torch_sparse_solver.py) already established.
+sandbox-then-user-machine validation path already established for autograd_tangent.py and
+torch_sparse_solver.py.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

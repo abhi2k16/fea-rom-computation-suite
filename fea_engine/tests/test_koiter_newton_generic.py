@@ -1,14 +1,13 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_koiter_newton_generic.py -- validation for Module 24:
+test_koiter_newton_generic.py -- validation for
 nonlinear_solver.solve_nonlinear_koiter_newton_generic() (the GENERIC,
 m>=1 Koiter-Newton continuation driver that lifts
 solve_nonlinear_koiter_newton()'s disclosed m=0 scope reduction).
 
 Three independent lines of evidence, matching the "hand-derivable
-benchmark, then regression, then end-to-end robustness" plan in
-docs/general_purpose_extensions_roadmap.md Section 11:
+benchmark, then regression, then end-to-end robustness" plan:
 
 1. test_generic_m0_fallback_matches_existing_driver -- with
    enable_mode_interaction=False, the generic driver reproduces the

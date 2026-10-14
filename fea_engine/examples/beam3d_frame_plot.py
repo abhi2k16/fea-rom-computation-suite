@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-beam3d_frame_plot.py -- Phase 3 (general-purpose extensions roadmap)
-worked example: visual verification companion to
+beam3d_frame_plot.py -- worked example: visual verification companion to
 beam3d_space_frame_demo.py.
 
 Draws the same 2-member L-shaped space frame in 3-D, undeformed

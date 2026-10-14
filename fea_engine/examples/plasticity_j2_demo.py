@@ -1,14 +1,12 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-plasticity_j2_demo.py -- Phase 6 (general-purpose extensions roadmap)
-worked example: Hex8PlasticJ2 (small-strain J2 plasticity, continuum).
+plasticity_j2_demo.py -- worked example: Hex8PlasticJ2 (small-strain J2 plasticity, continuum).
 
 Loads a single Hex8PlasticJ2 element into a genuinely UNIAXIAL STRESS
 state (axial load, lateral faces traction-free), past yield, then
 unloads -- and checks the result against PlasticMaterial1D's already-
-validated 1-D closed form at every step: this is the roadmap's
-headline validation requirement ("uniaxial stress path should match
+validated 1-D closed form at every step: this is the headline validation requirement ("uniaxial stress path should match
 PlasticMaterial1D's already-validated 1-D result exactly").
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"

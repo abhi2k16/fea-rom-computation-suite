@@ -2,8 +2,7 @@
 # SPDX-License-Identifier: MIT
 """
 test_critical_timestep_local.py -- validates FESystem.critical_timestep_local(),
-the cheap O(n_elements) local CFL estimate (Wave 6 item 32, docs/
-consolidated_future_roadmap.md: "Δt_crit = α·min_e(ℓ_e/c_e)", the
+the cheap O(n_elements) local CFL estimate", the
 book's cheaper alternative to critical_timestep()'s exact but
 O(n_dof^3) global spectral estimate).
 

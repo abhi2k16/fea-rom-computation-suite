@@ -1,22 +1,19 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_shell_corotational.py -- validation for Phases A and B of
-docs/geometric_nonlinear_shell_roadmap.md: elements.Shell4MITCCorotational,
+test_shell_corotational.py -- validation of
+elements.Shell4MITCCorotational,
 the geometric-nonlinear (co-rotational) wrapper around Shell4MITC.
 
-Six lines of evidence, matching the roadmap's Section 4 validation plan
-plus the checks Phase A's and Phase B's own build orders call out
-explicitly (Section 5: Phase A "validated against Section 4 items 1-2";
-Phase B "analytic tangent_stiffness()... cross-validated against Phase
-A's complex-step version"):
+Six lines of evidence, covering the complex-step tangent and the
+analytic tangent ("cross-validated against the complex-step version"):
 
 1. test_zero_displacement_gives_zero_force -- internal_force(elem_coords,
    0, D) must be exactly zero (no prestress in a fresh element), for
    both a plain axis-aligned unit square and a non-trivial rectangular
    element -- the most basic sanity check for any nonlinear element.
 
-2. test_u0_tangent_matches_linear_shell -- roadmap Section 4 item 1: at
+2. test_u0_tangent_matches_linear_shell -- at
    u=0, tangent_stiffness() (equivalently stiffness()) must reduce to
    Shell4MITC.stiffness() on the SAME geometry, since a co-rotational
    element with zero displacement is, by definition, indistinguishable
@@ -25,24 +22,23 @@ A's complex-step version"):
    EXACTLY..." comment for why the small residual is floating-point-
    level, not a modeling approximation).
 
-3. test_complex_step_matches_finite_difference -- roadmap Section 4
-   item 2: tangent_stiffness()'s derivative must agree with an
+3. test_complex_step_matches_finite_difference -- tangent_stiffness()'s derivative must agree with an
    independent real central-finite-difference derivative of
    internal_force(), confirming tangent_stiffness() genuinely IS the
    derivative of internal_force() and not some other, inconsistent
    computation -- checked at a generic (non-equilibrium, non-trivial)
    displacement state. Runs against whichever implementation
-   tangent_stiffness() currently is (Phase B's analytic version by
-   default), so this test alone would have caught either Phase's tangent
+   tangent_stiffness() currently is (the analytic version by
+   default), so this test alone would have caught either tangent
    being wrong.
 
-4. test_analytic_matches_complex_step -- Phase B's own explicit
+4. test_analytic_matches_complex_step -- the explicit
    cross-validation requirement: tangent_stiffness() (now the analytic
    material+geometric split, see shells.py's "Tangent" comment) must
-   match _tangent_stiffness_complex_step() (the ORIGINAL Phase A
+   match _tangent_stiffness_complex_step() (the ORIGINAL complex-step
    implementation, kept as the independent reference) to near-machine
    precision, at u=0, at small and larger random states, at the specific
-   bending-dominated state that broke the rejected Phase A dof-
+   bending-dominated state that broke the rejected dof-
    extraction designs (see "Design history"), and at rigid rotations --
    i.e. everywhere the earlier tests already probed internal_force()
    itself, now probing its DERIVATIVE the same way.
@@ -58,7 +54,7 @@ A's complex-step version"):
    this element: a multi-element Shell4MITCCorotational cantilever mesh,
    loaded incrementally via solve_nonlinear_static(), must actually
    CONVERGE using whichever tangent_stiffness() is current (this is what
-   caught two earlier, rejected Phase A dof-extraction designs -- see
+   caught two earlier, rejected dof-extraction designs -- see
    shells.py's own "Design history" comment -- neither of which could
    solve even this unremarkable problem), and the small-load limit must
    be close to the linear Euler-Bernoulli tip deflection while a
@@ -143,7 +139,7 @@ def _rigid_state(angle_deg, axis):
     return u_rigid
 
 
-# The bending-dominated state that broke the two rejected Phase A
+# The bending-dominated state that broke the two rejected
 # dof-extraction designs (see shells.py's "Design history") -- near-zero
 # in-plane translation, moderate w and theta_y, exactly the shape a real
 # Newton-Raphson correction on a real cantilever mesh produces (this is

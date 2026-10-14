@@ -1,42 +1,30 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-adaptivity.py -- Wave 8 items 41-45 (docs/consolidated_future_roadmap.md,
-source fem_implementation_lessons.md Chapters 14-15): a posteriori
-error estimation, marking strategies, conforming local mesh
-refinement, mesh-hierarchy tracking, and the solution-driven adaptive
-refinement loop (solve -> estimate -> mark -> refine -> re-solve).
+adaptivity.py -- adaptive mesh refinement for 2D plane-stress triangles: a posteriori error estimation, marking
+strategies, conforming local mesh refinement, mesh-hierarchy tracking, and the solution-driven adaptive refinement
+loop (solve -> estimate -> mark -> refine -> re-solve).
 
-Scope, stated up front (same "narrow, then document the narrowing"
-convention as grading.Notch/Fillet in Wave 5, and iterative_solvers.
-py's own multigrid section): every function in this module is scoped
-to Tri3PlaneStress -- a deliberate choice, not an oversight, so items
-41-45 form one coherent, end-to-end-tested pipeline on a single
-element family rather than five independently-scoped fragments.
-Tri3's constant-per-element stress field also makes the error
-estimator in item 41 exact-integral rather than Gauss-quadrature-
-approximate, which keeps the whole pipeline simple to verify.
-Extending any piece here to Quad4/higher-order elements is real,
-undone future work -- not attempted here.
+Scope: every function in this module is scoped to Tri3PlaneStress, so the pieces form one coherent, end-to-end
+tested pipeline on a single element family. Tri3's constant-per-element stress field makes the error estimator
+exact-integral rather than Gauss-quadrature-approximate, which keeps the pipeline simple to verify. Extending any
+piece to Quad4 or higher-order elements is not implemented.
 
-fem_implementation_lessons.md's own Appendix note is worth repeating
-here explicitly: fea_engine's actual design generates a fresh mesh
-every time (mesh.py/build_mesh.py), rather than iteratively editing
-an existing one -- so local refinement (item 43) and the resulting
-mesh hierarchy (item 44) are a genuinely NEW capability added by this
-wave, not a gap in something that already existed. The refinement
-algorithm chosen (Rivara 1984 longest-edge bisection with
-conformity-preserving propagation) is the specific one
-fem_implementation_lessons.md names as "provably cannot degenerate,"
-as opposed to repeated green-refinement closure, which the book
-flags as able to produce arbitrarily thin triangles.
+fea_engine generates a fresh mesh every time (mesh.py/build_mesh.py) rather than iteratively editing an existing
+one, so local refinement and the resulting mesh hierarchy are a distinct capability of this module. The refinement
+algorithm is Rivara (1984) longest-edge bisection with conformity-preserving propagation, which provably cannot
+degenerate, as opposed to repeated green-refinement closure, which can produce arbitrarily thin triangles.
+
+References (methods in this module are adopted from):
+  - O. C. Zienkiewicz, J. Z. Zhu (1987), "A simple error estimator and adaptive procedure for practical engineering analysis", Int. J. Numer. Meth. Engng 24(2)
+  - M.-C. Rivara (1984), "Algorithms for refining triangular grids suitable for adaptive and multigrid techniques", Int. J. Numer. Meth. Engng 20(4)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
 
 
 # =====================================================================
-# Item 41 -- a posteriori error estimators
+# A posteriori error estimators
 # =====================================================================
 def element_stresses(mesh, elem_formulation, D, U):
     """Per-element stress [sigma_xx, sigma_yy, sigma_xy], shape
@@ -153,7 +141,7 @@ def jump_residual_estimator(mesh, elem_formulation, D, U):
 
 
 # =====================================================================
-# Item 42 -- marking strategies
+# Marking strategies
 # =====================================================================
 def fixed_fraction_marking(eta, fraction=0.3):
     """Mark the top `fraction` of elements BY COUNT, ranked by eta
@@ -192,11 +180,11 @@ def equidistribution_marking(eta, n_target_elements):
 
 
 # =====================================================================
-# Items 43-44 -- conforming local refinement (Rivara longest-edge
+# Conforming local refinement (Rivara longest-edge
 # bisection) + mesh-hierarchy (parent/child, level) tracking
 # =====================================================================
 class RefinementRecord:
-    """Item 44: parent/child tracking across one refinement step.
+    """Parent/child tracking across one refinement step.
     parent_element[i] is the ORIGINAL (pre-refinement) element id new
     element i descended from; level[i] is its refinement depth
     relative to whatever `parent_level` was passed into
@@ -358,7 +346,7 @@ def refine_triangle_mesh_longest_edge(mesh, marked, parent_level=None):
 
 
 # =====================================================================
-# Item 45 -- solution-driven adaptive refinement loop
+# Solution-driven adaptive refinement loop
 # =====================================================================
 def adaptive_refine_solve(mesh, elem_formulation, D, setup_fn, thickness=1.0,
                            estimator="zz", marking="fixed_fraction",

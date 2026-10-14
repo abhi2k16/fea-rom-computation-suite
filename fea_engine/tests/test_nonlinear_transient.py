@@ -2,10 +2,9 @@
 # SPDX-License-Identifier: MIT
 """
 test_nonlinear_transient.py -- validates nonlinear_solver.solve_nonlinear_transient(),
-the Newmark-Newton nonlinear implicit time integrator (Module 15 /
-docs/nonlinear_transient_dynamics_roadmap.md).
+the Newmark-Newton nonlinear implicit time integrator.
 
-Three checks, following the roadmap doc's own validation plan (Section 4):
+Three checks, following the validation plan (Section 4):
 
 1. Linear-limit regression (the single most important test): on a
    LINEAR element (Beam2DEulerBernoulli, whose internal_force()/

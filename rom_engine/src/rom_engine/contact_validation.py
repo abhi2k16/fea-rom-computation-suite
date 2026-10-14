@@ -5,6 +5,9 @@ contact_validation.py -- error metrics for reduced contact models (plain arrays)
 
 All errors are normalised by the maximum norm of the reference (Manvelyan-Stroot et al. 2025), so a small
 reference value cannot inflate the ratio. Inputs are arrays of shape (n,) or (n_steps, n) / (n, n_cases).
+
+References (methods in this module are adopted from):
+  - D. Manvelyan-Stroot, Y. Filanova, I. Pontes Duff, P. Benner, U. Wever (2025), "Inference of Substructured Reduced-Order Models for Dynamic Contact from Contact-free Simulations", arXiv:2505.18050
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

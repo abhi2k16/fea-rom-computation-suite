@@ -7,6 +7,9 @@ displacement, 1-D J2 return-mapping plasticity).
 
 Split out of the original monolithic element.py during the
 fea_engine restructuring; no logic changed, only file location.
+
+References (methods in this module are adopted from):
+  - M. A. Crisfield (1991, 1997), "Non-linear Finite Element Analysis of Solids and Structures", Vols. 1-2, Wiley
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -80,7 +83,7 @@ class TrussTL2D(Element):
         return self.tangent_stiffness(elem_coords, np.zeros(4), mat, thickness)
 
     def geometric_stiffness(self, elem_coords, N, thickness=1.0):
-        """Module 19 (general-purpose extensions Phase 4): this is
+        """This is
         LITERALLY the K_geometric term already inside
         tangent_stiffness() above -- (S*A/L0)*I -- pulled out on its
         own so FESystem.assemble_geometric_stiffness() can build a
@@ -89,7 +92,7 @@ class TrussTL2D(Element):
         without needing a full nonlinear displacement state u_elem.
         No new physics here, just exposing an already-existing,
         already-validated piece of this element's own tangent through
-        the Module 19 extension point."""
+        the extension point."""
         X1, X2 = elem_coords[0], elem_coords[1]
         L0 = np.linalg.norm(X2 - X1)
         Ksub = (N / L0) * np.eye(2)
@@ -100,10 +103,7 @@ class TrussTL2D(Element):
 
 
 # =====================================================================
-# 2-node planar corotational beam-column (Module 15: large-displacement/
-# large-ROTATION geometric nonlinearity for BENDING members, extending
-# Module 8's geometric-nonlinearity machinery -- TrussTL2D -- from
-# axial-only to bending). 3 dof/node [u, v, theta] -- unlike TrussTL2D/TrussPlastic2D,
+# 2-node planar corotational beam-column. 3 dof/node [u, v, theta] -- unlike TrussTL2D/TrussPlastic2D,
 # this element carries bending, so it needs a rotational DOF and a
 # THIRD "natural" (rigid-body-mode-free) local deformation beyond the
 # truss's single axial stretch.
@@ -133,7 +133,7 @@ class TrussTL2D(Element):
 #     M1 = (EI/L0) * (4*theta1_bar + 2*theta2_bar)
 #     M2 = (EI/L0) * (2*theta1_bar + 4*theta2_bar)
 # ALL the nonlinearity is in how (e_bar, theta1_bar, theta2_bar) relate
-# to the 6 global DOFs -- exactly Module 8's "geometric, not material"
+# to the 6 global DOFs -- exactly "geometric, not material"
 # nonlinearity, same as TrussTL2D.
 #
 # Global internal force: f_global = B^T @ [N, M1, M2], where B (3x6) is
@@ -253,10 +253,7 @@ class TrussPlastic2D(Element):
 
 
 # =====================================================================
-# 1-node unilateral gap/contact element, PENALTY formulation (Module 10:
-# boundary/contact nonlinearity, "the status switch" -- zero stiffness
-# while apart, an immense compressive stiffness the instant contact
-# occurs, e.g. a column hitting a safety stopper, a crash barrier). A
+# 1-node unilateral gap/contact element, PENALTY formulation. A
 # single structural node approaches a FIXED rigid obstacle (not part of
 # the mesh, not a DOF) along a prescribed direction n_hat, with initial
 # gap g0. This is the classic textbook "gap element": stateless (unlike

@@ -4,58 +4,39 @@
 nonlinear_rom.py -- shared regression protocol for reduced nonlinear-
 force models, plus two concrete model families.
 
-A structural nonlinear ROM built by fitting a data-driven model of the
-nonlinear restoring force in reduced coordinates is a HYBRID: the
-linear part stays fully intrusive (a real modal or POD basis, projected
-from the actual K/M/C via pod.py/galerkin.py), and only the nonlinear
-CORRECTION term is a non-intrusive, black-box surrogate fit from
-sampled input/output pairs. Every published method in this family --
-STEP/E-STEP/HR-STEP, ICE, RBF-based STEP, and MFS-NLROM -- shares this
-one shape (see docs/nonlinear_surrogate_rom_roadmap.md Section 1 for
-the literature survey this module follows).
+A structural nonlinear ROM built by fitting a data-driven model of the nonlinear restoring force in reduced
+coordinates is a HYBRID: the linear part stays fully intrusive (a modal or POD basis, projected from the actual
+K/M/C via pod.py/galerkin.py), and only the nonlinear CORRECTION term is a non-intrusive, black-box surrogate fit
+from sampled input/output pairs. The STEP/E-STEP/HR-STEP, ICE, RBF-based STEP and multi-fidelity-surrogate methods
+all share this shape.
 
 This module provides:
 
-  - `ReducedForceModel`: the shared, duck-typed protocol every concrete
-    model implements (`fit`/`predict`/`jacobian`). Not an ABC by
-    inheritance requirement -- any object with these methods works,
-    matching this package's existing style (e.g. `galerkin.GalerkinROM`
-    accepting either a `PodBasis` or a bare ndarray).
-  - `MultiFidelitySurrogate`: an RBF surrogate of the nonlinear modal
-    force AS A FUNCTION OF THE LINEAR modal displacement `q_l` (the
-    MFS-NLROM approach) -- ported from this project's own validated
-    `mfs-nlrom-beam` skill (`scripts/mfs_nlrom.py`'s `RBFSurrogate`),
-    which reproduces He et al. (2023) on a real clamped-clamped beam
-    benchmark (R^2 = 0.9996 on held-out static test data, cubic
-    kernel). `KERNEL_REGISTRY` adds an analytic `dpsi/dR` for every
-    kernel (needed for `jacobian()`, which the original prototype did
-    not need and did not implement) and generalizes the ridge
-    regularization into an explicit parameter.
-  - `PolynomialModalROM`: a Nash-form quadratic+cubic polynomial fit of
-    the nonlinear modal force AS A FUNCTION OF THE NONLINEAR modal
-    displacement `q_nl` itself (the ICE / Shi & Mei / STEP family) --
-    ported from the same skill's `scripts/ice_rom.py`'s `IceRom`.
-    Unlike `MultiFidelitySurrogate`, evaluating `predict()` against an
-    external force needs its own Newton-Raphson solve (the accuracy/
-    speed trade-off the whole MFS-NLROM paper is built around) --
-    reproduced honestly here, not hidden.
-  - `TrainingStrategy` + two concrete strategies (`AppliedLoadStrategy`,
-    `EnforcedDisplacementStrategy`): pluggable training-DATA generation,
-    decoupled from the regression method. Neither strategy imports
-    `fea_engine` -- both take a caller-supplied `fom_solver` callable
-    (matching this package's design principle, stated in
-    `rom_engine/__init__.py`, that `fea_engine` is used only in
-    `tests/`/`examples/`).
+    - `ReducedForceModel`: the shared, duck-typed protocol every concrete model implements (`fit`/`predict`/
+      `jacobian`). Not an ABC by inheritance requirement: any object with these methods works, matching the style
+      of `galerkin.GalerkinROM` accepting either a `PodBasis` or a bare ndarray.
+    - `MultiFidelitySurrogate`: an RBF surrogate of the nonlinear modal force AS A FUNCTION OF THE LINEAR modal
+      displacement `q_l` (the multi-fidelity-surrogate approach of He et al. 2023). `KERNEL_REGISTRY` provides an
+      analytic `dpsi/dR` for every kernel (needed for `jacobian()`) and an explicit ridge-regularization parameter.
+    - `PolynomialModalROM`: a quadratic+cubic polynomial fit of the nonlinear modal force AS A FUNCTION OF THE
+      NONLINEAR modal displacement `q_nl` itself (the ICE / Shi and Mei / STEP family). Unlike
+      `MultiFidelitySurrogate`, evaluating `predict()` against an external force needs its own Newton-Raphson
+      solve (the accuracy/speed trade-off between the two model families).
+    - `TrainingStrategy` + two concrete strategies (`AppliedLoadStrategy`, `EnforcedDisplacementStrategy`):
+      pluggable training-DATA generation, decoupled from the regression method. Neither strategy imports
+      `fea_engine`; both take a caller-supplied `fom_solver` callable (`fea_engine` is used only in `tests/` and
+      `examples/`).
 
-Fidelity note (matching the mfs-nlrom-beam skill's own honesty
-convention): the reference paper's Eq. 8 describes a general
-multi-fidelity identity `y_H(x) = rho*y_L(x) + d(x)` with a free scaling
-factor `rho`; the skill's own validated reproduction (and this module,
-which ports it) uses the `rho=1` specialization throughout, because the
-free-`rho` generalization's exact intended form could not be recovered
-from the source PDF's OCR-damaged equation blocks (the same gap
-documented in the skill's own `SKILL.md` fidelity notes). This is
-recorded here rather than silently assumed away.
+Limitation: He et al. 2023 describe a general multi-fidelity identity `y_H(x) = rho*y_L(x) + d(x)` with a free
+scaling factor `rho`. This module uses the `rho=1` specialization throughout, because the free-`rho` form could not
+be recovered from the source PDF's damaged equation blocks.
+
+References (methods in this module are adopted from):
+  - He et al. (2023), "A novel geometric nonlinear reduced order modeling method using multi-fidelity surrogate for real-time structural analysis", Struct. Multidisc. Optim. 66:233
+  - S. A. Hollkamp, R. W. Gordon (2008), "Reduced-order models for nonlinear response prediction: Implicit condensation and expansion", J. Sound Vib. 318(4-5)
+  - A. A. Muravyov, S. A. Rizzi (2003), "Determination of nonlinear stiffness with application to random vibration of geometrically nonlinear structures", Comput. Struct. 81(15)
+  - M. P. Mignolet, A. Przekop, S. A. Rizzi, S. M. Spottswood (2013), "A review of indirect/non-intrusive reduced order modeling of nonlinear geometric structures", J. Sound Vib. 332(10):2437-2460
+  - P. Tiso, M. Karamooz Mahdiabadi, J. Marconi (2021), "Modal methods for reduced order modeling", Chapter 4, ETH Research Collection, doi:10.3929/ethz-b-000526692
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -110,7 +91,7 @@ def _dpsi_gaussian(R, sigma):
 
 KERNEL_REGISTRY = {
     "multiquadric": (_psi_multiquadric, _dpsi_multiquadric),
-    "cubic": (_psi_cubic, _dpsi_cubic),               # the paper's "BH" kernel
+    "cubic": (_psi_cubic, _dpsi_cubic),               # the "BH" kernel of He et al. 2023
     "thin_plate_spline": (_psi_thin_plate_spline, _dpsi_thin_plate_spline),
     "gaussian": (_psi_gaussian, _dpsi_gaussian),
 }
@@ -258,8 +239,7 @@ class MultiFidelitySurrogate(ReducedForceModel):
 
 
 # =====================================================================
-# 3b. NeuralSurrogate -- torch.nn (MLP) fit of F_nl(q_l) (Wave 7 item
-#     35, docs/consolidated_future_roadmap.md): a native PyTorch
+# 3b. NeuralSurrogate -- torch.nn (MLP) fit of F_nl(q_l) (a native PyTorch
 #     alternative to MultiFidelitySurrogate's RBF interpolant, sharing
 #     the exact same q_l -> F_nl protocol and predict()/jacobian()
 #     shape conventions, so `nonlinear_dynamics.py`/`nnm.py` (and any
@@ -267,7 +247,7 @@ class MultiFidelitySurrogate(ReducedForceModel):
 #     knows or cares which one produced the `ReducedForceModel` it was
 #     handed. See this class's own docstring for the design rationale
 #     and why this is NOT a new `TrainingStrategy` (a common
-#     misreading of the roadmap item's own name).
+#     misreading of the class name).
 # =====================================================================
 _HAS_TORCH = False
 try:
@@ -331,10 +311,7 @@ class NeuralSurrogate(ReducedForceModel):
     class's `fit(q_l_samples, F_nl_samples)` signature matches
     `MultiFidelitySurrogate.fit()` exactly.
 
-    Naming note: the roadmap item that scoped this (Wave 7 item 35,
-    `docs/consolidated_future_roadmap.md`, tracing back to
-    `tensormesh_comparative_analysis.md` Section 6.2) called the
-    planned class "NeuralSurrogateTrainingStrategy." Reading the
+    Naming note: this class was originally planned under the name "NeuralSurrogateTrainingStrategy." Reading the
     actual architecture here (this module's own Section 5 docstring:
     "`TrainingStrategy` ... pluggable training-DATA generation, not
     pluggable regression") makes clear that name described the wrong
@@ -703,8 +680,7 @@ class AppliedLoadStrategy(TrainingStrategy):
             constructing it) may know about a specific FE package --
             this module never imports one.
         return_snapshots : bool, default False
-            Wave 12 item 112 (docs/consolidated_future_roadmap.md,
-            `ICE-ROM/GAP_ANALYSIS.md` gap #1): when True, ALSO returns
+            When True, ALSO returns
             the full free-DOF displacement snapshots `W` this method
             already computes internally (as `u_free`) but previously
             discarded after projecting onto the retained modal basis.
@@ -841,8 +817,7 @@ def _farthest_point_subsample(candidates, n_target, rng):
 
 
 class TrajectoryPilotedStrategy(TrainingStrategy):
-    """Wave 12 item 113 (docs/consolidated_future_roadmap.md,
-    `ICE-ROM/GAP_ANALYSIS.md` gap #2): training-data generation piloted
+    """Training-data generation piloted
     by states a dynamic simulation actually VISITS, rather than by
     independently-sampled per-mode static targets.
 
@@ -955,7 +930,7 @@ class TrajectoryPilotedStrategy(TrainingStrategy):
 
 
 # =====================================================================
-# 6. Convenience constructors -- the paper's three named baselines,
+# 6. Convenience constructors -- the three named baselines of the source papers,
 #    as thin PolynomialModalROM(...) + TrainingStrategy combinations,
 #    not three copies of the same ~40 lines of least-squares code.
 # =====================================================================

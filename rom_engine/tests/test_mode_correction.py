@@ -4,7 +4,7 @@
 test_mode_correction.py -- validates rom_engine.mode_correction against
 a real fea_engine cantilever beam (fea_fixtures.cantilever_beam_system()).
 
-Checks (mirroring docs/classical_mor_roadmap.md Section 6):
+Checks:
   1. Plain mode displacement (galerkin.GalerkinROM.solve_static() on a
      truncated modal basis) has REAL, nonzero truncation error against
      the true K^-1 F solve -- establishing the baseline this module

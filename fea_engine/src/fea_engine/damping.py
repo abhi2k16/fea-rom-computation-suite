@@ -8,6 +8,9 @@ Split out of the original config.py during the fea_engine restructuring
 (kept separate from material.py because damping is a system-level
 property specification, not a constitutive/material law) -- no logic
 changed, only file location.
+
+References (methods in this module are adopted from):
+  - K.-J. Bathe (1996), "Finite Element Procedures", Prentice Hall
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 from dataclasses import dataclass
@@ -47,7 +50,7 @@ class ModalDamping:
 
 @dataclass
 class FieldDamping:
-    """Wave 17 item 141 (docs/consolidated_future_roadmap.md): a
+    """A
     field-wise ("per DOF-type") consistent viscous damping matrix,
     the damping model Georgiou 2005 actually uses (its Eqs. 1-3, 24,
     35 apply ONE scalar D uniformly to every field -- u1, u2, theta --

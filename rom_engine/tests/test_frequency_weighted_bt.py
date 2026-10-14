@@ -5,8 +5,7 @@ test_frequency_weighted_bt.py -- validates
 rom_engine.balanced_truncation.FrequencyWeightedBalancedTruncationROM
 (Enns 1984 frequency-weighted BT) against a REAL, damped fea_engine
 cantilever beam, using the SAME fixture, pre-reduction pattern, and
-port as test_balanced_truncation.py/test_singular_perturbation.py
-(docs/classical_mor_roadmap.md Section 10).
+port as test_balanced_truncation.py/test_singular_perturbation.py.
 
 Checks:
   1. Wi=Wo=None reproduces ordinary BalancedTruncationROM EXACTLY --

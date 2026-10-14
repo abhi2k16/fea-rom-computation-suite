@@ -1,9 +1,8 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-tests/test_mesh_grading_generalized.py -- Phase 2 validation of
-mesh.hole_in_rectangle_mesh()/hole_in_rectangle_mesh_graded() (docs/
-generalized_mesh_grading_roadmap.md).
+tests/test_mesh_grading_generalized.py -- of
+mesh.hole_in_rectangle_mesh()/hole_in_rectangle_mesh_graded().
 
 Checks are geometry-level (no element formulation, no solver): mesh area
 via the shoelace formula, element-inversion-freedom via Mesh.check_quality(),

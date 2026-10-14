@@ -37,6 +37,11 @@ vectors back through L^{-T} -- a standard trick (e.g. Chatterjee 2000,
 "An introduction to the proper orthogonal decomposition") that makes
 the extracted POD modes exactly M-orthonormal, i.e. behave under
 projection exactly like a truncated eigenbasis would.
+
+References (methods in this module are adopted from):
+  - I. T. Georgiou (2005), "Advanced proper orthogonal decomposition tools: using reduced order models to identify normal modes of vibration and slow invariant manifolds in the dynamics of planar nonlinear rods", Nonlinear Dyn. 41
+  - A. Chatterjee (2000), "An introduction to the proper orthogonal decomposition", Current Science 78(7)
+  - P. Holmes, J. L. Lumley, G. Berkooz (1996), "Turbulence, Coherent Structures, Dynamical Systems and Symmetry", Cambridge University Press
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -269,7 +274,7 @@ def assemble_field_weight_matrix(n_dof, field_slices, field_grams, scale=1.0):
         One small Gram/mass matrix per field, shape
         ``(len(field_slices[k]), len(field_slices[k]))``, each already
         including whatever normalization convention the caller wants
-        (e.g. Georgiou's own bare ``integral a.b ds`` with no extra
+        (e.g. Georgiou's bare ``integral a.b ds`` with no extra
         prefactor -- the ``2/L`` scalar is applied separately below, by
         `scale`, so the same per-field Gram can be reused unscaled for a
         different normalization convention later).
@@ -277,9 +282,8 @@ def assemble_field_weight_matrix(n_dof, field_slices, field_grams, scale=1.0):
         A single scalar applied to the whole assembled matrix -- this is
         where Georgiou's ``2/L`` inner-product prefactor (or any other
         global normalization convention) is plugged in. Deliberately a
-        plain keyword, not a hardcoded constant, per the roadmap's own
-        note that item 143 should generalize the paper's specific
-        normalization rather than lock it in permanently.
+        plain keyword, not a hardcoded constant, so the
+        source's specific normalization is not locked in.
 
     Returns
     -------
@@ -350,10 +354,10 @@ class MultiFieldPOD:
     this class's diagnostics need), then adds the per-field
     decompositions (component norms, normalized component shapes,
     amplitude histories, field-separated reconstruction, and a
-    deterministic cross-run sign convention) the paper's own analysis
+    deterministic cross-run sign convention) the analysis in Georgiou 2005
     needs on top of that fitted basis.
 
-    THE INNER PRODUCT. The paper's own weighted inner product is
+    THE INNER PRODUCT. Georgiou 2005's weighted inner product is
     ``<a,b> = (2/L) * integral_0^L a . b ds`` -- a single global scalar
     (``2/L``) times a plain dot-product spatial integral summed over all
     three fields. This class does not hardcode that -- it takes an
@@ -362,18 +366,18 @@ class MultiFieldPOD:
     `trapezoidal_field_gram` above for one concrete, dependency-free way
     to build one, or a real FE shape-function-based Gram from
     `fea_engine` for production use) and uses it exactly as `PodBasis`
-    already uses a mass matrix. Georgiou's own ``2/L`` normalization is
+    already uses a mass matrix. Georgiou's ``2/L`` normalization is
     just one particular choice of `W`'s overall scale -- a caller
-    reproducing the paper folds ``2/L`` into `W` (e.g. via
+    reproducing that paper folds ``2/L`` into `W` (e.g. via
     `assemble_field_weight_matrix`'s own `scale=` argument); a caller
     who wants a different weighting convention (a true FE-consistent
     Gram, a different global normalization, or no weighting at all,
     i.e. `W = identity`) uses a differently-built `W` instead. Nothing
-    about the paper's specific ``2/L`` choice is baked into this class.
+    about the specific ``2/L`` choice is baked into this class.
 
     CRITICAL ASSUMPTION: `W` must be block-diagonal ACROSS fields (no
     coupling between, say, an axial DOF and a rotation DOF in `W`) --
-    exactly what Georgiou's own inner product is, since it sums three
+    exactly what Georgiou's inner product is, since it sums three
     independent per-field dot products rather than mixing them. This is
     what makes the ``sum_k C_km^2 = 1`` identity (Eq. 10 in spirit) hold:
     the whole-vector M-orthonormality `PodBasis` already guarantees
@@ -390,14 +394,14 @@ class MultiFieldPOD:
     mode's sign) unless something pins it down. This class's convention:
     for each retained mode `m`, look at the SUB-VECTOR of that mode
     restricted to `sign_reference_field` (field 0 by default -- e.g. the
-    rod's axial field, chosen as the reference here since the paper's
+    rod's axial field, chosen as the reference here since Georgiou 2005's
     Table 17 axial component norms are its most consistently reported
     diagnostic across modes; use whichever field is physically most
     "always present" for a different application via the
     `sign_reference_field=` constructor argument), find the entry with
     the LARGEST MAGNITUDE in that sub-vector, and flip the whole column's
     sign (and the matching row of the amplitude history `Q`) if that
-    entry is negative. This is the roadmap's own suggested "positive
+    entry is negative. This follows the "positive
     midspan transverse component" convention, generalized: a literal
     midspan node index is not universally meaningful for arbitrary field
     layouts, but "the largest-magnitude entry of a fixed reference field"
@@ -433,7 +437,7 @@ class MultiFieldPOD:
         denominator the FULL (untruncated) singular-value spectrum's
         total energy -- so these fractions sum to 1 only when every mode
         is retained (n_modes == full rank), by construction, matching
-        the roadmap's own validation criterion.
+        the expected full-rank limit.
     """
 
     def __init__(self, field_slices, W, sign_reference_field=0):

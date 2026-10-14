@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-geometry.py -- Module 11: a single, dimension-driven entry point for
+geometry.py -- a single, dimension-driven entry point for
 mesh generation + FEM system setup.
 
 Every mesh generator already lives in mesh.py and is independently

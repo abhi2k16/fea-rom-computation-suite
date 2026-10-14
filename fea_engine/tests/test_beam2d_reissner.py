@@ -1,15 +1,14 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_beam2d_reissner.py -- validates Beam2DReissner (Wave 17 item 140,
-docs/consolidated_future_roadmap.md): the geometrically exact planar
+test_beam2d_reissner.py -- validates Beam2DReissner: the geometrically exact planar
 (Simo-Reissner) shear-deformable rod built to reproduce Georgiou
 (2005), "Advanced Proper Orthogonal Decomposition Tools..." (Nonlinear
 Dynamics 41:69-110). See that class's own docstring in
 elements/beams.py for the full strain-measure / tangent derivation and
 the objectivity proof this file's CHECK (b) confirms numerically.
 
-Five checks, exactly the roadmap's own validation plan for item 140:
+Five checks, the validation plan for Beam2DReissner:
 
 (a) Tangent vs. central finite difference of internal_force() at
     several RANDOM LARGE-ROTATION states -- the primary correctness
@@ -21,7 +20,7 @@ Five checks, exactly the roadmap's own validation plan for item 140:
     to within 0.2% of the closed-form Timoshenko (kappa_s=1) values
     3078.5 / 25214.0 / 60981.7 rad/s (bending modes 1/3/5 in the
     ordinary sense) -- the exact parameters (L=10, A=1, I=1/12,
-    E=12000, G=5000, rho=1e-6) are the roadmap's own gap-analysis
+    E=12000, G=5000, rho=1e-6) are the gap-analysis
     numbers, reused here so the result is directly comparable.
 (d) Large-rotation cantilever: an applied end moment
     M = 2*pi*EI/L rolls the rod into a closed circle (tip returns to
@@ -149,8 +148,8 @@ def test_check_c_pinned_pinned_frequencies_converge_to_timoshenko():
     print("CHECK (c): linear pinned-pinned frequencies converge to the")
     print("closed-form Timoshenko (kappa_s=1) values as the mesh is refined")
     print("=" * 70)
-    # Exact parameters from the roadmap's own gap-analysis derivation
-    # (Wave 17 section, docs/consolidated_future_roadmap.md) -- reused
+    # Exact parameters from the gap-analysis derivation
+    # -- reused
     # here so the result is directly comparable to the number already
     # worked out there.
     L, A, I = 10.0, 1.0, 1.0 / 12.0
@@ -158,15 +157,15 @@ def test_check_c_pinned_pinned_frequencies_converge_to_timoshenko():
     mat = (E, G, A, I, kappa_s)
     rhoA, rhoI = rho * A, rho * I
 
-    # Bending modes 1, 3, 5 in the ordinary sense (the paper's own
+    # Bending modes 1, 3, 5 in the ordinary sense (the source's
     # numbering interleaves axial/shear modes among them, see the
-    # roadmap's Wave 17 section) -- identified below as the 1st, 3rd,
+    # source) -- identified below as the 1st, 3rd,
     # and 6th eigenvalue (0-indexed 0, 2, 5) of the SORTED free-free...
     # pinned-pinned spectrum, confirmed by checking each converges
     # monotonically toward its own target as the mesh refines (the
     # OTHER indices converge toward genuinely different values --
     # e.g. index 3 toward the axial mode 1r = pi*c/L = 34414, the
-    # roadmap's own cross-check number -- not toward these targets).
+    # cross-check number -- not toward these targets).
     targets = np.array([3078.5, 25214.0, 60981.7])
     mode_indices = [0, 2, 5]
 
@@ -181,7 +180,7 @@ def test_check_c_pinned_pinned_frequencies_converge_to_timoshenko():
         fes.assemble_stiffness(mat)
         fes.assemble_mass((rhoA, rhoI))
         # Axially immovable pins: u1=u2=0 at both ends, theta free --
-        # the roadmap's own note (Wave 17 section) that the paper's
+        # the note that the source's
         # axial-mode frequency (1r = pi*c/L) implies this BC, not a
         # simply-supported-with-free-axial-slide one.
         fes.fix_dofs([0, n], [0, 1])
@@ -317,22 +316,21 @@ def test_check_e_energy_conservation_in_free_vibration():
     print("  PASS")
 
 
-def test_item142_distributed_transverse_load_sums_to_P_times_L():
-    """Item 142: check whether the EXISTING LoadPattern/TimeHistoryLoad
+def test_distributed_transverse_load_sums_to_P_times_L():
+    """Check whether the EXISTING LoadPattern/TimeHistoryLoad
     machinery already expresses a spatially-uniform, time-varying
     distributed transverse load F2(s,t) = P*g(t) as a nodal load vector
-    that sums to P*L over a length-L rod -- the roadmap's own (trivial)
-    validation bar for this item. Finding: YES, no new loads.py code is
+    that sums to P*L over a length-L rod -- the (trivial)
+    validation bar for this change. Finding: YES, no new loads.py code is
     needed -- LoadPattern.vector() already splits a `total` evenly
     across an arbitrary node_ids list at a fixed dof_index, so setting
     node_ids = every node along the rod and total = P*L*g(t) (via
     TimeHistoryLoad.time_fn) is exactly this load, with a trivially
     correct total. This is a genuinely LUMPED (equal-share) load, not a
-    higher-order 'consistent' FE line-load weighting, but the roadmap's
-    own acceptance criterion is only about the TOTAL, which any split
+    higher-order 'consistent' FE line-load weighting, but the acceptance criterion is only about the TOTAL, which any split
     that sums to P*L (equal-share included) satisfies by construction."""
     print("=" * 70)
-    print("Item 142: LoadPattern + TimeHistoryLoad already expresses a")
+    print("LoadPattern + TimeHistoryLoad already expresses a")
     print("uniform distributed transverse load with an arbitrary time shape")
     print("=" * 70)
     n_elem = 8
@@ -342,7 +340,7 @@ def test_item142_distributed_transverse_load_sums_to_P_times_L():
 
     node_ids = np.arange(n_elem + 1)   # every node along the rod
     pattern = LoadPattern(node_ids=node_ids, dof_index=1)   # transverse (u2)
-    g = lambda t: np.cos(Omega * t)    # e.g. the paper's own harmonic g(t)
+    g = lambda t: np.cos(Omega * t)    # e.g. the source's harmonic g(t)
     load = TimeHistoryLoad(pattern=pattern, time_fn=lambda t: P * L * g(t))
 
     n_dof = (n_elem + 1) * 3
@@ -355,4 +353,4 @@ def test_item142_distributed_transverse_load_sums_to_P_times_L():
         print(f"  t={t:.5e}  sum(F2)={total:.6f}  expected P*L*g(t)={expected:.6f}  "
               f"rel_err={rel_err:.2e}")
         assert rel_err < 1e-12
-    print("  PASS -- no new loads.py code needed for item 142")
+    print("  PASS -- no new loads.py code needed for distributed loads")

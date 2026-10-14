@@ -1,63 +1,39 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-reduced_basis_operator.py -- Wave 13 item 118 (fea_engine/docs/
-consolidated_future_roadmap.md): a discretization-robust encoder/
-decoder pair, adapting RONOM's (Dummer, Ye & Brune, "RONOM: Reduced-
-Order Neural Operator Modeling") architectural pattern -- encode a
-field sampled at ANY set of points into a finite-dimensional latent
-code via a regularized L2 projection onto a CONTINUOUS basis, then
-decode that latent code back to a field value at ANY OTHER set of
-points, including points never seen during fitting.
+reduced_basis_operator.py -- a discretisation-robust encoder/decoder pair in the style of reduced-order neural
+operators (RONOM, Dummer, Ye and Brune): encode a field sampled at ANY set of points into a finite-dimensional latent
+code by a regularised L2 projection onto a CONTINUOUS basis, then decode that code to a field value at ANY OTHER set
+of points, including points never seen during fitting.
 
-WHY THIS MATTERS (see the roadmap's own Wave 13 framing): every
-existing `rom_engine` reduced model -- `pod.PodBasis`,
-`nonlinear_rom.PolynomialModalROM`/`MultiFidelitySurrogate`/
-`NeuralSurrogate` -- is tied to the exact mesh/point ordering its
-basis or training data was built from. `PodBasis.project(x)` requires
-`x` to be the SAME length and ordering as the snapshots it was fit
-from; there is no way to fit a basis at one mesh resolution and query
-it at a genuinely different one. RONOM's own contribution is making
-that possible, at the cost of the basis functions needing a
-CONTINUOUS (not just tabulated-at-nodes) representation.
+WHY IT IS USEFUL. Reduced models such as `pod.PodBasis`, `nonlinear_rom.PolynomialModalROM`/
+`MultiFidelitySurrogate`/`NeuralSurrogate` are tied to the exact mesh and point ordering their basis or training data
+was built from. `PodBasis.project(x)` requires `x` to have the SAME length and ordering as the snapshots it was fit
+from, so a basis fitted at one mesh resolution cannot be queried at another. A continuous basis makes that possible.
 
-SCOPE LIMITATION, stated up front rather than discovered later
-(matching this project's "narrow and document" convention): this
-module handles a SINGLE SCALAR FIELD per spatial coordinate (e.g. the
-transverse-displacement component of a beam's deformation), not a
-full multi-DOF-per-node vector field. A caller wanting to reconstruct
-every DOF component (u, v, theta, ...) calls this once PER component.
-This keeps the regularized-projection linear algebra a single,
-unambiguous least-squares problem; RONOM's own paper (whose three
-numerical examples are all single-field PDEs -- Burgers, wave
-equation, and a single field of Navier-Stokes) does not attempt the
-multi-field case either.
+SCOPE LIMITATION: this module handles a SINGLE SCALAR FIELD per spatial coordinate (for example the
+transverse-displacement component of a beam), not a multi-DOF-per-node vector field. To reconstruct every DOF
+component (u, v, theta, ...), call it once PER component. This keeps the regularised projection a single,
+unambiguous least-squares problem.
 
-WHY A CONTINUOUS BASIS (not FE shape functions directly, though the
-roadmap's own item 118 row names that as a future option): building a
-literal isoparametric FE interpolant would need this module to
-understand element connectivity/shape functions, which is exactly the
-`fea_engine`-dependency this package's whole design (see package
-docstring) forbids in library code. Fitting each POD-basis column as
-an independent, smooth, mesh-free interpolant via `scipy.interpolate.
-RBFInterpolator` is a defensible, package-boundary-respecting
-alternative that is EXACTLY as evaluable at an arbitrary query
-coordinate as a real FE shape function would be, at the cost of not
-being the exact same interpolant a specific finite-element formulation
-would use element-by-element.
+WHY A CONTINUOUS BASIS (rather than FE shape functions directly): an isoparametric FE interpolant would require
+this module to know element connectivity and shape functions, which would make the package depend on `fea_engine`.
+Fitting each POD-basis column as an independent, smooth, mesh-free interpolant with
+`scipy.interpolate.RBFInterpolator` is evaluable at an arbitrary query coordinate, at the cost of not being the
+interpolant a specific finite-element formulation would use element by element.
 
-Two pieces, split the same numpy-core/torch-optional way every other
-trainable component in this package is:
+Two pieces, split into a numpy core and a torch-optional part:
 
-  - `RegularizedProjectionEncoder`/`decode()`: PURE NUMPY. The actual
-    RONOM-pattern encoder/decoder and this item's own decisive claim
-    (cross-mesh-resolution reconstruction) -- needs no torch at all.
-  - `LatentRefinementNet`: torch-optional. RONOM's own `E_phi` stage
-    (a small NN applied AFTER the linear projection, Eq. 2.4) -- here
-    used as a bias-correction network trained to nudge the linear
-    projection's own latent estimate toward a KNOWN true reduced
-    coordinate (e.g. an exact POD projection), when such ground truth
-    is available for training.
+    - `RegularizedProjectionEncoder`/`decode()`: PURE NUMPY. The encoder/decoder, including cross-mesh-resolution
+    reconstruction; needs no torch.
+  - `LatentRefinementNet`: torch-optional. A small network applied AFTER the linear projection (the refinement stage
+    of reduced-order neural operators), used as a bias-correction network trained to move the linear projection's
+    latent estimate toward a KNOWN true reduced coordinate (for example an exact POD projection) when such ground
+    truth is available for training.
+
+References (methods in this module are adopted from):
+  - L.-H. Yang, X.-L. Luo, Z.-B. Yang, C.-F. Nan, X.-F. Chen, Y. Sun (2025), "FE reduced-order model-informed neural operator for structural dynamic response prediction", Neural Networks 188:107437
+  - S. Dummer, D. Ye, C. Brune (2025), "RONOM: Reduced-Order Neural Operator Modeling", arXiv:2507.12814
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -85,7 +61,7 @@ def _require_torch():
 
 class RegularizedProjectionEncoder:
     """RONOM's `E := (E_phi o M o P_V^lambda)` encoder / optimal-
-    recovery decoder pair (Section 2.3/2.5 of the paper), specialized
+    recovery decoder pair (Section 2.3/2.5 of Yang et al. 2025), specialized
     to a basis built from an EXISTING discrete POD basis (any
     `pod.PodBasis.V` column, or a bare ndarray) made continuous via
     per-column RBF interpolation.

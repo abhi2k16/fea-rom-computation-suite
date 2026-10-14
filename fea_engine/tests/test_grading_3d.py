@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_grading_3d.py -- Wave 0 item 8 (docs/consolidated_future_roadmap.
-md, source generalized_mesh_grading_roadmap.md): validates the 3-D
+test_grading_3d.py -- validates the 3-D
 extension of Mesh.check_grading(), which previously raised
 NotImplementedError unconditionally for any 3-D mesh (no per-topology
 face-adjacency table existed yet).

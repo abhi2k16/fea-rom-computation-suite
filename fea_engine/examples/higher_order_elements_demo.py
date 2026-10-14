@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-higher_order_elements_demo.py -- Phase 1 (general-purpose extensions
-roadmap) worked example: Quad8PlaneStress vs Quad4PlaneStress under
+higher_order_elements_demo.py -- worked example: Quad8PlaneStress vs Quad4PlaneStress under
 coarse pure bending.
 
 Demonstrates the actual reason to reach for a quadratic element: at an
@@ -16,9 +15,7 @@ elasticity solution for a prismatic beam (not just a beam-theory
 approximation), so tip deflection = M*L^2/(2*E*I) is a mathematically
 exact target -- this is a decisive, not just qualitative, comparison.
 See tests/test_higher_order_elements.py for the same comparison run as
-a pytest regression check, and
-docs/general_purpose_extensions_roadmap.md Section 3 for the design
-background.
+a pytest regression check.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

@@ -7,8 +7,7 @@ cantilever beam (the SAME fixture/ground-truth convention
 test_scm.py uses), and directly compares its useful radius against
 scm.SingularValueLowerBound's already-measured ~1e-7 one on the SAME
 reference point of the SAME model -- the entire point of building the
-genuine LP-based SCM (docs/error_bounds_greedy_roadmap.md
-Section 9).
+genuine LP-based SCM.
 
 Checks:
   1. THE core promise: lower_bound(omega) NEVER exceeds the TRUE

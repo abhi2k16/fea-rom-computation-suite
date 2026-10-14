@@ -3,8 +3,7 @@
 """
 test_soar.py -- validates rom_engine.soar's SOARROM against a small
 synthetic system (exact moment-matching self-consistency) and a REAL,
-damped fea_engine cantilever beam (docs/frequency_domain_rom_roadmap.md
-Section 8), using the SAME fixture and port conventions test_krylov.py/
+damped fea_engine cantilever beam, using the SAME fixture and port conventions test_krylov.py/
 test_passivity.py already established for this "systems and control"
 family.
 

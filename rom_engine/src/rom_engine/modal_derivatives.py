@@ -41,6 +41,13 @@ WHAT IS NOT CLAIMED. The ranking heuristic is the maximum-modal-interaction idea
 selection heuristics in the literature are not implemented. The `directions` need not be vibration modes (Krylov or
 other vectors work for the static form, as in Rutzmoser et al. 2017) but symmetry theta_ij = theta_ji then holds only
 if the directions enter a symmetric third derivative, which is the case for any smooth potential.
+
+References (methods in this module are adopted from):
+  - I. Idelsohn, A. Cardona (1985), "A reduction method for nonlinear structural dynamic analysis", Comput. Methods Appl. Mech. Engrg. 49(3)
+  - L. Wu, P. Tiso (2016), "Nonlinear model order reduction for flexible multibody dynamics: a modal derivatives approach", Multibody Syst. Dyn. 36
+  - S. Jain, P. Tiso, J. B. Rutzmoser, D. J. Rixen (2017), "A quadratic manifold for model order reduction of nonlinear structural dynamics", Comput. Struct. 188
+  - J. B. Rutzmoser, D. J. Rixen, P. Tiso, S. Jain (2017), "Generalization of quadratic manifolds for reduced order modeling of nonlinear structural dynamics", Comput. Struct. 192
+  - P. Tiso, M. Karamooz Mahdiabadi, J. Marconi (2021), "Modal methods for reduced order modeling", Chapter 4, ETH Research Collection, doi:10.3929/ethz-b-000526692
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 from dataclasses import dataclass

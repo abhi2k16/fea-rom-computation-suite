@@ -1,35 +1,21 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-build_mesh.py -- Phase 4 of docs/generalized_mesh_grading_roadmap.md: the
-single entry point that decides, from a feature list and the target
-element formulation, whether to grade a mesh at all, which mesh-
-generation front end to use, and refuses combinations this package
-hasn't verified safe -- rather than silently handing back a mesh that
-looks fine and is quietly 40x-1500x too stiff, the exact failure mode the
-Shell4MITCCorotational reference-frame fix and the concurrent
-`_BEND_SIGN` fix (elements/shells.py) both addressed (see the roadmap
-doc's Section 2 for the full history).
+build_mesh.py -- the single entry point that decides, from a feature list and the target element formulation,
+whether to grade a mesh at all, which mesh-generation front end to use, and refuses combinations this package has
+not verified safe, rather than silently handing back a mesh that looks fine but is quietly 40x-1500x too stiff (the
+failure mode that the Shell4MITCCorotational reference-frame fix and the `_BEND_SIGN` fix in elements/shells.py both
+addressed).
 
-This module is deliberately the ONLY place that needs to know both "which
-mesh-generation functions exist" (mesh.py's structured front end -- the
-Gmsh-backed unstructured front end that used to live at
-geometry/gmsh_engine.py was removed; see below) AND "which element
-formulations carry rotational bending DOFs with a local-frame constraint"
-(elements/plates.py, elements/shells.py) -- grading.py itself stays
-ignorant of both by design (see that module's own docstring), so the
-safety-relevant knowledge lives in exactly one place rather than being
-duplicated or, worse, only enforced by convention/docstring warning the
-way it was before this phase.
+This module is the ONLY place that needs to know both which mesh-generation functions exist (mesh.py's structured
+front end) AND which element formulations carry rotational bending DOFs with a local-frame constraint
+(elements/plates.py, elements/shells.py). grading.py stays ignorant of both by design, so the safety-relevant
+knowledge lives in one place instead of being enforced only by convention or docstring warning.
 
-Gmsh-backed unstructured meshing was removed from this package (system
-OpenGL/libGLU dependency that could not be reliably provided, and no
-verified example or result depended on it -- see
-docs/generalized_mesh_grading_roadmap.md for the removal note). The
-translational-DOF branch of `build_mesh()` below that used to dispatch to
-the Gmsh path now raises `MeshGradingError` with an explanation instead
-of silently falling back to a different (unverified-for-that-case) mesh
-path.
+Gmsh-backed unstructured meshing was removed from this package (a system OpenGL/libGLU dependency could not be
+reliably provided, and no verified example or result depended on it). The translational-DOF branch of
+`build_mesh()` that used to dispatch to the Gmsh path now raises `MeshGradingError` with an explanation instead of
+silently falling back to a different, unverified mesh path.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 from .grading import Hole, MeshGradingError, DEFAULT_GROWTH_RATIO
@@ -58,7 +44,7 @@ from .elements.shells_director import Shell4Director
 # `Shell4Director` (registered 2026-09-10, docs/shells.md Section 1.3)
 # added here too: it carries the same class of rotational bending DOFs
 # with a geometry-derived local reference director, and its own scope
-# to date (docs/shells.md Section 1.3.2, "flat reference only") has
+# to date has
 # never been checked against a curved/unstructured mesh -- included
 # per this tuple's own stated policy above ("extend... do not infer
 # membership automatically"), not because a specific failure was
@@ -77,8 +63,7 @@ class RectangleWithHole:
     """The one geometry this dispatcher currently understands end-to-end
     on BOTH mesh-generation front ends: a rectangle [0,Lx] x [0,Ly] with
     at most one circular hole. This is deliberately narrow, not a stand-
-    in for general CAD feature detection -- see the roadmap doc's Phase
-    2/3 scope notes for what's not yet implemented (Notch, a Fillet mesh
+    in for general CAD feature detection -- not yet implemented: (Notch, a Fillet mesh
     path, multiple holes, arbitrary-geometry feature walking). Extending
     `build_mesh()` to a new geometry means adding a new class with the
     same `detect_features()`/`Lx`/`Ly` contract, not editing this one.
@@ -103,7 +88,7 @@ class RectangleWithHole:
 
 def build_mesh(geometry, target_size, element_formulation, growth_ratio=None,
                 nr=8, n_extend=None):
-    """The Phase 4 dispatcher (roadmap doc Section 3c): always calls
+    """The dispatcher: always calls
     `geometry.detect_features()` and decides FOR ITSELF whether/how to
     grade, instead of requiring the caller to notice "this geometry is
     complex" and reach for a differently-named function.
@@ -113,21 +98,19 @@ def build_mesh(geometry, target_size, element_formulation, growth_ratio=None,
       behavior, no grading machinery invoked for the common simple case.
     - Features present, `element_formulation` has rotational bending
       DOFs (`ROTATIONAL_DOF_ELEMENTS`) -> ALWAYS the structured,
-      axis-aligned-block path (`mesh.hole_in_rectangle_mesh_graded`,
-      Phase 2) -- this is the safety gate: a rotational-DOF element can
+      axis-aligned-block path (`mesh.hole_in_rectangle_mesh_graded`) -- this is the safety gate: a rotational-DOF element can
       never reach the curved/unstructured Gmsh path through this
       function, regardless of what would otherwise be the "natural"
       choice, because that combination hasn't been verified safe (see
-      the roadmap doc's Section 2). If the feature list ever contains
+      docs/ for the mesh-grading notes). If the feature list ever contains
       something the structured path can't build (not yet possible today
       -- RectangleWithHole only ever produces a single Hole feature, but
       future geometries may add features only the Gmsh path can mesh),
       this raises MeshGradingError instead of silently falling through
       to the unverified path.
     - Features present, `element_formulation` is translational-DOF ->
-      previously the Gmsh unstructured field-graded path (Phase 3,
-      `generate_2d_plate_with_hole_graded`), which the roadmap doc's
-      Section 2 established has no local-frame constraint to violate.
+      previously the Gmsh unstructured field-graded path
+      (`generate_2d_plate_with_hole_graded`), which has no local-frame constraint to violate.
       That path was removed along with Gmsh support; this branch now
       raises `MeshGradingError` explaining the removal instead of
       generating a mesh, rather than silently falling back to the
@@ -155,7 +138,7 @@ def build_mesh(geometry, target_size, element_formulation, growth_ratio=None,
                 "currently supported on the structured path. Refusing to "
                 "fall back to the unstructured Gmsh path, which has not "
                 "been verified safe for this element formulation (see "
-                "docs/generalized_mesh_grading_roadmap.md, Section 2).")
+                "docs/ for the mesh-grading notes).")
         hole = features[0]
         return mesh_mod.hole_in_rectangle_mesh_graded(
             geometry.Lx, geometry.Ly, hole.center, hole.radius,
@@ -166,7 +149,7 @@ def build_mesh(geometry, target_size, element_formulation, growth_ratio=None,
         raise MeshGradingError(
             "no mesh generator (structured or unstructured) currently "
             "implements this feature combination -- see docs/"
-            "generalized_mesh_grading_roadmap.md Phase 2/3 scope notes.")
+            "for the mesh-grading scope notes.")
     raise MeshGradingError(
         "the unstructured (Gmsh) grading path was removed from this "
         "package -- Gmsh-backed geometry support (geometry/gmsh_engine.py) "
@@ -180,5 +163,5 @@ def build_mesh(geometry, target_size, element_formulation, growth_ratio=None,
         "it's the only one ever verified safe for THOSE elements, not "
         "because it's a general fallback for translational-DOF elements "
         "on non-rectangular feature lists the structured path cannot "
-        "represent. See docs/generalized_mesh_grading_roadmap.md for the "
+        "represent. See docs/ for the "
         "removal note.")

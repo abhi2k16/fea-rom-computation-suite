@@ -3,7 +3,7 @@
 """
 test_loewner.py -- validates rom_engine.loewner.LoewnerROM.
 
-Checks (mirroring docs/loewner_modal_identification_roadmap.md Section 6):
+Checks:
   1. Non-intrusiveness as a CHECKED property, not just a design intent:
      LoewnerROM.fit()'s signature only accepts frequency/response
      arrays -- no M/C/K parameter exists for a caller to (mis)use.
@@ -38,8 +38,8 @@ def _match_and_report(f_true, eta_true, f_id, eta_id, tol_f=0.01, label=""):
     -- the same nearest-frequency matching convention already used by
     fem_rom_comparison.py, since a raw (unscreened) LoewnerROM fit can
     contain extra, non-physical eigenpairs interleaved with the genuine
-    ones (screening.py, Phase 3, is what removes those automatically;
-    this basic Phase 2 test just needs the genuine ones to be FINDABLE
+    ones (screening.py is what removes those automatically;
+    this basic test just needs the genuine ones to be FINDABLE
     among the raw output)."""
     matched = []
     print(f"\n{label} -- {'mode':>4} {'f_true':>10} {'f_id':>10} {'f_err%':>8} "
@@ -82,7 +82,7 @@ def test_synthetic_mass_spring_identifies_known_modes():
     omega_pool = 2 * np.pi * f_pool_hz
     x_pool = lf.frf(omega_pool, F, M, C, K)[ref_dof, :]
 
-    n_interp = n_modes + 3   # deliberately oversized, per the paper's guidance
+    n_interp = n_modes + 3   # deliberately oversized, per the source's guidance
     idx = rng.choice(n_pool, size=2 * n_interp, replace=False)
     idx_a, idx_b = idx[:n_interp], idx[n_interp:]
     rom = LoewnerROM.fit(omega_pool[idx_a], omega_pool[idx_b], x_pool[idx_a], x_pool[idx_b])

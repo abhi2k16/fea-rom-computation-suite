@@ -1,27 +1,20 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-beams3d.py -- Module 18 (general-purpose extensions roadmap Phase 3):
-a linear 3-D frame element, Beam3DEulerBernoulli. The 2-D beam
-(Beam2DEulerBernoulli, beams.py) only carries bending in one plane
-(2 dof/node: v, theta) -- correct for a 2-D frame, but a general 3-D
-frame member (a building frame, a space truss/piping run) bends about
-TWO principal axes, twists, and stretches axially: 6 dof/node
-(u, v, w, theta_x, theta_y, theta_z).
+beams3d.py -- a linear 3-D frame element, Beam3DEulerBernoulli. The 2-D beam (Beam2DEulerBernoulli, beams.py) only
+carries bending in one plane (2 dof/node: v, theta), which is correct for a 2-D frame; a general 3-D frame member
+(a building frame, a space truss/piping run) bends about TWO principal axes, twists, and stretches axially: 6
+dof/node (u, v, w, theta_x, theta_y, theta_z).
 
-Deliberately built from FOUR uncoupled 1-D blocks in the element's
-LOCAL frame -- axial (truss-like), torsional (St. Venant, GJ/L), and
-TWO independent Hermite bending blocks (one per principal axis) --
-then rotated to global coordinates. The two bending blocks are not
-re-derived from scratch: they REUSE Beam2DEulerBernoulli's existing,
-already-validated closed-form Hermite stiffness/mass matrices, called
-once for the (v, theta_z) in-plane bending block directly, and once
-more (with a sign-flip transform, see _FLIP below) for the (w,
-theta_y) out-of-plane bending block -- see docs/general_purpose_
-extensions_roadmap.md Section 2 for why this reuse is possible (both
-blocks are the SAME Euler-Bernoulli bending physics, just oriented
-differently, and a fixed local coordinate SIGN convention is the only
-thing that differs between them).
+Built from FOUR uncoupled 1-D blocks in the element's LOCAL frame (axial, truss-like; torsional, St. Venant, GJ/L;
+and TWO independent Hermite bending blocks, one per principal axis), then rotated to global coordinates. The two
+bending blocks REUSE Beam2DEulerBernoulli's closed-form Hermite stiffness/mass matrices: called once for the
+(v, theta_z) in-plane block directly, and once more (with a sign-flip transform, see _FLIP below) for the
+(w, theta_y) out-of-plane block. This reuse works because both blocks are the same Euler-Bernoulli bending physics,
+oriented differently; only a fixed local coordinate SIGN convention differs between them.
+
+References (methods in this module are adopted from):
+  - M. A. Crisfield (1990), "A consistent co-rotational formulation for non-linear, three-dimensional, beam-elements", Comput. Methods Appl. Mech. Engrg. 81(2)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -148,7 +141,7 @@ class Beam3DEulerBernoulli(Element):
         return self.stiffness(elem_coords, rigidities, thickness)
 
     def geometric_stiffness(self, elem_coords, N, thickness=1.0):
-        """Module 19 (general-purpose extensions Phase 4): reuses
+        """Reuses
         Beam2DEulerBernoulli's own geometric_stiffness() for BOTH
         bending planes -- exactly the same reuse pattern _local_
         matrices() above already uses for stiffness()/mass() (call it
@@ -242,8 +235,7 @@ def _skew3(v):
 
 
 # =====================================================================
-# Beam3DCorotational -- Wave 4 item 23 (docs/consolidated_future_
-# roadmap.md): geometric nonlinearity (large displacement/rotation,
+# Beam3DCorotational -- : geometric nonlinearity (large displacement/rotation,
 # small local strain) for Beam3DEulerBernoulli, generalizing
 # Beam2DCorotational's 2-D scalar-chord-angle co-rotational pattern to
 # a full 3-D beam (axial + torsion + two independent bending planes).
@@ -267,7 +259,7 @@ def _skew3(v):
 #      for the documented, still-reasonable fallback), then further
 #      TWISTED about the (now-current) e1 by the mean of the two nodes'
 #      own rotation-about-e1 -- an EXACT single-axis rotation (the same
-#      trick Wave 4 item 18 validated for the shell's drilling frame:
+#      trick validated for the shell's drilling frame:
 #      rotation about one FIXED, already-known axis needs only a scalar
 #      angle's cos/sin, no general 3-vector Rodrigues singularity).
 #   3. Six natural (rigid-body-free) strains: e_bar = L - L0 (axial,
@@ -293,7 +285,7 @@ def _skew3(v):
 # history" for how much transcription/derivation risk this class of
 # problem carries even for domain experts). Following this package's
 # OWN established staged-build precedent (Tet10SolidTL,
-# Shell4MITCCorotational Phase A: "implement internal_force() first...
+# Shell4MITCCorotational's first stage: "implement internal_force() first...
 # get a numerically CONSISTENT tangent for free via [numerical]
 # differentiation... THEN hand-derive the analytic ... tangent as a
 # follow-up speed optimization"), this class instead builds BOTH the
@@ -312,10 +304,10 @@ def _skew3(v):
 # internal_force(), itself internally differentiating _natural_dofs())
 # than a closed-form analytic tangent would be -- 24 internal_force()
 # evaluations per tangent, each internally doing 24 _natural_dofs()
-# evaluations for its own B matrix. This is a genuine Phase A, not a
-# finished optimization -- an analytic Phase B tangent (the real
+# evaluations for its own B matrix. This is a first-stage implementation, not a
+# finished optimization -- an analytic tangent (the real
 # Battini-Pacoste consistent-tangent derivation) is explicitly deferred
-# future work, exactly as docs/shells.md Section 4.2 (Phase A -> Phase B)
+# future work, exactly as docs/shells.md Section 4.2
 # phased the analogous shell derivation. Validated (tests/
 # test_beam3d_corotational.py): u=0 regression against Beam3DEulerBernoulli.
 # stiffness() to near machine precision; FD-tangent self-consistency
@@ -324,7 +316,7 @@ def _skew3(v):
 # least internally consistent, not merely "the same FD twice");
 # rigid-motion invariance (translation exactly zero force by
 # construction; rotation about the beam's own axis exactly zero by the
-# SAME exact-single-axis-rotation argument item 18 established;
+# SAME exact-single-axis-rotation argument used for the shell drilling update;
 # transverse rigid rotation bounded-small, analogous to the shell's own
 # bending-block limitation, not claimed exact); and a multi-element
 # cantilever actually converging under solve_nonlinear_static() and
@@ -398,7 +390,7 @@ class Beam3DCorotational(Element):
         """Exact rotation matrix for angle theta about a KNOWN unit
         axis (Rodrigues formula) -- used only for the twist correction
         about e1, the same "single fixed axis, so an exact update is
-        safe/simple" reasoning Wave 4 item 18 established for the
+        safe/simple" reasoning established for the
         shell's drilling frame."""
         K = _skew3(axis)
         return np.eye(3) + np.sin(theta) * K + (1.0 - np.cos(theta)) * (K @ K)
@@ -538,7 +530,7 @@ class Beam3DCorotational(Element):
 
     def tangent_stiffness(self, elem_coords, u_elem, rigidities, thickness=1.0, h=1e-6, **kwargs):
         """Real central-FD differentiation of internal_force() -- see
-        class docstring for why this Phase A implementation uses FD
+        class docstring for why this implementation uses FD
         rather than an analytic (material + geometric) tangent."""
         u = np.asarray(u_elem, dtype=float)
         K = np.zeros((12, 12))

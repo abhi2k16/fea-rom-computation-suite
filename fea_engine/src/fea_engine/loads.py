@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-loads.py -- Module 6: load definitions.
+loads.py -- load definitions.
 
 Decouples WHAT a load is (a spatial pattern plus a time/frequency/
 statistical description) from HOW it gets applied to a mesh (solver.py's

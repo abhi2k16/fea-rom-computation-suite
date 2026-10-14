@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_torch_linalg.py -- Wave 9 addendum item 138 (docs/consolidated_
-future_roadmap.md): validates rom_engine.torch_linalg.py's standalone
+test_torch_linalg.py -- validates rom_engine.torch_linalg.py's standalone
 primitives directly (the Kronecker-vectorization Lyapunov/Sylvester
 solvers, the Gramian square root, and the balancing step), independent
 of balanced_truncation.py's own backend="torch" wiring (covered by

@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_membrane_expansion.py -- Wave 12 item 112 (docs/consolidated_
-future_roadmap.md, ICE-ROM/GAP_ANALYSIS.md gap #1): validates
+test_membrane_expansion.py -- validates
 MembraneBasis's Eq. 15/16 least-squares fit and Eq. 16/11 expansion.
 
 Three independent lines of evidence:
@@ -141,7 +140,7 @@ def test_applied_load_strategy_return_snapshots_shape_and_default_unchanged():
 
 
 def test_membrane_expansion_reduces_training_reconstruction_residual_on_real_beam():
-    """The actual payoff this item exists for: adding the membrane term
+    """The actual payoff of the membrane expansion: adding the membrane term
     should reconstruct the TRUE full-order training snapshots better
     than the bending-only prediction alone (a straight/flat beam's
     bending modes carry ~zero axial content, so the bending-only

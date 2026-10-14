@@ -14,8 +14,8 @@ plate FE model, the same way every other example in this package
 builds its own fea_engine model, rather than importing tests/ fixture
 code):
 
-  1. Build the paper's plate FE model (867 structural DOF, 16x16 mesh,
-     from-scratch Reissner-Mindlin plate element) at both the paper's
+  1. Build the source's plate FE model (867 structural DOF, 16x16 mesh,
+     from-scratch Reissner-Mindlin plate element) at both the source's
      stated Table-1 excitation/measurement node locations, for two
      fluid-loading cases (air, water -- an approximate added-mass
      model; see the module-level caveat below).
@@ -35,17 +35,17 @@ code):
   5. Report and plot identified vs. true frequency/damping for both
      loading cases.
 
-Caveat on fluid loading (same as the paper-benchmark test fixture):
-the paper couples the plate to the surrounding fluid via a frequency-
+Caveat on fluid loading (same as the source-benchmark test fixture):
+the source couples the plate to the surrounding fluid via a frequency-
 dependent BEM-computed acoustic impedance matrix from a proprietary,
 much finer (ND=32321) commercial model that cannot be regenerated
 here. This script uses an approximate, frequency-INDEPENDENT added-
 mass model instead (captures the right order of magnitude/direction of
-the fluid effect, but omits fluid radiation damping -- the paper's
+the fluid effect, but omits fluid radiation damping -- the source's
 dominant damping mechanism). The point of this script is to
 demonstrate and validate the IDENTIFICATION METHOD against a real,
 paper-matched structural model's own honest ground truth -- not to
-reproduce the paper's exact Table 2 numbers.
+reproduce the source's exact Table 2 numbers.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -186,7 +186,7 @@ def ground_truth_modes(M, C, K, alpha, beta, fmin, fmax):
 
 
 # =====================================================================
-# 2. Build the paper's plate model
+# 2. Build the source's plate model
 # =====================================================================
 Lx, Ly, h = 0.455, 0.379, 0.003
 E, nu, rho_s = 2.1e11, 0.3, 7850.0

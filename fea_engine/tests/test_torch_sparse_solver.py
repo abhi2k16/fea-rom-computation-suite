@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_torch_sparse_solver.py -- Wave 0 item 3 (docs/consolidated_future_
-roadmap.md, source tensormesh_comparative_analysis.md Section 6.1):
+test_torch_sparse_solver.py --
 validates fea_engine.torch_sparse_solver's dense and sparse-CG PyTorch
 solve paths against this package's own existing SciPy-based
 FESystem.solve_static().

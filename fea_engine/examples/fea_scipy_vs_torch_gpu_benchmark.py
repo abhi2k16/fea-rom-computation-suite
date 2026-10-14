@@ -8,7 +8,7 @@ assembled linear-elastic cantilever system, across a sweep of mesh
 sizes.
 
 This exercises fea_engine's existing backend="scipy"/"torch" dispatch
-(solver.py) and torch_sparse_solver.py (Wave 0 item 3) exactly as
+(solver.py) and torch_sparse_solver.py exactly as
 already validated in tests/test_torch_sparse_solver.py -- this script
 does not reimplement any solve logic, it only times and plots the
 package's own real code paths. Per torch_sparse_solver.py's own
@@ -28,7 +28,7 @@ is available, but the whole point of this script is the GPU curve.
 
 Each mesh size is assembled EXACTLY ONCE (build_system()), using
 fea_engine's tensorized/chunked assembly path (vectorized=True,
-Wave 11 item 107 + Wave 16 item 129) -- not the default per-element
++ ) -- not the default per-element
 Python loop, which was measured during this script's own development
 taking ~1.2ms/element, i.e. minutes at the sweep's larger sizes, none
 of it relevant to the actual scipy-vs-torch SOLVE comparison this
@@ -130,7 +130,7 @@ def build_system(nx, ny, sparse=True):
     via as_backend(), instead of re-running assemble_stiffness() (the
     expensive part at large mesh sizes) three times over for no reason.
 
-    vectorized=True (Wave 11 item 107) + chunk_size (Wave 16 item 129)
+    vectorized=True + chunk_size
     uses fea_engine's tensorized, no-Python-element-loop assembly path
     -- numerically IDENTICAL to the default per-element loop (see
     vectorized_assembly.py's own docstring and tests/test_vectorized_

@@ -17,6 +17,10 @@ complete. `mode_sensitivities` can also take `exact=True` with the full eigen-de
 update; it is not claimed accurate outside the linear range of p.
 
 WHAT IS NOT CLAIMED. Repeated or close eigenvalues make c_ij blow up; they are rejected (relative gap `gap_tol`).
+
+References (methods in this module are adopted from):
+  - R. B. Nelson (1976), "Simplified calculation of eigenvector derivatives", AIAA J. 14(9)
+  - P. Tiso, M. Karamooz Mahdiabadi, J. Marconi (2021), "Modal methods for reduced order modeling", Chapter 4, ETH Research Collection, doi:10.3929/ethz-b-000526692
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

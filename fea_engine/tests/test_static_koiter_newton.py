@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_static_koiter_newton.py -- validation for Module 22:
+test_static_koiter_newton.py -- validation for
 nonlinear_solver.solve_nonlinear_static_koiter_newton() (Koiter-Newton
 solve to a SINGLE prescribed target load, not a path tracer).
 

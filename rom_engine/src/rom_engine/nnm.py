@@ -4,63 +4,38 @@
 nnm.py -- generalized multi-harmonic-balance (HBM) continuation for
 nonlinear normal mode (NNM) backbone curves.
 
-Generalizes the MFS-NLROM paper's Eq. 34-44 per the NLvib/MANLAB
-precedent (predictor-corrector continuation with either analytic or
-numerically-differentiated Jacobians, Alternating Frequency-Time (AFT)
-evaluation of the nonlinear force in the harmonic domain), parametrized
-by ANY `nonlinear_rom.ReducedForceModel` -- exactly like
-`nonlinear_dynamics.py`, this module never knows or cares whether the
-concrete model is `MultiFidelitySurrogate`, `PolynomialModalROM`, or a
+Generalized multi-harmonic-balance continuation (predictor-corrector, analytic or numerically differentiated
+Jacobians, Alternating Frequency-Time (AFT) evaluation of the nonlinear force in the harmonic domain, in the style
+of NLvib and MANLAB), parametrized by ANY `nonlinear_rom.ReducedForceModel`. Like `nonlinear_dynamics.py`, this
+module never needs to know whether the concrete model is `MultiFidelitySurrogate`, `PolynomialModalROM`, or a
 hand-wrapped full-order reference.
 
 Deliberate scope, stated honestly:
 
-- **Undamped-backbone convention.** `HarmonicBalanceSystem.apply_A()`
-  DOES support a damping term `C_r` (mirroring `frequency.FrequencyROM`'s
-  own `A(omega) = -omega^2*M + i*omega*C + K` construction -- see that
-  class's docstring for the real cos/sin block form this generalizes
-  it to), but `solve_nnm_backbone()`'s own continuation is written for
-  the classical, LITERATURE-STANDARD NNM backbone problem: an
-  UNFORCED, and in practice usually UNDAMPED (`C_r=0`), autonomous
-  periodic-orbit family (Peeters et al. 2009's own convention, and
-  exactly what the reference paper's Fig. 8/9 backbones are). A caller
-  may pass nonzero `C_r` to `HarmonicBalanceSystem` for other uses of
-  the class (e.g. the `n_harmonics=1` cross-check against
-  `frequency.FrequencyROM` this module's own test suite performs), but
-  `solve_nnm_backbone()` does not claim to trace a damped-forced
-  resonance curve -- that is a materially different, larger
-  continuation problem (two free parameters, forcing amplitude AND
-  frequency, not addressed here).
-- **Two continuation drivers, sharing the same AFT/HBM machinery but
-  making a genuinely different trade-off.** `solve_nnm_backbone()` uses
-  NATURAL-PARAMETER (prescribed-amplitude) continuation: each point is
-  solved at a DIRECTLY PRESCRIBED master-mode amplitude (Newton-
-  converged, seeded from the previous point's converged state). This is
-  simpler and fully robust for the non-folding (monotonically
-  hardening/softening) backbones this function's own validation
-  targets, but it CANNOT continue past a point where the master mode's
-  own amplitude is non-monotonic along the true curve (a genuine
-  "fold" in amplitude) -- the implicit constraint `a1 = target` has no
-  solution beyond such a point for a `target` on the far side of it.
-  `solve_nnm_backbone_arclength()` instead uses genuine PSEUDO-
-  ARCLENGTH continuation (Keller 1977, with a documented secant-
-  predictor simplification -- see its own docstring), which CAN
-  continue through such a fold, at the cost of tracing arclength rather
-  than a caller-chosen amplitude grid (so `amplitudes`, unlike
-  `solve_nnm_backbone`'s, is a MEASURED output, not a prescribed input).
-  Neither function is strictly better: `solve_nnm_backbone` is simpler
-  to call and reason about (a fixed amplitude grid) when the backbone
-  is known not to fold; `solve_nnm_backbone_arclength` is the one to
-  reach for once a fold is suspected or must be traced through (e.g.
-  near an internal resonance).
-- **No subharmonic multiplier.** Only the fundamental (period = 2*pi/omega)
-  is traced -- subharmonic resonance capture (period = m*2*pi/omega) is
-  a real extension of the same harmonic-balance machinery, not
-  implemented here.
+  - **Undamped-backbone convention.** `HarmonicBalanceSystem.apply_A()` supports a damping term `C_r` (mirroring
+    `frequency.FrequencyROM`'s `A(omega) = -omega^2*M + i*omega*C + K` construction, in the real cos/sin block
+    form), but `solve_nnm_backbone()`'s continuation is written for the standard NNM backbone problem: an
+    UNFORCED, usually UNDAMPED (`C_r=0`), autonomous periodic-orbit family (Peeters et al. 2009). A caller may pass
+    nonzero `C_r` to `HarmonicBalanceSystem` for other uses (for example the `n_harmonics=1` cross-check against
+    `frequency.FrequencyROM` in this module's tests), but `solve_nnm_backbone()` does not trace a damped-forced
+    resonance curve; that is a larger continuation problem (two free parameters, forcing amplitude AND frequency).
+  - **Two continuation drivers, sharing the same AFT/HBM machinery with different trade-offs.**
+    `solve_nnm_backbone()` uses natural-parameter (prescribed-amplitude) continuation: each point is solved at a
+    directly prescribed master-mode amplitude (Newton-converged, seeded from the previous point). It is simple and
+    robust for non-folding (monotonically hardening/softening) backbones, but cannot continue past a point where
+    the master mode's amplitude is non-monotonic along the curve (a fold), since the constraint `a1 = target` has
+    no solution beyond it. `solve_nnm_backbone_arclength()` uses pseudo-arclength continuation (Keller 1977, with
+    a documented secant-predictor simplification; see its docstring), which can continue through such a fold, at
+    the cost of tracing arclength rather than a caller-chosen amplitude grid (so `amplitudes` is a MEASURED
+    output). Use the first when the backbone is known not to fold, the second when a fold is suspected or must be
+    traced through (for example near an internal resonance).
+  - **No subharmonic multiplier.** Only the fundamental (period = 2*pi/omega) is traced; subharmonic resonance
+    capture (period = m*2*pi/omega) is a possible extension of the same machinery and is not implemented.
 
-See `docs/nonlinear_surrogate_rom_roadmap.md` Section 6 (original design)
-and Section 11 (pseudo-arclength addendum) for the full design
-background this module implements against.
+References (methods in this module are adopted from):
+  - H. B. Keller (1977), "Numerical solution of bifurcation and nonlinear eigenvalue problems", in Applications of Bifurcation Theory, Academic Press
+  - M. Peeters, R. Viguie, G. Serandour, G. Kerschen, J.-C. Golinval (2009), "Nonlinear normal modes, Part II: Toward a practical computation using numerical continuation techniques", Mech. Syst. Signal Process. 23(1)
+  - G. Kerschen, M. Peeters, J. C. Golinval, A. F. Vakakis (2009), "Nonlinear normal modes, Part I: A useful framework for the structural dynamicist", Mech. Syst. Signal Process. 23(1)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -632,7 +607,7 @@ def solve_nnm_backbone_arclength(hb, force_model, a0, n_points=40, direction=1.0
     each step. The trade-off: a slightly less accurate PREDICTOR very
     close to a sharp fold (more step-halvings may be needed there), at
     the benefit of no new null-space linear algebra -- see
-    `docs/nonlinear_surrogate_rom_roadmap.md` Section 11 for the full
+    docs/ for the full
     reasoning and the validation this choice was checked against.
 
     BOOTSTRAP: the first two points are found via ORDINARY
@@ -687,7 +662,7 @@ def solve_nnm_backbone_arclength(hb, force_model, a0, n_points=40, direction=1.0
     back before calling `hb.apply_A`/AFT, then chain-rules the returned
     Jacobian's last column) -- this scaling changes only the ARCLENGTH
     METRIC, not the physics being solved. See
-    `docs/nonlinear_surrogate_rom_roadmap.md` Section 11 for the measured
+    docs/ for the measured
     before/after this fix made on this module's own validation.
 
     Parameters

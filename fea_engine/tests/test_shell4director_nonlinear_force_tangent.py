@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 """
 test_shell4director_nonlinear_force_tangent.py -- validation of the nonlinear
-force and tangent (docs/director_based_shell_element_roadmap.md Section 5):
+force and tangent:
 `elements.shells_director.Shell4Director`'s full nonlinear
 `internal_force()`/`tangent_stiffness()`, isolated from the (separately
 tested, slow) multi-element/elastica benchmark in
@@ -19,15 +19,15 @@ tangent_stiffness()/strain_energy() calls):
    at u=0 since every strain measure is itself zero there).
 
 2. test_tangent_matches_linear_stiffness_membrane_and_drilling_blocks
-   -- the LINEAR (Phase 2) `stiffness()` and the FD-based nonlinear
+   -- the LINEAR `stiffness()` and the FD-based nonlinear
    `tangent_stiffness()` at u=0 must agree, block by block, EXCEPT
-   where Phase 3's own docstring documents a deliberate, understood
+   where the nonlinear tangent's docstring documents a deliberate, understood
    divergence (see #3 below). Checked here: the membrane block agrees
    to ~1e-10 relative (FD precision), the drilling block agrees
-   EXACTLY (unaffected by anything Phase 3 changed).
+   EXACTLY (unaffected by anything the nonlinear stage changed).
 
 3. test_tangent_bend_shear_divergence_is_bounded_and_expected -- the
-   bend+shear block's divergence from Phase 2's `stiffness()` (found
+   bend+shear block's divergence from the linear `stiffness()` (found
    necessary to fix a real rigid-rotation-invariance defect in the
    REUSED linear Bs -- see `strain_energy()`'s own "SHEAR -- A REAL,
    FOUND SIGN DIVERGENCE" docstring paragraph) is bounded (a few
@@ -36,7 +36,7 @@ tangent_stiffness()/strain_energy() calls):
    understood one, not a symptom of a broader bug.
 
 4. test_membrane_and_bending_energy_exact_zero_under_rigid_rotation --
-   THE decisive structural claim (roadmap doc step 8), split into its
+   THE decisive structural claim, split into its
    two exactly-provable pieces: membrane strain energy and bending
    (curvature) strain energy are EXACTLY zero (~1e-20 or below, machine
    noise) for a rigid rotation of ANY magnitude (0.5-90 degrees) about
@@ -126,7 +126,7 @@ def test_tangent_matches_linear_stiffness_membrane_and_drilling_blocks():
     scale = np.max(np.abs(K_lin))
 
     mem_rel = np.max(np.abs(diff[np.ix_(_MEM, _MEM)])) / np.max(np.abs(K_lin[np.ix_(_MEM, _MEM)]))
-    assert mem_rel < 1e-6, f"membrane block diverges from Phase 2 stiffness(): {mem_rel:.3e}"
+    assert mem_rel < 1e-6, f"membrane block diverges from the linear stiffness(): {mem_rel:.3e}"
 
     drill_diff = np.max(np.abs(diff[np.ix_(_DRILL, _DRILL)]))
     assert drill_diff == 0.0, f"drilling block should be byte-identical (unchanged): diff={drill_diff}"
@@ -134,7 +134,7 @@ def test_tangent_matches_linear_stiffness_membrane_and_drilling_blocks():
 
 def test_tangent_bend_shear_divergence_is_bounded_and_expected():
     """See `strain_energy()`'s own docstring -- the bend+shear block IS
-    expected to diverge from Phase 2's linear `stiffness()` (the fixed
+    expected to diverge from the linear `stiffness()` (the fixed
     shear formula is rigid-rotation-exact; the reused linear `Bs` it
     replaces is not), but the divergence must be a bounded, few-percent
     effect confined to shear cross-coupling -- not an order-of-magnitude
@@ -237,7 +237,7 @@ def test_internal_force_zero_under_rigid_rotation_any_axis(angle_deg, axis_name)
     across every tested angle 0.5-90 degrees and every axis. Drilling
     DOFs are excluded from the max (the drilling regularization IS a
     real, intentional, nonzero-for-drilling-rotation stiffness -- see
-    Phase 2's own 'ON THE DRILLING DOF' docstring -- so a nonzero
+    the 'ON THE DRILLING DOF' docstring -- so a nonzero
     drilling-DOF force under an e3-axis rotation is expected, not a
     violation of this claim)."""
     D, h = _material()

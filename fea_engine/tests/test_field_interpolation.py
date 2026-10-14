@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_field_interpolation.py -- Wave 16 item 128 (docs/consolidated_
-future_roadmap.md, source: TensorMesh's `Forms` documentation page):
+test_field_interpolation.py --
 validates interpolate_point_data()/interpolate_point_data_gradient()
 (mesh_transform.py) -- the bounded, non-dispatch version of TensorMesh's
 automatic point_data-to-quadrature-point interpolation.
@@ -68,7 +67,7 @@ class TestCoordinateSelfConsistency:
         phys = interpolate_point_data(mt, tet_mesh.nodes)
 
         # Tet4Solid3D is closed-form constant-strain (its own stiffness()
-        # doesn't loop over tet_quadrature_4pt() at all -- see Wave 15's
+        # doesn't loop over tet_quadrature_4pt() at all -- see
         # own "Tri3/Tet4 untouched" note), so MeshTransformation's
         # simplex-family dispatch (_reference_quadrature) is the actual
         # source of truth for which points mt.shape_val corresponds to,

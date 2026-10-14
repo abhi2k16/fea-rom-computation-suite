@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 """
 test_backend_selection.py -- validates the backend= construction
-parameter on FESystem (solver.py) added on top of Wave 0 item 3
+parameter on FESystem (solver.py) added on top of
 (torch_sparse_solver.py): the explicit, user-facing choice between the
 SciPy solve path (backend="scipy", default) and the PyTorch solve path
 (backend="torch"), requested so a caller never has to separately import

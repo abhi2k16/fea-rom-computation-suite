@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-arc_length_snap_through_plot.py -- Phase 5 (general-purpose extensions
-roadmap) worked example: visual verification companion to
+arc_length_snap_through_plot.py -- worked example: visual verification companion to
 arc_length_snap_through_demo.py.
 
 One panel, but a decisive one: the full P vs delta equilibrium path of

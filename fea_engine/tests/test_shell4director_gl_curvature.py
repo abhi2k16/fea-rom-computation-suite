@@ -5,7 +5,7 @@ test_shell4director_gl_curvature.py -- the Green-Lagrange curvature measure
 that became `Shell4Director`'s default on 2026-09-24 (see the
 "GREEN-LAGRANGE CURVATURE" comment block in elements/shells_director.py).
 
-Why this file exists: the Phase 3 "moderate rotation" curvature
+Why this file exists: the original "moderate rotation" curvature
 (kappa = Bb @ [w, e1.t, e2.t]) measures d(sin theta)/ds instead of
 d(theta)/ds. On a cantilever that softening exactly cancels the geometric
 stiffening -- w_tip stayed linear to <0.2% up to 37 deg of tip rotation, while

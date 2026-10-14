@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-element.py -- Module 3: Gauss-Legendre integration core engine +
-element formulations.
+base.py -- Gauss-Legendre integration core engine and the element base class shared by the element formulations.
 
 The Gauss-quadrature machinery (gauss_legendre / gauss_product) is
 general-purpose: any order, 1-D/2-D/3-D. The generic Element.stiffness()
@@ -43,19 +42,18 @@ correct). Quad4MindlinPlate additionally supports a 'sri' mode
 its actual default, and the standard, non-hourglass-prone fix for
 plate/shell locking) alongside plain 'full' and 'reduced'.
 
-hourglass_stabilized_stiffness() -- Wave 2 item 12 (docs/consolidated_
-future_roadmap.md): reduced_stiffness() plus a Flanagan-Belytschko/
-Belytschko-Bindeman-style perturbation stiffness restoring just the
-spurious (hourglass) directions' rank, leaving every genuinely-well-
-integrated mode (including every affine/constant-strain field --
-patch-test-safe by construction) untouched. See that method's own
-docstring for the full derivation. All three of full_stiffness()/
-reduced_stiffness()/hourglass_stabilized_stiffness() remain available
-side by side on every element that defines B_matrix() -- this is an
-explicit, opt-in CHOICE (matching the same principle established for
-FESystem's SciPy-vs-PyTorch backend= choice), never a silent
-replacement of the existing (honestly-labeled-unsafe) reduced_
-stiffness() default.
+hourglass_stabilized_stiffness() -- reduced_stiffness() plus a Flanagan-Belytschko/Belytschko-Bindeman-style
+perturbation stiffness that restores just the spurious (hourglass) directions' rank, leaving every
+well-integrated mode (including every affine/constant-strain field, so patch-test-safe by construction)
+untouched. See that method's docstring for the derivation. full_stiffness(), reduced_stiffness() and
+hourglass_stabilized_stiffness() remain available side by side on every element that defines B_matrix(): an
+explicit, opt-in CHOICE (like FESystem's SciPy-vs-PyTorch backend= choice), never a silent replacement of the
+reduced_stiffness() default, which is labeled unsafe.
+
+References (methods in this module are adopted from):
+  - D. P. Flanagan, T. Belytschko (1981), "A uniform strain hexahedron and quadrilateral with orthogonal hourglass control", Int. J. Numer. Meth. Engng 17(5)
+  - O. C. Zienkiewicz, R. L. Taylor (2000), "The Finite Element Method", 5th ed., Butterworth-Heinemann
+  - T. Belytschko, W. K. Liu, B. Moran, K. Elkhodary (2014), "Nonlinear Finite Elements for Continua and Structures", 2nd ed., Wiley
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -124,7 +122,7 @@ def tet_quadrature_4pt():
 def tet_quadrature(order):
     """Order-PARAMETERIZED quadrature on the natural tetrahedron
     {r,s,t >= 0, r+s+t <= 1}, exact for any polynomial of total degree
-    <= order -- Wave 15 item 125 (docs/consolidated_future_roadmap.md):
+    <= order -- :
     generalizes tet_quadrature_4pt()'s single fixed (degree-2-exact)
     rule to a genuine runtime order parameter, the uniform
     `get_quadrature(order)` pattern TensorMesh's own "Elements and
@@ -160,7 +158,7 @@ def tet_quadrature(order):
     1 through 7, and confirms machine-precision agreement -- the same
     decisive, reproducible-computation standard this project used to
     confirm meshio's node order (mesh_io.py) and the corrected RK4's
-    convergence rate (Wave 13 item 119).
+    convergence rate.
 
     tet_quadrature_4pt() (order=2, the fixed rule used everywhere in
     this package before this function existed, and still Tet10Solid3D's
@@ -199,8 +197,7 @@ def tri_quadrature_3pt():
     exactly the reasoning in tet_quadrature_4pt()'s own docstring --
     it doesn't belong in gauss_product() either: this is for a
     triangle-shaped reference domain, gauss_product() only knows
-    square/cube ones. Wave 0 item 7 (docs/consolidated_future_roadmap.
-    md, source geometry_meshing_alternatives_research.md item 4):
+    square/cube ones. :
     Tri6PlaneStress (elements/solids.py) is the first CALLER, mirroring
     Tet10Solid3D's use of tet_quadrature_4pt() for the same reason --
     Tri6's quadratic shape functions make B vary over the element
@@ -223,8 +220,7 @@ def tri_quadrature_3pt():
 def tri_quadrature(order):
     """Order-PARAMETERIZED quadrature on the natural triangle
     {xi,eta >= 0, xi+eta <= 1}, exact for any polynomial of total
-    degree <= order -- Wave 15 item 125 (docs/consolidated_future_
-    roadmap.md), the 2-D sibling of tet_quadrature() above; see that
+    degree <= order -- the 2-D sibling of tet_quadrature() above; see that
     function's own docstring for the full construction rationale
     (collapsed-coordinate/Duffy transform, scipy.special.roots_jacobi
     over a hand-transcribed literature table, the "checked directly"
@@ -294,8 +290,7 @@ def jacobian_measure(dN_natural, elem_coords):
     Used by Element.mass()/lumped_mass() below so any element relying
     on the GENERIC Gauss-quadrature mass loop (i.e. one that does not
     override mass() itself) integrates correctly regardless of its
-    embedding -- found and fixed doing the Wave 6 (docs/consolidated_
-    future_roadmap.md items 31-33) explicit-dynamics work: TrussTL2D
+    embedding -- found and fixed doing the explicit-dynamics work: TrussTL2D
     (dim=1, 2-D nodal coordinates) and every shell formulation (dim=2,
     3-D nodal coordinates) hit the plain square-J jacobian() the moment
     assemble_mass()/assemble_lumped_mass() was actually exercised on
@@ -359,11 +354,11 @@ class Element:
     quadrature_family = "tensor"   # "tensor" (gauss_product(), the default
                                     # -- Quad4/Quad8/Hex8/Hex20/plate/shell)
                                     # or "simplex" (tri_quadrature()/
-                                    # tet_quadrature(), Wave 15 item 125/126
+                                    # tet_quadrature(),
                                     # -- Tri3/Tri6/Tet4/Tet10 override this).
                                     # A single source-of-truth marker so
                                     # mesh_transform.py's MeshTransformation
-                                    # (Wave 11 item 106) knows which
+                                    # knows which
                                     # quadrature engine to precompute with,
                                     # rather than re-deriving that fact from
                                     # which stiffness() method got overridden.
@@ -428,9 +423,8 @@ class Element:
         raise NotImplementedError
 
     def _cached_shape_and_derivs(self, natural_coords):
-        """Memoizing wrapper around shape_and_derivs() -- Wave 0 item 4
-        of docs/consolidated_future_roadmap.md, closing the gap flagged
-        in docs/fem_implementation_lessons.md's appendix: shape_and_derivs()
+        """Memoizing wrapper around shape_and_derivs() --
+        avoids recomputing the reference-element shape functions: shape_and_derivs()
         recomputes N/dN from closed-form expressions on every call, with
         the book's reference-element O(n*i_d^2) -> O(n*i_d) payoff for
         higher-order elements unrealized.
@@ -541,8 +535,7 @@ class Element:
 
     def hourglass_stabilized_stiffness(self, elem_coords, D, thickness=1.0,
                                         c_hg=0.1, tol=1e-6):
-        """Wave 2 item 12 (docs/consolidated_future_roadmap.md, source
-        nonlinear_fem_lessons.md's appendix, Sec.8.7.3-8.7.6): adds a
+        """Adds a
         Flanagan-Belytschko/Belytschko-Bindeman-style PERTURBATION
         STIFFNESS to reduced_stiffness(), so reduced integration becomes
         safe to actually deploy instead of purely diagnostic (see that
@@ -650,7 +643,7 @@ class Element:
         return ke_reduced + K_stab
 
     # -------------------------------------------------------------
-    # Nonlinear extension point (geometric nonlinearity, Module 8).
+    # Nonlinear extension point (geometric nonlinearity).
     # Every element in this package is LINEAR by default: internal
     # force is just ke @ u and the tangent is just ke, so nothing
     # about Quad4/Hex8/plate/beam has to change to support the new
@@ -674,8 +667,7 @@ class Element:
         return self.stiffness(elem_coords, D, thickness, **kwargs)
 
     # -------------------------------------------------------------
-    # Linear buckling extension point (Module 19, general-purpose
-    # extensions roadmap Phase 4). A sibling to internal_force()/
+    # Linear buckling extension point. A sibling to internal_force()/
     # tangent_stiffness() above, but for a DIFFERENT kind of
     # nonlinearity question: not "what is K_T at displacement u_elem"
     # but "how much does a given axial force N reduce (or increase)
@@ -697,8 +689,7 @@ class Element:
     # kinematics to build K_sigma from has no notion of buckling under
     # its own stiffness() alone (a Quad4PlaneStress panel or a
     # Beam2DMindlinPlate needs a genuinely different, 2-D formulation
-    # not implemented here -- see docs/general_purpose_extensions_
-    # roadmap.md Section 6 for scope). Elements that DO support this
+    # not implemented here). Elements that DO support this
     # (Beam2DEulerBernoulli, Beam3DEulerBernoulli, TrussTL2D) override
     # it with their own closed-form K_sigma."""
     def geometric_stiffness(self, elem_coords, N, thickness=1.0, **kwargs):
@@ -742,8 +733,7 @@ class Element:
         positive.
 
         PER-DIRECTION, not one factor shared across every translational
-        direction at once (Wave 6 item 31/32 fix, docs/consolidated_
-        future_roadmap.md, found directly validating solve_transient_
+        direction at once (found directly validating solve_transient_
         explicit_nonlinear()/critical_timestep_local() against an exact
         bar-wave-speed ground truth on TrussTL2D): an element with N
         translational directions per node (N=2 for any planar element
@@ -759,7 +749,7 @@ class Element:
         needs -- silently under-lumping every translational entry by a
         factor of N (2x for Quad4/TrussTL2D, 3x for a shell) the moment
         more than one translational direction is tracked. Invisible
-        until Wave 6 actually exercised assemble_lumped_mass() on a
+        until actually exercised assemble_lumped_mass() on a
         multi-directional element for the first time (previously only
         ever exercised on Beam2DEulerBernoulli, which tracks exactly
         ONE translational direction -- w -- so N=1 there and the bug

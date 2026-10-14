@@ -1,10 +1,8 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_higher_order_elements.py -- validates the Phase 1 (general-purpose
-extensions roadmap) higher-order elements: Quad8PlaneStress,
-Hex20Solid3D, Tet10Solid3D (docs/general_purpose_extensions_roadmap.md
-Section 3).
+test_higher_order_elements.py -- validates the higher-order elements: Quad8PlaneStress,
+Hex20Solid3D, Tet10Solid3D.
 
 Same validation depth as the existing Tri3PlaneStress/Tet4Solid3D
 checks (test_simplex_elements.py): isoparametric-identity + exact
@@ -34,7 +32,7 @@ element's OTHER three edges, so a shared edge's midpoint really is
 interior after just two elements -- confirmed by CHECK 5 passing at
 literal machine precision (~1e-19).
 
-CHECK 6 is the headline general-purpose demonstration the roadmap
+CHECK 6 is the headline general-purpose demonstration the design notes
 itself called for: a coarse (1-element-through-the-height) cantilever
 under a PURE bending moment -- the classic textbook case where a
 single row of Quad4 elements is well known to shear-lock (parasitic
@@ -346,8 +344,7 @@ def test_tet10_solid3d():
 
 
 def test_quad8_vs_quad4_pure_bending_locking_comparison():
-    """The headline general-purpose demonstration
-    docs/general_purpose_extensions_roadmap.md Section 3 called for:
+    """The headline general-purpose demonstration:
     quadratic elements should need far fewer DOF (here, literally the
     SAME coarse 2-element-long, 1-element-tall mesh) to capture a
     bending-dominated response that a linear element is known to

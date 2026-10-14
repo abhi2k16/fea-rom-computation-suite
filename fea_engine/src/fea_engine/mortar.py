@@ -25,6 +25,9 @@ Scope, stated honestly: straight interfaces (the master and slave node lists are
 tangent), linear 2-node interface segments, small displacements (fixed normal and a constant P), full overlap
 (every slave segment is covered by master segments, otherwise a ValueError). Curved interfaces, quadratic
 segments, 3-D surfaces and large sliding are out of scope.
+
+References (methods in this module are adopted from):
+  - S. Ritzert, J. Kehls, S. Reese, T. Brepols (2025), "Component-Based Model-Order Reduction With Mortar Tied Contact for Nonlinear Quasi-Static Mechanical Problems", Int. J. Numer. Meth. Engng
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

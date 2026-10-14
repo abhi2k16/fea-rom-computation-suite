@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 """
 test_shell4director_linear_stiffness.py -- validation of the
-linear stiffness (docs/director_based_shell_element_roadmap.md Section 5): `elements.shells_director.Shell4Director`'s LINEAR (u=0)
+linear stiffness: `elements.shells_director.Shell4Director`'s LINEAR (u=0)
 stiffness, independently assembled from director kinematics.
 
 Four lines of evidence:
@@ -41,8 +41,7 @@ Four lines of evidence:
 
 5. test_reference_directors_are_the_flat_normal -- sanity check that
    `reference_directors()` returns the element's own flat-facet normal
-   at every node (Phase 2's flat-reference scope, per the roadmap
-   doc), consistent with `Shell4MITC._local_frame_and_coords()`'s own
+   at every node (the linear-stiffness stage's flat-reference scope), consistent with `Shell4MITC._local_frame_and_coords()`'s own
    e3.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"

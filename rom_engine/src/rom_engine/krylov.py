@@ -1,8 +1,8 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-krylov.py -- Krylov-subspace moment-matching ROM (Besselink et al. 2013,
-Section 3 / eqs. 21-36), the paper's "numerical mathematics" family.
+krylov.py -- Krylov-subspace moment-matching ROM (Besselink et al. 2013, Section 3 / eqs. 21-36), the
+"numerical mathematics" family of model reduction.
 
 The transfer function of a first-order state-space system (see
 state_space.py) H(s) = Cout (s*E - A)^-1 B has a Taylor expansion around
@@ -22,42 +22,28 @@ which is accurate globally), and this module deliberately does not try
 to hide that: KrylovROM.frequency_response() should be expected to look
 very good near s0 and progressively worse away from it.
 
-This module builds the basis via ONE-SIDED (Galerkin) block Arnoldi by
-default -- matching the paper's own eqs. 21-31 exactly, and its own
-worked-example method (the paper's numerical results ARE one-sided
-Arnoldi at s0=0). A TWO-SIDED (Petrov-Galerkin) extension is also
-available (KrylovROM.from_MCK(..., two_sided=True)): it builds a SECOND
-Krylov basis W from the dual system (A^H, E^H, Cout^H) and
-biorthogonalizes it against V (W^H E V = I), giving an oblique
-projection that matches roughly TWICE as many moments from the same
-basis size -- k' input-side moments from V, k' more output-side moments
-from W (Grimme 1997; Bai 2002 Section 4). This is exactly the
-"genuinely fragile" extension flagged in docs/classical_mor_roadmap.md
-Section 7 Phase 3: biorthogonalizing two INDEPENDENTLY built Krylov
-bases can be ill-conditioned when the input and output Krylov subspaces
-are nearly degenerate with each other for a given port/s0/k, and
-two_sided_arnoldi_bases() raises a clear ValueError rather than
-silently returning a numerically meaningless basis when that happens --
-callers hitting it should fall back to one-sided (the default), try a
-different s0, or request fewer moments (a smaller k). A genuinely
-SECOND-ORDER-structure-preserving Krylov method (SOAR/TOAR, building
-the subspace directly in the (M,C,K) pencil instead of first collapsing
-to the 2*n_dof first-order form) is still out of scope here, already
-flagged as a deferred later phase in
-docs/frequency_domain_rom_roadmap.md Section 2b -- the paper's own
-method is the plain first-order approach implemented here, so matching
-the paper is simpler, not harder, than the structure-preserving
-alternative.
+This module builds the basis via ONE-SIDED (Galerkin) block Arnoldi by default (Besselink et al. eqs. 21-31). A
+TWO-SIDED (Petrov-Galerkin) extension is also available (KrylovROM.from_MCK(..., two_sided=True)): it builds a SECOND
+Krylov basis W from the dual system (A^H, E^H, Cout^H) and biorthogonalises it against V (W^H E V = I), giving an
+oblique projection that matches roughly TWICE as many moments from the same basis size -- k' input-side moments from
+V, k' more output-side moments from W (Grimme 1997; Bai 2002 Section 4). This extension is numerically delicate:
+biorthogonalising two INDEPENDENTLY built Krylov bases can be ill-conditioned when the input and output Krylov
+subspaces are nearly degenerate for a given port/s0/k, and two_sided_arnoldi_bases() raises a clear ValueError
+rather than silently returning a numerically meaningless basis when that happens. Callers hitting it should fall
+back to one-sided (the default), try a different s0, or request fewer moments (a smaller k). A
+SECOND-ORDER-structure-preserving Krylov method (SOAR/TOAR, building the subspace directly in the (M,C,K) pencil
+instead of first collapsing to the 2*n_dof first-order form) is not implemented here; see soar.py.
 
-IMPORTANT, and worth repeating from the module built on top of this one:
-Krylov moment matching gives NO a priori stability guarantee. The
-paper's own benchmark found its k=20 reduced model unstable on a
-posteriori inspection, despite the full-order model being passive/stable
-and both its other two methods (mode displacement, balanced truncation)
-remaining stable at the same order. KrylovROM.is_stable() checks this
-directly -- callers should check it, not assume a Galerkin-projected
-model inherits the full-order model's stability (it generally does NOT,
-unlike balanced truncation, where stability preservation is a theorem).
+IMPORTANT: Krylov moment matching gives NO a priori stability guarantee. In published benchmarks a k=20 reduced
+model has been found unstable on a posteriori inspection although the full-order model was passive/stable and mode
+displacement and balanced truncation stayed stable at the same order. KrylovROM.is_stable() checks this directly;
+callers should check it, not assume a Galerkin-projected model inherits the full-order model's stability (it
+generally does NOT, unlike balanced truncation, where stability preservation is a theorem).
+
+References (methods in this module are adopted from):
+  - E. J. Grimme (1997), "Krylov projection methods for model reduction", PhD thesis, University of Illinois at Urbana-Champaign
+  - Z. Bai (2002), "Krylov subspace techniques for reduced-order modeling of large-scale dynamical systems", Appl. Numer. Math. 43
+  - B. Besselink, U. Tabak, A. Lutowska, N. van de Wouw, H. Nijmeijer, D. J. Rixen, M. E. Hochstenbach, W. H. A. Schilders (2013), "A comparison of model reduction techniques from structural dynamics, numerical mathematics and systems and control", J. Sound Vib. 332(19)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -90,8 +76,8 @@ def arnoldi_basis(A, E, B, k, s0=0.0, tol=1e-12):
         with 2 inputs gives roughly 5 "generations" of the block
         recursion, not 10 each).
     s0 : float or complex
-        Expansion point. s0=0 (the default) matches the paper's own
-        choice; any other point is the ordinary shift-and-invert
+        Expansion point. s0=0 (the default) matches the
+        Besselink et al. choice; any other point is the ordinary shift-and-invert
         generalization of the same construction.
     tol : float
         A candidate direction with norm below this (after being
@@ -276,7 +262,7 @@ class KrylovROM:
         Cout : ndarray (n_out, n_dof) or (n_dof,)
         C : ndarray (n_dof, n_dof), optional
         s0 : float or complex
-            Expansion point (default 0, matching the paper).
+            Expansion point (default 0, matching Besselink et al.).
         k : int
             Target reduced STATE-SPACE order (i.e. the size of the
             first-order pencil after reduction -- this is DOUBLE the
@@ -290,8 +276,8 @@ class KrylovROM:
             number of MOMENTS matched is roughly 2x this reduced order,
             not 2x k.
         two_sided : bool
-            False (default): one-sided Galerkin projection (matches the
-            paper's own worked-example method exactly). True: two-sided
+            False (default): one-sided Galerkin projection (the
+            Besselink et al. method). True: two-sided
             Petrov-Galerkin projection (two_sided_arnoldi_bases()) --
             matches more moments per reduced state, at the cost of a
             documented, real biorthogonalization fragility (see that

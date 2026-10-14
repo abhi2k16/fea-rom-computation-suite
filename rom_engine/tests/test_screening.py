@@ -3,9 +3,9 @@
 """
 test_screening.py -- validates rom_engine.screening.screen_physical_modes.
 
-Checks (mirroring docs/loewner_modal_identification_roadmap.md Section 6):
+Checks:
   1. Screening correctness: with n_interp deliberately oversized (as
-     the paper recommends), a single raw LoewnerROM fit contains MORE
+     the source recommends), a single raw LoewnerROM fit contains MORE
      eigenpairs than there are true modes; screening's retained count
      converges to the true count instead.
   2. Screened (f, eta) values match the known closed-form ground truth
@@ -46,7 +46,7 @@ def _build_pool(seed=42, n=15, top_mode_index=5):
 
 def test_screening_converges_to_true_mode_count_while_raw_rom_does_not():
     d = _build_pool()
-    n_interp = d["n_modes"] + 3  # deliberately oversized, per the paper's guidance
+    n_interp = d["n_modes"] + 3  # deliberately oversized, per the source's guidance
 
     # ---- (a) a single raw ROM: expect MORE than n_modes raw eigenpairs
     # in-band, incl. spurious ones (this is the exact behavior the

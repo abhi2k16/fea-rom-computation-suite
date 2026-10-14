@@ -1,41 +1,25 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-batched_solve.py -- Wave 11 item 109 (docs/consolidated_future_roadmap.md,
-source tensormesh_analysis_report.md Sec 5 "Sparse Solvers", 'Batched
-right-hand sides': "b of shape [n_dof, n_batch] amortizes one
-factorization across many back-substitutions -- the workhorse of the
-tensormesh.dataset ML workflow").
+batched_solve.py -- solve one assembled stiffness matrix against many load vectors with a single factorization
+(`b` of shape [n_dof, n_batch] amortizes one factorization across many back-substitutions).
 
-Factorize an assembled stiffness matrix ONCE and reuse that
-factorization to solve against MANY load vectors -- exactly the shape
-of a ROM/surrogate training-snapshot sweep (Wave 7's neural-surrogate
-strategy, Wave 10 items 103/104's dataset-diagnostics/differentiable-
-correction utilities, mfs-nlrom-beam's own static-pressure-sweep
-dataset). Today, generating N snapshots via N independent
-FESystem.solve_static() calls re-factorizes K from scratch every
-single time even though only the load vector changes -- for a direct
-solve this is genuinely wasted work (the factorization is the
-expensive O(n^3) [dense] / O(n^1.x) [sparse, mesh-dependent] part;
-each back-substitution against it is comparatively cheap).
+Factorize an assembled stiffness matrix ONCE and reuse that factorization to solve against MANY load vectors, the
+shape of a ROM/surrogate training-snapshot sweep (neural-surrogate training sets, dataset-diagnostics and
+differentiable-correction utilities, static pressure sweeps). Generating N snapshots via N independent
+FESystem.solve_static() calls re-factorizes K every time even though only the load vector changes; for a direct
+solve that is wasted work (the factorization is the expensive O(n^3) [dense] / O(n^1.x) [sparse, mesh-dependent]
+part; each back-substitution is comparatively cheap).
 
-Integration policy: no `tensormesh`/`torch-sla` dependency -- SciPy's
-own `lu_factor`/`lu_solve` (dense) and `splu` (sparse), or a single
-batched `torch.linalg.solve()` call, both already-standard multi-RHS
-solve APIs this module just wires up consistently with this package's
-own `backend=` convention (Wave 0 item 3).
+No `tensormesh`/`torch-sla` dependency: SciPy's `lu_factor`/`lu_solve` (dense) and `splu` (sparse), or a single
+batched `torch.linalg.solve()` call, are wired up consistently with this package's `backend=` convention.
 
-Scope: unlike `FESystem.solve_static()`'s own SciPy path (Wave 0 items
-5/6), `solve_batched()`'s scipy backend does NOT attempt an SPD-aware
-Cholesky path or an automatic near-singular/rigid-body eigen fallback
--- it is a lean multi-RHS LU-factor-once utility for the common,
-well-constrained case a training-data sweep already implies (the SAME
-BCs held fixed across every sample, only the load changing), matching
-the same "no automatic fallback" precedent `backend="torch"`'s own
-`solve_static()` path already established (torch_sparse_solver.py's
-own docstring). A caller with a genuinely singular/near-singular system
-should keep using `FESystem.solve_static()`'s own per-call handling
-instead.
+Scope: unlike `FESystem.solve_static()`'s SciPy path, `solve_batched()`'s scipy backend does NOT attempt an
+SPD-aware Cholesky path or an automatic near-singular/rigid-body eigen fallback. It is a lean multi-RHS
+LU-factor-once utility for the common, well-constrained case of a training-data sweep (the SAME BCs held fixed
+across every sample, only the load changing), with the same "no automatic fallback" behaviour as the
+`backend="torch"` path of `solve_static()` (see torch_sparse_solver.py). A caller with a genuinely
+singular/near-singular system should keep using `FESystem.solve_static()`'s per-call handling.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -107,7 +91,7 @@ def solve_static_batched(fesystem, F_batch, backend=None):
     assembled `K` against MANY external load vectors at once, applying
     the SAME fixed-dof boundary conditions (`fesystem.fixed_dofs`/
     `free_dofs`) to every column, factorizing `Kff` exactly once
-    (item 109's own payoff) instead of calling `fesystem.solve_static()`
+ instead of calling `fesystem.solve_static()`
     once per column.
 
     Parameters
@@ -123,14 +107,9 @@ def solve_static_batched(fesystem, F_batch, backend=None):
         numbering `fesystem.F` itself uses.
     backend : "scipy", "torch", or None
         None (default) reuses `fesystem.backend` UNLESS it is "auto"
-        (item 109 does not implement its own auto-selection -- an
-        "auto" FESystem falls back to "scipy" here, the always-safe
-        choice; pass backend= explicitly to override).
+.
 
-    Non-homogeneous Dirichlet values (Wave 16 item 133, a follow-up
-    closing a gap this function itself created relative to item 131:
-    this function predates item 131 and, until now, silently treated
-    EVERY fixed DOF as zero regardless of `fix_dofs(..., value=...)`
+    Non-homogeneous Dirichlet values`
     -- a batched load-sweep on a mesh with a nonzero prescribed
     displacement got a silently wrong answer at every column. Now
     reads `fesystem.fixed_dof_values` exactly like `solve_static()`

@@ -7,36 +7,23 @@ basis from a fixed (e.g. uniform) grid of frequencies, ADAPTIVELY pick
 which frequencies to full-order-solve at, spending that (expensive)
 budget where the current basis is actually weak.
 
-The algorithm (see docs/error_bounds_greedy_roadmap.md Section
-4 for the full research background): start from a small seed set of
-frequencies, then repeatedly (1) evaluate a CHEAP error indicator
-across every untried candidate frequency, (2) full-order-solve ONLY at
-the worst-indicated one and add it to the training set, (3) rebuild
-the basis, (4) repeat until the worst indicated error is small enough
-or a basis-size budget is reached. This concentrates expensive
-full-order solves near resonances (where a frequency response is
-hardest to represent) instead of wasting them on a uniform grid's flat
-regions.
+The algorithm (see the design notes in docs/ for the research background): start from a small seed set of
+frequencies, then repeatedly (1) evaluate a CHEAP error indicator across every untried candidate frequency, (2)
+full-order-solve ONLY at the worst-indicated one and add it to the training set, (3) rebuild the basis, (4) repeat
+until the worst indicated error is small enough or a basis-size budget is reached. This concentrates expensive
+full-order solves near resonances (where a frequency response is hardest to represent) instead of wasting them on
+the flat regions of a uniform grid.
 
-The error indicator: this iteration's FrequencyROM vs. the PREVIOUS
-iteration's, both evaluated (cheaply -- reduced queries only, no
-full-order solve) at every untried candidate --
-FrequencyROM.hierarchical_error_indicator(). This is the standard
-weak-greedy hierarchical construction (Hain et al.): the previous
-iteration's model is a genuinely SMALLER-INFORMATION model (it was
-built before the most recently selected snapshot was added), so
-"how much did the last real snapshot change the prediction at this
-candidate" is a reasonable proxy for "how much would the NEXT snapshot
-change it" under the usual (unverified, but standard) saturation
-assumption that error decreases roughly monotonically as snapshots are
-added. This is deliberately used INSTEAD OF a certified coercivity-
-bound estimator, because the literature documents the coercivity-bound
-approach as weak exactly near resonance (Section 3 of the roadmap doc)
--- precisely where this loop most needs a reliable signal. The very
-first iteration has no "previous" model yet to compare against, so it
-falls back to FrequencyROM.residual_norm() (Phase 4a's efficient exact
-residual) instead -- a real ranking signal even without a comparison
-point.
+The error indicator: this iteration's FrequencyROM versus the PREVIOUS iteration's, both evaluated (cheaply --
+reduced queries only, no full-order solve) at every untried candidate -- FrequencyROM.hierarchical_error_indicator().
+This is the standard weak-greedy hierarchical construction (Hain et al.): the previous iteration's model is built
+from less information (it predates the most recently selected snapshot), so "how much did the last real snapshot
+change the prediction at this candidate" is a reasonable proxy for "how much would the NEXT snapshot change it",
+under the usual (unverified, but standard) assumption that error decreases roughly monotonically as snapshots are
+added. It is used INSTEAD OF a certified coercivity-bound estimator because the literature documents the
+coercivity-bound approach as weak near resonance, precisely where this loop most needs a reliable signal. The first
+iteration has no previous model to compare against, so it falls back to FrequencyROM.residual_norm() (the efficient
+exact residual).
 
 This module is deliberately NOT specific to any one FrequencyROM
 construction detail beyond from_MCK()'s signature -- the greedy LOOP
@@ -44,6 +31,9 @@ itself (evaluate indicator, pick worst, solve, extend, repeat) is a
 generic pattern that a future affine.py material-parameter greedy
 trainer could reuse with a different error indicator and full-order
 solver, not implemented here but noted as a natural generalization.
+
+References (methods in this module are adopted from):
+  - G. Rozza, D. B. P. Huynh, A. T. Patera (2008), "Reduced basis approximation and a posteriori error estimation for affinely parametrized elliptic coercive partial differential equations", Arch. Comput. Methods Eng. 15(3)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

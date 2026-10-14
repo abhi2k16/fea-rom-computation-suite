@@ -2,8 +2,7 @@
 # SPDX-License-Identifier: MIT
 """
 test_shell_corotational_committed_coupling.py -- validation for
-Wave 4 item 46, building block C (docs/shell_rotation_coupling_fix_
-roadmap.md Section 4.3): `Shell4MITCCorotational`'s
+, building block C: `Shell4MITCCorotational`'s
 init_state()/commit_state() and the state= branch of
 internal_force()/tangent_stiffness().
 

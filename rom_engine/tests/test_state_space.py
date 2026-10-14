@@ -8,7 +8,7 @@ damped fea_engine cantilever beam (fea_fixtures.damped_cantilever_beam_system())
 where the poles must reproduce the fixture's own known undamped natural
 frequencies and Rayleigh damping ratios.
 
-Checks (mirroring docs/classical_mor_roadmap.md Section 6):
+Checks:
   1. form="E" and form="A" give ALGEBRAICALLY EQUIVALENT poles (E-form:
      generalized eig(A, E); A-form: ordinary eig(A)) for the same model
      -- the two representations of the module docstring are the same

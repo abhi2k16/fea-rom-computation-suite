@@ -4,8 +4,7 @@
 Tests for nnm.py -- HarmonicBalanceSystem (AFT bookkeeping, A(omega)
 block assembly), solve_nnm_backbone (natural-parameter NNM backbone
 continuation), and solve_nnm_backbone_arclength (pseudo-arclength NNM
-backbone continuation -- see docs/nonlinear_surrogate_rom_roadmap.md
-Section 11 for the design this validates against).
+backbone continuation).
 
 Every check has an independent ground truth: exact linear-algebra
 identities for the AFT machinery, a direct cross-check against
@@ -299,9 +298,7 @@ class TestPseudoArclengthAlgorithm:
     continuation has at a genuine amplitude fold, verified here with
     total mathematical certainty rather than depending on locating and
     fully characterizing a real NNM backbone fold (a harder, separate
-    validation target -- see docs/nonlinear_surrogate_rom_roadmap.md
-    Section 11 for an honest account of what was and was not
-    established on real coupled-mode systems)."""
+    validation target that is not established here for real coupled-mode systems)."""
 
     @staticmethod
     def _circle_h_and_J(v):
@@ -402,9 +399,8 @@ class TestArclengthMatchesNaturalParameter:
 class TestArclengthOnCoupledTwoModeSystem:
     """A genuinely 2-mode coupled nonlinear system (two cubic oscillators
     with a quadratic-form cubic coupling term) -- explored extensively
-    while validating this function (see docs/nonlinear_surrogate_rom_
-    roadmap.md Section 11 for what was and was not established about
-    its full bifurcation structure). The one finding reported here is
+    while validating this function (its full bifurcation structure is not
+    established here). The one finding reported here is
     fully verified and unambiguous: on the INVARIANT "planar" branch
     (satellite mode identically zero), the coupled system reduces
     EXACTLY to the already-validated single-DOF Duffing oscillator, and

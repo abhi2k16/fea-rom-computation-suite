@@ -12,8 +12,8 @@ FULL and physical) and q the amplitudes of interior fixed-boundary modes Phi:
 
     u_interior = Psi u_b + Phi q,        T = [[I, 0], [Psi, Phi]]  (rows ordered boundary, interior).
 
-The coupling matrix Psi can come from static solves (`static_coupling`: one interior solve per boundary DOF, the
-choice the source recommends and exact for a linear model) or from a least-squares fit of the data
+The coupling matrix Psi can come from static solves (`static_coupling`: one interior solve per boundary DOF, exact
+for a linear model) or from a least-squares fit of the data
 (`lstsq_coupling`, which only sees the motion present in the data).
 
 Operators: minimise  sum_t || M a_t + K x_t - f_t ||^2  over symmetric positive definite M and K, parametrised
@@ -26,6 +26,10 @@ B_r x_{n+1} >= c is reduced to an LCP in lam (same scheme as `fea_engine.contact
 
 Scope, stated honestly: linear structure; the contact node set must be known when the operators are learned (the
 boundary DOFs are chosen up front); no damping term; the data must excite both the boundary and the interior.
+
+References (methods in this module are adopted from):
+  - B. Peherstorfer, K. Willcox (2016), "Data-driven operator inference for nonintrusive projection-based model reduction", Comput. Methods Appl. Mech. Engrg. 306
+  - D. Manvelyan-Stroot, Y. Filanova, I. Pontes Duff, P. Benner, U. Wever (2025), "Inference of Substructured Reduced-Order Models for Dynamic Contact from Contact-free Simulations", arXiv:2505.18050
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

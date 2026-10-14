@@ -5,8 +5,7 @@ test_passivity.py -- validates rom_engine.passivity's diagnostics
 against a REAL, damped fea_engine cantilever beam, using the SAME
 collocated tip-force-in/tip-out port convention every other module in
 this "systems and control" family (state_space.py/krylov.py/
-balanced_truncation.py) already uses (docs/classical_mor_roadmap.md
-Section 12).
+balanced_truncation.py) already uses.
 
 Checks:
   1. Sanity check on the fixture and on is_passive() itself: the

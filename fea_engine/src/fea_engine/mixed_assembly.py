@@ -1,43 +1,25 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-mixed_assembly.py -- Wave 11 item 110 (docs/consolidated_future_
-roadmap.md, source tensormesh_analysis_report.md's "Mixed Assembly"
-section: `MixedElementAssembler`/`Field`/`BlockLayout` -- independent
-trial/test polynomial order per field, each `(field_i, field_j)` block
-extracted by zeroing the other fields with a runtime bilinearity guard,
-topological (not mesh-order-tied) DOF maps).
+mixed_assembly.py -- mixed-field assembly: independent trial/test polynomial order per field
+(`MixedElementAssembler`/`Field`/`BlockLayout` style), each `(field_i, field_j)` block extracted by zeroing the
+other fields with a runtime bilinearity guard, and topological (not mesh-order-tied) DOF maps.
 
-Wave 16 item 130 addendum (2026-09-18, source: a later, live comparison
-against TensorMesh's actual `Mixed Assembly` documentation page,
-https://docs.tensor-mesh.com/user_guide/mixed_assembly.html): that
-comparison noted `check_bilinearity()` below was opt-in/standalone,
-while TensorMesh runs its own analogous guard AUTOMATICALLY inside
-every mixed-assembler call. `assemble_mixed_tet10_p1()` now does the
-same by default (`verify_bilinearity=True`) -- see that function's own
-docstring and `_verify_mixed_blocks()`/`_tet10_p1_direct_forms()` below
-for what the automatic guard does and, honestly, doesn't protect
-against here (there's no user-supplied `forward()` in this codebase's
-version of mixed assembly, so the guard is a regression check against
-a future code edit, not a check on end-user-supplied math).
+`assemble_mixed_tet10_p1()` runs the bilinearity guard automatically by default (`verify_bilinearity=True`);
+`check_bilinearity()` is also available standalone. See that function's docstring and `_verify_mixed_blocks()`/
+`_tet10_p1_direct_forms()` below for what the guard does and does not protect against here: there is no
+user-supplied `forward()` in this version of mixed assembly, so the guard is a regression check against a future
+code edit, not a check on end-user-supplied math.
 
-Second attempt, scoped down deliberately
-------------------------------------------
-`tensormesh_comparative_analysis.md` Sec.6.4 already named true mixed
-(LBB-stable, block) assembly as "the architecturally correct fix" for
-BOTH the 3-D solids' volumetric-locking gap (Wave 2 item 11 instead
-solved that with B-bar -- a real, validated fix, but not this
-architecturally-different alternative) and the corotational shell's own
-mixed-formulation internal unknown (`docs/shells.md` item 19, dead ends
-4/7 -- that attempt sub-iterated the internal unknown rather than
-promoting it to a genuinely independent field, and produced Newton
-indefiniteness no variant fixed). Per this item's own roadmap row, the
-SHELL case is explicitly NOT reattempted here -- only the lower-risk
-3-D SOLID case is, and only in its LINEAR (not corotational/nonlinear)
-form. The two lightweight, genuinely reusable building blocks
-(`BlockDofLayout`, `check_bilinearity`) are useful on their own
-regardless of whether the solid case below is ever extended further --
-see the roadmap row's own framing.
+Scope
+-----
+True mixed (LBB-stable, block) assembly is the architecturally correct fix for the 3-D solids' volumetric-locking
+gap (this package solves that with B-bar, a validated fix that is a different approach) and for the corotational
+shell's mixed-formulation internal unknown (a sub-iterated internal unknown rather than a genuinely independent
+field produced Newton indefiniteness that no variant fixed; see docs/shells.md). The SHELL case is NOT addressed
+here; only the lower-risk 3-D SOLID case is, and only in its LINEAR (not corotational/nonlinear) form. The two
+lightweight, reusable building blocks (`BlockDofLayout`, `check_bilinearity`) are useful on their own regardless of
+whether the solid case is extended further.
 
 The concrete formulation: Taylor-Hood P2-P1 on Tet10/Tet4
 ------------------------------------------------------------
@@ -83,6 +65,9 @@ Block system, per element and assembled globally:
 `Kuu = integral(Bu^T D_dev Bu) dV`, `Kup[i,a] = integral((m^T Bu)_i * Np_a) dV`
 (`m = [1,1,1,0,0,0]`, the trace/divergence operator on Voigt strain),
 `Kpp = integral(Np^T Np) dV / kappa`.
+
+References (methods in this module are adopted from):
+  - C. Taylor, P. Hood (1973), "A numerical solution of the Navier-Stokes equations using the finite element technique", Comput. Fluids 1(1)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -135,8 +120,8 @@ class BlockDofLayout:
 
 
 # =====================================================================
-# Bilinearity self-check -- the cheap, worth-copying correctness guard
-# tensormesh_analysis_report.md's own MixedElementAssembler describes:
+# Bilinearity self-check -- a cheap correctness guard (in the style
+# of TensorMesh's MixedElementAssembler):
 # evaluate the coupled integrand with one field's contribution zeroed
 # (i.e. probed via additivity/homogeneity on random vectors) and
 # confirm the result is genuinely LINEAR in what remains.
@@ -198,8 +183,7 @@ _M_TRACE = np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
 
 
 def _tet10_p1_direct_forms(elem_coords, D_dev, kappa):
-    """Wave 16 item 130 (docs/consolidated_future_roadmap.md, source:
-    TensorMesh's `Mixed Assembly` documentation page): a SECOND,
+    """a SECOND,
     independently-structured evaluation of the SAME per-element weak
     form `tet10_p1_mixed_element_blocks()` computes -- used only to
     automatically guard that function's own output (see
@@ -362,8 +346,8 @@ def build_pressure_dof_map(connectivity):
     nodes, so this builds a COMPACT map from "global node id" to
     "pressure dof index" (0..n_p-1) covering only the nodes that
     actually appear as a corner somewhere -- exactly the "topological,
-    not mesh-order-tied" DOF map `tensormesh_analysis_report.md`'s own
-    `BlockLayout` describes."""
+    not mesh-order-tied" DOF map (as in TensorMesh's
+    `BlockLayout`)."""
     corner_ids = np.unique(connectivity[:, :4].reshape(-1))
     p_dof_of_node = {int(nid): i for i, nid in enumerate(corner_ids)}
     return corner_ids, p_dof_of_node
@@ -393,8 +377,7 @@ def assemble_mixed_tet10_p1(mesh, connectivity, mat, kappa=None, verify_bilinear
         `kappa` explicitly to probe the near-incompressible limit
         beyond what `mat.nu` alone implies).
     verify_bilinearity : bool
-        Wave 16 item 130 (docs/consolidated_future_roadmap.md, source:
-        TensorMesh's `Mixed Assembly` page's automatic per-forward()
+        (analogous to TensorMesh's automatic per-forward()
         zero-evaluation guard). Default True: before assembling the
         mesh, runs `_verify_mixed_blocks()` ONCE against the first
         element's own geometry -- confirms `tet10_p1_mixed_element_

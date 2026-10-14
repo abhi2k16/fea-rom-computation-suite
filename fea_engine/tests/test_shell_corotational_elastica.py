@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_shell_corotational_elastica.py -- Phase C of
-docs/geometric_nonlinear_shell_roadmap.md (Section 4 items 3-4): a
+test_shell_corotational_elastica.py -- a
 large-deflection benchmark against a published/sourced reference
 solution, plus quasi-static ramp agreement, for
 elements.Shell4MITCCorotational.
@@ -37,7 +36,7 @@ Four checks:
      modeling limitation, not unconverged discretization.
   3. The elastica benchmark itself, restricted to the regime this
      element's own docstring (shells.py, "Known remaining limitation",
-     "Phase C finding") documents as trustworthy -- tip rotation up to
+     "Elastica finding") documents as trustworthy -- tip rotation up to
      roughly 13 degrees, where tip-deflection agreement with the exact
      elastica solution stays within a few percent.
   4. A canary for the SAME known limitation, run deliberately BEYOND
@@ -213,12 +212,12 @@ def test_shell_strip_mesh_independence_moderate_rotation():
 
 
 def test_elastica_benchmark_small_to_moderate_rotation():
-    """The actual Phase C acceptance test: a ramp of load levels up to
+    """The actual acceptance test: a ramp of load levels up to
     ~13 degrees of tip rotation (shells.py's own documented trustworthy
     regime), compared point-by-point against the exact elastica tip
     deflection -- this IS the "quasi-static ramp agreement" check
-    (Section 4 item 4) and the "large-deflection benchmark" check
-    (item 3) together, exactly how test_nonlinear_beam.py's own CHECK 6
+    and the "large-deflection benchmark" check
+ together, exactly how test_nonlinear_beam.py's own CHECK 6
     combines both for Beam2DCorotational."""
     fes, tip_nodes = _build_strip(nx=20)
     load_fracs = np.linspace(0.02, 0.15, 10)
@@ -242,7 +241,7 @@ def test_elastica_benchmark_small_to_moderate_rotation():
 
 
 def test_known_limitation_large_rotation_regime():
-    """Canary for the documented (shells.py, 'Phase C finding')
+    """Canary for the documented (shells.py, 'Elastica finding')
     limitation, UPDATED 2026-09-03 after a partial fix (see shells.py's
     _bending_membrane_coupling_force()): axial foreshortening is no
     longer EXACTLY zero (part (a) below), but the fix is a per-element-

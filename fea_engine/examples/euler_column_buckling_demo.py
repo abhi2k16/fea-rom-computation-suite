@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-euler_column_buckling_demo.py -- Module 19 (general-purpose extensions
-roadmap Phase 4): linear buckling eigenvalue solver demo.
+euler_column_buckling_demo.py -- linear buckling eigenvalue solver demo.
 
 Discretizes a pin-pin column into progressively finer meshes of
 Beam2DEulerBernoulli elements, solves the linear buckling eigenproblem

@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-solver.py -- Module 4: global assembly, boundary conditions, and the
+solver.py -- global assembly, boundary conditions, and the
 linear/eigenvalue solve.
 
 FESystem is deliberately element-agnostic: it calls element.stiffness()
@@ -13,7 +13,7 @@ of the design in element.py: the "additive" property the whole package
 is built around lands here, in the one place that would otherwise need
 an if/elif per element type.
 
-Module 14: mixed-element-type assembly. Every assemble_*/init_state/
+Mixed-element-type assembly. Every assemble_*/init_state/
 commit_all_states method below loops over self._blocks, a list of
 (block_name, element_formulation, connectivity_array) triples built
 once in __init__(). The ORIGINAL single-element-type usage --
@@ -44,6 +44,10 @@ themselves be a dict keyed the same way as the blocks (per-block
 material/physics, e.g. different D matrices per block) or a single
 plain value reused for every block (the common case: one physics, just
 more than one element topology) -- see _per_block_arg().
+
+References (methods in this module are adopted from):
+  - N. M. Newmark (1959), "A method of computation for structural dynamics", J. Eng. Mech. Div. ASCE 85(3)
+  - K.-J. Bathe (1996), "Finite Element Procedures", Prentice Hall
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import warnings
@@ -63,11 +67,11 @@ class FESystem:
         mesh.blocks' keys exactly (mesh must be a mesh.MultiBlockMesh).
         See this module's docstring for the mixed-element-type case.
 
-        sparse=True (Module 18, general-purpose extensions Phase 2):
+        sparse=True:
         store K/M/M_lumped as scipy.sparse.lil_matrix (efficient
         incremental element-by-element scatter-add, the SAME `+=`
-        syntax the dense np.zeros() path already uses -- see
-        docs/general_purpose_extensions_roadmap.md Section 7) instead
+        syntax the dense np.zeros() path already uses --)
+        instead
         of dense numpy arrays. This is a STORAGE-FORMAT change only:
         assemble_stiffness()/assemble_mass()/assemble_lumped_mass()
         are otherwise unchanged, and solve_static()/solve_modal()
@@ -79,16 +83,14 @@ class FESystem:
         O(n_dof^3) solves become the bottleneck. NOT yet wired into
         the nonlinear (assemble_internal_force/assemble_tangent_
         stiffness) or transient-dynamics paths -- scoped to the
-        static/modal case for this first pass; see the roadmap doc's
-        Section 7 validation plan for why an additive, opt-in rollout
+        static/modal case for now: an additive, opt-in rollout
         was chosen over converting every existing path at once.
 
         backend="scipy" (default) or "torch" -- selects which linear-
         algebra engine solve_static() dispatches to. This is an
         explicit, user-facing CHOICE between two coexisting, fully
         maintained implementations, not a replacement of one by the
-        other -- see torch_sparse_solver.py's module docstring and
-        docs/consolidated_future_roadmap.md for why: SciPy's Cholesky/
+        other -- see torch_sparse_solver.py's module docstring for why: SciPy's Cholesky/
         eigen-decomposition path (backend="scipy") is the default,
         battle-tested, CPU-only path with no extra dependency; the
         PyTorch path (backend="torch") reuses the exact solve logic
@@ -120,8 +122,7 @@ class FESystem:
         preferring or hiding one -- apply this same pattern to future
         additions, not just this solver.
 
-        backend="auto" (Wave 11 item 108, docs/consolidated_future_
-        roadmap.md): a THIRD option, alongside the two explicit choices
+        backend="auto": a THIRD option, alongside the two explicit choices
         above -- lets solve_static() pick "scipy" or "torch" itself,
         per call, based on Kff's own size and SPD-ness (see
         backend_dispatch.py's own module docstring for the exact rule
@@ -137,7 +138,7 @@ class FESystem:
                 f"FESystem: unknown backend={backend!r} -- expected 'scipy' "
                 f"(default, SciPy-based direct/eigen solve), 'torch' "
                 f"(PyTorch-based dense/CG solve, see torch_sparse_solver.py), "
-                f"or 'auto' (Wave 11 item 108 -- picks between the two at "
+                f"or 'auto' (picks between the two at "
                 f"solve_static() time, see backend_dispatch.py).")
         if backend == "torch":
             from .torch_sparse_solver import _require_torch
@@ -190,15 +191,14 @@ class FESystem:
         # adding a second copy (K -> 2K). See _begin_assembly().
         self._assembled = set()
         self._warned_reassembly = set()
-        self.K_sigma = None  # geometric ("stress stiffness") matrix, Module 19
-                              # (general-purpose extensions Phase 4) -- None
-                              # until assemble_geometric_stiffness() is called,
+        self.K_sigma = None  # geometric ("stress stiffness") matrix --
+                              # None until assemble_geometric_stiffness() is called,
                               # same "None means not built yet" convention as
                               # self.M above; only solve_linear_buckling() reads it.
         self.C = None
         self.F = np.zeros(self.n_dof)
         self.fixed_dofs = set()
-        self.fixed_dof_values = {}   # Wave 16 item 131 -- dof -> prescribed
+        self.fixed_dof_values = {}   # dof -> prescribed
                                       # value, populated by fix_dofs(value=...).
                                       # Missing entries mean 0.0 (the original,
                                       # homogeneous-only behavior). See fix_dofs()
@@ -215,7 +215,7 @@ class FESystem:
                              # (block_name is always None in the single-block
                              # case) -- see init_state().
         self.iter_state = None   # per-element MIXED-FORMULATION internal
-                             # unknown (Module 23 -- e.g. Shell4MITCCorotational's
+                             # unknown (e.g. Shell4MITCCorotational's
                              # von Karman coupling stress resultant) -- a
                              # DELIBERATELY SEPARATE mechanism from self.state
                              # above, not a variant of it, because the two have
@@ -236,17 +236,17 @@ class FESystem:
                              # {block_name: [iter_state_or_None, ...]}.
         self.contact_elements = []   # auxiliary (elem, node_ids, mat) triples,
                                       # see add_contact_element() -- lets a
-                                      # contact/gap element (Module 10) act on
+                                      # contact/gap element act on
                                       # nodes of the MAIN mesh without the mesh
                                       # itself needing a second element type.
         self.contact_state = []      # per-contact-element path-dependent state
-                                      # (Module 13: GapContactCurvedFriction needs
+                                      # (GapContactCurvedFriction needs
                                       # to remember its stick anchor between
                                       # iterations, the same way self.state does
                                       # for the main mesh -- see add_contact_element()
                                       # and commit_all_states(). A contact element
                                       # without init_state() (e.g. GapContactPenalty,
-                                      # Module 10, which is stateless) simply gets
+                                      # which is stateless) simply gets
                                       # None here, silently ignored everywhere below,
                                       # exactly like self.state's per-element None.
 
@@ -580,7 +580,7 @@ class FESystem:
         UserWarning says so). Pass accumulate=True to ADD to the existing
         matrix on purpose, e.g. to superpose a second contribution.
 
-        method (Wave 2 item 12, docs/consolidated_future_roadmap.md):
+        method:
         which of Element's stiffness variants (elements/base.py) to
         call for EVERY element in this system -- "full" (default,
         ORIGINAL behavior: formulation.stiffness(elem_coords, D,
@@ -597,11 +597,11 @@ class FESystem:
         backend= parameter established for the SciPy-vs-PyTorch solve
         choice: never silently prefer or replace one implementation.
 
-        vectorized (Wave 11 item 107, docs/consolidated_future_roadmap.md):
+        vectorized:
         when True, ADDS this call's stiffness contribution via
         vectorized_assembly.assemble_stiffness_vectorized() instead of
         the per-element Python loop below -- a tensorized, no-Python-
-        loop-over-elements path built on item 106's MeshTransformation,
+        loop-over-elements path built on MeshTransformation,
         for the homogeneous continuum-solid/plane-stress element types
         that module supports (see its own Scope docstring; anything
         else raises ValueError rather than silently falling back).
@@ -613,7 +613,7 @@ class FESystem:
         point solve-vs-solve agreement, not merely "close") to the
         default per-element loop -- see tests/test_vectorized_assembly.py.
 
-        chunk_size (Wave 16 item 129, docs/consolidated_future_roadmap.md):
+        chunk_size:
         only meaningful with vectorized=True -- an optional memory-
         chunking knob threaded straight through to
         vectorized_assembly.assemble_stiffness_vectorized() (see that
@@ -623,13 +623,12 @@ class FESystem:
         once, with no change to the assembled result.
 
         backend ("numpy" default, or "torch"), device ("cpu" default,
-        or "cuda") -- Wave 9 addendum item 136, docs/consolidated_
-        future_roadmap.md: only meaningful with vectorized=True,
+        or "cuda"): only meaningful with vectorized=True,
         threaded straight through to vectorized_assembly.assemble_
         stiffness_vectorized()'s own backend=/device= (which in turn
-        thread through to MeshTransformation, item 135). Note this is
+        thread through to MeshTransformation). Note this is
         INDEPENDENT of this FESystem's own constructor-time backend=
-        (solver.py __init__, Wave 0 item 3) -- that one selects scipy
+        (solver.py __init__) -- that one selects scipy
         vs. torch for the LINEAR SOLVE step (solve_static()); this one
         selects numpy vs. torch for the ASSEMBLY step. The two may be
         set differently (e.g. assemble on torch/GPU, solve on scipy)
@@ -789,7 +788,7 @@ class FESystem:
         return arg[i]
 
     def assemble_geometric_stiffness(self, N, **kwargs):
-        """Module 19 (general-purpose extensions Phase 4): global
+        """Global
         geometric ("stress stiffness") matrix K_sigma, built from a
         REFERENCE axial force state N (TENSION-POSITIVE, see Element.
         geometric_stiffness's docstring) rather than from mass or a
@@ -817,7 +816,7 @@ class FESystem:
                 self.K_sigma[np.ix_(g, g)] += kg
 
     # -----------------------------------------------------------------
-    # Nonlinear assembly (Module 8: geometric nonlinearity). These are
+    # Nonlinear assembly (geometric nonlinearity). These are
     # the nonlinear counterparts of assemble_stiffness() above: instead
     # of building ONE global K, they build the internal-force vector
     # and tangent stiffness AT A GIVEN DISPLACEMENT STATE u_global,
@@ -930,9 +929,9 @@ class FESystem:
         assemble_internal_force()/assemble_tangent_stiffness() above),
         the same additive payoff Modules 8-9 already demonstrated.
 
-        If elem defines init_state() (Module 13:
+        If elem defines init_state() (e.g.
         GapContactCurvedFriction, which must remember its stick anchor
-        between iterations -- Module 10's GapContactPenalty is
+        between iterations -- GapContactPenalty is
         stateless and doesn't), a fresh state slot is created in
         self.contact_state, parallel to self.contact_elements, and
         advanced by commit_all_states() exactly like the main mesh's
@@ -941,7 +940,7 @@ class FESystem:
         self.contact_state.append(elem.init_state() if hasattr(elem, "init_state") else None)
 
     # -----------------------------------------------------------------
-    # Path-dependent element state (Module 9: material nonlinearity --
+    # Path-dependent element state (material nonlinearity --
     # plasticity, and later viscoelasticity/creep, both need to
     # remember history, not just the current total strain). The
     # convention: internal_force()/tangent_stiffness() above ALWAYS
@@ -958,7 +957,7 @@ class FESystem:
     def init_state(self):
         """Call once, before the first nonlinear solve, for any system
         that uses a path-dependent element. Elements without state
-        (everything before Module 9, e.g. TrussTL2D) simply don't
+        (e.g. TrussTL2D) simply don't
         define init_state(), so they get None -- harmless, and
         assemble_internal_force()/assemble_tangent_stiffness() above
         still pass state=None through to them (silently ignored, since
@@ -999,7 +998,7 @@ class FESystem:
                                                              block_states[i], **kwargs)
 
     # -----------------------------------------------------------------
-    # Mixed-formulation internal state (Module 23). A DELIBERATELY
+    # Mixed-formulation internal state. A DELIBERATELY
     # SEPARATE mechanism from init_state()/commit_all_states() above --
     # see self.iter_state's own docstring (in __init__) for why the two
     # are not variants of each other. Motivated directly by
@@ -1064,13 +1063,10 @@ class FESystem:
 
     def assemble_damping(self, damping, **kwargs):
         """damping: a damping.RayleighDamping instance, a
-        damping.FieldDamping instance (Wave 17 item 141, docs/
-        consolidated_future_roadmap.md -- Georgiou 2005's single-
-        scalar-per-field model, NOT mass/stiffness-proportional), or a
+        damping.FieldDamping instance, or a
         raw damping matrix (plain ndarray, or scipy.sparse matrix when
         self.sparse) added to self.C directly -- the "today fesystem.C
-        can only be set by hand" escape hatch the roadmap explicitly
-        asks to keep available alongside the two named damping types.
+        can only be set by hand" escape hatch, kept available alongside the two named damping types.
         Requires assemble_mass() to have been called first for
         RayleighDamping/FieldDamping (and, implicitly, assemble_
         stiffness() for RayleighDamping's beta*K term). damping.
@@ -1078,8 +1074,7 @@ class FESystem:
         solve_modal_superposition(), which never needs a global C
         matrix at all.
 
-        ADDITIVE, not replacing (Wave 17 item 141's own explicit
-        instruction, matching this project's standing "never silently
+        ADDITIVE, not replacing (following the "never silently
         prefer or replace one implementation" principle, applied here
         to damping SOURCES rather than backends): each call ADDS its
         contribution to self.C rather than overwriting it, so e.g.
@@ -1128,9 +1123,7 @@ class FESystem:
         dof_indices: which local DOF(s) at each node to constrain
         (0-based, element-formulation-specific, e.g. 0,1 for u,v).
 
-        value (Wave 16 item 131, docs/consolidated_future_roadmap.md,
-        source: TensorMesh's `Boundary Conditions` page's non-
-        homogeneous `Condenser(mask, values)` case): the prescribed
+        value` case): the prescribed
         displacement at every (node, dof_index) pair this call fixes.
         Default 0.0 reproduces the original, homogeneous-only
         behavior exactly. A single scalar applies to every (node,
@@ -1153,18 +1146,15 @@ class FESystem:
         `mixed_assembly.py`'s own `fixed_u_dofs` convention -- does
         NOT read `fixed_dof_values` at all and will silently treat a
         DOF fixed via `value=nonzero` as fixed at ZERO, exactly as
-        before this item existed. This is a DELIBERATELY narrow first
-        step (the plain linear static path only, matching what the
-        TensorMesh comparison this item is sourced from actually
-        looked at) -- see this method's caller-facing warning repeated
-        in solve_static()'s own docstring, and the module docstring's
-        own precedent (Wave 4/Wave 11's "reuses two already-validated
-        pieces rather than touching everything at once") for why a
+        before this option existed. This is a DELIBERATELY narrow first
+        step (the plain linear static path only, kept narrow on purpose) -- see this method's caller-facing warning repeated
+        in solve_static()'s own docstring, and the preference for
+        "reuse already-validated pieces rather than touching everything at once" for why a
         narrower, honestly-scoped addition was chosen over a riskier
         codebase-wide sweep. A genuinely non-zero prescribed
         displacement in a NONLINEAR model should still go through
         `solve_nonlinear_displacement_control()`, which predates this
-        item and remains the supported mechanism there."""
+        option and remains the supported mechanism there."""
         # v1.0.1: validated -- an empty selection or a local DOF index outside 0..dofs_per_node-1
         # used to be accepted silently (the latter constrained OTHER nodes' DOFs).
         nodes = self._check_nodes(node_ids, "fix_dofs")
@@ -1213,7 +1203,7 @@ class FESystem:
         graded mesh).
 
         Straight, LINEAR (2-node) segments only -- see add_consistent_
-        facet_load() below (Wave 15 item 127) for curved/quadratic
+        facet_load() below for curved/quadratic
         edges (Tri6/Quad8) and 3-D element faces (Tet4/Tet10/Hex8/
         Hex20), via real Gauss quadrature instead of this method's own
         closed-form 2-node formula."""
@@ -1228,9 +1218,7 @@ class FESystem:
 
     def add_consistent_facet_load(self, formulation, facets, dof_index, traction,
                                    quad_order=2, thickness=1.0):
-        """Wave 15 item 127 (docs/consolidated_future_roadmap.md,
-        source: TensorMesh's "Elements and Quadrature" documentation
-        page's facet_quadrature()/nanson_scale() machinery): the
+        """Consistent facet (edge/face) load using facet_quadrature()/nanson_scale() machinery: the
         generalization of add_consistent_edge_load() above to curved/
         quadratic edges (Tri6PlaneStress/Quad8PlaneStress) and 3-D
         element faces (Tet4Solid3D/Tet10Solid3D/Hex8Solid3D/
@@ -1250,7 +1238,7 @@ class FESystem:
                 facets.append(tuple(elem_conn[i] for i in local_idx))
 
         for every boundary element/facet you want loaded (a natural
-        pairing with Wave 14 item 123's compute_boundary_mask(), which
+        pairing with compute_boundary_mask(), which
         identifies which faces/edges of a mesh are on the boundary in
         the first place).
         dof_index, traction, thickness: same convention as
@@ -1480,7 +1468,7 @@ class FESystem:
 
     @property
     def fixed_dofs_array(self):
-        """Wave 16 item 131 -- `fixed_dofs` (a set) in a fixed, sorted
+        """`fixed_dofs` (a set) in a fixed, sorted
         order, matching `free_dofs`'s own convention -- so a caller
         pairing this against `_fixed_dof_values_array()` below gets a
         consistent, reproducible ordering."""
@@ -1495,8 +1483,7 @@ class FESystem:
 
     def _dirichlet_rhs_correction(self, Kmat, free, fixed, u_fixed):
         """The `-Kio @ uo` term of non-homogeneous static condensation
-        (Wave 16 item 131, source: TensorMesh's `Boundary Conditions`
-        page) -- `Ff = F[free] - K[free, fixed] @ u_fixed`. Returns the
+        -- `Ff = F[free] - K[free, fixed] @ u_fixed`. Returns the
         zero vector (cheaply, without even slicing `Kmat`) when every
         fixed DOF's prescribed value is 0.0 -- the original,
         homogeneous-only case -- so this is a no-op in both RESULT and
@@ -1511,8 +1498,7 @@ class FESystem:
     # -----------------------------------------------------------------
     @staticmethod
     def _dense_spd_solve(Kff, Ff, tol=1e-6):
-        """Wave 0 item 5 (docs/consolidated_future_roadmap.md, source
-        fem_implementation_lessons.md): route the dense static solve
+        """Route the dense static solve
         through a Cholesky factorization when Kff is SPD, instead of
         always paying for a general LU (np.linalg.solve's dense
         path). Kff is symmetric for every element formulation this
@@ -1529,7 +1515,7 @@ class FESystem:
         LinAlgError) is NOT by itself a reliable SPD test for a matrix
         whose near-zero eigenvalues are many orders of magnitude
         smaller than its largest entries -- exactly the pure-Neumann/
-        floating-structure case Wave 0 item 6 targets. Measured
+        floating-structure case the regularized solve targets. Measured
         directly on a real free-floating plane-stress model: the true
         rigid-body eigenvalues were ~1e-5 while the matrix's own
         entries were ~1e9-1e12 -- a 14-17 order-of-magnitude gap, far
@@ -1582,20 +1568,19 @@ class FESystem:
 
     @staticmethod
     def _eigen_solve(Kff, Ff, tol=1e-8):
-        """Wave 0 items 5 and 6's shared fallback for a dense Kff that
-        _dense_spd_solve() rejected as non-SPD (docs/consolidated_
-        future_roadmap.md, source fem_implementation_lessons.md).
+        """Shared fallback for a dense Kff that
+        _dense_spd_solve() rejected as non-SPD.
         Symmetrically eigendecomposes Kff (valid -- Kff is always
         symmetric in this package) and reconstructs the solution as
         x = V @ diag(1/eigvals) @ V.T @ F. For a NONSINGULAR indefinite
-        Kff (no near-zero eigenvalues -- a case Wave 0 item 5's
+        Kff (no near-zero eigenvalues -- a case the
         Cholesky-first dispatch can reach even though no linear-elastic
         static K in this package is expected to actually be indefinite
         in practice) this is an exact, numerically robust general
         solve, just via eigenvectors instead of LU -- correct, if not
         the cheapest possible route for that particular sub-case.
 
-        For a SINGULAR Kff (Wave 0 item 6's actual target: a
+        For a SINGULAR Kff (the actual target of the regularized solve: a
         pure-Neumann/floating-structure model, e.g. a free-floating
         part loaded only by a self-equilibrated pressure/traction, with
         no Dirichlet BC removing rigid-body motion) one rigid-body mode
@@ -1622,7 +1607,7 @@ class FESystem:
         missing pin) up to rank 6 (a totally unsupported 3-D body) are
         all handled by the same loop, since the true rigid-body rank
         isn't known in advance. This is the null-space-projection
-        reading of the roadmap item's "K_rho = K + rho*E*E^T",
+        reading of "K_rho = K + rho*E*E^T",
         generalized beyond a single hand-picked E. rho is chosen
         relative to Kff's own largest eigenvalue so the regularization
         is negligible next to the real stiffness -- as rho -> 0 this
@@ -1680,12 +1665,10 @@ class FESystem:
     @staticmethod
     def _sparse_lu_solve(Kff_csc, Ff, tol=1e-10):
         """Sparse counterpart of the _dense_spd_solve()/_eigen_solve()
-        dispatch above (Wave 0 items 5 and 6). No sparse-native
+        dispatch above. No sparse-native
         Cholesky is used here (true sparse Cholesky needs CHOLMOD/
         scikit-sparse, an optional binary dependency this package does
-        not currently require -- see docs/consolidated_future_roadmap.
-        md backlog item 36 for the related fill-reducing-reordering
-        follow-on); instead this reuses the SAME SuperLU sparse LU
+        not currently require); instead this reuses the SAME SuperLU sparse LU
         factorization scipy.sparse.linalg.spsolve() already performs
         internally, via splu() directly, so detecting near-singularity
         costs nothing extra on top of the solve itself.
@@ -1695,7 +1678,7 @@ class FESystem:
         orders of magnitude of Kff's largest entries (empirically
         ~1e-3 relative, measured on the models in
         tests/test_singular_system.py); for a genuinely singular Kff
-        (e.g. a pure-Neumann/floating-structure model, Wave 0 item 6),
+        (e.g. a pure-Neumann/floating-structure model),
         the rigid-body null space collapses one or more pivots to
         floating-point noise near zero, empirically ~1e-16 relative --
         twelve-plus orders of magnitude apart, an unambiguous signal.
@@ -1725,10 +1708,9 @@ class FESystem:
 
     def _solve_static_raw(self, verbose=False, method=None, **method_kwargs):
         """Dense: SPD-aware Cholesky solve when Kff is SPD (the common,
-        well-constrained case -- see _dense_spd_solve(), Wave 0 item
-        5), falling back to the shared eigenvalue-based solve
+        well-constrained case -- see _dense_spd_solve()), falling back to the shared eigenvalue-based solve
         (_eigen_solve()) for a non-SPD Kff -- which includes the
-        genuinely SINGULAR case Wave 0 item 6 targets: an
+        genuinely SINGULAR case the regularized solve targets: an
         unconstrained/pure-Neumann model.
 
         sparse=True: the sparse counterpart, _sparse_lu_solve() --
@@ -1747,10 +1729,9 @@ class FESystem:
         Validated in tests/test_sparse_assembly.py to agree with the
         dense path to near machine precision on every (well-posed)
         model checked; see tests/test_singular_system.py for the new
-        regularized-solve coverage (Wave 0 item 6, including agreement
+        regularized-solve coverage (including agreement
         with an independent scipy.linalg.pinv() reference) and
-        tests/test_spd_solve.py for the Cholesky-path coverage (Wave 0
-        item 5).
+        tests/test_spd_solve.py for the Cholesky-path coverage.
 
         backend="torch" (set at construction, see __init__'s docstring):
         dispatches instead to torch_sparse_solver.fesystem_solve_static_
@@ -1762,14 +1743,13 @@ class FESystem:
         merged into one fallback chain -- see __init__'s docstring for
         why backend is an explicit choice, not an automatic upgrade).
 
-        backend="auto" (Wave 11 item 108): decided HERE, once Kff
+        backend="auto": decided HERE, once Kff
         exists -- see backend_dispatch.select_backend() for the exact
         SPD/size rule. verbose=True prints the one-line diagnostic
         backend_dispatch.format_diagnostic_line() builds (n, nnz,
         dtype, device, symmetric, spd, backend, method chosen).
 
-        Non-homogeneous Dirichlet values (Wave 16 item 131, source:
-        TensorMesh's `Boundary Conditions` page): if any DOF was fixed
+        Non-homogeneous Dirichlet values (if any DOF was fixed
         via `fix_dofs(..., value=nonzero)`, the default (`backend=
         "scipy"`) and `backend="auto"` paths below apply the standard
         static-condensation RHS correction `Ff -= K[free, fixed] @
@@ -1781,25 +1761,19 @@ class FESystem:
         is present, rather than silently solving the homogeneous
         system and returning a wrong answer.
 
-        method= (Wave 16 item 132, source: TensorMesh's `Sparse
-        Solvers` page): None (default) is the direct-solve behavior
+        method=: None (default) is the direct-solve behavior
         described above, completely unchanged -- IDENTICAL cost when
         unused, same convention as every other optional parameter in
-        this package since Wave 1's du_tol/energy_tol. Passing
+        this package (du_tol/energy_tol). Passing
         method="cg"/"pcg" instead routes the free-DOF solve through
-        Wave 8's own hand-written (preconditioned) conjugate-gradient
-        solver (iterative_solvers.py, items 37/38) -- see
+        this package's hand-written (preconditioned) conjugate-gradient
+        solver (iterative_solvers.py) -- see
         _solve_static_iterative()'s own docstring for the exact
         dispatch, method_kwargs (tol=, maxiter=, preconditioner= for
-        "pcg"), and why Jacobi/Gauss-Seidel/SOR (item 39) are
+        "pcg"), and why Jacobi/Gauss-Seidel/SOR are
         deliberately NOT exposed as a third method= choice here.
 
-        Valid with backend="scipy" (the default) OR backend="torch"
-        (Wave 9 addendum item 137, docs/consolidated_future_roadmap.md
-        -- CLOSES a gap this item's own docstring used to describe:
-        method= combined with backend="torch" now routes through
-        iterative_solvers.preconditioned_cg(backend="torch", device=
-        self.device) instead of raising, reusing torch_sparse_solver.
+        Valid with backend="scipy" (the default) OR backend="torch" instead of raising, reusing torch_sparse_solver.
         py's own generic CG loop rather than the separate dense/sparse-
         CG dispatch backend="torch" ALREADY has for method=None -- an
         explicit, caller-typed method="cg"/"pcg" AND backend="torch" is
@@ -1809,19 +1783,19 @@ class FESystem:
         that runtime choice with an explicitly-typed method= would be
         the exact "silently reinterpret" ambiguity this project's
         "never silently reinterpret, fail loudly instead" precedent
-        (Wave 0 item 3 onward) exists to avoid -- pass backend="scipy"
+        exists to avoid -- pass backend="scipy"
         or backend="torch" explicitly instead. The -Kio*uo
         non-homogeneous-Dirichlet RHS correction above is honored
         identically regardless of method -- it's a property of the
         linear system being solved, not of how it's solved.
-        NOT wired here: Wave 8's own multigrid_solve() (item 40) -- it
+        NOT wired here: multigrid_solve() -- it
         needs a structured Quad4 mesh HIERARCHY
         (iterative_solvers.structured_quad_hierarchy()), which isn't
         derivable from an arbitrary already-assembled FESystem without
         the caller's own mesh-generation parameters (Lx, Ly, nx0, ny0);
         a caller who wants multigrid still builds that hierarchy by
         hand and calls iterative_solvers.multigrid_solve() directly, as
-        before this item."""
+        before."""
         self._require_stiffness("solve_static")
         fixed = self.fixed_dofs_array
         u_fixed = self._fixed_dof_values_array(fixed)
@@ -1850,8 +1824,8 @@ class FESystem:
                 raise NotImplementedError(
                     "solve_static(backend='torch'): non-homogeneous Dirichlet "
                     "values (fix_dofs(..., value=nonzero)) are not yet "
-                    "supported on the torch backend (Wave 16 item 131 only "
-                    "implemented the scipy/auto paths) -- use backend='scipy' "
+                    "supported on the torch backend (only the "
+                    "scipy/auto paths implement it) -- use backend='scipy' "
                     "or backend='auto', or fix this DOF at value=0.0 and "
                     "apply the offset some other way.")
             from .torch_sparse_solver import fesystem_solve_static_torch
@@ -1872,7 +1846,7 @@ class FESystem:
                         "solve_static(backend='auto'): backend_dispatch chose "
                         "'torch' for this system, but non-homogeneous Dirichlet "
                         "values (fix_dofs(..., value=nonzero)) are not yet "
-                        "supported on the torch backend (Wave 16 item 131) -- "
+                        "supported on the torch backend -- "
                         "pass backend='scipy' explicitly to force the scipy "
                         "path, which does support them.")
                 from .torch_sparse_solver import fesystem_solve_static_torch, _require_torch
@@ -1920,17 +1894,17 @@ class FESystem:
         return U
 
     def _solve_static_iterative(self, method, fixed, u_fixed, method_kwargs):
-        """Wave 16 item 132: the method= branch of solve_static() above,
+        """The method= branch of solve_static() above,
         split out for readability. Builds Kff/Ff exactly like the plain
         scipy path (same -Kio*uo correction, same free/fixed split),
-        then dispatches to Wave 8's preconditioned_cg() (items 37/38)
+        then dispatches to preconditioned_cg()
         instead of a direct solve.
 
         Deliberately narrower than "wire up all of iterative_solvers.py":
         only "cg"/"pcg" are exposed here, matching the Krylov-method
         vocabulary TensorMesh's own `Sparse Solvers` page actually
         offers through `.solve(method=...)` (cg, bicgstab, gmres,
-        minres, lsqr, lsmr) -- Jacobi/Gauss-Seidel/SOR (item 39) are
+        minres, lsqr, lsmr) -- Jacobi/Gauss-Seidel/SOR are
         deliberately NOT exposed as a solve_static() method= choice:
         this was tried first and confirmed, directly, to diverge on an
         ordinary Quad4 plane-stress stiffness matrix (not diagonally
@@ -1942,7 +1916,7 @@ class FESystem:
         that's likely to fail on their actual FE problem. A caller who
         specifically wants Jacobi/Gauss-Seidel/SOR (e.g. as hand-rolled
         multigrid smoothers) still imports iterative_solvers.py
-        directly, unchanged by this item.
+        directly, unchanged.
 
         method_kwargs:
           "cg"  -- tol=, maxiter=, x0= (unpreconditioned CG, requires
@@ -1958,8 +1932,7 @@ class FESystem:
         iteration count calls iterative_solvers.preconditioned_cg()
         directly instead of going through solve_static().
 
-        self.backend (Wave 9 addendum item 137, docs/consolidated_
-        future_roadmap.md): "scipy" (default) builds Kff/Ff as plain
+        self.backend: "scipy" (default) builds Kff/Ff as plain
         numpy/scipy and calls preconditioned_cg(backend="scipy")
         (unchanged). "torch" builds the SAME Kff/Ff (still numpy/scipy
         -- self.K's own contract, see vectorized_assembly.py's own
@@ -2114,7 +2087,7 @@ class FESystem:
         return freq_hz[:n_modes], self.field(mode_shapes, label="mode shapes")
 
     def solve_linear_buckling(self, n_modes=4):
-        """Module 19 (general-purpose extensions Phase 4): the linear
+        """The linear
         (eigenvalue) buckling problem (K + lambda*K_sigma)*phi = 0 on
         the free DOFs, i.e. K*phi = -lambda*K_sigma*phi -- the exact
         same GENERALIZED EIGENPROBLEM PATTERN solve_modal() above
@@ -2156,9 +2129,8 @@ class FESystem:
         eigenvalue here is mathematically valid but means "buckles
         under a reference load reversed in direction", not physically
         meaningful for the compressive reference state this method is
-        meant to be used with; see docs/general_purpose_extensions_
-        roadmap.md Section 6 for the validation this was checked
-        against (the Euler column closed form). Dense-only for this
+        meant to be used with; it is validated against
+        the Euler column closed form. Dense-only for this
         first pass (mirrors solve_modal()'s sparse=True path being
         reserved for future work if a large-buckling use case
         actually needs it -- see that method's docstring for the
@@ -2205,13 +2177,7 @@ class FESystem:
         for it more than once. Returns (t, U_hist) with U_hist shape
         (n_steps+1, n_dof).
 
-        sparse=True (Wave 16 item 134, docs/consolidated_future_
-        roadmap.md, source: TensorMesh's `Time Integration` page --
-        its worked heat-equation example spends a whole section on
-        "factorize the time-stepped operator once, reuse it every step
-        via back-substitution," the SAME idiom this method already
-        used independently for the dense case, well before that
-        comparison): before this item, this method unconditionally
+        sparse=True: previously this method unconditionally
         called `np.linalg.inv()` on `Kff + a0c*Mff + a1c*Cff`, which
         silently assumed a dense `Kff`/`Mff`/`Cff` -- for
         `sparse=True`, those are `scipy.sparse` matrices, and
@@ -2307,8 +2273,7 @@ class FESystem:
         stability, and it is typically far above the lowest few
         'physical' modes). Exact but O(n_dof^3) via a dense eigh, so for
         very large systems estimate dt_crit from a single representative
-        element instead -- see critical_timestep_local() (Wave 6 item
-        32) for the cheap O(n_elements) local alternative this method's
+        element instead -- see critical_timestep_local() for the cheap O(n_elements) local alternative this method's
         own gap used to flag with no fix; fine for the mesh sizes this
         package targets."""
         if self.M is None:
@@ -2321,15 +2286,14 @@ class FESystem:
         return 2.0 / omega_max
 
     def critical_timestep_local(self, wave_speed, alpha=0.9):
-        """Item 32 (Wave 6, docs/consolidated_future_roadmap.md, source
-        nonlinear_fem_lessons.md's appendix): the book's cheap LOCAL
+        """The cheap LOCAL
         per-element estimate dt_crit = alpha * min_e(l_e / c_e), an
         O(n_elements) alternative to critical_timestep()'s exact but
         O(n_dof^3) global spectral estimate (a dense eigh of the FULL
         assembled K/M) -- for a mesh large enough that repeated dense
         eigendecompositions become the real bottleneck (the exact gap
         critical_timestep()'s own docstring already flagged, unaddressed
-        until this item), this trades a modest amount of conservatism
+        there), this trades a modest amount of conservatism
         for a per-element loop that costs about the same as one
         assemble_mass() call, and needs neither K nor M assembled first.
 

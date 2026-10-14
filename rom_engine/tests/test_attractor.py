@@ -1,10 +1,9 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_attractor.py -- validates rom_engine.attractor (Wave 17 item 146,
-fea_engine/docs/consolidated_future_roadmap.md).
+test_attractor.py -- validates rom_engine.attractor.
 
-Two REQUIRED validation checks, per the roadmap's own item-146 row:
+Two REQUIRED validation checks:
 
   1. TestDuffingPeriod1Attractor -- a Duffing oscillator integrated into
      its known period-1 steady state, stroboscopically sampled with
@@ -70,7 +69,7 @@ class TestDuffingPeriod1Attractor:
     omega=1.2 gives a single settled Poincare point at
     x* ~= 0.502 (see module-level development check) -- if this
     parameter choice had NOT cleanly settled, that would itself be
-    useful information (wrong regime), per this item's own validation
+    useful information (wrong regime)
     note; it does settle cleanly, confirmed below."""
     delta, alpha, beta, gamma, omega = 0.3, 1.0, 0.5, 0.5, 1.2
 
@@ -254,7 +253,7 @@ class TestDominantFrequency:
         assert rel_err < 1e-8
 
     def test_slave_mode_responds_at_2x_master_frequency(self):
-        # Reproduces the paper's own "slaved mode responds at 2x the
+        # Reproduces the source's "slaved mode responds at 2x the
         # master frequency" claim on a synthetic master/slave pair.
         T_total, n = 60.0, 6000
         k = 48   # bin index nearest the originally-intended 5.0 rad/s;

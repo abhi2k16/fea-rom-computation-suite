@@ -1,9 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_trajectory_piloted_strategy.py -- Wave 12 item 113 (docs/
-consolidated_future_roadmap.md, ICE-ROM/GAP_ANALYSIS.md gap #2):
-validates `_farthest_point_subsample()` and `TrajectoryPilotedStrategy`.
+test_trajectory_piloted_strategy.py -- validates `_farthest_point_subsample()` and `TrajectoryPilotedStrategy`.
 
 Uses the SAME hand-built cubic-spring synthetic "full order model" as
 `test_nonlinear_rom.py`'s own `AppliedLoadStrategy`/

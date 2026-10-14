@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_node_to_segment_contact.py -- Wave 3 items 16-17 (docs/
-consolidated_future_roadmap.md): validates closest_point_on_segment_2d(),
+test_node_to_segment_contact.py -- validates closest_point_on_segment_2d(),
 find_contact_pairs_2d(), NodeToSegmentContact2D, and
 NodeToSegmentContact2DFriction -- real geometric node-to-segment
 contact search between a slave node and a MASTER SEGMENT of two
@@ -38,7 +37,7 @@ Six lines of evidence:
    code needed. Checked: global equilibrium (sum of reactions balances
    the applied load to near machine precision) and that the BLOCK
    itself measurably deforms under the contact reaction (the concrete
-   "master side is not rigid" property this item's roadmap entry asks
+   "master side is not rigid" property this feature asks
    for).
 6. test_friction_stick_then_slip_and_frictionless_reduction --
    NodeToSegmentContact2DFriction's stick/slip decision matches the

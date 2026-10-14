@@ -1,66 +1,32 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-torch_sparse_solver.py -- Wave 0 item 3 (docs/consolidated_future_
-roadmap.md, source tensormesh_comparative_analysis.md Section 6.1): a
-PyTorch-based linear-solve path for an already-assembled SciPy sparse
-system, opening a GPU-resident solve option for the larger systems
-Hex20/Tet10/graded meshes can produce -- WITHOUT touching any
-element/assembly code. solver.py's FESystem still does all assembly
-(K/F) exactly as before; this module only offers an alternative FINAL
-linear-algebra step, via fesystem_solve_static_torch() below, which a
-caller opts into explicitly.
+torch_sparse_solver.py -- a PyTorch-based linear-solve path for an already-assembled SciPy sparse system, opening a
+GPU-resident solve option for the larger systems Hex20/Tet10/graded meshes can produce WITHOUT touching any
+element/assembly code. solver.py's FESystem still does all assembly (K/F) as before; this module only offers an
+alternative FINAL linear-algebra step, via fesystem_solve_static_torch() below, which a caller opts into
+explicitly.
 
-Per the user's explicit instruction earlier in this project's
-development, this module uses bare `torch` ops only -- no
-`tensormesh`/`torch-sla` package import anywhere; TensorMesh's own
-docs (Section 6.1's own source) were consulted only as design
-inspiration.
+This module uses bare `torch` ops only; there is no `tensormesh`/`torch-sla` package import anywhere.
 
-TWO solve paths, matching the roadmap item's own "PyTorch's own sparse
-linear algebra OR a hand-written preconditioned CG/BiCGSTAB" wording:
+TWO solve paths (PyTorch's own dense linear algebra, or a hand-written preconditioned CG):
 
-  torch_dense_solve()     -- densify + torch.linalg.solve(). The
-                              simplest possible GPU-capable path (any
-                              Kff, no structural assumption), but O(n^2)
-                              memory -- only sensible for small/medium
-                              systems, or as an independent correctness
-                              reference for the sparse path below.
-  torch_sparse_cg_solve() -- a hand-written, Jacobi-preconditioned
-                              Conjugate Gradient solver operating on a
-                              genuine torch.sparse_csr_tensor (no
-                              densification, GPU-resident matvecs).
-                              REQUIRES Kff to be SPD -- CG is not a
-                              general-purpose solver; BiCGSTAB (the
-                              roadmap's other named option) would drop
-                              that requirement at the cost of real
-                              extra complexity (non-symmetric Krylov
-                              recurrences have more numerically
-                              delicate breakdown conditions), and this
-                              package's own linear-elastic static solve
-                              is already SPD in the well-constrained
-                              case (see solver.py's Wave 0 item 5,
-                              _dense_spd_solve()/_sparse_lu_solve()) --
-                              so CG is the right first cut here, with
-                              BiCGSTAB left as documented future work
-                              (docs/consolidated_future_roadmap.md
-                              backlog items 37/38, "Preconditioning"/
-                              "Conjugate gradients", note the CG half of
-                              that backlog item is effectively
-                              superseded by this module).
+    torch_dense_solve()     -- densify + torch.linalg.solve(). The simplest GPU-capable path (any Kff, no
+                                structural assumption), but O(n^2) memory: only sensible for small/medium systems,
+                                or as an independent correctness reference for the sparse path below.
+    torch_sparse_cg_solve() -- a hand-written, Jacobi-preconditioned Conjugate Gradient solver operating on a
+                                genuine torch.sparse_csr_tensor (no densification, GPU-resident matvecs). REQUIRES
+                                Kff to be SPD: CG is not a general-purpose solver. BiCGSTAB would drop that
+                                requirement at the cost of more delicate breakdown conditions in non-symmetric
+                                Krylov recurrences and is not implemented; this package's linear-elastic static
+                                solve is SPD in the well-constrained case (see solver.py's
+                                _dense_spd_solve()/_sparse_lu_solve()), so CG covers the common case.
 
-HONESTY NOTE (development-sandbox limitation, since resolved by real
-execution -- see "VALIDATED" below): this module was written and
-installed in an environment (this project's own development sandbox)
-where the publicly downloadable `torch` PyPI wheel could be downloaded
-and pip-installed but NOT actually imported -- every default-index
-build tried (current release and a legacy 1.13.1 release) is
-CUDA-linked and unconditionally dlopen()s CUDA runtime libraries
-(libcudart/libcublas/libcublasLt/...) at import time, which are not
-present on a CPU-only machine with no NVIDIA driver; the separate
-CPU-only wheel index (download.pytorch.org/whl/cpu) is blocked by this
-sandbox's network proxy. The test file skips itself cleanly there
-(gated on _HAS_TORCH, see below) rather than reporting a false pass.
+VALIDATION NOTE: this module was first written in an environment where the publicly downloadable `torch` PyPI
+wheel could be pip-installed but NOT imported (every default-index build tried is CUDA-linked and dlopen()s CUDA
+runtime libraries at import time, absent on a CPU-only machine with no NVIDIA driver). The test file skips itself
+cleanly when torch is not importable (gated on _HAS_TORCH, see below) rather than reporting a false pass; see
+"VALIDATED" below for the real execution record.
 
 VALIDATED (2026-09-08, on the user's own machine -- Windows, NVIDIA
 GeForce GTX 1050, PyTorch 2.7.0/CUDA 12.6): all 7 tests in
@@ -218,7 +184,7 @@ def torch_sparse_cg_solve(K, F, tol=1e-8, max_iter=None, device="cpu", dtype=Non
     so this function only sanity-checks that the diagonal is strictly
     positive, a cheap NECESSARY-but-not-sufficient SPD condition, and
     trusts the caller for the rest, exactly the same "well-constrained
-    linear-elastic K is SPD" assumption solver.py's own Wave 0 item 5
+    linear-elastic K is SPD" assumption solver.py's own
     (_dense_spd_solve()) already makes for the default SciPy path).
 
     K: SciPy sparse matrix or dense array-like, (n, n), SPD. F: (n,)
@@ -269,8 +235,7 @@ def fesystem_solve_static_torch(sysobj, method="cg", device="cpu", tol=1e-8, max
     """Drop-in alternative to FESystem.solve_static() (solver.py) that
     routes the SAME free-dof linear solve through PyTorch instead of
     SciPy -- the concrete demonstration of "a GPU solve path ...
-    without touching any element/assembly code" this module's roadmap
-    item calls for: `sysobj`'s K/F are already fully assembled by the
+    without touching any element/assembly code" this module is built for: `sysobj`'s K/F are already fully assembled by the
     ordinary assemble_stiffness() (unchanged, SciPy/NumPy throughout)
     by the time this function is called; only the FINAL linear-algebra
     step is replaced.
@@ -278,7 +243,7 @@ def fesystem_solve_static_torch(sysobj, method="cg", device="cpu", tol=1e-8, max
     method="cg" (default): torch_sparse_cg_solve() -- appropriate for
     the ordinary well-constrained linear-elastic static case
     solve_static() itself already treats as (typically) SPD, see
-    solver.py's Wave 0 item 5. Raises RuntimeError if CG fails to
+    solver.py's . Raises RuntimeError if CG fails to
     converge (unlike torch_sparse_cg_solve() itself, which just reports
     converged=False -- this function's contract mirrors
     FESystem.solve_static()'s own "either return a real answer or

@@ -2,27 +2,26 @@
 # SPDX-License-Identifier: MIT
 """
 test_cross_configuration_validation.py -- validates the cross-configuration harness that
-ties items 117/118/119 together on ONE real fea_engine fixture pair
+ties the residual check, basis cross-resolution check and integrator comparison together on ONE real fea_engine fixture pair
 (`clamped_clamped_nonlinear_beam_system`, n_elem=10 for training /
 n_elem=20 for cross-resolution validation), rather than re-proving any
-one item's own already-tested claim in isolation.
+any one component's already-tested claim in isolation.
 
 Empirical numbers from this file's own development (recorded here so
 a future reader can tell "still working as designed" apart from
 "regressed" without re-deriving thresholds from scratch):
 
-  - Two independent integrators (Newton-Newmark, item 114; RK4, item
-    119) of the SAME fitted reduced dynamics, at dt=2e-5/n_steps=2500:
+  - Two independent integrators (Newton-Newmark; RK4) of the SAME fitted reduced dynamics, at dt=2e-5/n_steps=2500:
     max relative trajectory difference ~0.37%, well under the 2%
     bound asserted below. At the module's own former default
     (dt=2e-4/n_steps=250) they only agreed to ~42% -- a resolution
     issue in BOTH integrators (confirmed by dt-halving convergence),
     not a bug, and the reason the finer default was chosen.
-  - item 117's residual, evaluated on both trajectories: ~0.02%
+  - the reduced-equation residual, evaluated on both trajectories: ~0.02%
     (Newmark) / ~0.007% (RK4) of the applied-force scale.
-  - item 118's cross-mesh-resolution reconstruction: ~0.03% same-
+  - the cross-mesh-resolution reconstruction: ~0.03% same-
     resolution vs ~0.5%-2.2% cross-resolution (n_elem=10 -> n_elem=20),
-    matching item 118's own test file's numbers almost exactly (same
+    matching the reduced-basis operator test's numbers almost exactly (same
     underlying fixture, same AppliedLoadStrategy convention).
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
@@ -49,8 +48,8 @@ def fix20():
 
 
 # =====================================================================
-# 1. Reduced-dynamics cross-check: Newton-Newmark vs item 119's RK4,
-#    both checked against item 117's own residual function.
+# 1. Reduced-dynamics cross-check: Newton-Newmark vs RK4,
+#    both checked against the reduced-equation residual function.
 # =====================================================================
 def test_two_independent_integrators_of_the_same_reduced_model_agree(fix10):
     rep = cross_check_reduced_dynamics(fix10, n_train=40, seed=0)
@@ -78,7 +77,7 @@ def test_coarser_resolution_shows_the_two_integrators_diverge_then_reconverge(fi
 
 
 # =====================================================================
-# 2. Basis cross-resolution generalization (item 118), re-run as part
+# 2. Basis cross-resolution generalization, re-run as part
 #    of the combined harness.
 # =====================================================================
 def test_basis_cross_resolution_error_stays_small_and_exceeds_same_resolution_error(fix10, fix20):

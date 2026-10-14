@@ -1,13 +1,10 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-balanced_truncation.py -- balanced truncation (Besselink et al. 2013,
-Section 4 / eqs. 37-58), the paper's "systems and control" family, and
-the one of its three numerically-applied methods that stays accurate
-FAR from any single expansion point (unlike krylov.py's moment
-matching, which is only locally accurate) because it explicitly uses
-WHERE the inputs and outputs are, not just the system's own internal
-dynamics.
+balanced_truncation.py -- balanced truncation (Besselink et al. 2013, Section 4 / eqs. 37-58), the "systems and
+control" family of model reduction. Unlike krylov.py's moment matching, which is only locally accurate, it stays
+accurate FAR from any single expansion point because it uses WHERE the inputs and outputs are, not just the
+system's internal dynamics.
 
 The idea: solve two continuous-time Lyapunov equations for the
 controllability Gramian P and observability Gramian Q of the first-order
@@ -26,12 +23,10 @@ observability, i.e. for the actual input-output behavior specifically
 matching, "knows" about the ports) -- and truncate to the r states with
 the largest sigma_i.
 
-This module implements the numerically preferred SQUARE-ROOT method
-(Cholesky/eigen factors of the Gramians, an SVD of their cross product,
-never an explicit eigendecomposition of the Gramian PRODUCT P@Q, which
-is the classical textbook presentation but genuinely ill-conditioned
-when the Hankel singular values span a wide range -- exactly what real
-structural models, including this paper's own benchmark, produce).
+This module implements the numerically preferred SQUARE-ROOT method (Cholesky/eigen factors of the Gramians, an SVD
+of their cross product, never an explicit eigendecomposition of the Gramian PRODUCT P@Q, which is the classical
+textbook presentation but ill-conditioned when the Hankel singular values span a wide range, as real structural
+models do).
 
 Why form="A" (the explicit M-inverted state-space form), not form="E"
 like krylov.py: scipy.linalg.solve_continuous_lyapunov only solves the
@@ -51,27 +46,14 @@ property, so BalancedTruncationROM.is_stable() should always report
 True and is kept mainly as a regression guard on that theorem, not a
 real per-call check the way krylov.KrylovROM's version is.
 
-Extensions the paper mentions but does not itself run numerically
-(coprime-factorization BT for unstable systems, passivity-preserving
-BT, optimal Hankel norm approximation) were originally out of scope --
-see docs/classical_mor_roadmap.md Section 2c/7 -- but ALL THREE are now
-covered, two of them elsewhere in this package rather than as sibling
-classes here: singular perturbation approximation (SPA,
-SingularPerturbationROM below -- see its own docstring and
-docs/classical_mor_roadmap.md Section 8) and frequency-weighted BT
-(FrequencyWeightedBalancedTruncationROM below -- see its own docstring
-and Section 10) ARE sibling classes in THIS file, since both reuse the
-SAME square-root balancing machinery this module already implements
-(_balance_from_gramians()), just fed different Gramians. Passivity
-preservation was instead scoped into its own module, passivity.py (a
-closed-form theorem plus a diagnostic, not a new ROM class -- see that
-module's docstring and Section 12 for why). Optimal Hankel norm
-approximation was also scoped into its own module,
-hankel_norm.py's OptimalHankelNormROM (see its own docstring and
-Section 14) -- it reuses hankel_singular_values() for its balancing
-step but its Gamma-inversion/Schur-plus-Sylvester construction is
-algorithmically unlike anything else in this file, the same reasoning
-that already keeps krylov.py separate from this module.
+Related methods: singular perturbation approximation (SPA, SingularPerturbationROM below; see its docstring) and frequency-weighted BT (FrequencyWeightedBalancedTruncationROM below;
+see its docstring and Section 10) are sibling classes in THIS file, since both reuse the SAME square-root balancing
+machinery (_balance_from_gramians()), fed different Gramians. Passivity preservation is in its own module,
+passivity.py (a closed-form theorem plus a diagnostic, not a new ROM class; see its docstring and Section 12).
+Optimal Hankel norm approximation is in hankel_norm.py's OptimalHankelNormROM (see its docstring and Section 14): it
+reuses hankel_singular_values() for its balancing step, but its Gamma-inversion/Schur-plus-Sylvester construction is
+algorithmically unlike anything else in this file, the same reason krylov.py is separate. Coprime-factorisation BT
+for unstable systems is not implemented.
 
 A PRACTICAL SCALE NOTE, found while validating this module against a
 real fea_engine beam: don't call from_MCK() directly on a raw,
@@ -91,6 +73,13 @@ for a worked example of this two-stage pattern, including the numerical
 symptoms (an artificial noise floor a few orders of magnitude above
 machine epsilon in the smallest computed Hankel singular values) that
 show up if this step is skipped.
+
+References (methods in this module are adopted from):
+  - B. C. Moore (1981), "Principal component analysis in linear systems: controllability, observability, and model reduction", IEEE Trans. Autom. Control 26(1)
+  - D. F. Enns (1984), "Model reduction with balanced realizations: an error bound and a frequency weighted generalization", Proc. 23rd IEEE Conf. Decision and Control
+  - Y. Liu, B. D. O. Anderson (1989), "Singular perturbation approximation of balanced systems", Int. J. Control 50(4)
+  - L. Pernebo, L. M. Silverman (1982), "Model reduction via balanced state space representations", IEEE Trans. Autom. Control 27(2)
+  - B. Besselink, U. Tabak, A. Lutowska, N. van de Wouw, H. Nijmeijer, D. J. Rixen, M. E. Hochstenbach, W. H. A. Schilders (2013), "A comparison of model reduction techniques from structural dynamics, numerical mathematics and systems and control", J. Sound Vib. 332(19)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -99,8 +88,7 @@ from scipy.linalg import solve_continuous_lyapunov, cholesky, eigh, LinAlgError,
 from .state_space import to_state_space
 from .torch_linalg import _HAS_TORCH, _require_torch, torch_solve_continuous_lyapunov, torch_balance_from_gramians
 
-# GPU/torch side-by-side path (Wave 9 addendum item 138, docs/
-# consolidated_future_roadmap.md) -- see torch_linalg.py's own module
+# GPU/torch side-by-side path -- see torch_linalg.py's module
 # docstring for the full design (why a shared helper module, what is
 # and is not ported, the Kronecker-vectorization Lyapunov-solve method
 # used in place of scipy's Bartels-Stewart). Every function below that
@@ -116,7 +104,7 @@ from .torch_linalg import _HAS_TORCH, _require_torch, torch_solve_continuous_lya
 def controllability_gramian(A, B, backend="numpy", device="cpu"):
     """Solve A P + P A^T + B B^T = 0 for P. backend="numpy" (default,
     unchanged) uses scipy's dense Bartels-Stewart solver (LAPACK
-    ?TRSYL). backend="torch" (Wave 9 addendum item 138) routes through
+    ?TRSYL). backend="torch" routes through
     torch_linalg.torch_solve_continuous_lyapunov() instead -- a
     genuinely different numerical method (Kronecker-sum vectorization,
     see that function's own docstring), cross-validated against the
@@ -194,8 +182,8 @@ def _balance_from_gramians(P, Q, backend="numpy", device="cpu"):
     hankel_singular_values()'s optional return_transform -- both public
     callers decide for themselves whether to expose it).
 
-    backend="numpy" (default, unchanged) / backend="torch" (Wave 9
-    addendum item 138) -- torch path routes through torch_linalg.
+    backend="numpy" (default, unchanged) / backend="torch"
+    -- torch path routes through torch_linalg.
     torch_balance_from_gramians(), same formulas, always returns
     NumPy arrays either way.
 
@@ -249,7 +237,7 @@ def hankel_singular_values(A, B, Cout, return_transform=False, backend="numpy", 
         Gramians = diag(hsv)) -- what BalancedTruncationROM uses
         internally to build its reduced model.
     backend : "numpy" (default) or "torch"
-        Wave 9 addendum item 138: backend="torch" routes the two
+        backend="torch" routes the two
         Lyapunov solves and the balancing SVD through torch_linalg.py
         (device= selects "cpu"/"cuda") -- accelerates the genuinely
         expensive, full-order-sized compute this function does. Always
@@ -329,7 +317,7 @@ def bandpass_weight(omega_n, zeta=0.1):
 def frequency_weighted_gramians(A, B, Cout, Wi=None, Wo=None, backend="numpy", device="cpu"):
     """Enns (1984) frequency-weighted controllability/observability
     Gramians, restricted to the plant's own n states -- see module
-    docstring / docs/classical_mor_roadmap.md Section 10 for the
+    docstring for the
     cascade-system derivation. Either Wi or Wo (or both) may be None,
     degenerating that side back to Wi(s)=1 / Wo(s)=1 exactly (i.e. the
     plain, unweighted Gramian on that side).
@@ -344,7 +332,7 @@ def frequency_weighted_gramians(A, B, Cout, Wi=None, Wo=None, backend="numpy", d
         BEFORE the plant (on the input side); Wo is applied AFTER the
         plant (on the output side).
     backend, device
-        Wave 9 addendum item 138 -- passed through to the underlying
+        Passed through to the underlying
         controllability_gramian()/observability_gramian() calls (both
         potentially on an AUGMENTED, larger-than-n system when Wi/Wo
         are given, making the torch path more valuable here, not less).
@@ -392,7 +380,7 @@ def frequency_weighted_hankel_singular_values(A, B, Cout, Wi=None, Wo=None,
     this reproduces hankel_singular_values() exactly (frequency_
     weighted_gramians() returns the SAME plain Gramians in that case) --
     see test_frequency_weighted_bt.py's direct regression check of
-    this. backend/device: Wave 9 addendum item 138, same convention as
+    this. backend/device: same convention as
     hankel_singular_values()."""
     if backend not in ("numpy", "torch"):
         raise ValueError(
@@ -463,7 +451,7 @@ class BalancedTruncationROM:
             mode-displacement basis of comparable size would use --
             see state_space.py's module docstring).
         backend, device
-            Wave 9 addendum item 138: backend="numpy" (default,
+            backend="numpy" (default,
             unchanged) / backend="torch" (+ device="cpu"/"cuda"),
             passed straight through to hankel_singular_values() -- see
             that function's own docstring and torch_linalg.py's module
@@ -523,9 +511,7 @@ class SingularPerturbationROM:
     """Singular perturbation approximation (SPA; Liu & Anderson 1989,
     "Singular perturbation approximation of balanced systems" -- also
     called "residualization", e.g. Antoulas, *Approximation of
-    Large-Scale Dynamical Systems*, Ch. 9) -- docs/classical_mor_
-    roadmap.md Section 8 has the full derivation this docstring
-    summarizes.
+    Large-Scale Dynamical Systems*, Ch. 9). The derivation is summarized in this docstring.
 
     Ordinary BalancedTruncationROM DISCARDS the truncated ("fast")
     balanced states `x2` outright (assumes `x2 = 0`), which is exact at
@@ -624,8 +610,8 @@ class SingularPerturbationROM:
         """Build a SingularPerturbationROM directly from second-order
         mass/stiffness (and, optionally, damping) matrices plus an
         input map B and output map Cout -- identical signature to
-        BalancedTruncationROM.from_MCK (including backend=/device=,
-        Wave 9 addendum item 138), for direct side-by-side use."""
+        BalancedTruncationROM.from_MCK (including backend=/device=),
+        for direct side-by-side use."""
         ss = to_state_space(M, K, C=C, B=B, Cout=Cout, form="A")
         hsv, T, Tinv = hankel_singular_values(ss.A, ss.B, ss.Cout, return_transform=True,
                                                backend=backend, device=device)
@@ -676,9 +662,7 @@ class SingularPerturbationROM:
 class FrequencyWeightedBalancedTruncationROM:
     """Frequency-weighted balanced truncation (Enns 1984, "Model
     reduction with balanced realizations: An error bound and a
-    frequency weighted generalization") -- docs/classical_mor_
-    roadmap.md Section 10 has the full derivation this docstring
-    summarizes.
+    frequency weighted generalization"). The derivation is summarized in this docstring.
 
     Ordinary BalancedTruncationROM's Hankel singular values rank each
     balanced state by how much it matters for the input-output
@@ -755,8 +739,7 @@ class FrequencyWeightedBalancedTruncationROM:
         BalancedTruncationROM.from_MCK, plus the Wi/Wo weight
         arguments (see lowpass_weight()/bandpass_weight() for
         convenience constructors, or module docstring for the raw
-        (Aw, Bw, Cw, Dw) tuple convention). backend/device: Wave 9
-        addendum item 138, same convention as BalancedTruncationROM.
+        (Aw, Bw, Cw, Dw) tuple convention). backend/device: same convention as BalancedTruncationROM.
         from_MCK -- the augmented (plant + weight) systems this class's
         own Gramians are built from are LARGER than the plant alone,
         making the torch path more valuable here, not less."""

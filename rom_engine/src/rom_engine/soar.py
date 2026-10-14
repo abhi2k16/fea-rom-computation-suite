@@ -1,11 +1,9 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-soar.py -- SOAR (Second-Order Arnoldi) moment-matching ROM: a
-SECOND-ORDER-structure-preserving alternative to krylov.py's own
-first-order Krylov moment matching, built as a Phase 5 addendum to
-docs/frequency_domain_rom_roadmap.md (Section 8 there has the full
-derivation and validation plan -- this docstring summarizes it).
+soar.py -- SOAR (Second-Order Arnoldi) moment-matching ROM: a second-order-structure-preserving alternative to
+krylov.py's first-order Krylov moment matching. The Krylov subspace is built directly from the (M, C, K) pencil, so
+the reduced model keeps the second-order form M_r q'' + C_r q' + K_r q = B_r u.
 
 krylov.py matches Taylor moments of H(s) = Cout (s*E-A)^-1 B, the
 FIRST-ORDER linearized transfer function, at the cost of doubling the
@@ -43,28 +41,15 @@ first several Taylor moments at s0 -- SOAR's whole point, and the
 source of its "avoids the first-order 2x blowup" advantage over
 krylov.py's own arnoldi_basis().
 
-SOAR vs. TOAR, stated honestly: Bai & Su's original SOAR construction
-(built here) is literature-documented as numerically fragile,
-particularly for BLOCK (multiple simultaneous input columns) starting
-vectors -- exactly this package's use case (B with n_in columns). TOAR
-(Lu, Su, Bai) fixes this with a "two-level" representation (every
-Krylov direction stored as a shared position-space basis plus a small
-per-direction coefficient pair, rather than as full-length vectors).
-This module does NOT implement that two-level bookkeeping -- a
-deliberate, stated scope decision (matching this project's established
-precedent of honestly-scoped-out extensions: scm_lp.py's natural-norm
-SCM variant, passivity.py's D!=0 positive-real ARE case, nnm.py's
-subharmonic-multiplier support). soar_basis() instead mitigates SOAR's
-known fragility the standard way Arnoldi-family methods generally do --
-FULL reorthogonalization against every previously-kept basis vector at
-every step (already how krylov.py's own arnoldi_basis() works) -- which
-is expected to behave well at the modest scale this package's real
-validation fixtures actually reach (two to three orders of magnitude
-below the 10^5-10^7-DOF industrial scale where TOAR's extra machinery
-specifically earns its keep), checked directly in test_soar.py rather
-than assumed. If a real target model ever needs genuine TOAR, replacing
-soar_basis()'s internals is a much narrower follow-up than this SOAR
-implementation was, since SOARROM's projection/API stays the same.
+SOAR versus TOAR: the original SOAR construction (Bai and Su) implemented here is documented in the literature as
+numerically fragile, particularly for BLOCK starting vectors (several simultaneous input columns, as when B has
+n_in columns). TOAR (Lu, Su and Bai) addresses this with a two-level representation (each Krylov direction stored
+as a shared position-space basis plus a small per-direction coefficient pair). That two-level bookkeeping is NOT
+implemented. soar_basis() mitigates the fragility the way Arnoldi-family methods usually do, with full
+reorthogonalization against every previously kept basis vector at every step (as krylov.py's arnoldi_basis()
+does). This is expected to behave well at the model sizes used in the tests (checked directly in test_soar.py), but
+is not claimed for 10^5-10^7-DOF models, where TOAR's extra machinery matters. Replacing soar_basis()'s internals
+with TOAR would leave SOARROM's projection and API unchanged.
 
 A subtlety that cost a real, self-caught bug during development (worth
 recording rather than silently fixing): the two-term recurrence MUST be
@@ -141,6 +126,9 @@ at a real reduced order on this package's own fixture. This makes
 SOARROM the first Krylov-family (moment-matching) method in this
 package with a provable passivity guarantee -- checked directly in
 test_soar.py, not just asserted from the theorem.
+
+References (methods in this module are adopted from):
+  - Z. Bai, Y. Su (2005), "SOAR: A second-order Arnoldi method for the solution of the quadratic eigenvalue problem", SIAM J. Matrix Anal. Appl. 26(3)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

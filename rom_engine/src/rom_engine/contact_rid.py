@@ -11,17 +11,17 @@ small piece of the mesh (the RID) and the contact forces on that piece are kept 
 
 Sign convention (the PAPER's, which differs from `fea_engine.contact_solvers`):
 
-        K U + B^T Lam = F,      B U <= D,      Lam >= 0,      Lam . (D - B U) = 0              (paper Eq. 16)
+        K U + B^T Lam = F,      B U <= D,      Lam >= 0,      Lam . (D - B U) = 0              (Eq. 16 of the source)
 
 Pipeline (offline, then online)
 -------------------------------
-1. POD basis V of displacement snapshots; the basis size is set by the information rate (paper Eq. 18).
+1. POD basis V of displacement snapshots; the basis size is set by the information rate (Eq. 18 of the source).
 2. DEIM indices of V (and of a coarse POD of the multiplier snapshots) -> `rid_elements` -> RID (paper Sec. 4.2).
 3. `rid_dofs` splits the DOFs into P (balance equations are written: every element touching them is in the RID)
    and `ext` (all DOFs of RID elements: what the stiffness rows of P couple to).
 4. `contact_rows_in_rid`: the potential contacts whose gap can be evaluated inside the RID.
 5. `HybridHRContact` enriches V with unit vectors so that B_r = B[rows] V has full row rank (the discrete inf-sup /
-   LBB condition, paper Eq. 39-40), then solves the reduced saddle-point problem (paper Eq. 38) online.
+   LBB condition, Eq. 39-40 of the source), then solves the reduced saddle-point problem (Eq. 38 of the source) online.
 6. `reconstruct_contact_forces` (in contact_hyper_reduction.py) extends the multipliers outside the RID (Eq. 41).
 7. `interpolation_indicator` is the cheap a-posteriori error estimate eta of Eq. 42-43, used to drive a greedy
    choice of snapshots.
@@ -29,6 +29,9 @@ Pipeline (offline, then online)
 Honest scope. Frictionless, small displacement (constant B), linear elastic K in the examples (K may depend on the
 parameter: it is passed in per query). Nothing here knows about a particular mesh: the caller supplies, per element,
 the list of DOFs it touches.
+
+References (methods in this module are adopted from):
+  - A. Fauque, I. Ramiere, D. Ryckelynck (2018), "Hybrid hyper-reduced modeling for contact mechanics problems", Int. J. Numer. Meth. Engng 115(1):117-139
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -47,7 +50,7 @@ __all__ = ["pod_by_information_rate", "rid_elements", "rid_dofs", "contact_rows_
 # Basis and RID construction (offline)
 # ----------------------------------------------------------------------------------------------------------------
 def pod_by_information_rate(S, eps_tol):
-    """POD basis of the snapshot matrix S (N x Ns) truncated by the paper's information rate (Eq. 18):
+    """POD basis of the snapshot matrix S (N x Ns) truncated by the information rate (Eq. 18 of Fauque et al.):
     the smallest l with  sum_{j<=l} sigma_j^2 / sum_j sigma_j^2  >=  1 - eps_tol.  Returns V (N x l)."""
     Us, s, _ = np.linalg.svd(np.asarray(S, float), full_matrices=False)
     rate = np.cumsum(s ** 2) / np.sum(s ** 2)
@@ -90,8 +93,8 @@ def rid_elements(elem_dofs, n_dof, dof_indices, layers=0, previous=None):
 def rid_dofs(elem_dofs, n_dof, rid_elems):
     """Split the DOFs for the RID.
     P    : DOFs ALL of whose incident elements lie in the RID. The balance equation of such a DOF can be written
-           exactly on the RID (the set called Gamma-hat-sub-A in the paper).
-    ext  : every DOF of every RID element. The rows of K for P only couple to ext (the paper's union set), so only
+           exactly on the RID (the set Gamma-hat-sub-A of the source).
+    ext  : every DOF of every RID element. The rows of K for P only couple to ext (the source's union set), so only
            K[P, ext] is needed online.
     Returns (P, ext), both sorted int arrays. ext \\ P is the interface Gamma_I where pseudo-Dirichlet data lives."""
     inc = _incident(elem_dofs, n_dof)
@@ -105,7 +108,7 @@ def rid_dofs(elem_dofs, n_dof, rid_elems):
 def contact_rows_in_rid(B, P):
     """Rows of the potential-contact matrix B whose gap can be evaluated with DOFs of P only (every nonzero column
     of the row lies in P). For node-to-node / obstacle contact this is simply the contact nodes inside P; for
-    node-to-surface contact rows touching the interface are dropped, which is the paper's Gamma_I^C extension
+    node-to-surface contact rows touching the interface are dropped (the Gamma_I^C extension of the source,
     (Sec. 5.1): there the gap is not computable, so no multiplier is kept."""
     Bc = sp.csr_matrix(B)
     inP = np.zeros(Bc.shape[1], bool)
@@ -126,11 +129,11 @@ class HybridHRResult:
 
 
 class HybridHRContact:
-    """Hybrid hyper-reduced contact model (paper Eq. 38).
+    """Hybrid hyper-reduced contact model (Eq. 38 of the source).
 
     V        (N x l) POD basis;      B (m x N) potential-contact matrix;
     P, ext   from `rid_dofs`;        rows from `contact_rows_in_rid`.
-    enrich   append unit vectors to V until B[rows] V has full row rank (paper Eq. 39-40). Without it the reduced
+    enrich   append unit vectors to V until B[rows] V has full row rank (Eq. 39-40 of the source). Without it the reduced
              saddle-point problem is singular whenever len(rows) > l.
 
     Online `solve(K_Pext, F_P, D_rows)` needs ONLY the RID blocks K[P, ext], F[P] and D[rows]: the cost does not
@@ -152,7 +155,7 @@ class HybridHRContact:
 
     @property
     def n_unknowns(self):
-        """Primal reduced unknowns + RID multipliers (the 'total number of unknowns' of the paper's Table 1)."""
+        """Primal reduced unknowns + RID multipliers (the 'total number of unknowns' of the source's Table 1)."""
         return self.V.shape[1] + len(self.rows)
 
     def inf_sup_deficiency(self):
@@ -200,7 +203,7 @@ def restricted_fom_solve(K_PP, K_PI, F_P, u_I, B_P, D, B_I=None):
 def snapshot_interpolator(params, values):
     """Interpolate snapshot columns in the parameter space: values (n x Ns) at params (Ns x d) -> callable mu -> (n,).
     Linear (Delaunay) interpolation inside the convex hull of the sampled parameters -- the scattered-data version
-    of the bilinear interpolation the paper uses on a grid -- and nearest neighbour outside it or when there are too
+    of the bilinear interpolation used on a regular grid -- and nearest neighbour outside it or when there are too
     few / degenerate points (early greedy iterations)."""
     from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
     X = np.atleast_2d(np.asarray(params, float))

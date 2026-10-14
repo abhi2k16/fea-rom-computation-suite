@@ -1,13 +1,10 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-nonlinear_solids.py -- Module 19 (general-purpose extensions roadmap
-Phase 6): nonlinear continuum elements, Hex8PlasticJ2 (small-strain J2
-plasticity) and Tet4NeoHookean (large-strain compressible hyperelasticity).
-Plus Tet10SolidTL (added 2026-08-30, see that class's own docstring):
-geometric-only nonlinearity (Total Lagrangian, linear elastic material) on
-the quadratic Tet10 element -- a different axis from the first two, which
-are both material nonlinearity on LINEAR-order elements.
+nonlinear_solids.py -- nonlinear continuum elements: Hex8PlasticJ2 (small-strain J2 plasticity) and Tet4NeoHookean
+(large-strain compressible hyperelasticity), plus Tet10SolidTL (see that class's docstring): geometric-only
+nonlinearity (Total Lagrangian, linear elastic material) on the quadratic Tet10 element, a different axis from the
+first two, which are both material nonlinearity on LINEAR-order elements.
 
 Hex8PlasticJ2/Tet4NeoHookean SUBCLASS their existing linear-elastic
 counterparts (Hex8Solid3D, Tet4Solid3D respectively) rather than
@@ -18,11 +15,14 @@ identical to the linear parent, only internal_force()/tangent_stiffness()
 (and, for the path-dependent plasticity case, init_state()/commit_state())
 differ. Tet10SolidTL follows the same pattern, subclassing Tet10Solid3D.
 
-Split into its own file (rather than added to solids.py, already the
-largest element module) since this is a genuinely separate axis of
-extension -- material/geometric NONLINEARITY on TOP of existing
-elements -- mirroring how beams3d.py was split out for Phase 3 rather
-than folded into beams.py.
+This is its own file (rather than part of solids.py, already the largest element module) because material/
+geometric NONLINEARITY on top of existing elements is a separate axis of extension, as with beams3d.py versus
+beams.py.
+
+References (methods in this module are adopted from):
+  - J. C. Simo, R. L. Taylor (1985), "Consistent tangent operators for rate-independent elastoplasticity", Comput. Methods Appl. Mech. Engrg. 48(1)
+  - K.-J. Bathe (1996), "Finite Element Procedures", Prentice Hall
+  - T. Belytschko, W. K. Liu, B. Moran, K. Elkhodary (2014), "Nonlinear Finite Elements for Continua and Structures", 2nd ed., Wiley
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -109,7 +109,7 @@ class Hex8PlasticJ2(Hex8Solid3D):
 
 # =====================================================================
 # Quad4PlasticJ2PlaneStress -- small-strain J2 plasticity, PLANE STRESS,
-# Wave 2 item 13 (docs/consolidated_future_roadmap.md)
+#
 # =====================================================================
 class Quad4PlasticJ2PlaneStress(Quad4PlaneStress):
     """Quad4PlaneStress + small-strain J2 (von Mises) plasticity, via
@@ -190,8 +190,8 @@ class Quad4PlasticJ2PlaneStress(Quad4PlaneStress):
 
 # =====================================================================
 # Hex8PlasticJ2Kinematic -- small-strain J2 plasticity, COMBINED
-# isotropic + Armstrong-Frederick kinematic hardening, Wave 2 item 14
-# (docs/consolidated_future_roadmap.md)
+# isotropic + Armstrong-Frederick kinematic hardening,
+#
 # =====================================================================
 class Hex8PlasticJ2Kinematic(Hex8PlasticJ2):
     """Hex8PlasticJ2 + Armstrong-Frederick nonlinear kinematic hardening
@@ -199,7 +199,7 @@ class Hex8PlasticJ2Kinematic(Hex8PlasticJ2):
     j2_radial_return_3d_kinematic()) -- a SUBCLASS of Hex8PlasticJ2, not
     a replacement, so isotropic-only plasticity keeps working through
     the plain Hex8PlasticJ2 class exactly as before (same "add, don't
-    replace" principle as every other Wave 2 item). Only
+    replace" principle as every other item). Only
     j2_radial_return_3d() is swapped for j2_radial_return_3d_kinematic()
     and a per-Gauss-point back-stress "beta" (6,) is added to the state
     dict -- everything else (B_matrix, node/DOF layout, gauss loop
@@ -286,7 +286,7 @@ class Tet4NeoHookean(Tet4Solid3D):
     tangent_stiffness() is FINITE-DIFFERENCE of that closed-form
     internal_force(), NOT a hand-derived analytic material+geometric
     tangent -- the same choice elements.contact.GapContactCurvedFriction
-    (Module 13) already made for a different reason (friction's return-
+ already made for a different reason (friction's return-
     map derivative), made here because the full consistent tangent for
     compressible Neo-Hookean needs the 4th-order elasticity tensor
     C_IJKL = 4*d2W/dCdC dotted through both the isochoric AND
@@ -296,7 +296,7 @@ class Tet4NeoHookean(Tet4Solid3D):
     validated closed-form S(F) is safer, still gives Newton-quality
     (quadratic-near-convergence) behavior, and is honestly documented
     as such rather than presented as a hand-derived closed form it
-    isn't -- see docs/general_purpose_extensions_roadmap.md Section 4."""
+    isn't -- see docs/ (general-purpose extensions notes, Section 4)."""
 
     def _deformation_gradient(self, elem_coords, u_elem):
         (xi, eta, zeta) = (0.25, 0.25, 0.25)   # constant strain -> any point works
@@ -324,7 +324,7 @@ class Tet4NeoHookean(Tet4Solid3D):
         difference described in this class's own docstring above.
 
         method="autograd" (opt-in, torch side-by-side addition,
-        docs/consolidated_future_roadmap.md "PyTorch AD" item): routes
+        PyTorch autodiff): routes
         through autograd_tangent.tet4_neo_hookean_tangent_autograd()
         instead -- the EXACT derivative of the same closed-form
         internal_force() this method's own FD approximates, computed
@@ -382,7 +382,7 @@ class Tet4NeoHookean(Tet4Solid3D):
 # Tet10SolidTL -- geometric-only nonlinearity (Total Lagrangian, LINEAR
 # elastic material) on the quadratic Tet10 element. Added 2026-08-30 for
 # the wing-cantilever example in the sibling Multi_Fidelity_NL_
-# Structural_ROM project: that paper's own nonlinearity is explicitly
+# Structural_ROM project: that paper's nonlinearity is explicitly
 # geometric ("caused by the large deflection phenomenon... stiffness
 # nonlinearization"), NOT material -- unlike Hex8PlasticJ2/Tet4NeoHookean
 # above, which are both material nonlinearity (J2 plasticity, Neo-Hookean

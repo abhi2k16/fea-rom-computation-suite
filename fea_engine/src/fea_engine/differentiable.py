@@ -1,74 +1,44 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-differentiable.py -- Wave 10 (docs/consolidated_future_roadmap.md),
-sourced from Saverio, Bucci, Farro, Content & Sipp, "An end-to-end
-PyTorch interface for differentiable PDE solvers: A RANS model-
-correction study" (Data-Centric Engineering 7:e37, 2026,
-doi:10.1017/dce.2026.10066). Items 98-101 of that wave:
+differentiable.py -- differentiable-solver utilities for model-correction studies, following Saverio, Bucci, Farro,
+Content & Sipp, "An end-to-end PyTorch interface for differentiable PDE solvers: A RANS model-correction study"
+(Data-Centric Engineering 7:e37, 2026, doi:10.1017/dce.2026.10066):
 
-  - Item 99: a generic trainable additive-correction API (`Additive
-    Correction` + concrete `ScalarFieldCorrection`/`MLPCorrection`)
-    bolted onto FESystem's own nonlinear static residual, promoting
-    Wave 9's ad hoc per-element `method="autograd"` opt-in into a
-    first-class R(u)+f_theta(u)=0 hook. `solve_nonlinear_static_
-    corrected()` is the concrete Newton driver every other item in
-    this module trains THROUGH.
-  - Item 100: `calibrate_correction_explicit()` -- the cheap, lower-
-    risk calibration path for when a full reference state is already
-    available: minimize ||R(w_m)+f_theta(w_m)||^2 directly, no Newton
-    solve needed. Built and validated FIRST, per this wave's own
-    stated risk-ordering.
-  - Item 98: `implicit_correction_solve()` / `adjoint_gradient()` --
-    the whole-solver implicit-differentiation (DEQ-style adjoint) layer
-    that differentiates an ENTIRE converged Newton solve w.r.t.
-    correction.parameters() by solving one adjoint linear system,
-    without unrolling the Newton iteration. The single biggest item in
-    this wave.
-  - Item 101: `mass_cholesky_factor()` / `MetricScaledField` -- the
-    Cholesky change-of-variables (Appendix C) that makes a plain
-    Euclidean optimizer step on a REPARAMETRIZED spatial-field
-    parameter equal a mass-matrix-metric-consistent step on the field
-    itself.
+    - A generic trainable additive-correction API (`AdditiveCorrection` + concrete `ScalarFieldCorrection`/
+      `MLPCorrection`) attached to FESystem's nonlinear static residual, as a first-class R(u)+f_theta(u)=0 hook.
+      `solve_nonlinear_static_corrected()` is the Newton driver that the other functions here train THROUGH.
+    - `calibrate_correction_explicit()` -- the cheap, lower-risk calibration path for when a full reference state is
+      available: minimize ||R(w_m)+f_theta(w_m)||^2 directly, no Newton solve needed.
+    - `implicit_correction_solve()` / `adjoint_gradient()` -- whole-solver implicit differentiation (DEQ-style
+      adjoint): differentiates an ENTIRE converged Newton solve with respect to correction.parameters() by solving
+      one adjoint linear system, without unrolling the Newton iteration.
+    - `mass_cholesky_factor()` / `MetricScaledField` -- the Cholesky change of variables (Appendix C of the source)
+      that makes a plain Euclidean optimizer step on a REPARAMETRIZED spatial-field parameter equal a
+      mass-matrix-metric-consistent step on the field itself.
 
-Item 102 (batched vmap element-tangent assembly) lives in
-autograd_tangent.py instead, next to the per-element autograd tangents
-it batches (Wave 9 items 93/96) -- see that module's own new section.
-Items 103-105 (ROM correction design/prototype, dataset diagnostics,
-ensemble UQ) live in the sibling rom_engine package (differentiable_
-correction.py, dataset_diagnostics.py, ensemble_uq.py) since none of
-them are FEA-specific -- see each module's own docstring.
+Batched vmap element-tangent assembly lives in autograd_tangent.py, next to the per-element autograd tangents it
+batches. ROM correction, dataset diagnostics and ensemble UQ live in the sibling rom_engine package
+(differentiable_correction.py, dataset_diagnostics.py, ensemble_uq.py) since none of them are FEA-specific.
 
-CONVENTION CARRIED OVER UNCHANGED from autograd_tangent.py/torch_
-sparse_solver.py (Wave 0/9): torch stays an OPTIONAL dependency
-(`_HAS_TORCH`/`_require_torch()`, bare `except Exception` for the same
-CUDA-linked-wheel reason documented in those modules' own docstrings).
+CONVENTION shared with autograd_tangent.py/torch_sparse_solver.py: torch is an OPTIONAL dependency
+(`_HAS_TORCH`/`_require_torch()`, with a bare `except Exception` because a CUDA-linked wheel without its runtime can
+fail at import with an error other than ImportError).
 
-DELIBERATE DESIGN CHOICE, made so this module's most important new
-capability could get REAL test coverage in a sandbox where torch is
-not importable at all: the additive-correction Newton driver (item 99)
-and the adjoint math (item 98's `adjoint_gradient()`) are written
-against a plain `value()`/`jacobian()` protocol ANY object can
-satisfy, including a pure-NumPy one with a hand-coded closed-form
-Jacobian -- they do not import or require torch themselves. This means
-tests/test_differentiable.py can validate the actual mathematical
-content (does a Newton solve with a correction term converge to a
-self-consistent root; does the adjoint formula for differentiating
-through that root match a brute-force finite-difference reference)
-WITHOUT needing a working torch install. Only the concrete NN/tensor-
-parameterized correction classes, the explicit-calibration training
-LOOP (needs a torch optimizer), and the torch.autograd.Function
-wrapper around the adjoint layer actually require torch -- exactly the
-same "numpy-shadow-first" split Wave 7's NeuralSurrogate established
-(`_fit_normalization`/`_normalize`/`_denormalize` there; `adjoint_
-gradient()`/`solve_nonlinear_static_corrected()` here).
+DESIGN CHOICE: the additive-correction Newton driver and the adjoint math (`adjoint_gradient()`) are written
+against a plain `value()`/`jacobian()` protocol that ANY object can satisfy, including a pure-NumPy one with a
+hand-coded closed-form Jacobian; they do not import or require torch. tests/test_differentiable.py can therefore
+validate the mathematical content (a Newton solve with a correction term converges to a self-consistent root; the
+adjoint formula for differentiating through that root matches a brute-force finite-difference reference) without a
+torch install. Only the concrete NN/tensor-parameterized correction classes, the explicit-calibration training LOOP
+(needs a torch optimizer), and the torch.autograd.Function wrapper around the adjoint layer require torch, the same
+"numpy-shadow-first" split that NeuralSurrogate uses (`_fit_normalization`/`_normalize`/`_denormalize` there;
+`adjoint_gradient()`/`solve_nonlinear_static_corrected()` here).
 
-SIGN CONVENTION, stated once here since every function below depends
-on it: this package's own nonlinear residual is R(u) = F_ext - F_int
-(u) = 0 (see nonlinear_solver.solve_nonlinear_static()'s own
-_residual() closure). The paper's own convention is R(w)+f_theta(w)=0
-with R meaning THEIR forward operator (our F_int-F_ext). Translating
-their form into ours: (F_int(u)-F_ext) + f_theta(u) = 0, i.e.
+SIGN CONVENTION, which every function below depends on: this package's nonlinear residual is
+R(u) = F_ext - F_int(u) = 0 (see nonlinear_solver.solve_nonlinear_static()'s _residual() closure). The source
+writes R(w)+f_theta(w)=0 with R as its forward operator (our F_int-F_ext). In our form that is
+(F_int(u)-F_ext) + f_theta(u) = 0, i.e.
 
     F_ext - F_int(u) - f_theta(u) = 0
 
@@ -76,6 +46,9 @@ their form into ours: (F_int(u)-F_ext) + f_theta(u) = 0, i.e.
 like an ADDITIONAL, trainable internal-force term. Every function
 below (corrected_residual, corrected_tangent, adjoint_gradient's own
 derivation) is consistent with this one convention.
+
+References (methods in this module are adopted from):
+  - L. Saverio, M. A. Bucci, D. Farro, G. Content, D. Sipp (2026), "An end-to-end PyTorch interface for differentiable PDE solvers: a RANS model-correction study", Data-Centric Engineering 7:e37, doi:10.1017/dce.2026.10066
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -104,7 +77,7 @@ def _require_torch():
 
 
 # =====================================================================
-# Item 99: generic trainable additive-correction interface
+# Generic trainable additive-correction interface
 # =====================================================================
 class AdditiveCorrection:
     """Duck-typed protocol (not an ABC by inheritance requirement --
@@ -116,7 +89,7 @@ class AdditiveCorrection:
         R(u) = F_ext - F_int(u) - f_theta(u) = 0
 
     -- see this module's own docstring, "SIGN CONVENTION," for why the
-    minus sign is the right translation of the paper's own R(w)+
+    minus sign is the right translation of the source's R(w)+
     f_theta(w)=0 into this package's F_ext-F_int=0 convention.
 
     A concrete correction MUST implement:
@@ -137,7 +110,7 @@ class AdditiveCorrection:
       scope: "local" (each output component only depends on its own
           input component / the owning element's own state -- cheap,
           often-diagonal Jacobian) or "nonlocal" (may couple across
-          dofs) -- self-descriptive metadata, matching the paper's own
+          dofs) -- self-descriptive metadata, matching the source's
           local f(w,alpha_theta o phi(w)) vs. nonlocal f(w,alpha_theta
           (w)) distinction (Eq. 2.1-2.14); not enforced by this base
           class.
@@ -145,8 +118,8 @@ class AdditiveCorrection:
     A TRAINABLE (torch-backed) correction additionally implements:
       torch_value(u_free_t) -> torch tensor, DIFFERENTIABLE w.r.t. both
           u_free_t and this object's own trainable parameters -- what
-          calibrate_correction_explicit() (item 100) and the implicit
-          adjoint layer (item 98) both need instead of value().
+          calibrate_correction_explicit() and the implicit
+          adjoint layer both need instead of value().
       parameters() -> list of torch leaf tensors (requires_grad=True).
     A pure-NumPy, non-trainable correction (see this module's own test
     file's `_NumpyToyCorrection`) never defines these two -- usable
@@ -216,7 +189,7 @@ def _newton_equilibrium(fesystem, mat, correction, F_ext, u0=None,
     iter_state snapshot/restore. Adding a trainable correction term is
     scoped as an ADDITIVE capability on top of the plain-Newton case
     only here -- exactly the same "narrow, document explicitly"
-    convention Wave 5's Notch/Fillet items and Wave 8's multigrid
+    convention Notch/Fillet items and multigrid
     scoping already established -- not a claim that every existing
     nonlinear_solver.py robustness feature has been reproduced.
 
@@ -258,7 +231,7 @@ def _newton_equilibrium(fesystem, mat, correction, F_ext, u0=None,
 
 def solve_nonlinear_static_corrected(fesystem, mat, correction=None, n_steps=10, tol=1e-8,
                                       max_iter=30, verbose=False, load_factors=None, **kwargs):
-    """Item 99's concrete Newton driver: the SAME load-controlled
+    """The concrete Newton driver for the additive correction: the SAME load-controlled
     incremental-Newton ladder as nonlinear_solver.solve_nonlinear_
     static() (identical load_factors convention, identical commit_all_
     states() call after every converged step), generalized to solve
@@ -313,13 +286,13 @@ def solve_nonlinear_static_corrected(fesystem, mat, correction=None, n_steps=10,
 
 
 # =====================================================================
-# Item 100: explicit residual-minimization calibration
+# Explicit residual-minimization calibration
 # =====================================================================
 def calibrate_correction_explicit(fesystem, mat, correction, w_reference, F_ext=None,
                                    n_epochs=500, lr=1e-2, optimizer_cls=None, verbose=False,
                                    **kwargs):
-    """Item 100 -- the cheap, lower-risk alternative to item 98's
-    implicit adjoint layer: when a full reference state w_m is already
+    """The cheap, lower-risk alternative to the implicit
+    adjoint layer: when a full reference state w_m is already
     available (a finer-mesh solution, a full-field DIC/experimental
     measurement, or a high-fidelity ROM snapshot -- w_reference here),
     calibrate correction.parameters() by minimizing
@@ -330,15 +303,13 @@ def calibrate_correction_explicit(fesystem, mat, correction, w_reference, F_ext=
     computed ONCE in plain NumPy (mat's own internal-force law is not
     trainable, so nothing needs to differentiate through it) and held
     as a CONSTANT torch tensor; only f_theta(w_m) is differentiated
-    w.r.t. theta, every optimizer step. This is exactly why this item
-    is cheap relative to item 98: one forward+backward through f_theta
+    w.r.t. theta, every optimizer step. This is exactly why this path
+    is cheap relative to the implicit adjoint layer: one forward+backward through f_theta
     ALONE per step, reusing the same row-by-row torch.autograd.grad-
     adjacent machinery autograd_tangent.py already established, just
     applied to a training loop instead of a single tangent evaluation.
 
-    Built and validated FIRST, before item 98, per this wave's own
-    documented risk-ordering ("Ordering logic," docs/consolidated_
-    future_roadmap.md Wave 10).
+    It is the lower-risk path and is the one to try first.
 
     correction: any AdditiveCorrection with torch_value()/parameters()
     (a "trainable" one -- see AdditiveCorrection's own docstring).
@@ -384,7 +355,7 @@ class ScalarFieldCorrection(AdditiveCorrection):
     term, independent of u -- jacobian() is therefore exactly zero).
     'local' by construction: theta_i only ever affects free-dof i. The
     "handful of scalars" case AdditiveCorrection's own docstring and
-    item 101's MetricScaledField both contrast against a spatially-
+    MetricScaledField both contrast against a spatially-
     varying field or NN correction."""
     scope = "local"
 
@@ -411,7 +382,7 @@ class MLPCorrection(AdditiveCorrection):
     """Local, feature-based trainable correction: a small shared-
     weight torch.nn MLP applied POINTWISE to each free dof's own
     scalar feature (u_free itself by default, or a caller-supplied
-    feature_fn) -- f_theta(u)_i = MLP(phi(u)_i) -- matching the paper's
+    feature_fn) -- f_theta(u)_i = MLP(phi(u)_i) -- matching the source's
     LOCAL correction form f(w, alpha_theta o phi(w)) (Eq. 2.1-2.14):
     every dof is corrected by the SAME small network applied to its
     own feature, not a network that reads the whole field (that would
@@ -473,7 +444,7 @@ class MLPCorrection(AdditiveCorrection):
 
 
 # =====================================================================
-# Item 98: whole-solver implicit-differentiation adjoint layer
+# Whole-solver implicit-differentiation adjoint layer
 # =====================================================================
 def adjoint_gradient(K_eff, grad_w, vjp_fn):
     """Shared numeric core of the whole-solver implicit-differentiation
@@ -527,12 +498,11 @@ def _vector_to_params(vec, params):
 
 class _ImplicitCorrectedSolve(torch.autograd.Function if _HAS_TORCH else object):
     """torch.autograd.Function wrapping ONE call to _newton_
-    equilibrium() (item 99's plain-NumPy corrected Newton solve) as a
+    equilibrium() as a
     black-box forward pass, with a backward() that calls adjoint_
     gradient() above instead of differentiating through the Newton
-    iteration -- the actual mechanism item 98 exists to provide (see
-    this module's own docstring, and the roadmap's own framing:
-    "without this, any correction calibrated against partial/indirect
+    iteration -- the actual mechanism this layer exists to provide (see
+    this module's docstring: "without this, any correction calibrated against partial/indirect
     data has no way to get a gradient back to theta short of unrolling
     the whole Newton iteration by hand").
 
@@ -587,7 +557,7 @@ class _ImplicitCorrectedSolve(torch.autograd.Function if _HAS_TORCH else object)
 
 def implicit_correction_solve(fesystem, mat, correction, F_ext=None, u0=None,
                                tol=1e-8, max_iter=30):
-    """Public entry point for item 98: solves the corrected equilibrium
+    """Public entry point for the implicit adjoint layer: solves the corrected equilibrium
     F_ext - F_int(w) - f_theta(w) = 0 for w* via the ORDINARY plain-
     NumPy Newton ladder (_newton_equilibrium(), fully reused from item
     99 -- no reimplementation), and returns w*_free as a torch tensor
@@ -616,7 +586,7 @@ def implicit_correction_solve(fesystem, mat, correction, F_ext=None, u0=None,
 
 
 # =====================================================================
-# Item 101: metric-consistent gradient scaling for spatial-field
+# Metric-consistent gradient scaling for spatial-field
 # parameters
 # =====================================================================
 def mass_cholesky_factor(M_sub):
@@ -671,9 +641,9 @@ class MetricScaledField(AdditiveCorrection):
     change needed to the optimizer or training loop itself (the whole
     appeal of a change-of-variables fix over a custom optimizer).
 
-    WHY THIS MATTERS, not cosmetic: the moment item 99/100 calibrates a
+    WHY THIS MATTERS, not cosmetic: the moment a calibration
     SPATIALLY-VARYING field parameter (one scalar per node/element,
-    analogous to the paper's mu_t(x)/beta(x)) rather than a handful of
+    analogous to the source's mu_t(x)/beta(x)) rather than a handful of
     scalars or NN weights (whose natural coordinate already IS
     Euclidean), a standard optimizer's implicit Euclidean metric makes
     the effective per-location step size MESH-DENSITY-DEPENDENT -- a

@@ -7,7 +7,7 @@ displacement-increment/energy-error convergence criteria and Armijo
 line search, added to solve_nonlinear_static(), solve_nonlinear_
 displacement_control(), solve_nonlinear_arc_length(), and solve_
 nonlinear_static_koiter_newton()'s corrector (see nonlinear_solver.py's
-own module docstring "Wave 1" section for the full design and the two
+own module docstring "" section for the full design and the two
 shared helpers, _extra_convergence_ok()/_armijo_line_search_step(),
 every one of those drivers now calls).
 
@@ -15,7 +15,7 @@ Two things are checked here, split deliberately:
 
 1. CHECK 1/2 unit-test the two shared helpers DIRECTLY against hand-
    computed, independently-verifiable numbers -- this is the actual
-   new algorithmic core Wave 1 introduces, and is fully controllable
+   new algorithmic core introduces, and is fully controllable
    (unlike a real FE model's convergence behavior).
 
 2. CHECK 3+ are integration tests on real drivers, confirming (a) the
@@ -23,7 +23,7 @@ Two things are checked here, split deliberately:
    DEFAULT values (None/None/True-but-never-triggered), reproduce
    EXACTLY the same converged answer every existing test already
    confirms (this file adds no NEW default-path regression coverage
-   beyond what already re-passed unmodified -- see the Wave 1
+   beyond what already re-passed unmodified -- see the
    implementation notes -- so it isn't repeated here), and (b)
    explicitly setting du_tol/energy_tol to a loose-enough value still
    reaches the SAME, closed-form-verified answer.

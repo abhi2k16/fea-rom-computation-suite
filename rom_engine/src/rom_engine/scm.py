@@ -1,25 +1,16 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-scm.py -- a genuinely CERTIFIED (rigorously provable, not just a
-practical indicator) lower bound on sigma_min(A(omega)), the quantity
-that turns FrequencyROM.residual_norm() into a true a posteriori error
-BOUND rather than an estimate: ||x_true(omega) - x_ROM(omega)|| <=
-residual_norm(omega) / sigma_min(A(omega)).
+scm.py -- a rigorous (provable, not just a practical indicator) lower bound on sigma_min(A(omega)), the quantity
+that turns FrequencyROM.residual_norm() into an a posteriori error BOUND rather than an estimate:
+||x_true(omega) - x_ROM(omega)|| <= residual_norm(omega) / sigma_min(A(omega)).
 
-Honest relationship to the classical Successive Constraint Method
-(SCM): the reduced-basis-method literature's SCM (Huynh, Rozza, Sen,
-Patera 2007; the "natural-norm" SCM of Chen et al. 2010 for the
-general non-coercive/non-symmetric case, which is the relevant variant
-for our complex, non-Hermitian A(omega)) computes a rigorous lower
-bound via a small LINEAR PROGRAM at each query, built from an
-offline-selected set of "control points" and continuity/stability
-constraints on an "attainable set" in R^(Q^2). That is the sharpest
-version of this idea, but its LP formulation for a general complex,
-non-normal affine operator is substantial machinery to implement
-correctly from scratch (see
-docs/error_bounds_greedy_roadmap.md Section 3's caveat about
-this).
+Relationship to the classical Successive Constraint Method (SCM; Huynh, Rozza, Sen, Patera 2007, and the
+"natural-norm" variant of Chen et al. 2010 for non-coercive/non-symmetric operators): SCM computes a rigorous lower
+bound via a small linear program at each query, built from an offline-selected set of control points and
+continuity/stability constraints on an attainable set in R^(Q^2). That is the sharpest form of the idea, but its
+LP formulation for a general complex, non-normal affine operator is substantial machinery; the simplified
+construction in this module is used instead, and the LP version is in scm_lp.py.
 
 THIS module implements a SIMPLER, still fully rigorous, SCM-FAMILY
 bound instead, built on a single classical matrix-perturbation fact
@@ -59,6 +50,9 @@ here and in every docstring below, that it is a SIMPLIFIED variant,
 not the classical LP-based algorithm -- so nothing here should be
 confused with, or cited as, the Huynh/Rozza/Sen/Patera or Chen et al.
 methods themselves.
+
+References (methods in this module are adopted from):
+  - D. B. P. Huynh, G. Rozza, S. Sen, A. T. Patera (2007), "A successive constraint linear optimization method for lower bounds of parametric coercivity and inf-sup stability constants", C. R. Math. Acad. Sci. Paris 345(8)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -262,8 +256,7 @@ def certified_error_bound(rom, scm_bound, omega, F):
         A RIGOROUS upper bound on the true error, or +inf if
         scm_bound's lower bound at this omega is <= 0 (uninformative;
         happens near resonance more often than not with a small
-        reference set -- see docs/error_bounds_greedy_roadmap.md
-        Section 3's discussion of why this whole family of bounds is
+        reference set -- the discussion in docs/ of why this whole family of bounds is
         fundamentally weaker there, an honest limitation this function
         surfaces as +inf rather than hides).
     """

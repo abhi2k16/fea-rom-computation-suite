@@ -6,6 +6,11 @@ elements (Quad4PlaneStress, Hex8Solid3D, Tri3PlaneStress, Tet4Solid3D).
 
 Split out of the original monolithic element.py during the
 fea_engine restructuring; no logic changed, only file location.
+
+References (methods in this module are adopted from):
+  - T. J. R. Hughes (1980), "Generalization of selective integration procedures to anisotropic and nonlinear media", Int. J. Numer. Meth. Engng 15(9)
+  - D. P. Flanagan, T. Belytschko (1981), "A uniform strain hexahedron and quadrilateral with orthogonal hourglass control", Int. J. Numer. Meth. Engng 17(5)
+  - R. D. Cook, D. S. Malkus, M. E. Plesha, R. J. Witt (2002), "Concepts and Applications of Finite Element Analysis", 4th ed., Wiley
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -39,7 +44,7 @@ class Quad4PlaneStress(Element):
 
 
 # =====================================================================
-# Quad8 -- serendipity (8-node) plane-stress continuum, Module 15: the
+# Quad8 -- serendipity (8-node) plane-stress continuum, the
 # quadratic counterpart to Quad4PlaneStress above. Corner nodes 0-3 at
 # (+-1,+-1) (same ordering/convention as Quad4), mid-edge nodes 4-7 at
 # (0,-1),(1,0),(0,1),(-1,0) -- the standard serendipity node layout
@@ -48,7 +53,7 @@ class Quad4PlaneStress(Element):
 # it reproduces complete quadratic polynomials with fewer DOF than
 # Quad9, at the cost of one specific quartic term Quad9's extra
 # interior node would capture -- rarely worth the extra DOF in
-# practice (see docs/general_purpose_extensions_roadmap.md Section 3).
+# practice.
 #
 # The GENERIC Gauss loop in Element.stiffness()/mass() (base.py) works
 # completely UNMODIFIED for this element -- only shape_and_derivs()
@@ -58,7 +63,7 @@ class Quad4PlaneStress(Element):
 # GMSH COMPATIBILITY (checked 2026-08-30, same investigation as
 # Hex20Solid3D/Tet10Solid3D's own notes, done for consistency BEFORE
 # wiring this element into geometry/gmsh_engine.py's extraction table --
-# see docs/geometry_meshing_alternatives_research.md Section 7 item 2,
+# see docs/geometry_meshing_alternatives_research.md,
 # which explicitly calls out that Gmsh's documented ordering table
 # should not be trusted without checking a real element): unlike
 # Hex20/Tet10, this one is CLEAN. A single reference Quad8 built through
@@ -159,10 +164,8 @@ class Hex8Solid3D(Element):
 
 
 # =====================================================================
-# Hex8 -- mean-dilatation B-bar (Hughes 1980), Wave 2 item 11
-# (docs/consolidated_future_roadmap.md, source general_purpose_
-# extensions_roadmap.md / nonlinear_fem_lessons.md / tensormesh_
-# comparative_analysis.md Sec.6.4): the volumetric-locking cure for
+# Hex8 -- mean-dilatation B-bar (Hughes 1980):
+# the volumetric-locking cure for
 # near-incompressible 3-D solids -- see nonlinear_fem_lessons.md's own
 # quoted description: "assumes the stress field is orthogonal to the
 # difference between assumed strain B-bar and actual B(v)... B is
@@ -179,7 +182,7 @@ class Hex8Solid3D(Element):
 #     B_bar(p)  = B_dev(p) + B_vol_bar
 # and assemble stiffness with B_bar in place of B, at the SAME full
 # 2x2x2 = 8-point rule Hex8Solid3D already uses (NOT a reduced point
-# count -- this is deliberately a DIFFERENT cure from Wave 2 item 12's
+# count -- this is deliberately a DIFFERENT cure from
 # hourglass stabilization, which starts from a genuinely under-
 # integrated 1-point rule; B-bar keeps full quadrature and just
 # constrains the DILATATIONAL part of every point's strain to agree,
@@ -208,7 +211,7 @@ class Hex8Solid3D(Element):
 # B_bar(p) == B(p) exactly, and this element's stiffness reduces to
 # Hex8Solid3D's own, bit-for-bit, for any such field. This is the same
 # "limitation principle" (Stolarski & Belytschko 1987, quoted in
-# nonlinear_fem_lessons.md) already used to validate Wave 2 item 12's
+# nonlinear_fem_lessons.md) already used to validate
 # hourglass stabilizer: a correct mixed/assumed-strain method can only
 # SUPPRESS deleterious strain terms, never change the answer for a
 # field the original element already got exactly right.
@@ -249,7 +252,7 @@ class Hex8SolidBbar(Hex8Solid3D):
     def stiffness(self, elem_coords, D, thickness=1.0, gauss_order=None):
         """Ignores gauss_order (B-bar is only meaningful at the full
         8-point rule -- there is no reduced/hourglass variant of this
-        element; use Hex8Solid3D + Wave 2 item 12's hourglass_
+        element; use Hex8Solid3D + hourglass_
         stabilized_stiffness() if a reduced-integration Hex8 is what
         you actually want)."""
         B_bars, detJs, wts = self._bbar_matrices(elem_coords)
@@ -268,12 +271,12 @@ class Hex8SolidBbar(Hex8Solid3D):
             "mean-dilatation correction is only meaningful at the full "
             "8-point rule (see this class's own docstring). Use plain "
             "Hex8Solid3D's reduced_stiffness()/hourglass_stabilized_"
-            "stiffness() (Wave 2 item 12) if you want a reduced-"
+            "stiffness() if you want a reduced-"
             "integration Hex8 instead.")
 
 
 # =====================================================================
-# Hex20 -- serendipity (20-node) 3-D solid continuum, Module 15: the
+# Hex20 -- serendipity (20-node) 3-D solid continuum, the
 # quadratic counterpart to Hex8Solid3D above. 8 corner nodes (same
 # ordering/convention as Hex8) + 12 mid-edge nodes -- no face/interior
 # nodes (that's the FULL 27-node Lagrange Hex27; serendipity is the
@@ -316,7 +319,7 @@ class Hex8SolidBbar(Hex8Solid3D):
 # connectivity through GMSH_NODE_ORDER below first (corners 0-7 need no
 # change; only columns 8-19 differ) -- geometry/gmsh_engine.py does not
 # yet generate 2nd-order meshes at all (see
-# docs/geometry_meshing_alternatives_research.md Section 7 item 2, not
+# docs/geometry_meshing_alternatives_research.md, not
 # yet implemented), so this currently only matters for scripts driving
 # Gmsh's API directly, but GMSH_NODE_ORDER is provided here (rather than
 # re-derived ad hoc per script) as the single, tested source of truth
@@ -325,7 +328,7 @@ class Hex8SolidBbar(Hex8Solid3D):
 # Same as Quad8: the GENERIC Gauss loop in Element.stiffness()/mass()
 # is unmodified -- only shape_and_derivs()/B_matrix() are new.
 # gauss_order=3 (27-point full rule) -- see this element's docstring
-# note in docs/general_purpose_extensions_roadmap.md Section 3 for why
+# note for why
 # a higher order than Hex8's 2 is needed.
 # =====================================================================
 class Hex20Solid3D(Element):
@@ -406,7 +409,7 @@ class Hex20Solid3D(Element):
 
 class Tri3PlaneStress(Element):
     n_nodes, dofs_per_node, dim, gauss_order = 3, 2, 2, 1
-    quadrature_family = "simplex"   # Wave 15 item 125/126 -- see base.py's
+    quadrature_family = "simplex"   # see base.py's
                                      # Element.quadrature_family docstring.
 
     def shape_and_derivs(self, natural_coords):
@@ -494,7 +497,7 @@ class Tri3PlaneStress(Element):
 
 
 # =====================================================================
-# 4-node linear tetrahedron (Tet4), Module 12: the 3-D counterpart to
+# 4-node linear tetrahedron (Tet4), the 3-D counterpart to
 # Tri3PlaneStress above -- same reasoning applies (constant strain,
 # closed-form stiffness/mass, NOT the tensor-product Gauss loop, since
 # the natural tetrahedron {xi,eta,zeta>=0, xi+eta+zeta<=1} is a
@@ -502,7 +505,7 @@ class Tri3PlaneStress(Element):
 # =====================================================================
 class Tet4Solid3D(Element):
     n_nodes, dofs_per_node, dim, gauss_order = 4, 3, 3, 1
-    quadrature_family = "simplex"   # Wave 15 item 125/126 -- see base.py's
+    quadrature_family = "simplex"   # see base.py's
                                      # Element.quadrature_family docstring.
 
     def shape_and_derivs(self, natural_coords):
@@ -581,7 +584,7 @@ class Tet4Solid3D(Element):
 
 
 # =====================================================================
-# Tet10 -- quadratic (10-node) tetrahedron, Module 15: the quadratic
+# Tet10 -- quadratic (10-node) tetrahedron, the quadratic
 # counterpart to Tet4Solid3D above. 4 corner nodes (same convention as
 # Tet4) + 6 mid-edge nodes. Built from BARYCENTRIC shape functions
 # (L1=1-r-s-t, L2=r, L3=s, L4=t -- the standard simplex generalization
@@ -629,7 +632,7 @@ class Tet4Solid3D(Element):
 # =====================================================================
 class Tet10Solid3D(Element):
     n_nodes, dofs_per_node, dim = 10, 3, 3
-    quadrature_family = "simplex"   # Wave 15 item 125/126 -- see base.py's
+    quadrature_family = "simplex"   # see base.py's
                                      # Element.quadrature_family docstring.
 
     # Permutation mapping Gmsh's native 10-node tetrahedron (element
@@ -702,8 +705,7 @@ class Tet10Solid3D(Element):
 
         quad_order: None (default) keeps the ORIGINAL fixed 4-point
         rule (tet_quadrature_4pt(), degree-2-exact) -- no behavior
-        change for any existing caller. Pass an explicit int (Wave 15
-        item 125, docs/consolidated_future_roadmap.md) to request
+        change for any existing caller. Pass an explicit int to request
         tet_quadrature(quad_order) instead -- e.g. quad_order=4 for a
         genuinely quartic-exact integral, useful for mass() below
         where the N^T*rho*N integrand really is quartic and the
@@ -733,7 +735,7 @@ class Tet10Solid3D(Element):
         is quadratic, so Nᵀ rho N is quartic -- the default 4-point
         rule is only exact to degree 2, so with quad_order=None this
         mass matrix is a good, standard engineering approximation, not
-        machine-precision exact). Pass quad_order=4 (Wave 15 item 125)
+        machine-precision exact). Pass quad_order=4
         for a genuinely quartic-exact consistent mass matrix instead --
         tests/test_quadrature_order.py confirms directly that this
         actually changes the result (vs. quad_order=None) and that the
@@ -757,15 +759,14 @@ class Tet10Solid3D(Element):
 
 
 # =====================================================================
-# Tri6 -- 6-node quadratic-triangle plane-stress element, Wave 0 item 7
-# (docs/consolidated_future_roadmap.md, source geometry_meshing_
-# alternatives_research.md item 4): row-3 parity with the existing
+# Tri6 -- 6-node quadratic-triangle plane-stress element:
+# row-3 parity with the existing
 # Quad8PlaneStress -- this package had a quadratic quad (Quad8) and a
 # quadratic tet/hex (Tet10/Hex20) but no quadratic triangle, the plane-
-# stress analogue of Tet10Solid3D one dimension down. Explicitly "not a
-# prerequisite" for anything else on the roadmap; touches only this
-# file (no gmsh_engine.py extraction-table wiring yet -- that is
-# backlog item 30, deliberately deferred until an actual Gmsh-sourced
+# stress analogue of Tet10Solid3D one dimension down. Not a
+# prerequisite for anything else; touches only this
+# file (no gmsh_engine.py extraction-table wiring yet --
+# deliberately deferred until an actual Gmsh-sourced
 # Tri6 mesh is needed).
 #
 # Node convention: corners 0,1,2 (same xi/eta convention as
@@ -788,8 +789,7 @@ class Tet10Solid3D(Element):
 # (constant detJ) -- exactly what tri_quadrature_3pt() integrates
 # exactly.
 # =====================================================================
-# GMSH COMPATIBILITY (checked 2026-09-08, Wave 5 item 30 of docs/
-# consolidated_future_roadmap.md, same investigation as Quad8Plane
+# GMSH COMPATIBILITY (checked 2026-09-08, same investigation as Quad8Plane
 # Stress/Hex20Solid3D/Tet10Solid3D's own notes, done BEFORE wiring this
 # element into geometry/gmsh_engine.py's extraction table -- per this
 # project's own established practice of checking a real Gmsh-built
@@ -809,7 +809,7 @@ class Tet10Solid3D(Element):
 # =====================================================================
 class Tri6PlaneStress(Element):
     n_nodes, dofs_per_node, dim = 6, 2, 2
-    quadrature_family = "simplex"   # Wave 15 item 125/126 -- see base.py's
+    quadrature_family = "simplex"   # see base.py's
                                      # Element.quadrature_family docstring.
 
     # Permutation mapping Gmsh's native 6-node triangle (element type 9)
@@ -870,8 +870,7 @@ class Tri6PlaneStress(Element):
 
         quad_order: None (default) keeps the ORIGINAL fixed 3-point
         rule (tri_quadrature_3pt(), degree-2-exact) -- no behavior
-        change for any existing caller. Pass an explicit int (Wave 15
-        item 125, docs/consolidated_future_roadmap.md) to request
+        change for any existing caller. Pass an explicit int to request
         tri_quadrature(quad_order) instead -- see Tet10Solid3D.
         stiffness()'s own docstring for the mass()-integrand rationale
         this mirrors exactly, one simplex dimension down."""
@@ -900,8 +899,7 @@ class Tri6PlaneStress(Element):
         the default 3-point rule is only exact to degree 2, so this
         mass matrix is a good, standard engineering approximation, not
         machine-precision exact -- identical reasoning to Tet10Solid3D.
-        mass(), one simplex dimension down). Pass quad_order=4 (Wave 15
-        item 125) for a genuinely quartic-exact consistent mass matrix
+        mass(), one simplex dimension down). Pass quad_order=4 for a genuinely quartic-exact consistent mass matrix
         instead -- see Tet10Solid3D.mass()'s own docstring for the
         decisive verification this mirrors."""
         rho_matrix = np.asarray(rho_matrix, dtype=float)
@@ -920,9 +918,9 @@ class Tri6PlaneStress(Element):
 
 
 # =====================================================================
-# 1-node contact element vs a FIXED RIGID CIRCLE, Module 13: closes two
+# 1-node contact element vs a FIXED RIGID CIRCLE, closes two
 # more items from the contact-nonlinearity taxonomy that
-# GapContactPenalty (Module 10) deliberately left out --
+# GapContactPenalty deliberately left out --
 #
 #   (a) an UPDATING contact normal: n = n(u), not a fixed direction.
 #       GapContactPenalty's obstacle is a flat wall, whose normal is
@@ -933,7 +931,7 @@ class Tri6PlaneStress(Element):
 #   (b) Coulomb friction (stick/slip): a tangential traction capped at
 #       mu*pn. Coulomb friction and J2 plasticity are structurally the
 #       SAME problem -- a linear trial response capped at a pressure-
-#       dependent limit -- so this reuses Module 9's state/
+#       dependent limit -- so this reuses state/
 #       commit_state/return-mapping pattern (TrussPlastic2D) almost
 #       unchanged, with mu*pn playing the role sigma_y+H*alpha played
 #       there, and a tangential "stick anchor" arc-length playing the

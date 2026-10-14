@@ -1,9 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_plasticity_kinematic.py -- Wave 2 item 14 (docs/consolidated_
-future_roadmap.md, source nonlinear_fem_lessons.md appendix status
-table: "Non-associative / kinematic hardening -- Not Implemented"):
+test_plasticity_kinematic.py --
 validates material.PlasticMaterialJ2Kinematic / material.
 j2_radial_return_3d_kinematic() / elements.Hex8PlasticJ2Kinematic --
 combined isotropic + Armstrong-Frederick nonlinear kinematic hardening.

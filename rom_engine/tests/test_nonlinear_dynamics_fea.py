@@ -13,7 +13,7 @@ reduced nonlinear time integration) survives contact with a real,
 coupled, geometrically nonlinear structural model released into free
 vibration.
 
-Free-decay setup, mirroring the reference paper's own Fig. 7 dynamic
+Free-decay setup, mirroring the reference's Fig. 7 dynamic
 comparison and this project's earlier `mfs-nlrom-beam` skill
 reproduction of it (`scripts/dynamic_newmark.py`): light (~1%) modal
 Rayleigh damping calibrated across the two retained modes, a

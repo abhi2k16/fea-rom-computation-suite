@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_shell_director_kinematics.py -- validation for Wave 4 item 47,
-Phase 1 (docs/director_based_shell_element_roadmap.md Sections 1-2):
+test_shell_director_kinematics.py -- validation of
 `elements/shells_director.py`'s two isolated primitives for the new
 director-based shell element --
 
@@ -10,8 +9,8 @@ director-based shell element --
 2. `_polar_decomposition_angle_2x2()` / `drilling_angle_from_tangents()`
    -- the closed-form, iteration-free in-plane drilling angle.
 
-Per the roadmap doc's own build order, this file validates ONLY these
-two primitives in isolation -- no full element exists yet (Phase 2/3).
+Per the build order, this file validates ONLY these
+two primitives in isolation -- these primitives are validated before any full element assembly.
 
 Six lines of evidence:
 

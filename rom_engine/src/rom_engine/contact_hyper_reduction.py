@@ -15,7 +15,7 @@ Contact adds three things it does not handle (Fauque, Ramiere and Ryckelynck 201
    a non-negative least-squares fit to snapshots: `reconstruct_contact_forces` (Fauque et al., their Eq. 41);
    and the reduced saddle-point problem is only well posed when B_r = B V has full row rank on the active
    constraints, which `rank_deficiency` measures and `enrich_basis_for_constraints` repairs by appending unit
-   vectors at constraint DOFs (the hybrid reduced / full-order basis of the paper).
+   vectors at constraint DOFs (the hybrid reduced / full-order basis of the source).
 
 `solve_reduced_contact_newton` is the reduced counterpart of `fea_engine.contact_solvers.solve_contact_newton`:
 sequential linearisation with the hyper-reduced force and tangent and a reduced LCP at every iterate.
@@ -23,6 +23,11 @@ sequential linearisation with the hyper-reduced force and tangent and a reduced 
 Honest scope. Frictionless, small-displacement constraints (constant B). The ECSW weights are trained on smooth
 states; whether they transfer across changes of the active contact set is not guaranteed and is measured in the
 tests, not assumed.
+
+References (methods in this module are adopted from):
+  - A. Fauque, I. Ramiere, D. Ryckelynck (2018), "Hybrid hyper-reduced modeling for contact mechanics problems", Int. J. Numer. Meth. Engng 115(1):117-139
+  - P. Nikiema, V. Denis, F. Matzke, S. Gonzalez, S. Van Der Veen, J.-M. Mencik (2026), "Model order reduction for structural assembly simulations with contact and geometric nonlinearities", Finite Elem. Anal. Des. 260:104605
+  - C. Farhat, P. Avery, T. Chapman, J. Cortial (2014), "Dimensional reduction of nonlinear finite element dynamic models with finite rotations and energy-based mesh sampling and weighting for computational efficiency", Int. J. Numer. Meth. Engng 98(9)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

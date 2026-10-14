@@ -1,20 +1,18 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_nonhomogeneous_dirichlet.py -- Wave 16 item 131 (docs/consolidated_
-future_roadmap.md, source: TensorMesh's `Boundary Conditions`
-documentation page's non-homogeneous `Condenser(mask, values)` case):
+test_nonhomogeneous_dirichlet.py -- ` case):
 validates FESystem.fix_dofs(value=...)/solve_static()'s new -Kio*uo
 static-condensation RHS correction.
 
 Decisive checks throughout: agreement with an independently-built
 bordered/manual elimination reference (not just "runs without
 erroring"), exact backward compatibility when value=0.0 (the only value
-possible before this item existed), and that the torch backend fails
+possible before this change existed), and that the torch backend fails
 LOUDLY (a specific NotImplementedError) rather than silently solving the
 wrong (homogeneous) system when a nonzero value is present -- matching
 this project's own "fails loudly rather than silently" precedent
-(Wave 0 item 6's singular-system handling, mesh_transform.py's
+(singular-system handling, mesh_transform.py's
 _check_scope(), etc.).
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
@@ -49,7 +47,7 @@ def _manual_elimination_reference(fs):
 
 class TestBackwardCompatibility:
     """value=0.0 (the default, and the only value ever possible before
-    this item existed) must reproduce the exact original behavior --
+    this change existed) must reproduce the exact original behavior --
     bit-for-bit, not just numerically close, since this is a pure
     no-op path when unused."""
 
@@ -162,7 +160,7 @@ class TestNonHomogeneousDirichlet:
         on every node but one (a rigid-body translation, with one node
         left free so free_dofs is non-empty -- a fully-constrained mesh
         is a separate, pre-existing edge case in free_dofs unrelated to
-        this item, so it's avoided here) must produce that exact
+        this change, so it's avoided here) must produce that exact
         translation everywhere, including at the one free node, since a
         pure rigid translation carries zero strain energy and the free
         node has nothing pulling it away from the rigid solution."""
@@ -207,7 +205,7 @@ class TestTorchBackendGuard:
     confirm it fails LOUDLY (a specific NotImplementedError) rather than
     silently returning a wrong (homogeneous) answer. Gated on torch
     actually being constructible (backend='torch' fails fast at
-    FESystem construction, per Wave 0 item 3's own design, in any
+    FESystem construction, per design, in any
     environment without a working torch install -- including this
     project's own development sandbox, see torch_sparse_solver.py's
     docstring) -- these tests are written to run for real wherever

@@ -1,14 +1,13 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_mesh_field_data.py -- Wave 14 items 121 and 123 (docs/consolidated_
-future_roadmap.md), scoped directly against TensorMesh's own Meshes
+test_mesh_field_data.py -- scoped directly against TensorMesh's own Meshes
 documentation page (https://docs.tensor-mesh.com/user_guide/meshes.html):
 
-    item 121: point_data/cell_data/field_data attached directly onto
+    point_data/cell_data/field_data attached directly onto
               Mesh/MultiBlockMesh, plus the register_point_data()/
               register_element_data() convenience methods.
-    item 123: Mesh.compute_boundary_mask()/MultiBlockMesh.compute_
+    Mesh.compute_boundary_mask()/MultiBlockMesh.compute_
               boundary_mask() -- topology-derived (edge-/face-adjacency)
               boundary-node detection, working on any mesh shape, not
               just axis/plane-aligned boundaries the way nodes_on_line()/
@@ -29,7 +28,7 @@ from fea_engine.mesh import (
 
 
 # =====================================================================
-# Item 121: point_data / cell_data / field_data
+# point_data / cell_data / field_data
 # =====================================================================
 class TestFieldDataAttachment:
     def test_mesh_defaults_to_empty_dicts(self):
@@ -96,7 +95,7 @@ class TestFieldDataAttachment:
 
 
 # =====================================================================
-# Item 123: topology-derived boundary-node detection
+# Topology-derived boundary-node detection
 # =====================================================================
 class TestBoundaryMask:
     def test_2d_uniform_grid_exact_boundary_count(self):

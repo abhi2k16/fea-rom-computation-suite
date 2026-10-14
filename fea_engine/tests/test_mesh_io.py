@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_mesh_io.py -- Wave 14 item 122 (docs/consolidated_future_roadmap.
-md): meshio-based mesh file I/O. All tests here are torch-analogue
+test_mesh_io.py -- meshio-based mesh file I/O. All tests here are torch-analogue
 "meshio-gated": skip cleanly if the optional `meshio` package isn't
 installed, matching this project's established `_HAS_TORCH`/`_HAS_GMSH`
 skip convention for every other optional dependency.
@@ -141,7 +140,7 @@ class TestMeshFromMeshioAndReadMesh:
     def test_point_data_and_cell_data_carried_over_on_write(self, tmp_path):
         print("=" * 70)
         print("CHECK 3: register_point_data()/register_element_data() fields")
-        print("(Wave 14 item 121) actually reach the written file")
+        print(" actually reach the written file")
         print("=" * 70)
         m = rectangle_mesh(1.0, 1.0, 2, 2)
         u = np.linspace(0, 1, len(m.nodes))

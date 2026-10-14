@@ -1,12 +1,10 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-tests/test_mesh_fillet_notch.py -- Wave 5 items 26/27 (docs/
-consolidated_future_roadmap.md): grading.Notch (real implementation,
+tests/test_mesh_fillet_notch.py -- grading.Notch (real implementation,
 replacing the previous MeshGradingError-on-construction placeholder)
 and mesh.fillet_in_rectangle_mesh()/notch_in_rectangle_mesh() (the
-structured-path Fillet/Notch support docs/generalized_mesh_grading_
-roadmap.md's Phase 2 explicitly deferred).
+structured-path Fillet/Notch support that the structured hole mesher did not cover).
 
 Checks are geometry-level (no element formulation beyond Quad4PlaneStress
 for check_quality(), no solver): mesh area via the shoelace formula

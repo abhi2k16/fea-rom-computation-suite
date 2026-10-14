@@ -12,14 +12,11 @@ only file location.
 hole, box, box-with-hole) has NO external dependency beyond numpy and
 is always available.
 
-Gmsh-backed geometry support (arbitrary CAD-like geometry and STEP/IGES/
-BREP import via the Gmsh Python API, formerly ``gmsh_engine.py``) has
-been REMOVED from this package: it required ``pip install gmsh`` plus,
-on a minimal Linux install, the system libGLU library, which could not
-be reliably provided, and no verified example or result in this package
-depended on it. The supported path for arbitrary/unstructured meshing
-needs is now just ``shapes``/``mesh.py``'s structured front end. See
-docs/generalized_mesh_grading_roadmap.md for the removal note.
+Gmsh-backed geometry support (arbitrary CAD-like geometry and STEP/IGES/BREP import via the Gmsh Python API,
+formerly ``gmsh_engine.py``) has been REMOVED from this package: it required ``pip install gmsh`` plus, on a
+minimal Linux install, the system libGLU library, which could not be reliably provided, and no verified example or
+result in this package depended on it. The supported path for arbitrary/unstructured meshing is ``shapes``/
+``mesh.py``'s structured front end.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 from .shapes import (

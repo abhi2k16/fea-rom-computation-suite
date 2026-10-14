@@ -118,17 +118,17 @@ def damped_cantilever_beam_system(n=20, L=1.0, E=210e9, rho=7800.0, A=0.01, I=8.
 def reissner_cantilever_system(n_elem=6, L=1.0, E=210e9, nu=0.3, rho=7800.0,
                                 A=1e-3, I=8.33e-7, kappa_s=1.0):
     """A fixed-free (cantilever) chain of the real, geometrically EXACT
-    `fea_engine.elements.Beam2DReissner` rod (Wave 17 item 140), node 0
+    `fea_engine.elements.Beam2DReissner` rod, node 0
     fully clamped (u1=u2=theta=0). Used by
     rom_engine/tests/test_intrusive_nonlinear_rom.py as the real,
     genuinely nonlinear full-order model `IntrusiveNonlinearROM`
     is validated against -- unlike
     `clamped_clamped_nonlinear_beam_system()` above (built on
     `Beam2DCorotational`, no independent rotation field / rotary
-    inertia), this fixture exists specifically so item 144's own
-    `internal_force_fn`/`tangent_fn` callbacks can be exercised through
+    inertia), this fixture exists specifically so the
+    `IntrusiveNonlinearROM` `internal_force_fn`/`tangent_fn` callbacks can be exercised through
     a SHEAR-DEFORMABLE element with a real rotary-inertia mass term, the
-    element this whole Wave 17 track was built around.
+    element the intrusive nonlinear ROM is aimed at.
 
     Returns a dict with the assembled linear stiffness/mass ("K", "M"),
     "mat" (the (E, G, A, I, kappa_s) tuple `internal_force()`/

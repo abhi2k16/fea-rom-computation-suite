@@ -1,9 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_hex8_bbar.py -- Wave 2 item 11 (docs/consolidated_future_roadmap.
-md, source general_purpose_extensions_roadmap.md / nonlinear_fem_
-lessons.md / tensormesh_comparative_analysis.md Sec.6.4): validates
+test_hex8_bbar.py -- validates
 Hex8SolidBbar (elements/solids.py), the mean-dilatation B-bar cure for
 volumetric locking as Poisson's ratio nu -> 0.5.
 

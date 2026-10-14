@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 """
 fea_06_topology_optimization.py -- Example Gallery: SIMP density-based
-compliance topology optimization (topopt.py, Wave 11 item 111),
+compliance topology optimization (topopt.py),
 mirroring TensorMesh's Example Gallery / Inverse Design &
 Identification page (its own worked example is thermal-compliance
 topology optimization via an Optimality-Criteria optimizer -- this is

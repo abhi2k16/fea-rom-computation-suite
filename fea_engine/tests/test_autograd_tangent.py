@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_autograd_tangent.py -- Wave 0 item 2 (docs/consolidated_future_
-roadmap.md, source tensormesh_comparative_analysis.md Section 6.3):
+test_autograd_tangent.py --
 validates fea_engine.autograd_tangent's independent torch.autograd
 cross-checks against the existing Tet4NeoHookean (finite-difference)
 and Tet10SolidTL (analytic) element tangents.
@@ -200,12 +199,12 @@ def test_tet10_solid_tl_autograd_tangent_matches_complex_step_reference():
 
 
 # =====================================================================
-# Wave 10 item 102: batched (vmap) multi-element autograd tangent
+# batched (vmap) multi-element autograd tangent
 # assembly -- validates tet4_neo_hookean_tangent_autograd_batched()
 # against calling the per-element tet4_neo_hookean_tangent_autograd()
 # once per element in a plain Python loop (this file's own existing
 # function, unmodified) on a random multi-element batch. This is the
-# whole correctness claim item 102 makes: batching only changes HOW
+# whole correctness claim the batched tangent makes: batching only changes HOW
 # the computation is scheduled, never the physics or the numbers.
 # =====================================================================
 class TestTet4NeoHookeanBatchedAutograd:

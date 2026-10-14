@@ -1,9 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_facet_loads.py -- Wave 15 item 127 (docs/consolidated_future_
-roadmap.md, source: TensorMesh's "Elements and Quadrature" documentation
-page's facet_quadrature()/nanson_scale() machinery): validates
+test_facet_loads.py -- validates
 facet_loads.py (the bounded, quadrature-based facet/traction loader)
 and FESystem.add_consistent_facet_load().
 

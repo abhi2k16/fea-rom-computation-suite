@@ -22,6 +22,10 @@ hyper-reduction in this first version), so the speed-up is in the linear algebra
 
 Scope: the interface is whatever `P` couples (the caller builds it); small displacements through a constant P; two
 components per call (chain more by repeating the pattern).
+
+References (methods in this module are adopted from):
+  - S. Ritzert, J. Kehls, S. Reese, T. Brepols (2025), "Component-Based Model-Order Reduction With Mortar Tied Contact for Nonlinear Quasi-Static Mechanical Problems", Int. J. Numer. Meth. Engng
+  - M. Balajewicz, D. Amsallem, C. Farhat (2015), "Projection-based model reduction for contact problems", arXiv:1503.01000 (Int. J. Numer. Meth. Engng, 2016)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

@@ -1,13 +1,13 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_topopt.py -- Wave 11 item 111 (docs/consolidated_future_roadmap.md):
+test_topopt.py --
 validates topopt.py -- the SIMP interpolation, the closed-form
 compliance sensitivity against a direct finite-difference perturbation
 of the actual forward solve (decisive, unconditional -- no torch
 needed), the torch-gated adjoint-layer sensitivity path against that
-SAME closed-form reference (the actual "does item 98's adjoint layer
-work end-to-end on a new problem" claim this item exists to validate),
+SAME closed-form reference (the actual "does the adjoint layer
+work end-to-end on a new problem" claim this change exists to validate),
 the OC update's own volume-constraint/move-limit contract, and a real
 end-to-end compliance-minimization run on a short-cantilever domain.
 """

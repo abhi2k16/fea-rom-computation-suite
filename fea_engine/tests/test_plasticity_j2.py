@@ -1,11 +1,10 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_plasticity_j2.py -- validation for Module 19 (general-purpose
-extensions roadmap Phase 6): material.PlasticMaterialJ2 /
+test_plasticity_j2.py -- validation for  material.PlasticMaterialJ2 /
 material.j2_radial_return_3d() / elements.Hex8PlasticJ2.
 
-Five lines of evidence, following the roadmap's own validation plan
+Five lines of evidence, following the validation plan
 (Section 4) plus the closed-form-tangent cross-check every hand-derived
 tangent in this project gets:
 
@@ -20,12 +19,12 @@ tangent in this project gets:
    difference of the SAME function's own stress output, in the
    plastic regime.
 3. test_hex8_uniaxial_stress_matches_plastic_material_1d -- the
-   roadmap's headline check: a single Hex8PlasticJ2 element, loaded
+   headline check: a single Hex8PlasticJ2 element, loaded
    and constrained to reproduce a genuinely UNIAXIAL STRESS state
    (axial load, lateral faces traction-free), must match
    PlasticMaterial1D's already-validated 1-D closed form EXACTLY --
    the "collapse to an existing validated special case" pattern used
-   throughout this roadmap, one dimension up.
+   throughout this, one dimension up.
 4. test_monotonic_then_unload_shows_correct_permanent_set -- ramp the
    SAME element past yield, then unload: the elastic unloading slope
    must equal E exactly (no reverse yielding), and the strain

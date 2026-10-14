@@ -1,38 +1,23 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-torch_linalg.py -- Wave 9 addendum item 138 (docs/consolidated_future_
-roadmap.md): shared, backend-neutral torch-native dense linear-algebra
-primitives for rom_engine's classical state-space MOR family
-(balanced_truncation.py, hankel_norm.py -- see those modules' own
-docstrings for which of their own functions actually route through
-this one). Mirrors fea_engine/torch_sparse_solver.py's role (a single
-_HAS_TORCH/_require_torch() source of truth plus a handful of reusable
-primitives), independently implemented here since rom_engine does not
-depend on fea_engine as a library (rom_engine/__init__.py's own stated
-design -- fea_engine is a test/example dependency only; nonlinear_
-rom.py's own _HAS_TORCH/_require_torch() block already reimplements
-the same defensive except-Exception pattern for the identical reason,
-duplicated here rather than imported since the two modules must not
-depend on each other).
+torch_linalg.py -- shared, backend-neutral torch-native dense linear-algebra primitives for rom_engine's classical
+state-space MOR family (balanced_truncation.py, hankel_norm.py; see those modules' docstrings for which of their
+functions route through this one). Provides a single _HAS_TORCH/_require_torch() source of truth plus a handful of
+reusable primitives, independently implemented here because rom_engine does not depend on fea_engine as a library
+(fea_engine is a test/example dependency only). nonlinear_rom.py has its own _HAS_TORCH/_require_torch() block with
+the same defensive except-Exception pattern; it is duplicated rather than imported because the two modules must
+not depend on each other.
 
-Scope, stated up front (same "narrow, then document explicitly"
-convention Wave 9 item 137 used for IC(0)): this module provides
-generic torch equivalents of the SPECIFIC primitives balanced_
-truncation.py's own hot path (two Lyapunov solves feeding an SVD)
-actually needs -- solve_continuous_lyapunov (no native torch
-equivalent; solved here via the classical Kronecker-sum vectorization
-of the Lyapunov equation, a genuinely DIFFERENT algorithm from scipy's
-dense Bartels-Stewart eigenvalue-based solver, cross-validated against
-it in tests/test_torch_linalg.py rather than assumed equivalent), an
-SVD, and a Gramian square root (Cholesky-or-eigh fallback, mirroring
-balanced_truncation._gramian_square_root() exactly). A general
-Sylvester-equation solver (torch_solve_sylvester(), the natural
-generalization of the Lyapunov solver above -- the Lyapunov equation is
-the special case B=A^T, Q symmetric) is also provided, since deriving
-the shared Kronecker-vectorization machinery once serves both, but it
-is NOT currently wired into any backend="torch" call path in this
-package -- see its own docstring for why.
+Scope: generic torch equivalents of the SPECIFIC primitives the balanced_truncation.py hot path (two Lyapunov
+solves feeding an SVD) needs -- solve_continuous_lyapunov (no native torch equivalent; solved here by the classical
+Kronecker-sum vectorisation of the Lyapunov equation, a genuinely DIFFERENT algorithm from scipy's dense
+Bartels-Stewart solver, cross-validated against it in tests/test_torch_linalg.py rather than assumed equivalent), an
+SVD, and a Gramian square root (Cholesky-or-eigh fallback, mirroring balanced_truncation._gramian_square_root()
+exactly). A general Sylvester-equation solver (torch_solve_sylvester(), the natural generalisation of the Lyapunov
+solver: Lyapunov is the case B=A^T, Q symmetric) is also provided, since the shared Kronecker-vectorisation
+machinery serves both, but it is NOT currently wired into any backend="torch" call path in this package; see its
+docstring for why.
 
 hankel_norm.py's OWN post-balancing machinery (a real Schur
 decomposition with custom stable/antistable eigenvalue sorting, then a
@@ -46,15 +31,11 @@ full-order-sized step, called both for the main balancing step and for
 OptimalHankelNormROM's own empirical self-check) gets a backend="torch"
 option, via balanced_truncation.py's own dispatch.
 
-krylov.py (dense-LU-based block Arnoldi, already cheap for the modest
-per-generation systems this package's own state spaces produce) and
-loewner.py (a tiny generalized eigenproblem sized by the NUMBER OF
-INTERPOLATION POINTS, typically far smaller than a full-order model)
-are likewise left NumPy/SciPy-only entirely -- matching roadmap item
-138's own reasoning: a GPU win here only materializes for a large
-full-order model fed directly into balancing, or a batched sweep
-across many parameter points (not attempted in this item), and neither
-applies to those two modules' own works-on-something-small paths.
+krylov.py (dense-LU-based block Arnoldi, already cheap for the modest per-generation systems this package's state
+spaces produce) and loewner.py (a tiny generalised eigenproblem sized by the NUMBER OF INTERPOLATION POINTS,
+typically far smaller than a full-order model) are likewise left NumPy/SciPy-only: a GPU gain materialises only for
+a large full-order model fed directly into balancing, or a batched sweep across many parameter points, and neither
+applies to those two modules' small working problems.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -163,7 +144,7 @@ def torch_solve_sylvester(A, B, Q, device="cpu", dtype=None):
     future item that does need it at full-order scale, the same
     "build the honest primitive even if not every caller reaches it
     yet" reasoning fea_engine/torch_sparse_solver.py's own _cg_torch()
-    followed (item 3 wrote it generically so a later caller, item 137,
+    followed (it was written generically so a later caller
     could reuse it without touching the loop again)."""
     _require_torch()
     dtype = dtype or torch.float64
@@ -219,8 +200,7 @@ def torch_balance_from_gramians(P, Q, device="cpu", dtype=None):
     square roots, then an SVD of Lq^T Lp), same formulas, same return
     convention (sigma descending, T, Tinv) -- but returns plain NumPy
     arrays (NOT torch tensors). Unlike fea_engine's mesh_transform.py/
-    vectorized_assembly.py GPU-residency chain (Wave 9 items 135/136,
-    where MeshTransformation deliberately keeps its output as live
+    vectorized_assembly.py GPU-residency chain (where MeshTransformation deliberately keeps its output as live
     torch.Tensors because vectorized_assembly.py's own functions
     consume them directly), nothing downstream of this function in
     rom_engine is torch-native -- BalancedTruncationROM/

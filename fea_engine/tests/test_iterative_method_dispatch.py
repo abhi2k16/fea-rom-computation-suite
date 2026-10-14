@@ -1,25 +1,22 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_iterative_method_dispatch.py -- Wave 16 item 132 (docs/
-consolidated_future_roadmap.md, source: TensorMesh's `Sparse Solvers`
-documentation page): validates FESystem.solve_static(method="cg"/"pcg")
--- routing the free-DOF solve through Wave 8's own preconditioned_cg()
+test_iterative_method_dispatch.py -- validates FESystem.solve_static(method="cg"/"pcg")
+-- routing the free-DOF solve through own preconditioned_cg()
 (iterative_solvers.py) instead of the existing direct/eigen path.
 
 Decisive checks throughout: agreement with the existing direct-solve
 path (not just "runs without erroring"), each of the three
 preconditioners actually being exercised and agreeing too, correct
-interaction with item 131's non-homogeneous Dirichlet correction, the
-method=None default being a true no-op (nothing about this item changes
+interaction with the non-homogeneous Dirichlet correction, the
+method=None default being a true no-op (nothing about this change changes
 the untouched code path), and the explicit ValueError guards (unknown
 method, method= combined with backend='auto') -- matching this
 project's own "fail loudly, never silently reinterpret" precedent.
 
-TestTorchBackendGuard (updated for Wave 9 addendum item 137, docs/
-consolidated_future_roadmap.md): method="cg"/"pcg" combined with
+TestTorchBackendGuard: method="cg"/"pcg" combined with
 backend="torch" used to raise ValueError (the ORIGINAL, narrower scope
-of this item); item 137 closes that gap by giving backend="torch" its
+of this change); that gap is closed by giving backend="torch" its
 own CG dispatch (iterative_solvers.preconditioned_cg(backend="torch"))
 -- so this class now confirms AGREEMENT with the direct-solve path on
 backend="torch", the same decisive standard every other class in this
@@ -28,7 +25,7 @@ case (preconditioner="ic0" combined with backend="torch") raising
 NotImplementedError rather than silently falling back or breaking.
 backend="auto" combined with method= still raises ValueError
 unchanged -- see TestGuardRails::test_method_with_backend_auto_raises_
-value_error below, untouched by this item.
+value_error below, untouched by this change.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -92,7 +89,7 @@ class TestCGMatchesDirectSolve:
 
 
 class TestNonHomogeneousDirichletInteraction:
-    """method="cg" must honor item 131's -Kio*uo RHS correction
+    """method="cg" must honor the -Kio*uo RHS correction
     identically to the direct path -- the correction is a property of
     the linear system, not of how it's solved."""
 
@@ -127,7 +124,7 @@ class TestGuardRails:
         """method=None (the default) must be bit-for-bit identical to
         never having passed method= at all -- true no-op, matching
         this project's own IDENTICAL-cost/behavior-when-unused
-        convention (first established for Wave 1's du_tol/energy_tol)."""
+        convention (first established for du_tol/energy_tol)."""
         fs1 = _cantilever()
         U1 = fs1.solve_static()
         fs2 = _cantilever()
@@ -149,7 +146,7 @@ class TestGuardRails:
         own docstring): Jacobi/Gauss-Seidel/SOR are NOT valid method=
         choices here, even though iterative_solvers.py implements them
         -- confirmed to diverge on an ordinary (non-diagonally-
-        dominant) Quad4 stiffness matrix during this item's own
+        dominant) Quad4 stiffness matrix during this
         development, so exposing them as a top-level solve method
         would be handing a caller a solver likely to fail silently."""
         fs = _cantilever()
@@ -163,8 +160,7 @@ class TestGuardRails:
 
 
 class TestTorchBackendGuard:
-    """method="cg"/"pcg" combined with backend='torch' (Wave 9 addendum
-    item 137) -- gated on torch actually being usable, same convention
+    """method="cg"/"pcg" combined with backend='torch' -- gated on torch actually being usable, same convention
     as test_nonhomogeneous_dirichlet.py's own TestTorchBackendGuard
     (backend='torch' fails at FESystem construction time in any
     environment without a working torch install, including this

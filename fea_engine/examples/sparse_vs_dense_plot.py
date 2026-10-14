@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-sparse_vs_dense_plot.py -- Phase 2 (general-purpose extensions
-roadmap) worked example: visual verification companion to
+sparse_vs_dense_plot.py -- worked example: visual verification companion to
 sparse_vs_dense_cantilever.py.
 
 Two panels: (1) log-log solve time vs n_dof for the dense and sparse

@@ -4,25 +4,19 @@
 sampling.py -- generalized Optimal Latin Hypercube Sampling (OLHS)
 design-of-experiments core.
 
-Every nonlinear-force-model training strategy in `nonlinear_rom.py`
-(Section 4 of docs/nonlinear_surrogate_rom_roadmap.md) needs a way to
-pick WHERE in some parameter space to run expensive full-order training
-solves -- a per-mode force-scale factor for `AppliedLoadStrategy`, a
-displacement-pattern amplitude for `EnforcedDisplacementStrategy`, or
-(in the future) something else entirely. Rather than hand-roll that
-sampling logic once per strategy, this module provides ONE
-general-purpose OLHS sampler in the unit hypercube (`optimal_lhs`),
-decoupled from any physical convention, plus ONE thin, named
-convenience function (`modal_force_samples`) that rescales its output
-into the specific per-mode force-scale quantity Eq. 16-17/46-47 of the
-reference paper (He et al. 2023) needs. A future training strategy that
-samples something else entirely reuses `optimal_lhs` directly rather
-than duplicating the space-filling-design logic.
+Every nonlinear-force-model training strategy in `nonlinear_rom.py` needs a way to pick WHERE in some parameter space
+to run expensive full-order training solves -- a per-mode force-scale factor for `AppliedLoadStrategy`, a
+displacement-pattern amplitude for `EnforcedDisplacementStrategy`, or something else entirely. Rather than hand-roll
+that sampling once per strategy, this module provides ONE general-purpose OLHS sampler in the unit hypercube
+(`optimal_lhs`), decoupled from any physical convention, plus ONE thin, named convenience function
+(`modal_force_samples`) that rescales its output into the per-mode force-scale quantity of Eq. 16-17/46-47 of He et
+al. 2023. A training strategy that samples something else reuses `optimal_lhs` directly.
 
-Explicit `rng` throughout (no hidden global state), matching the
-convention already established for this package's other randomized
-constructions (`rom_engine.loewner`/`rom_engine.screening`, see
-docs/loewner_modal_identification_roadmap.md Section 2).
+Explicit `rng` throughout (no hidden global state), the convention of this package's other randomised constructions
+(`rom_engine.loewner`/`rom_engine.screening`).
+
+References (methods in this module are adopted from):
+  - He et al. (2023), "A novel geometric nonlinear reduced order modeling method using multi-fidelity surrogate for real-time structural analysis", Struct. Multidisc. Optim. 66:233
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -117,7 +111,7 @@ def modal_force_samples(basis_freqs_hz, mode_shape_peaks, target_fracs,
     samples a per-mode target peak displacement within a fraction range
     of a caller-supplied reference length scale, then converts each
     sampled displacement target into the per-mode FORCE-scale factor
-    `f_hat_r` the paper's `AppliedLoadStrategy` (ICE / Shi & Mei
+    `f_hat_r` the `AppliedLoadStrategy` (ICE / Shi & Mei
     training-load convention) needs:
 
         Q_max_r = a_r * reference_scale_r     (a_r in [frac_min_r, frac_max_r], OLHS-sampled)
@@ -126,13 +120,13 @@ def modal_force_samples(basis_freqs_hz, mode_shape_peaks, target_fracs,
     where `lambda_r = (2*pi*basis_freqs_hz[r])^2` is the retained
     mode's squared natural frequency (rad/s) and `phi_r_max =
     mode_shape_peaks[r]` is that mode's own peak (max-abs) shape
-    component -- the paper's own normalization, so `Q_max_r` is exactly
+    component -- the normalization of He et al. 2023, so `Q_max_r` is exactly
     the requested modal PEAK displacement, not a dimensionless quantity.
 
-    Deliberately generalized beyond the paper's own beam-thickness-
+    Deliberately generalized beyond the beam-thickness-
     specific convention: `reference_scale` is a caller-supplied
     physical length (e.g. a beam or plate thickness for the "0.8-1.2x
-    thickness" range the paper itself uses), not hardcoded to
+    thickness" range used in that work), not hardcoded to
     "thickness" -- this function makes no assumption about what
     structure or geometry it's being used for.
 

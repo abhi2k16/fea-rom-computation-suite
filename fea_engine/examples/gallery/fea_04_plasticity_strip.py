@@ -6,8 +6,8 @@ with isotropic hardening, on a plate-with-a-hole strip under cyclic
 axial tension -- mirrors TensorMesh's Example Gallery / Solid
 Mechanics / Plasticity (J2 with Isotropic Hardening) page.
 
-Uses Quad4PlasticJ2PlaneStress (item 13, Wave 2) on a hole_in_
-rectangle_mesh() strip (Wave 5's mesh-generation machinery) -- the
+Uses Quad4PlasticJ2PlaneStress on a hole_in_
+rectangle_mesh() strip -- the
 classic stress-concentration-driven plasticity benchmark: an elastic
 stress-concentration factor of ~3 at the hole boundary means local
 yielding starts there long before the strip's nominal (far-field)

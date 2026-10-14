@@ -5,7 +5,7 @@ test_greedy.py -- validates rom_engine.greedy.greedy_train_frequency_basis()
 against a REAL, damped fea_engine cantilever beam (mirroring
 test_frequency.py's fixtures and ground-truth conventions).
 
-Checks (per docs/error_bounds_greedy_roadmap.md Section 6):
+Checks:
   1. Greedy-selected training frequencies CLUSTER near the model's
      actual resonances -- a directly checkable claim (density near a
      known resonance vs. a uniform grid's density), not "seems

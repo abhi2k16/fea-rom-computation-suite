@@ -1,14 +1,12 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_torch_vectorized_assembly.py -- Wave 9 addendum item 136 (docs/
-consolidated_future_roadmap.md): validates assemble_stiffness_
+test_torch_vectorized_assembly.py -- validates assemble_stiffness_
 vectorized()'s backend="numpy"/"torch" contract (vectorized_
-assembly.py), building directly on item 135's MeshTransformation
+assembly.py), building directly on the MeshTransformation
 backend contract.
 
-Same two-part split as test_torch_mesh_transform.py (item 135's own
-test file) and this project's established convention:
+Same two-part split as test_torch_mesh_transform.py and this project's established convention:
 
   TestBackendArgumentValidation -- runs UNCONDITIONALLY, no torch
       needed: unknown backend= raises ValueError; backend="numpy"
@@ -69,11 +67,8 @@ class TestBackendArgumentValidation:
         np.testing.assert_array_equal(fs_default.K, fs_explicit.K)
 
     def test_numpy_backend_still_matches_per_element_loop(self):
-        # Regression check: this item must not perturb the pre-existing,
-        # already-validated numpy path (Wave 11 item 107's own
-        # test_vectorized_matches_looped_on_quad4_patch_dense covers this
-        # too -- repeated here as a direct smoke test scoped to this
-        # item's own touch points). Same atol=1e-3 that test uses: the
+        # Regression check: this change must not perturb the pre-existing,
+        # already-validated numpy path. Same atol=1e-3 that test uses: the
         # einsum-reduction vs. sequential-scatter-add paths sum the same
         # per-element contributions in a different order, so agreement
         # is to float64 summation-order noise (~1e-4 absolute at this
@@ -132,7 +127,7 @@ class TestTorchBackendNumericalAgreement:
         assert np.allclose(fs_np.K, fs_torch.K, atol=1e-3, rtol=1e-8)
 
     def test_torch_backend_end_to_end_static_solve_matches_numpy_backend(self):
-        # The decisive, end-to-end check (mirroring item 107's own
+        # The decisive, end-to-end check (mirroring the
         # test_vectorized_static_solve_matches_looped_end_to_end): build
         # K via the torch assembly path, solve with the ORDINARY scipy
         # solve_static() (assembly backend and solve backend are

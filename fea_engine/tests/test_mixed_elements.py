@@ -156,7 +156,7 @@ def test_mixed_elements():
     # to build a genuinely mixed tri3+quad4 recombined mesh from Gmsh
     # output, rather than the hand-built mixed mesh CHECK 1-4 above use.
     # Gmsh-backed geometry support was removed from this package (system
-    # libGLU dependency; see docs/generalized_mesh_grading_roadmap.md)
+    # libGLU dependency; see docs/)
     # -- CHECK 1-4 already cover mixed-element assembly/solve on a
     # hand-built mesh, so no coverage is lost for the FESystem mixed-
     # element machinery itself, only for Gmsh's ability to produce such

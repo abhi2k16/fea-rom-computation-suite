@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 """
 test_intrusive_nonlinear_rom.py -- validates rom_engine.intrusive_
-nonlinear_rom.IntrusiveNonlinearROM (Wave 17 item 144) against real
-fea_engine models, per the roadmap's own four-part validation criteria:
+nonlinear_rom.IntrusiveNonlinearROM against real
+fea_engine models, against a four-part validation:
 
   1. Identity-basis reduction reproduces fea_engine.nonlinear_solver.
      solve_nonlinear_transient()'s own trajectory to integrator
@@ -241,7 +241,7 @@ class TestEnergyConservationRK4FourthOrder:
         fes, mat, free = fx["sys"], fx["mat"], fx["free_dofs"]
         n_dof, n_free = fx["n_dof"], len(free)
         M_ff = fx["M"][np.ix_(free, free)]
-        C_ff = np.zeros_like(M_ff)   # undamped, per the roadmap's own criterion
+        C_ff = np.zeros_like(M_ff)   # undamped
 
         def internal_force_fn(u_free):
             return fes.assemble_internal_force(_embed(u_free, free, n_dof), mat)[free]
@@ -329,9 +329,9 @@ class TestReducedMatricesSPD:
 
 # =====================================================================
 # Extra sanity checks -- integrate_solve_ivp(), integrate_newton_newmark(),
-# and impulse_to_reduced_velocity(), not one of the roadmap's own four
-# named validation criteria but required so every integrator this item
-# promises ("genuinely available, not just mentioned") is actually
+# and impulse_to_reduced_velocity(), not one of the four
+# named validation criteria but required so every integrator
+# the class provides ("genuinely available, not just mentioned") is actually
 # exercised, not merely defined.
 # =====================================================================
 class TestSolveIvpAgreesWithRK4:

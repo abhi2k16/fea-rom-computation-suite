@@ -1,46 +1,28 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-topopt.py -- Wave 11 item 111 (docs/consolidated_future_roadmap.md,
-source tensormesh_analysis_report.md's "Differentiability" section,
-`OCOptimizer`: density-per-element, SIMP stiffness interpolation,
-volume-fraction constraint via bisection on a Lagrange multiplier,
-driven directly by `rho.grad` from the adjoint solve -- demonstrated
-there on ~8.6x compliance reduction at an exactly-held volume
-constraint).
+topopt.py -- density-based topology optimization: density per element, SIMP stiffness interpolation, a
+volume-fraction constraint via bisection on a Lagrange multiplier (optimality-criteria update), driven by
+compliance sensitivities from either a closed form or the adjoint solve.
 
-Hard dependency, now satisfied: Wave 10 item 98 (the whole-solver
-implicit-differentiation adjoint layer -- `differentiable.
-adjoint_gradient()`). This module's own `compliance_sensitivity_via_
-adjoint()` is the concrete "does the adjoint layer actually work
-end-to-end, on a problem genuinely different from the one it was built
-for" validation this item exists to perform -- the same role
-`OCOptimizer` plays for TensorMesh itself -- by reusing `adjoint_
-gradient(K_eff, grad_w, vjp_fn)`'s generic signature DIRECTLY, not by
-re-deriving a new adjoint mechanism.
+Dependency: the whole-solver implicit-differentiation adjoint layer (`differentiable.adjoint_gradient()`).
+`compliance_sensitivity_via_adjoint()` applies the adjoint layer end to end to a problem different from the one it
+was built for, by reusing `adjoint_gradient(K_eff, grad_w, vjp_fn)`'s generic signature directly rather than
+re-deriving an adjoint mechanism.
 
-Two independent, cross-validated sensitivity paths (the "numpy-shadow-
-first" pattern Wave 10 established -- see differentiable.py's own
-module docstring): compliance topology optimization is the textbook
-SELF-ADJOINT case (the adjoint variable lam turns out to equal -u
-exactly, a well-known closed-form fact -- see `compliance_sensitivity_
-closed_form()`'s own docstring for the derivation), so this module
-gets BOTH a fast, torch-free, hand-derived closed-form sensitivity
-(the one the actual optimization LOOP below uses by default) AND a
-slower, torch-gated path that computes the exact same quantity through
-`adjoint_gradient()` plus a genuine `torch.autograd.grad` vector-
-Jacobian product -- the two must agree to floating-point/autograd
-precision, which `tests/test_topopt.py` checks directly, not merely
-assumed.
+Two independent, cross-validated sensitivity paths (the "numpy-shadow-first" pattern; see differentiable.py's
+module docstring): compliance topology optimization is the textbook SELF-ADJOINT case (the adjoint variable lam
+equals -u exactly; see `compliance_sensitivity_closed_form()`'s docstring for the derivation), so this module has
+BOTH a fast, torch-free, hand-derived closed-form sensitivity (the one the optimization LOOP below uses by default)
+AND a slower, torch-gated path that computes the same quantity through `adjoint_gradient()` plus a genuine
+`torch.autograd.grad` vector-Jacobian product. The two must agree to floating-point/autograd precision, which
+`tests/test_topopt.py` checks directly.
 
-Integration policy: no `tensormesh.optimizer` dependency -- native
-NumPy/`torch` autograd only, reusing this package's own Wave 11 items
-106/107 (`MeshTransformation`/`tensorized_element_stiffness`) to build
-the SINGLE "unit-density" element stiffness stack once, then rescaling
-it every OC iteration by a cheap per-element SIMP scalar (`vectorized_
-assembly.scatter_global_stiffness()` handles the actual global
-scatter) -- SIMP's own standard trick, and a natural, concrete use case
-for items 106/107's own tensorized-assembly machinery.
+Native NumPy/`torch` autograd only (no external optimizer dependency). The module reuses
+`MeshTransformation`/`tensorized_element_stiffness` to build the SINGLE "unit-density" element stiffness stack once,
+then rescales it every OC iteration by a cheap per-element SIMP scalar (`vectorized_assembly.
+scatter_global_stiffness()` handles the global scatter): SIMP's standard trick and a natural use of the tensorized
+assembly machinery.
 
 Scope: SIMP density-per-element compliance minimization under a single
 volume-fraction constraint, Optimality-Criteria updates with a move
@@ -55,6 +37,9 @@ classic heuristic, "A 99 line topology optimization code written in
 Matlab", 2001) is included to avoid obvious checkerboarding -- density
 filtering (a genuinely different, arguably better-founded technique) is
 a natural follow-on, not attempted here.
+
+References (methods in this module are adopted from):
+  - M. P. Bendsoe, O. Sigmund (2003), "Topology Optimization: Theory, Methods and Applications", Springer; O. Sigmund (2001), "A 99 line topology optimization code written in Matlab", Struct. Multidisc. Optim. 21
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -95,7 +80,7 @@ def simp_scale_grad(rho, p=3.0, rho_min=1e-3):
 # =====================================================================
 def unit_stiffness_stack(fesystem, D, gauss_order=None):
     """The mesh-wide `(n_elements, n_edof, n_edof)` stiffness stack at
-    `rho=1` everywhere -- computed ONCE via items 106/107
+    `rho=1` everywhere -- computed ONCE via
     (`MeshTransformation` + `tensorized_element_stiffness`), then
     reused (just rescaled per element, every OC iteration) by
     `assemble_K_from_scale()` below instead of ever reassembling from
@@ -106,7 +91,7 @@ def unit_stiffness_stack(fesystem, D, gauss_order=None):
 
 
 def assemble_K_from_scale(ke_unit, scale, connectivity, dofs_per_node, n_dof):
-    """Global K(rho) via item 107's vectorized scatter, given the
+    """Global K(rho) via the vectorized scatter, given the
     already-rescaled per-element stiffness stack `ke_unit * scale[:,
     None, None]` -- one call, no Python loop over elements."""
     ke_scaled = ke_unit * np.asarray(scale)[:, None, None]
@@ -124,8 +109,7 @@ def _elem_dof_table(connectivity, dofs_per_node):
 # =====================================================================
 def solve_simp_equilibrium(ke_unit, connectivity, dofs_per_node, n_dof, free_dofs, F_ext, rho, p, rho_min):
     """K(rho) u = F_ext on the free dofs, via the SAME SPD-aware
-    Cholesky-then-eigen dispatch `FESystem.solve_static()` itself uses
-    (Wave 0 items 5/6) -- reused directly (both are `@staticmethod`),
+    Cholesky-then-eigen dispatch `FESystem.solve_static()` itself uses -- reused directly (both are `@staticmethod`),
     not reimplemented, since a SIMP density field genuinely can produce
     a near-singular Kff (a fully-void, disconnected region) that the
     existing fallback chain already knows how to handle safely.
@@ -180,7 +164,7 @@ def compliance_sensitivity_closed_form(ke_unit, connectivity, dofs_per_node, u_f
 def compliance_sensitivity_via_adjoint(ke_unit, connectivity, dofs_per_node, n_dof,
                                         free_dofs, u_full, Kff, Ff, rho, p, rho_min):
     """The SAME dC/drho as compliance_sensitivity_closed_form(), computed
-    instead through Wave 10 item 98's own general machinery --
+    instead through general machinery --
     differentiable.adjoint_gradient(K_eff, grad_w, vjp_fn) -- reused
     here EXACTLY as-is, with:
       K_eff = Kff        (this problem is LINEAR, so the "corrected
@@ -197,8 +181,8 @@ def compliance_sensitivity_via_adjoint(ke_unit, connectivity, dofs_per_node, n_d
                     condition only through the "f_theta"-like term,
                     here the whole K(rho)@u itself).
 
-    This is this item's actual reason for existing: a real, independent
-    demonstration that item 98's adjoint layer, built for a nonlinear
+    This exists as a real, independent
+    demonstration that the adjoint layer, built for a nonlinear
     structural-correction problem, is genuinely general enough to
     reproduce a textbook closed-form topology-optimization sensitivity
     exactly -- see tests/test_topopt.py for the decisive agreement
@@ -320,7 +304,7 @@ def topology_optimize_compliance(fesystem, D, F_ext, volume_fraction, p=3.0, rho
     volume_fraction : float in (0, 1]
         Target `mean(rho)`.
     sensitivity : "closed_form" (default, fast, torch-free) or
-        "adjoint" (Wave 10 item 98's general machinery, torch-gated --
+        "adjoint" (general machinery, torch-gated --
         see compliance_sensitivity_via_adjoint()'s own docstring).
         Both are validated to agree in tests/test_topopt.py; "adjoint"
         exists to prove that agreement holds, not because it is faster

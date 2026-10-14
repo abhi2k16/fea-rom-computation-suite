@@ -1,11 +1,10 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-tests/test_grading.py -- Phase 1 validation of fea_engine.grading.
+tests/test_grading.py -- of fea_engine.grading.
 
 Pure sizing-function math, no mesher and no element formulation involved
-(see docs/generalized_mesh_grading_roadmap.md, Section 4's "Analytic"
-validation item) -- everything here is checked against closed-form/
+ -- everything here is checked against closed-form/
 geometric-series expectations, not against a solve.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
@@ -126,7 +125,7 @@ def test_edgebias_h_min_is_h_first():
 
 
 def test_notch_now_implemented_constructs_and_derives_h_min():
-    """Wave 5 item 26 (docs/consolidated_future_roadmap.md): Notch is no
+    """Notch is no
     longer a permanently-raising placeholder -- a REAL rectangular-slot
     implementation now exists (see the class's own docstring for the
     deliberate scope narrowing from an arbitrary path to a 2-point
@@ -181,7 +180,7 @@ def test_plan_grade_for_matches_solver():
 
 
 # =====================================================================
-# Threshold-field sizing law (Gmsh-facing, Phase 3 prerequisite)
+# Threshold-field sizing law (Gmsh-facing)
 # =====================================================================
 def test_threshold_field_matches_gmsh_definition_pointwise():
     h_min, h_max, dmin, dmax = 0.001, 0.02, 0.0, 0.05

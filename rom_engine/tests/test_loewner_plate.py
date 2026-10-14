@@ -5,7 +5,7 @@ test_loewner_plate.py -- validates rom_engine.loewner/rom_engine.screening
 against plate_fixtures.build_paper_plate_system(): a materially harder,
 more realistic real-model target than the mass-spring-chain and beam
 fixtures used elsewhere (867 structural DOF, 6 measurement DOFs, a
-real added-mass fluid-loading effect), matching the paper's own
+real added-mass fluid-loading effect), matching the source's
 "Example 1" excitation/measurement node layout (Table 1).
 
 This mirrors the working prototype's fem_rom_comparison.py workflow,

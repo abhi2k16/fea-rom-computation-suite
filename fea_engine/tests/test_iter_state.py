@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_iter_state.py -- validation for Module 23: FESystem.init_iter_state()/
+test_iter_state.py -- validation for FESystem.init_iter_state()/
 update_iter_states(), the mixed-formulation internal-state mechanism
 added to nonlinear_solver.py's static drivers to support
 Shell4MITCCorotational's von Karman coupling fix (see that class's
@@ -113,7 +113,7 @@ def test_iter_state_multi_step_accumulates_across_steps():
 
 
 def test_arc_length_and_static_koiter_newton_also_wire_iter_state():
-    """Spot-check the other two drivers touched by Module 23
+    """Spot-check the other two drivers touched by the iter_state mechanism
     (solve_nonlinear_arc_length, solve_nonlinear_static_koiter_newton)
     -- same accumulator fingerprint, on the same toy spring (a linear
     element, so both drivers converge trivially; the point here is

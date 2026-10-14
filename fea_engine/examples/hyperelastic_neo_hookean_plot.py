@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-hyperelastic_neo_hookean_plot.py -- Phase 6 (general-purpose
-extensions roadmap) worked example: visual verification companion to
+hyperelastic_neo_hookean_plot.py -- worked example: visual verification companion to
 hyperelastic_neo_hookean_demo.py.
 
 Two panels: (1) log-log convergence of the small-strain relative error

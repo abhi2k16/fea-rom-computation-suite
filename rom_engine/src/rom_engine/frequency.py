@@ -18,19 +18,13 @@ analysis -- is exactly the kind of "same structure, many parameter
 queries" problem the rest of this package (pod.py, galerkin.py,
 affine.py) already exists to accelerate.
 
-The key structural fact this module leans on: A(omega) is EXACTLY
-affine in the 3-term basis {M, C, K}, with parameter-dependent
-coefficients theta(omega) = [-omega^2, i*omega, 1]. That is precisely
-the abstraction affine.py already implements -- this module does not
-introduce new projection algebra, it COMPOSES AffineDecomposition (for
-the offline/online split) with GalerkinROM (for basis projection of
-the load vector and expansion back to full coordinates) around that
-one physically-specific theta(omega). See
-docs/frequency_domain_rom_roadmap.md for the full research/design
-background (Krylov/SOAR alternatives, certified error estimation,
-POD-on-FRF-snapshots vs. modal bases) -- this module implements that
-document's Phase 1 (affine-reuse core) and Phase 2 (POD-on-FRF-
-snapshots basis option).
+The key structural fact this module uses: A(omega) is EXACTLY affine in the 3-term basis {M, C, K}, with
+parameter-dependent coefficients theta(omega) = [-omega^2, i*omega, 1]. That is precisely the abstraction affine.py
+implements, so this module introduces no new projection algebra: it COMPOSES AffineDecomposition (for the
+offline/online split) with GalerkinROM (for basis projection of the load vector and expansion back to full
+coordinates) around that one physically specific theta(omega). Two basis options are provided: modal bases and
+POD on FRF snapshots. See the design notes in docs/ for the background (Krylov/SOAR alternatives, certified error
+estimation, POD-on-FRF-snapshots versus modal bases).
 
 Damping models
 --------------
@@ -207,9 +201,7 @@ class FrequencyROM:
         ||F - A(omega) @ (V @ q)|| of the expanded reduced solution at
         this omega -- computed EFFICIENTLY, in O(Q * n_dof * n_modes),
         via AffineDecomposition.assemble_action() rather than
-        O(n_dof^2) via assemble() (see
-        docs/error_bounds_greedy_roadmap.md Section 2 for the
-        derivation). Since n_modes << n_dof for any basis worth
+        O(n_dof^2) via assemble(). Since n_modes << n_dof for any basis worth
         reducing to, this is cheap enough to call many times inside a
         greedy training loop's inner sweep over candidate frequencies
         -- the use case error_estimate() (below) was originally too
@@ -221,9 +213,8 @@ class FrequencyROM:
         posteriori bound needs this residual divided by a rigorous
         lower bound on A(omega)'s smallest singular value (the
         "coercivity constant" of the reduced-basis-method literature),
-        which is NOT implemented here; see
-        docs/error_bounds_greedy_roadmap.md Section 3 for why
-        that is a genuinely hard, still-open problem near resonance
+        which is NOT implemented here; that
+        is a genuinely hard, still-open problem near resonance
         (the literature is explicit that residual/coercivity-based
         estimators do not give tight bounds there), and why this
         package's greedy training uses the hierarchical indicator
@@ -250,8 +241,7 @@ class FrequencyROM:
         comparison_rom.frequency_response([omega], F)|| -- the
         DISAGREEMENT between this ROM and a second FrequencyROM (same
         M, K, C; a DIFFERENT basis) at this omega, used as a practical
-        error indicator that needs no coercivity constant at all (see
-        docs/error_bounds_greedy_roadmap.md Section 3).
+        error indicator that needs no coercivity constant at all).
 
         This sidesteps residual_norm()'s fundamental limitation
         (dividing by a near-zero singular value near resonance to turn
@@ -289,8 +279,7 @@ def build_pod_basis_from_frf_snapshots(training_omegas, M, K, F, C=None,
     frequencies and POD the resulting (complex) snapshot matrix -- an
     alternative to a modal (undamped-eigenmode) basis for
     FrequencyROM, better suited to capturing the actual load-dependent
-    response shape near resonance (see
-    docs/frequency_domain_rom_roadmap.md Section 2a: the applied POD-
+    response shape near resonance (the applied POD-
     FRF literature reports this outperforming plain modal truncation
     once enough accuracy is demanded).
 
@@ -298,9 +287,7 @@ def build_pod_basis_from_frf_snapshots(training_omegas, M, K, F, C=None,
     len(training_omegas) of them. The caller decides how many/which
     training frequencies to use; a grid spanning (and a bit beyond)
     the frequency BAND of interest, with extra density near any known
-    resonances, is a reasonable starting point. A smarter, error-
-    driven (greedy) alternative is Phase 4 of the roadmap, not
-    implemented here.
+    resonances, is a reasonable starting point. A smarter, error-driven (greedy) alternative is in greedy.py.
 
     Parameters
     ----------

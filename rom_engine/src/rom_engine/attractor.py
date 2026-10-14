@@ -1,74 +1,43 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-attractor.py -- Wave 17 item 146 (fea_engine/docs/consolidated_future_
-roadmap.md): attractor / Poincare tooling for FE (full-order) and
-reduced (IntrusiveNonlinearROM) models, needed to reproduce Georgiou
-(2005)'s Figs. 15, 18, 19, 20-22 and Eq. 61.
+attractor.py -- steady-state, stroboscopic and attractor diagnostics for forced nonlinear structures: samples
+trajectories of full-order and reduced (IntrusiveNonlinearROM) models at the forcing period, measures steady-state
+amplitudes, sweeps frequency or amplitude, and extracts slaved-mode relations from POD amplitude series.
 
-WHY THIS IS ITS OWN MODULE, NOT PART OF nnm.py. nnm.py already covers
-one flavor of "periodic response" analysis -- harmonic-balance NNM
-BACKBONE continuation (an autonomous, undamped, unforced periodic-orbit
-family). This item is a genuinely different animal: FORCED, damped
-steady-state response, characterized by TIME-DOMAIN integration plus
-stroboscopic (Poincare) sampling at the forcing period, not harmonic
-balance. Checked directly before writing anything here: nnm.py has no
-stroboscopic/Poincare/attractor-adjacent helper at all (its own
-docstring's own "Deliberate scope" section explicitly limits it to
-undamped-autonomous backbones) -- so there is nothing to reuse or
-duplicate from it; this module is additive, not a generalization of
-existing code.
+RELATION TO nnm.py. nnm.py traces harmonic-balance NNM backbones (an autonomous, undamped, unforced periodic-orbit
+family). This module addresses a different problem: FORCED, damped steady-state response, characterised by
+TIME-DOMAIN integration plus stroboscopic (Poincare) sampling at the forcing period rather than harmonic balance.
+It has no code in common with nnm.py.
 
 CONTENTS
 --------
-- `stroboscopic_sample()` -- samples a trajectory at the forcing period
-  `2*pi/Omega`, WITH a genuine settling check (compares consecutive
-  stroboscopic samples to a relative tolerance and reports the actual
-  number of periods discarded, rather than assuming any fixed discard
-  count) -- see its own docstring for why a fixed count is wrong here
-  (the roadmap's own Wave 17 gap analysis: mode-1-scale problems settle
-  in ~10 periods, mode-3-scale problems can need 50-80).
-- `steady_state_amplitude()` -- 0.5*(max-min) of the FULL trajectory
-  over the last settled forcing period, the standard steady-state
-  forced-response amplitude definition used by an FRF.
-- `SweepPoint`/`SweepResult` -- the common FS(full-order)-vs-RS(reduced)
-  sweep-result data layout (see `frequency_sweep()`'s own docstring for
-  the design reasoning).
-- `frequency_sweep()`/`amplitude_sweep()` -- share one driver
-  (`_sweep_driver()`), dispatching on whether `model` is an
-  `IntrusiveNonlinearROM` (Wave 17 item 144) or a plain FE-model
-  callable, per this item's own roadmap row.
-- `midspan_transverse_probe()` -- transverse-displacement probe,
-  generalized to any node count/dof layout (not hardcoded to one mesh).
-- `master_slave_data()` -- Q2 vs Q1 / Q2 vs (Q1, Q1_dot) extraction from
-  POD amplitude time series, for the paper's own Figs. 20-22 slow-
-  invariant-manifold plots.
-- `dominant_frequency()` -- FFT-based dominant frequency of a Q_m(t)
-  series, for the paper's "slaved mode responds at 2x the master
-  frequency" claim (Section 11) and its Section 7 amplitude-frequency
-  table.
+- `stroboscopic_sample()` -- samples a trajectory at the forcing period `2*pi/Omega`, WITH a genuine settling check
+  (compares consecutive stroboscopic samples to a relative tolerance and reports the actual number of periods
+  discarded, rather than assuming a fixed discard count; see its docstring for why a fixed count is wrong: problems
+  dominated by a low mode settle in about 10 periods, problems dominated by a higher mode can need 50-80).
+- `steady_state_amplitude()` -- 0.5*(max-min) of the FULL trajectory over the last settled forcing period, the
+  standard steady-state forced-response amplitude definition used by an FRF.
+- `SweepPoint`/`SweepResult` -- the common full-order (FS) versus reduced (RS) sweep-result data layout (see
+  `frequency_sweep()`'s docstring for the design reasoning).
+- `frequency_sweep()`/`amplitude_sweep()` -- share one driver (`_sweep_driver()`), dispatching on whether `model` is
+  an `IntrusiveNonlinearROM` or a plain full-order callable.
+- `midspan_transverse_probe()` -- transverse-displacement probe, generalized to any node count/dof layout (not
+  hardcoded to one mesh).
+- `master_slave_data()` -- Q2 versus Q1 / Q2 versus (Q1, Q1_dot) extraction from POD amplitude time series, for
+  slow-invariant-manifold (slaved-mode) plots.
+- `dominant_frequency()` -- FFT-based dominant frequency of a Q_m(t) series, for checking whether a slaved mode
+  responds at a multiple of the master frequency and for amplitude-frequency tables.
 
-PARALLELISM. `n_jobs=` on both sweep drivers, via the standard library's
-`concurrent.futures.ProcessPoolExecutor` -- checked directly (not
-assumed) that neither `rom_engine` nor `fea_engine` uses
-`multiprocessing`/`joblib`/`concurrent.futures` ANYWHERE else in either
-package before choosing this, so this module is the first user of any
-parallelism mechanism in either package. `ProcessPoolExecutor` (stdlib,
-no new dependency) was chosen over `joblib` for exactly that reason --
-both packages' `pyproject.toml` declare only `numpy`/`scipy` as runtime
-dependencies, and this project's standing convention (see e.g.
-`intrusive_nonlinear_rom.py`'s own "no cross-module rom_engine imports"
-note) is to avoid adding a dependency when the standard library already
-covers the need. HONEST LIMITATION, stated up front rather than
-discovered by a confused caller: `ProcessPoolExecutor` pickles the
-worker function and its arguments, so `n_jobs>1` requires `model`
-(including, for an `IntrusiveNonlinearROM`, its own
-`internal_force_fn`/`tangent_fn`/`load_fn` attributes),
-`load_fn_builder`, and `probe_fn` to all be picklable -- plain
-module-level functions or picklable callable objects, NOT lambdas or
-closures over local variables (the standard Python multiprocessing
-constraint, not specific to this module). `n_jobs=1` (the default) runs
-serially with no such restriction.
+PARALLELISM. `n_jobs=` on both sweep drivers uses the standard library's `concurrent.futures.ProcessPoolExecutor`
+(no extra dependency; both packages declare only numpy/scipy at run time). LIMITATION: the executor pickles the
+worker function and its arguments, so `n_jobs>1` requires `model` (including, for an `IntrusiveNonlinearROM`, its
+`internal_force_fn`/`tangent_fn`/`load_fn` attributes), `load_fn_builder` and `probe_fn` to be picklable: plain
+module-level functions or picklable callable objects, NOT lambdas or closures over local variables. `n_jobs=1` (the
+default) runs serially with no such restriction.
+
+References (methods in this module are adopted from):
+  - I. T. Georgiou (2005), "Advanced proper orthogonal decomposition tools: using reduced order models to identify normal modes of vibration and slow invariant manifolds in the dynamics of planar nonlinear rods", Nonlinear Dyn. 41
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 from concurrent.futures import ProcessPoolExecutor
@@ -90,8 +59,7 @@ def _as_2d(y):
 def stroboscopic_sample(t, y, Omega, tol=1e-3, min_periods=3, norm_ord=np.inf):
     """Stroboscopic sampling of a trajectory `y(t)` at the forcing
     period `T = 2*pi/Omega`, with an AUTOMATIC settling check -- NOT a
-    fixed arbitrary discard count. Rationale (the roadmap's own gap
-    analysis, Wave 17 intro): a mode-1-scale problem (damping ratio
+    fixed arbitrary discard count. Rationale: a mode-1-scale problem (damping ratio
     ~0.08) settles in ~10 forcing periods, a mode-3-scale problem
     (damping ratio ~0.01) can need 50-80; a fixed discard window would
     be either wrong (too short for the slow case) or wasteful (too long
@@ -219,8 +187,7 @@ def steady_state_amplitude(t, y, Omega, tol=1e-3, min_periods=3, norm_ord=np.inf
 def midspan_transverse_probe(state, n_nodes, dofs_per_node=3, transverse_dof=1, V=None):
     """Transverse-displacement value at (or nearest) the midpoint node
     of a rod/beam model, generalized to any node count and dof layout
-    (not hardcoded to one specific mesh size, per this item's own
-    roadmap row).
+    (not hardcoded to one specific mesh size).
 
     Parameters
     ----------
@@ -265,8 +232,8 @@ def midspan_transverse_probe(state, n_nodes, dofs_per_node=3, transverse_dof=1, 
 # =====================================================================
 def master_slave_data(t, Q, master=0, slave=1):
     """`Q2` vs `Q1` and `Q2` vs `(Q1, Q1_dot)` extraction from a POD
-    amplitude time series `Q(t)`, for reproducing the paper's own
-    master-slave slow-invariant-manifold plots (Figs. 20-22), where the
+    amplitude time series `Q(t)`, for master-slave slow-invariant-manifold plots,
+    where the
     slaved mode's amplitude is shown as approximately a function of the
     master mode's amplitude and velocity.
 
@@ -278,7 +245,7 @@ def master_slave_data(t, Q, master=0, slave=1):
         or an `IntrusiveNonlinearROM` reduced trajectory).
     master, slave : int
         Mode indices for the master/slave roles (default 0/1, matching
-        the paper's own mode-1-master / mode-2-slave convention).
+        a mode-1-master / mode-2-slave convention).
 
     Returns
     -------
@@ -301,7 +268,7 @@ def master_slave_data(t, Q, master=0, slave=1):
 # =====================================================================
 def dominant_frequency(t, Q_m, n_peaks=1, rtol=1e-6):
     """FFT-based dominant (angular) frequency of a single mode's own
-    amplitude time series `Q_m(t)`, needed for the paper's "the slaved
+    amplitude time series `Q_m(t)`, used to show that the slaved
     mode responds at 2x the master frequency" claim (Section 11) and its
     Section 7 amplitude-frequency numbers (3067.21 / 25764.58 /
     62571.12 rad/s).
@@ -446,20 +413,20 @@ def _sweep_driver(model, param_values, param_name, strobe_omega_fn, *,
                    probe_fn=None, strobe_kwargs=None, n_jobs=1):
     """Shared engine for `frequency_sweep()`/`amplitude_sweep()`.
 
-    `model` dispatch (per this item's own roadmap row -- "accept EITHER
+    `model` dispatch (accepts EITHER
     a FE-model callable OR an IntrusiveNonlinearROM"):
       - `IntrusiveNonlinearROM` instance: each point is integrated with
         the ROM's OWN integrator (`integrator=` selects `"rk4"`
-        (default -- the paper's own choice, per item 144),
+        (default),
         `"solve_ivp"`, or `"newton_newmark"`), with `load_fn_builder(param)`
         supplying that point's forcing (temporarily substituted for
         `model.load_fn`, restored afterward).
       - plain callable: called as `model(param) -> (t, y)` or
         `(t, y, ydot)` -- e.g. a closure wrapping
         `fea_engine.nonlinear_solver.solve_nonlinear_transient()` through
-        the FAST vectorized element path (item 147's
+        the FAST vectorized element path
         `beam2d_reissner_vectorized.py`), NOT the slow looped path --
-        see this module's own docstring / the roadmap's item 147 row for
+        see this module's own docstring for
         why (a 20-40 run sweep is ~14-27 min on the vectorized path vs.
         1.5-7.5 hours looped).
 

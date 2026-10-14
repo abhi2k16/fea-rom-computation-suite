@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 """
 test_pod_rm_analysis.py -- validates rom_engine.intrusive_nonlinear_rom.
-pod_rm_analysis() (Wave 17 item 145) against the roadmap's own two
+pod_rm_analysis() against two
 named validation criteria:
 
   1. Diagonal M_r/K_r gives E_hat = I EXACTLY (machine precision) and
@@ -31,7 +31,7 @@ def _align_signs_to_reference(E, R):
     with the matching column of R agrees -- eigenvectors (and this
     module's own sign convention) are only defined up to an overall
     per-column sign, so a direct comparison needs this alignment step
-    first, exactly as the roadmap's own item 145 row anticipates
+    first, as anticipated
     ("up to your own documented sign convention")."""
     E = E.copy()
     for m in range(E.shape[1]):

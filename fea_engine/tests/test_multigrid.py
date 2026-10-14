@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_multigrid.py -- Wave 8 item 40 (docs/consolidated_future_roadmap.
-md): geometric multigrid for structured Quad4 rectangle grids
+test_multigrid.py -- geometric multigrid for structured Quad4 rectangle grids
 (iterative_solvers.py). Scoped, as the module docstring states, to
 mesh.rectangle_mesh()'s plain nx-by-ny grids -- see that docstring
 for exactly why this pair of grids admits an EXACT nested hierarchy.
@@ -79,9 +78,9 @@ class TestVCycleAndMultigridSolve:
         assert n_iter < 50
 
     def test_multigrid_beats_plain_gauss_seidel_on_the_fine_system(self):
-        """The actual payoff item 40 exists for: "defeating the
+        """The actual payoff multigrid exists for: "defeating the
         h-dependence" (fem_implementation_lessons.md Chapter 13's own
-        framing) -- checked by putting plain Gauss-Seidel (item 39) up
+        framing) -- checked by putting plain Gauss-Seidel up
         against multigrid on the IDENTICAL fine-level system. Plain
         Gauss-Seidel should need drastically more iterations (or fail
         to converge at all within a generous cap), while multigrid

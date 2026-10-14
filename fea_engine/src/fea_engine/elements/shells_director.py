@@ -1,63 +1,44 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-shells_director.py -- Wave 4 item 47 (docs/shells.md Section 1.3 and
-Section 4.6): Phase 1 of a NEW, director-based (degenerated/
-Ahmad-Ramm-Simo-Fox) shell element for fea_engine, motivated directly
-by Wave 4 item 46's building-block-C finding (docs/shells.md Section
-4.5, "Building block C"; elements/shells.py's own "BUILDING BLOCK C"
-comment): a
-coupling term only benefits from incremental commitment if measured
-against a frame that ITSELF rotates with each commit; a director-based
-element has that rotating frame as a native kinematic object (the
-nodal director vector, rotated every increment), not auxiliary state
-bolted onto an Euler-angle DOF architecture the way every attempt on
-`Shell4MITCCorotational` needed.
+shells_director.py -- a director-based (degenerated / Ahmad-Ramm-Simo-Fox) shell element. The motivation is that
+an incremental coupling term only benefits from incremental commitment if measured against a frame that ITSELF
+rotates with each commit; a director-based element has that rotating frame as a native kinematic object (the nodal
+director vector, rotated every increment), not auxiliary state bolted onto an Euler-angle DOF architecture the way
+every attempt on `Shell4MITCCorotational` needed (see docs/shells.md).
 
-Phase 1 delivers two ISOLATED, independently-validated primitives,
-deliberately before any full element assembly is attempted --
-mirroring Wave 4 item 46's own "isolated primitive first" discipline
-(building block A's `_mean_rigid_rotation()` was validated alone
-before any wiring was attempted; building block C's state machinery
-was validated alone before the elastica benchmark was run):
+Two ISOLATED, independently validated primitives underlie the element (each validated alone before any full element
+assembly):
 
 1. `director_update()` -- the director rotation kinematics themselves
-   (roadmap doc Section 1), reusing this project's own already-
+   (see docs/shells.md), reusing this project's own already-
    validated `Shell4MITCCorotational._exp_map()` Rodrigues exponential
    map (building block A) rather than a new rotation-algebra layer.
 2. `drilling_angle_from_tangents()` (+ `_polar_decomposition_angle_2x2()`)
    -- the closed-form, ITERATION-FREE 2x2 polar-decomposition drilling
-   angle (roadmap doc Section 2), which is what lets this element's
+   angle (see docs/shells.md), which is what lets this element's
    DOF convention stay 6/node (mixed-mesh-compatible with this
    project's existing beams/shell) without either a redundant
    rotational unknown or an artificial drilling stiffness.
 
-Phase 2 (2026-09-09, this update) adds `Shell4Director`, a genuine
-`Element` subclass -- but SCOPED, deliberately, to exactly what the
-roadmap doc's own build order asks for at this stage: a LINEAR (u=0)
-stiffness, independently assembled from director kinematics, and
-validated against `Shell4MITC.stiffness()`. See that class's own
-docstring for the central derivation (linearized director rotation
-`theta_a x t_a` reduces EXACTLY to `Quad4MindlinPlate`'s own
-`(betax, betay)` convention -- checked against the ALREADY-VALIDATED
-`_BEND_SIGN` array from `shells.py`, not merely asserted) and for why
-this reduction is a mathematical NECESSITY, not a coincidence: linear
-shell theory has one answer regardless of which DOF parameterization
-you build it from.
+`Shell4Director`, a genuine `Element` subclass, provides a LINEAR (u=0) stiffness assembled independently from
+director kinematics and validated against `Shell4MITC.stiffness()`. See that class's docstring for the central
+derivation (the linearized director rotation `theta_a x t_a` reduces EXACTLY to `Quad4MindlinPlate`'s
+`(betax, betay)` convention, checked against the validated `_BEND_SIGN` array from `shells.py`) and for why this
+reduction is a mathematical necessity: linear shell theory has one answer regardless of which DOF
+parameterization it is built from.
 
-Phase 3 (2026-09-09, this update) adds the full nonlinear
-`internal_force()`/`tangent_stiffness()` -- see `Shell4Director.
-strain_energy()`'s own docstring for the finite-rotation strain
-measures (full Green-Lagrange membrane strain, built directly from the
-CURRENT director-driven kinematics, plus curvature/shear built from
-`Shell4MITC`'s own unmodified `Bb`/`Bs_assumed` operators applied to a
-nonlinearly-updated `(w, betax, betay)` triple). A genuine, NOT
-originally anticipated, finding from this phase: `init_state()`/
-`commit_state()` (roadmap doc step 7, building block C's own state
-machinery) turned out to be UNNECESSARY for this design -- see
-`Shell4Director`'s own docstring, "ON STATEFULNESS," for why. Not yet
-registered in `ELEMENT_REGISTRY` -- see the class docstring's own
-"STATUS" note on what Phase 3 validates and what remains open.
+The full nonlinear `internal_force()`/`tangent_stiffness()` are also provided; see `Shell4Director.strain_energy()`
+for the finite-rotation strain measures (full Green-Lagrange membrane strain built from the CURRENT director-driven
+kinematics, plus curvature/shear built from `Shell4MITC`'s unmodified `Bb`/`Bs_assumed` operators applied to a
+nonlinearly updated `(w, betax, betay)` triple). `init_state()`/`commit_state()` turned out to be UNNECESSARY for
+this design (see `Shell4Director`'s docstring, "ON STATEFULNESS"). The element is not registered in
+`ELEMENT_REGISTRY`; see the class docstring's "STATUS" note on what is validated and what remains open.
+
+References (methods in this module are adopted from):
+  - J. C. Simo, D. D. Fox (1989), "On a stress resultant geometrically exact shell model. Part I: Formulation and optimal parametrization", Comput. Methods Appl. Mech. Engrg. 72(3)
+  - E. N. Dvorkin, K. J. Bathe (1984), "A continuum mechanics based four-node shell element for general non-linear analysis", Eng. Comput. 1(1)
+  - Y. Ko, P.-S. Lee, K.-J. Bathe (2017), "A new MITC4+ shell element", Comput. Struct. 182
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -69,7 +50,7 @@ from .shells import (Shell4MITC, Shell4MITCCorotational, _MEM, _BEND, _DRILL, _B
 
 def director_update(t_ref, theta):
     """t' = exp_map(theta) @ t_ref -- the director rotation update
-    (roadmap doc Section 1). Reuses `Shell4MITCCorotational._exp_map()`
+    (docs/shells.md Section 1.3). Reuses `Shell4MITCCorotational._exp_map()`
     directly (building block A, already validated: exact SO(3)
     exponential map with a correct small-angle Taylor fallback near
     theta=0) rather than re-deriving rotation-vector machinery for a
@@ -153,8 +134,7 @@ def _characteristic_tangents(P):
 
 
 def drilling_angle_from_tangents(X_ref, x_current):
-    """The closed-form, ITERATION-FREE in-plane drilling angle (roadmap
-    doc Section 2), extracted directly from geometry -- no Newton
+    """The closed-form, ITERATION-FREE in-plane drilling angle (docs/shells.md Section 1.3), extracted directly from geometry -- no Newton
     solve, unlike building block A's general 3-vector `_mean_rigid_
     rotation()` (which needs iteration precisely because a 3x3
     rotation has no closed form for a multi-node Frechet mean; a
@@ -193,7 +173,7 @@ def drilling_angle_from_tangents(X_ref, x_current):
     the TRUE rigid-rotation angle for the in-plane-rotation case; this
     is expected and documented, not a bug -- the drilling angle is by
     definition an IN-PLANE quantity, and bending's own rotation content
-    is handled separately (roadmap doc Section 3, curvature strain via
+    is handled separately (docs/shells.md, curvature strain via
     the director, not this function)."""
     X = np.asarray(X_ref, dtype=float)
     x = np.asarray(x_current, dtype=float)
@@ -334,15 +314,14 @@ def _dexp_action(v, p):
 
 
 class Shell4Director(Element):
-    """Wave 4 item 47, Phase 2 (`docs/director_based_shell_element_
-    roadmap.md` Section 5, steps 3-6): the LINEAR (`u=0`) stiffness of
+    """The LINEAR (`u=0`) stiffness of
     a director-based shell element, independently assembled from
     director kinematics and validated against `Shell4MITC.stiffness()`.
 
-    CENTRAL DERIVATION (the actual new content of Phase 2 -- everything
+    CENTRAL DERIVATION (the actual new content of the linear-stiffness stage -- everything
     below is checked, not merely asserted; see `tests/test_shell_
-    director_kinematics.py`'s "Phase 2" tests): the general degenerated-
-    shell displacement field (roadmap doc Section 1) is
+    director_kinematics.py`'s "linear stiffness" tests): the general degenerated-
+    shell displacement field (docs/shells.md Section 1.3) is
 
         u(xi,eta,zeta) = sum_a N_a * [ u_a + (zeta*h_a/2)*(t_a' - t_a) ]
 
@@ -396,22 +375,21 @@ class Shell4Director(Element):
     ON THE DRILLING DOF: this element keeps `Shell4MITC`'s own small
     diagonal drilling regularization (`_drilling_stiffness()`) rather
     than treating the closed-form `drilling_angle_from_tangents()`
-    (Phase 1) as eliminating the need for it. It does not, AT THE
+    (the kinematic-primitives stage) as eliminating the need for it. It does not, AT THE
     LINEAR LEVEL: `drilling_angle_from_tangents()` returns exactly 0 at
-    `u=0` (verified, Phase 1's own `test_drilling_angle_zero_at_
+    `u=0` (verified, the kinematic-primitives stage's own `test_drilling_angle_zero_at_
     reference_state`), so it cannot possibly change this class's `u=0`
     stiffness either way. Its actual role -- tracking the element's own
-    local material-frame rotation for Phase 3's incremental strain
+    local material-frame rotation for the nonlinear stage's incremental strain
     measures, the same role `R_drill`/`theta_z_mean` plays in
     `Shell4MITCCorotational` today, but via closed-form geometry
     instead of an averaged DOF -- only matters once genuine
-    displacement is present (Phase 3). This element's 6th DOF per node
+    displacement is present (the nonlinear stage). This element's 6th DOF per node
     (rotation about the director) remains, honestly, a numerically-
     regularized null direction at every stage of this design, exactly
-    like `Shell4MITC`'s own -- and, per `director_based_shell_element_
-    roadmap.md`'s own Section 2, exactly like Abaqus's S4/S4R shells
+    like `Shell4MITC`'s own -- and, per docs/shells.md, exactly like Abaqus's S4/S4R shells
     ALSO do for their own 6th nodal DOF, despite not using it in their
-    bending/membrane physics either. The roadmap doc's original
+    bending/membrane physics either. The original
     framing ("avoids... the artificial-stiffness patch") is corrected
     here: the closed-form angle avoids a REDUNDANT ROTATIONAL UNKNOWN
     in the bending/membrane physics, not the numerical drilling
@@ -426,7 +404,7 @@ class Shell4Director(Element):
     a re-derivation that would only repeat existing risk. What is
     genuinely NEW here: the derivation above (not assumed elsewhere),
     this class's own identity and `reference_directors()` (director-
-    vector state Phase 3 will build the incremental/nonlinear strain
+    vector state the nonlinear stage will build the incremental/nonlinear strain
     measures on top of), and an INDEPENDENT re-assembly of the 24x24
     local stiffness (not a delegating call to `Shell4MITC.stiffness()`
     itself) -- so the validation test below is a genuine check of the
@@ -438,7 +416,7 @@ class Shell4Director(Element):
 
     def __init__(self, drilling_factor=1e-3, curvature="green_lagrange"):
         """curvature: "green_lagrange" (default since 2026-09-24) or
-        "moderate" (the original Phase 3 measure, kept only to reproduce
+        "moderate" (the original nonlinear-stage measure, kept only to reproduce
         pre-2026-09-24 results) -- see `_gl_curvature()` for why the
         default changed."""
         if curvature not in ("green_lagrange", "moderate"):
@@ -451,11 +429,11 @@ class Shell4Director(Element):
 
     def reference_directors(self, elem_coords):
         """Returns (t_nodes (4,3), e1_0, e2_0, e3_0, local_coords).
-        Phase 2 scope is a FLAT reference element (matching `Shell4MITC`'s
+        the linear-stiffness stage scope is a FLAT reference element (matching `Shell4MITC`'s
         own flat-facet approximation), so every node shares the SAME
         director `t_a = e3_0` -- a per-node-varying reference director
         (for a genuinely curved/faceted reference shell) is out of
-        Phase 2's scope, not yet needed until a non-flat validation
+        the linear-stiffness stage's scope, not yet needed until a non-flat validation
         case is attempted."""
         e1_0, e2_0, e3_0, local = self._mitc._local_frame_and_coords(elem_coords)
         t_nodes = np.tile(e3_0, (4, 1))
@@ -466,7 +444,7 @@ class Shell4Director(Element):
         same convention as `Shell4MITC.stiffness()`. See this class's
         own docstring for the full derivation; this method's structure
         deliberately mirrors `Shell4MITC.stiffness()`'s own (same
-        index arrays, same sub-formula calls) since Phase 2's own
+        index arrays, same sub-formula calls) since the linear-stiffness stage's own
         derivation shows that structure is not incidental -- it is
         what the director kinematics themselves reduce to at `u=0`."""
         Dm, Db, Ds, h = D
@@ -518,8 +496,7 @@ class Shell4Director(Element):
         return self._mitc.mass(elem_coords, rho_matrix, thickness)
 
     # =================================================================
-    # Wave 4 item 47, PHASE 3 (2026-09-09, docs/director_based_shell_
-    # element_roadmap.md Section 5, steps 7-10): the full nonlinear
+    # NONLINEAR STAGE (2026-09-09, docs/shells.md): the full nonlinear
     # `internal_force()`/`tangent_stiffness()`.
     #
     # STRAIN MEASURES (the genuinely new content -- see strain_energy()'s
@@ -548,9 +525,8 @@ class Shell4Director(Element):
     #     was preferred, and that it STILL achieves the decisive
     #     exact-rigid-rotation-invariance property).
     #
-    # TANGENT STRATEGY -- UPDATED (2026-09-10, item 47's own leftover
-    # follow-up, docs/shells.md Section 1.3.2's "analytic tangent" open
-    # item): Phase 3 originally shipped `internal_force()` as the real
+    # TANGENT STRATEGY -- UPDATED (2026-09-10, the leftover follow-up, docs/shells.md Section 1.3.2's "analytic tangent" open
+    # item): the nonlinear stage originally shipped `internal_force()` as the real
     # central-difference GRADIENT of `strain_energy()` (48 energy
     # evaluations) and `tangent_stiffness()` as the real central-
     # difference JACOBIAN of THAT (another 48 evaluations, each itself
@@ -595,7 +571,7 @@ class Shell4Director(Element):
     # which was this whole item's actual blocking constraint.
     #
     # ON STATEFULNESS (a genuine, NOT originally anticipated finding):
-    # the roadmap doc's own step 7 anticipated needing `init_state()`/
+    # the original design anticipated needing `init_state()`/
     # `commit_state()`, reusing building block C's own tested plumbing.
     # Building block C needed that machinery because ITS coupling term
     # was built from a FIXED small-rotation projection (`theta @ e1_0`/
@@ -628,10 +604,10 @@ class Shell4Director(Element):
         return np.array([director_update(e3_0, theta_nodes[a]) for a in range(4)])
 
     # -----------------------------------------------------------------
-    # GREEN-LAGRANGE CURVATURE (2026-09-24, replaces the Phase 3
+    # GREEN-LAGRANGE CURVATURE (2026-09-24, replaces the nonlinear-stage
     # "moderate rotation" measure as the default).
     #
-    # WHY: the Phase 3 measure, kappa = Bb @ [w, e1.t, e2.t], treats
+    # WHY: the nonlinear-stage measure, kappa = Bb @ [w, e1.t, e2.t], treats
     # beta = e.t = sin(theta) as if it were the rotation, so its
     # curvature is d(sin theta)/ds = cos(theta)*theta' instead of
     # theta'. That softens bending by cos^2(theta) and exactly cancels
@@ -641,7 +617,7 @@ class Shell4Director(Element):
     # to <0.2% up to 37 deg of tip rotation (the elastica stiffens 13%),
     # and the tip rotation equalled asin(PL^2/2EI) to 3 digits -- the
     # exact signature of that measure. The rigid-rotation invariance
-    # Phase 3 was after holds, but finite bending is wrong.
+    # the nonlinear stage was after holds, but finite bending is wrong.
     #
     # WHAT: the standard degenerated-shell (Total-Lagrangian) bending
     # strain, kappa_ab = 1/2 (g_a . t_,b + g_b . t_,a) - (same at the
@@ -791,8 +767,8 @@ class Shell4Director(Element):
         This is the STANDARD Total-Lagrangian Green-Lagrange membrane
         strain (the same family `TrussTL2D`/`Tet10SolidTL` already use
         elsewhere in this codebase, applied here to a shell's in-plane
-        tangent vectors) -- NOT the roadmap doc's originally-sketched
-        polar-decomposition form (Section 3), a simpler, lower-risk,
+        tangent vectors) -- NOT the originally-sketched
+        polar-decomposition form (see docs/shells.md), a simpler, lower-risk,
         mathematically equivalent-for-objectivity substitute found
         while implementing this phase (both are frame-invariant
         Green-Lagrange-family measures; the polar-decomposition route
@@ -818,8 +794,8 @@ class Shell4Director(Element):
         rotation -- see `tests/test_shell4director_nonlinear_force_tangent.py`).
 
         SHEAR -- A REAL, FOUND SIGN DIVERGENCE FROM PHASE 2 (this is
-        the single most important finding of Phase 3's own
-        implementation, not a footnote): the roadmap's original plan
+        the single most important finding of the nonlinear stage's own
+        implementation, not a footnote): the original plan
         (reuse `Shell4MITC._mitc4_shear_B()`'s linear `Bs_assumed`
         directly on `(w, betax, betay)`, exactly like `kappa` above)
         was TRIED FIRST and gives WRONG physics -- direct numerical
@@ -858,14 +834,14 @@ class Shell4Director(Element):
         assumed` computes `-betax` -- diagonal `w`-`w` and `beta`-`beta`
         terms are UNCHANGED, only the cross term flips). Consequently
         `Shell4Director.tangent_stiffness(elem_coords, 0, D)` does
-        `Shell4Director.stiffness(elem_coords, D)` (Phase 2's own
+        `Shell4Director.stiffness(elem_coords, D)` (the linear-stiffness stage's own
         `Bs_assumed`-based, `Shell4MITC`-matching linear stiffness) --
         NOT a bug, an accepted, understood, and DOCUMENTED trade-off:
-        Phase 2's own "exact match to Shell4MITC" finding is still
+        the linear-stiffness stage's own "exact match to Shell4MITC" finding is still
         correct AS STATED (a comparison of two small-rotation-only
         formulations), and is kept unchanged/unregressed since nothing
-        calls `stiffness()` from Phase 3's own nonlinear path; Phase
-        3's `tangent_stiffness()` uses the MORE PHYSICALLY CORRECT
+        calls `stiffness()` from the nonlinear stage's own nonlinear path; the
+        nonlinear stage's `tangent_stiffness()` uses the MORE PHYSICALLY CORRECT
         (rigid-rotation-EXACT, not merely small-rotation-accurate)
         formula throughout, prioritizing the property the whole
         director-based-element effort was undertaken to deliver. The
@@ -877,7 +853,7 @@ class Shell4Director(Element):
         director_phase3.py`.
 
         DRILLING: unchanged small diagonal regularization on raw
-        `theta_z`, exactly Phase 2's choice (see that phase's own "ON
+        `theta_z`, exactly the linear-stiffness stage's choice (see that stage's own "ON
         THE DRILLING DOF" paragraph) -- `0.5 * k_drill * theta_z_a^2`
         per node, summed.
 
@@ -938,7 +914,7 @@ class Shell4Director(Element):
         return float(U)
 
     def _internal_force_fd(self, elem_coords, u_elem, D, thickness=1.0, h=1e-6, **kwargs):
-        """The ORIGINAL Phase 3 `internal_force()`: real central-
+        """The ORIGINAL nonlinear-stage `internal_force()`: real central-
         difference gradient of `strain_energy()`. Kept, not deleted --
         this is now `internal_force()`'s own correctness ORACLE (see
         the analytic version below and class-level "TANGENT STRATEGY"
@@ -958,7 +934,7 @@ class Shell4Director(Element):
         return f
 
     def _tangent_stiffness_fd(self, elem_coords, u_elem, D, thickness=1.0, h=1e-6, **kwargs):
-        """The ORIGINAL Phase 3 `tangent_stiffness()`: real central-
+        """The ORIGINAL nonlinear-stage `tangent_stiffness()`: real central-
         difference Jacobian of `_internal_force_fd()`. Kept as the
         oracle `tangent_stiffness()` (below) was cross-validated
         against, for the same reason `_internal_force_fd()` is kept."""
@@ -1155,10 +1131,8 @@ class Shell4Director(Element):
 
     def tangent_stiffness(self, elem_coords, u_elem, D, thickness=1.0, **kwargs):
         """Fully analytic material-plus-geometric-stiffness tangent --
-        Wave 4 item 47's own "fully analytic tangent" stretch goal
-        (docs/shells.md Section 3), implemented once `Shell4Director`'s
-        registration made a real transient-dynamics workload (item 24,
-        the wing-pipeline NNM backbone) the concrete reason to want it:
+        implemented (docs/shells.md Section 3) because a real
+        transient-dynamics workload (the wing-pipeline NNM backbone) made it worthwhile:
         at ~0.03s/element/iteration this is fast enough to make a
         multi-hundred-element, many-time-step, multi-amplitude-point
         NNM continuation run affordable, where the single-level-FD

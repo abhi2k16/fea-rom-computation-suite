@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_iterative_solvers.py -- Wave 8 items 36-39 (docs/consolidated_
-future_roadmap.md): fill-reducing reordering, preconditioners,
+test_iterative_solvers.py -- fill-reducing reordering, preconditioners,
 conjugate gradients, and classical stationary iterations
 (iterative_solvers.py).
 """
@@ -41,7 +40,7 @@ def _grid_laplacian(n):
 
 class TestFillReducingReordering:
     def test_rcm_reduces_fill_on_scrambled_ordering(self):
-        """The regime item 36 targets: an arbitrary (here, randomly
+        """The regime fill-reducing reordering targets: an arbitrary (here, randomly
         scrambled) node numbering has much worse fill than a natural
         one, and RCM recovers most of that loss -- fem_implementation_
         lessons.md's own "cuts factor fill by half" framing, checked

@@ -1,60 +1,39 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-vectorized_assembly.py -- Wave 11 item 107 (docs/consolidated_future_
-roadmap.md): a tensorized (no Python loop over elements) global
-stiffness-assembly path, built directly on top of item 106's
+vectorized_assembly.py -- a tensorized (no Python loop over elements) global stiffness-assembly path, built on
 `MeshTransformation` (mesh_transform.py).
 
-TensorMesh's own framing for this ("Tensorized assembly", Concepts:
-"There is no Python-level loop over elements... assembly is a single
-GPU kernel") is the design reference; this module is a native NumPy
-reimplementation of the same IDEA (batch the per-element linear algebra
+The design follows TensorMesh's "tensorized assembly" idea (no Python-level loop
+over elements); this module is a native NumPy
+implementation of that IDEA (batch the per-element linear algebra
 into one array-level contraction instead of a Python `for element in
-elements` loop), not a port of any TensorMesh code -- same integration
-policy as mesh_transform.py's own docstring restates.
+elements` loop), not a port of any TensorMesh code.
 
-This is an ADDITIVE, opt-in path -- `FESystem.assemble_stiffness()`'s
-existing per-element loop is completely unchanged and remains the
-default; `assemble_stiffness(..., vectorized=True)` is a second way to
-reach the exact same `fesystem.K` result, matching this project's own
-"keep every option available, explicit opt-in, never a silent
-replacement" convention (Wave 0 item 3's `backend=` parameter, Wave 2
-item 12's `method=` choice on `assemble_stiffness()` itself, etc.).
+This is an ADDITIVE, opt-in path: `FESystem.assemble_stiffness()`'s per-element loop is unchanged and remains the
+default; `assemble_stiffness(..., vectorized=True)` is a second way to reach the same `fesystem.K` result (keeping
+every option available as an explicit opt-in, like the `backend=` parameter and the `method=` choice on
+`assemble_stiffness()`).
 
-Scope: same continuum-elasticity B-matrix conventions
-`mesh_transform.py`'s own Scope section restricts `MeshTransformation`
-to -- dofs_per_node in {2, 3} (plane-stress / 3-D solid), using the
-exact row-pattern convention every existing Quad4PlaneStress/
-Quad8PlaneStress (dofs_per_node=2) and Hex8Solid3D/Hex20Solid3D
-(dofs_per_node=3) element's own B_matrix() method already uses
-(transcribed directly from those bodies below, not re-derived). A
-CONSTANT material matrix D per block (not a per-element or per-Gauss-
-point field), matching this item's own "homogeneous-element-type mesh
-REGION" framing (tensormesh_analysis_report.md). Only `method="full"`
-(the plain `Element.stiffness()` Gauss loop) is supported -- "reduced"/
-"hourglass_stabilized" integration is a genuinely different per-element
-computation (a second, deflated-eigenproblem stiffness on top of the
-plain one) not attempted here. Heterogeneous per-element D is a natural
-follow-on (the einsum below still contracts cleanly with an added
-element axis on D) but not attempted here either.
+Scope: the continuum-elasticity B-matrix conventions that `MeshTransformation` is restricted to: dofs_per_node in
+{2, 3} (plane-stress / 3-D solid), using the row-pattern convention every Quad4PlaneStress/Quad8PlaneStress
+(dofs_per_node=2) and Hex8Solid3D/Hex20Solid3D (dofs_per_node=3) element's own B_matrix() uses (transcribed from
+those bodies below, not re-derived). A CONSTANT material matrix D per block (not a per-element or per-Gauss-point
+field), matching a homogeneous-element-type mesh REGION. Only `method="full"` (the plain `Element.stiffness()`
+Gauss loop) is supported: "reduced"/"hourglass_stabilized" integration is a different per-element computation
+(a second, deflated-eigenproblem stiffness on top of the plain one) and is not implemented. Heterogeneous
+per-element D is a natural extension (the einsum still contracts cleanly with an added element axis on D) and is
+not implemented.
 
-GPU/torch side-by-side path (Wave 9 addendum item 136, docs/
-consolidated_future_roadmap.md)
--------------------------------------------------------------------
-`assemble_stiffness_vectorized(..., backend="numpy"/"torch", device=)`
-threads straight through to `MeshTransformation`'s own `backend=`/
-`device=` (item 135) for each chunk it builds -- `backend="numpy"`
-(default) is byte-for-byte unchanged. `backend="torch"` keeps the
-expensive part of this path GPU-resident end to end: `build_B_batched()`
-and `tensorized_element_stiffness()` below both DISPATCH on what they
-are actually handed (a plain ndarray vs. a live `torch.Tensor`) rather
-than taking a separate backend= flag of their own, so a `MeshTransformation`
-built with `backend="torch"` flows straight into the B-matrix build and
-the einsum contraction as torch tensors on `device`, with NO copy back
-to numpy in between -- avoiding exactly the "precompute on GPU, copy to
-numpy, convert back to torch for assembly" round trip item 135's own
-docstring flags as pointless.
+GPU/torch side-by-side path
+---------------------------
+`assemble_stiffness_vectorized(..., backend="numpy"/"torch", device=)` threads straight through to
+`MeshTransformation`'s `backend=`/`device=` for each chunk it builds; `backend="numpy"` (default) is unchanged.
+`backend="torch"` keeps the expensive part of this path GPU-resident end to end: `build_B_batched()` and
+`tensorized_element_stiffness()` DISPATCH on what they are handed (a plain ndarray vs. a live `torch.Tensor`)
+rather than taking a backend= flag of their own, so a `MeshTransformation` built with `backend="torch"` flows into
+the B-matrix build and the einsum contraction as torch tensors on `device`, with no copy back to numpy in between
+(avoiding a "precompute on GPU, copy to numpy, convert back to torch for assembly" round trip).
 
 The one place a copy back to host IS unavoidable is the very end of
 each chunk: `fesystem.K` is a plain numpy array or `scipy.sparse`
@@ -109,7 +88,7 @@ def build_B_batched(shape_grad, dofs_per_node):
     shape_grad : (n_elements, n_gauss, n_basis, dim) ndarray or torch.Tensor
         `MeshTransformation.shape_grad` -- a plain ndarray (backend=
         "numpy", the default) or a live torch.Tensor (backend="torch",
-        Wave 9 addendum item 135/136): this function DISPATCHES on
+        ): this function DISPATCHES on
         which one it was actually handed (`isinstance(..., np.ndarray)`)
         rather than taking a separate backend= flag, so it faithfully
         mirrors whatever MeshTransformation it was built from.
@@ -164,19 +143,18 @@ def build_B_batched(shape_grad, dofs_per_node):
 
 def tensorized_element_stiffness(mesh_transform, D, thickness=1.0):
     """All `n_elements` local stiffness matrices in one pass (no Python
-    loop over elements) via a single einsum contraction over item 106's
+    loop over elements) via a single einsum contraction over the
     precomputed B/JxW tensors.
 
     Parameters
     ----------
     mesh_transform : MeshTransformation
-        Either `backend="numpy"` (default) or `backend="torch"` (Wave 9
-        addendum item 135) -- this function reads `mesh_transform.backend`
+        Either `backend="numpy"` (default) or `backend="torch"` -- this function reads `mesh_transform.backend`
         to decide whether to convert `D` to a torch tensor (on
         `mesh_transform.device`) and use `torch.einsum`, or stay on
         plain `np.asarray`/`np.einsum` -- never guesses from array type
         alone, since `mesh_transform.backend` is the single source of
-        truth item 135 already established for this.
+        truth for this.
     D : (n_strain, n_strain) array-like
         Constant material matrix shared by every element in this
         MeshTransformation -- see module docstring Scope.
@@ -217,7 +195,7 @@ def tensorized_element_stiffness(mesh_transform, D, thickness=1.0):
 def scatter_global_stiffness(ke, connectivity, dofs_per_node, n_dof, sparse=False):
     """Vectorized (no Python loop over elements) scatter-add of a
     stacked local-stiffness array into a global matrix -- the second
-    half of item 107's "no per-element loop anywhere in this path".
+    half of the "no per-element loop anywhere in this path" design.
 
     Builds one flat (row, col, data) COO triple across ALL elements at
     once and lets `scipy.sparse.coo_matrix` perform the duplicate-index
@@ -229,7 +207,7 @@ def scatter_global_stiffness(ke, connectivity, dofs_per_node, n_dof, sparse=Fals
     `self.K[np.ix_(g, g)] += ke` loop produces.
 
     `ke` may be a plain ndarray (the original, numpy path -- unchanged)
-    or a torch.Tensor (Wave 9 addendum item 136, `ke` built by a
+    or a torch.Tensor (, `ke` built by a
     `backend="torch"` `tensorized_element_stiffness()` call): this
     function DISPATCHES on `isinstance(ke, np.ndarray)` rather than a
     separate flag, mirroring `build_B_batched()`'s own convention.
@@ -261,7 +239,7 @@ def scatter_global_stiffness(ke, connectivity, dofs_per_node, n_dof, sparse=Fals
         return K if sparse else K.toarray()
 
     # ------------------------------------------------------------
-    # torch path -- Wave 9 addendum item 136. Identical row/col/data
+    # torch path -- . Identical row/col/data
     # construction to the numpy path above, on torch tensors, ending
     # in torch.sparse_coo_tensor(...).coalesce() -- coalesce() sums
     # values at duplicate (row,col) index pairs, the exact duplicate-
@@ -292,7 +270,7 @@ def assemble_stiffness_vectorized(fesystem, D, gauss_order=None, thickness=1.0, 
                                    backend="numpy", device="cpu"):
     """Additive, opt-in alternative to `FESystem.assemble_stiffness()`'s
     per-element Python loop -- computes and scatters the stiffness
-    contribution of every block in `fesystem._blocks` via item 106/107's
+    contribution of every block in `fesystem._blocks` via the
     tensorized path, ADDING into `fesystem.K` exactly like the existing
     per-element loop does (never resetting it -- calling this more than
     once, or mixing it with ordinary `assemble_stiffness()` calls,
@@ -308,12 +286,11 @@ def assemble_stiffness_vectorized(fesystem, D, gauss_order=None, thickness=1.0, 
     part of the system.
 
     backend ("numpy" default, or "torch"), device ("cpu" default, or
-    "cuda") -- Wave 9 addendum item 136, docs/consolidated_future_
-    roadmap.md: threaded straight through to each chunk's own
-    `MeshTransformation(..., backend=backend, device=device)` (item
-    135) -- `backend="numpy"` reproduces the ORIGINAL behavior exactly
+    "cuda"): threaded straight through to each chunk's own
+    `MeshTransformation(..., backend=backend, device=device)` 
+    -- `backend="numpy"` reproduces the ORIGINAL behavior exactly
     (every intermediate array a plain ndarray, unchanged from before
-    this item). `backend="torch"` keeps `MeshTransformation`'s own
+    the torch option). `backend="torch"` keeps `MeshTransformation`'s own
     Jacobian/shape-gradient precompute, `build_B_batched()`'s B-matrix
     build, and `tensorized_element_stiffness()`'s einsum contraction
     ALL GPU-resident on `device`, chunk by chunk, only converting each
@@ -326,12 +303,11 @@ def assemble_stiffness_vectorized(fesystem, D, gauss_order=None, thickness=1.0, 
     `_require_torch()` call, at the first chunk's construction), not
     partway through a large mesh's assembly.
 
-    chunk_size (Wave 16 item 129, docs/consolidated_future_roadmap.md,
-    source: TensorMesh's `Forms` page `batch_size` argument): optional
+    chunk_size: optional
     memory-chunking knob. `None` (the default) reproduces the ORIGINAL
     behavior exactly -- one `MeshTransformation`/einsum pass per block,
     covering every element in that block's connectivity at once, same
-    as before this item existed. When set to a positive int, each
+    as before this option existed. When set to a positive int, each
     block's own connectivity is split into sequential chunks of at most
     `chunk_size` elements (a shorter tail chunk when the count doesn't
     divide evenly -- the same "one extra shorter batch" behavior
@@ -360,7 +336,7 @@ def assemble_stiffness_vectorized(fesystem, D, gauss_order=None, thickness=1.0, 
     different grouping can round differently (measured: ~1e-4 absolute
     on ~1e11-scale entries for a representative case in
     tests/test_vectorized_assembly.py's own `TestMemoryChunking`,
-    matching the ~1e-3 atol/1e-8 rtol tolerance item 107's own
+    matching the ~1e-3 atol/1e-8 rtol tolerance the
     vectorized-vs-looped comparison already uses for the identical
     reason). Chunk sizes that can't straddle any shared-dof group
     (chunk_size=1, or any chunk_size >= the block's own element count)
@@ -368,7 +344,7 @@ def assemble_stiffness_vectorized(fesystem, D, gauss_order=None, thickness=1.0, 
     positive control. This is possible with no new precompute logic at
     all because `MeshTransformation`/`tensorized_element_stiffness()`
     already work correctly on ANY connectivity subset (this is exactly
-    why item 106's own `connectivity=` constructor parameter exists in
+    why `MeshTransformation`'s `connectivity=` constructor parameter exists in
     the first place -- `FESystem._blocks` already relies on it for
     per-block connectivity slicing); chunking is simply calling that
     same, already-validated machinery on smaller connectivity slices in

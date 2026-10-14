@@ -1,10 +1,9 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_parameterized_latent_ode.py -- Wave 13 item 119 (fea_engine/docs/
-consolidated_future_roadmap.md).
+test_parameterized_latent_ode.py -- tests for the module of the same name.
 
-The decisive evidence for this item is the head-to-head order-of-
+The decisive evidence for this module is the head-to-head order-of-
 convergence comparison below: the CORRECT `rk4_step()`/`integrate_rk4()`
 in this package versus an inline reimplementation of the
 `L-NeuralODE` reference's own bug (k2/k3 evaluated at the un-advanced
@@ -206,7 +205,7 @@ class TestParameterizedLatentODE:
         dq/dt=qdot, dqdot/dt=-omega0^2*q - xi*q^3, sweeping the cubic
         stiffness xi across several TRAINING values, then evaluates on
         an UNSEEN xi strictly between two training values -- the same
-        honest, non-inflated generalization bar item 117's own
+        honest, non-inflated generalization bar the
         ExcitationResponseOperator test uses (R^2 > 0, not a tight
         accuracy target)."""
         from rom_engine.parameterized_latent_ode import ParameterizedLatentODE

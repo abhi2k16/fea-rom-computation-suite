@@ -1,13 +1,12 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_plasticity_plane_stress.py -- Wave 2 item 13 (docs/consolidated_
-future_roadmap.md, source general_purpose_extensions_roadmap.md):
+test_plasticity_plane_stress.py --
 validates material.j2_radial_return_plane_stress() and
 elements.Quad4PlasticJ2PlaneStress.
 
 Mirrors tests/test_plasticity_j2.py's five-line-of-evidence structure
-(same roadmap, same validation standard), one dimension down:
+(same design notes, same validation standard), one dimension down:
 
 1. test_elastic_branch_matches_D_plane_stress -- below yield, the
    eps_33-Newton-condensed return map must degenerate EXACTLY to

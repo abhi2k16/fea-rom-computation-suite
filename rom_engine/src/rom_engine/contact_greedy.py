@@ -12,7 +12,7 @@ solution u_r can be checked against the three Hertz-Signorini-Moreau conditions 
     r3 = lam_hat = (B^T)^+ (K u - f)                 contact-force positivity (must be >= 0),
 
 and the indicator is  I = a1 |[r1]_-|^2 + a2 |r2|^2 + a3 |[r3]_-|^2  with [x]_- = min(x, 0). Evaluating it needs
-matrix-vector products only, no solve; a1 = 1, a2 = a3 = 0 is the cheapest and, in the paper's static test, the best.
+matrix-vector products only, no solve; a1 = 1, a2 = a3 = 0 is the cheapest and, in the source's static test, the best.
 
 `greedy_contact_sampling` runs the loop for any parametrisation: you supply the full-order solver, a function that
 builds a ROM from the snapshots collected so far, and the indicator. The loop adds the candidate with the largest

@@ -19,6 +19,9 @@ either one was obtained:
     one statistic) but equally applicable to any (y_true, y_pred) pair
     -- force samples, displacement samples, NNM amplitude samples,
     whatever a caller is checking a regression fit against.
+
+References (methods in this module are adopted from):
+  - He et al. (2023), "A novel geometric nonlinear reduced order modeling method using multi-fidelity surrogate for real-time structural analysis", Struct. Multidisc. Optim. 66:233
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

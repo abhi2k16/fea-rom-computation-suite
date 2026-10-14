@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_balanced_truncation_torch.py -- Wave 9 addendum item 138 (docs/
-consolidated_future_roadmap.md): validates balanced_truncation.py's
+test_balanced_truncation_torch.py -- validates balanced_truncation.py's
 (and hankel_norm.py's) backend="numpy"/"torch" contract end-to-end --
 the actual class-level entry points (BalancedTruncationROM.from_MCK,
 SingularPerturbationROM.from_MCK, FrequencyWeightedBalancedTruncation
@@ -50,7 +49,7 @@ def _mck_chain(n_dof=6, k=200.0, m=1.0, alpha=0.5, beta=1e-4):
     (tridiagonal K, diagonal M, C = alpha*M + beta*K) -- a self-
     contained fixture with no fea_engine dependency, matching the
     small-synthetic-system style test_torch_iterative_solvers.py (the
-    fea_engine sibling item's own torch test file) already uses rather
+    fea_engine torch iterative-solver test file) already uses rather
     than test_balanced_truncation.py's real-fea_engine-beam fixture
     (that file's own scale note about needing a WELL-CONDITIONED,
     modally-pre-truncated system applies here too -- this chain is
@@ -180,7 +179,7 @@ class TestTorchBackendNumericalAgreement:
         # (which is what BalancedTruncationROM.from_MCK(backend="torch")
         # actually calls) resolve the name through balanced_
         # truncation's own module globals, not torch_linalg's -- the
-        # exact by-reference-import lesson fea_engine's Wave 9 item 135
+        # exact by-reference-import lesson the fea_engine
         # test (test_torch_mesh_transform.py) learned the hard way on
         # real hardware; applied proactively here instead.
         import rom_engine.balanced_truncation as bt_mod

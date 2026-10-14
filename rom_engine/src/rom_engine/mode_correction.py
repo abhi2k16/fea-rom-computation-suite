@@ -32,6 +32,9 @@ Like every other module in this package, this is FE-package-agnostic:
 K, F, and the basis are plain numpy arrays (or a basis object with a .V
 attribute, e.g. a fitted pod.PodBasis or a galerkin.GalerkinROM's own
 .V), on the same full DOF numbering throughout.
+
+References (methods in this module are adopted from):
+  - B. Besselink, U. Tabak, A. Lutowska, N. van de Wouw, H. Nijmeijer, D. J. Rixen, M. E. Hochstenbach, W. H. A. Schilders (2013), "A comparison of model reduction techniques from structural dynamics, numerical mathematics and systems and control", J. Sound Vib. 332(19)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

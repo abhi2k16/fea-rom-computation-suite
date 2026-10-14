@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_backend_auto_dispatch.py -- Wave 11 item 108 (docs/consolidated_
-future_roadmap.md): validates backend="auto" (backend_dispatch.py) --
+test_backend_auto_dispatch.py -- validates backend="auto" (backend_dispatch.py) --
 the selection rule itself (SPD/symmetry probes, DOF-count threshold),
 the verbose=True diagnostic line, and an end-to-end FESystem round trip
 confirming backend="auto" produces the SAME answer backend="scipy"

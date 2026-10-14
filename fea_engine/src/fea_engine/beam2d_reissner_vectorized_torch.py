@@ -1,105 +1,50 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-beam2d_reissner_vectorized_torch.py -- Wave 17 item 147 torch addendum
-(docs/consolidated_future_roadmap.md): a side-by-side PyTorch,
-GPU-capable backend for the batched (all-elements-at-once) Beam2DReissner
-internal_force()/tangent_stiffness() path item 147 itself built in plain
-NumPy (beam2d_reissner_vectorized.py, this module's own direct template).
+beam2d_reissner_vectorized_torch.py -- a side-by-side PyTorch, GPU-capable backend for the batched
+(all-elements-at-once) Beam2DReissner internal_force()/tangent_stiffness() path implemented in plain NumPy in
+beam2d_reissner_vectorized.py (this module's direct template).
 
-Why a separate peer module rather than a backend="torch" parameter bolted
-onto beam2d_reissner_vectorized.py's existing functions: that module's
-internal_force_batched()/tangent_stiffness_batched()/assemble_*_vectorized()
-functions currently take no backend/device parameter at all (unlike
-vectorized_assembly.py's assemble_stiffness_vectorized(..., backend=,
-device=), which was DESIGNED from the start, in item 135/136, around a
-MeshTransformation object that already carries a backend/device concept
-end to end). Retrofitting a backend= flag onto beam2d_reissner_
-vectorized.py's functions would mean branching every internal helper
-(_local_dofs_batched, _B_and_H_batched) on backend, duplicating almost all
-of their bodies either way -- there is no shared "backend-agnostic
-tensor-transformation object" here the way MeshTransformation provides for
-the continuum-element path. This project's own established precedent for
-exactly this situation is a peer file, not a parameter: torch_sparse_
-solver.py sits beside solver.py's SciPy-based solve path (Wave 0 item 3),
-offering the SAME solve_static() capability via a completely separate
-module rather than a branch inside solver.py itself. This module follows
-that same precedent, one level up the call stack (element-level batched
-force/stiffness, not the final linear solve) -- matching this project's
-standing principle (restated across the roadmap) that "whenever more than
-one valid implementation/backend exists for the same capability, keep all
-of them available and give the caller an explicit, named choice, never
-silently prefer or replace one": nothing in beam2d_reissner_vectorized.py
-is modified, nothing in the elements/rom_engine call sites that already
-use the numpy path needs to change, and a caller who wants the torch/GPU
-path imports this module explicitly by name.
+Why a separate peer module rather than a backend="torch" parameter on beam2d_reissner_vectorized.py: that module's
+batched functions take no backend/device parameter, and retrofitting one would mean branching every internal helper
+(_local_dofs_batched, _B_and_H_batched) on backend and duplicating most of their bodies either way; there is no
+shared backend-agnostic tensor-transformation object here, unlike MeshTransformation for the continuum-element
+path. The package's convention for this situation is a peer file, not a parameter (torch_sparse_solver.py sits
+beside solver.py's SciPy solve path); this module follows it one level up the call stack (element-level batched
+force/stiffness rather than the final linear solve). Where more than one backend exists for a capability, all stay
+available with an explicit, named choice: nothing in beam2d_reissner_vectorized.py changes, existing numpy call
+sites are unaffected, and a caller who wants the torch/GPU path imports this module explicitly.
 
-Batching strategy: IDENTICAL to beam2d_reissner_vectorized.py's own --
-every array operation below is a straight re-expression, in torch ops, of
-that module's _local_dofs_batched()/_B_and_H_batched()/
-internal_force_batched()/tangent_stiffness_batched(), with the SAME
-leading n_elements axis threaded through instead of a Python loop, and NO
-change to which axis means what (re-checked line-by-line against that
-module while writing this one -- see each function's own docstring below
-for the specific numpy line it mirrors). np.einsum subscript strings carry
-over to torch.einsum unchanged; np.zeros(...)/np.stack(...)/[:, None]
-broadcasting carry over to torch with an added dtype=/device=; the one
-non-literal translation is `.transpose(0, 2, 1)` (a 3-axis numpy
-permutation used in _B_and_H_batched() to build ga_gc/gb_gc as the
-transpose of gc_ga/gc_gb) -- torch's `Tensor.transpose(dim0, dim1)` takes
-exactly two axes to swap, and swapping axes 1 and 2 of a (n, 6, 6) tensor
-while leaving axis 0 fixed is exactly what numpy's `.transpose(0, 2, 1)`
-does here, so `.transpose(1, 2)` is the correct (not merely similar) torch
-equivalent -- confirmed by matching the resulting index pattern
-(gc_ga[n, i, j] = gc[n, i] * ga[n, j], so ga_gc[n, i, j] must equal
-gc_ga[n, j, i], which is exactly what swapping axes 1 and 2 produces)
-rather than assumed from the similar-looking API.
+Batching strategy: identical to beam2d_reissner_vectorized.py. Every array operation is a re-expression, in torch
+ops, of that module's _local_dofs_batched()/_B_and_H_batched()/internal_force_batched()/
+tangent_stiffness_batched(), with the same leading n_elements axis. np.einsum subscript strings carry over to
+torch.einsum unchanged; np.zeros(...)/np.stack(...)/[:, None] broadcasting carry over with an added dtype=/device=.
+The one non-literal translation is `.transpose(0, 2, 1)` (a 3-axis numpy permutation used in _B_and_H_batched() to
+build ga_gc/gb_gc as the transpose of gc_ga/gc_gb): torch's `Tensor.transpose(dim0, dim1)` swaps two axes, and
+`.transpose(1, 2)` produces the same index pattern (ga_gc[n, i, j] = gc_ga[n, j, i]).
 
-Reuse of existing torch-compatible assembly machinery (per this item's own
-instruction to check for it, rather than writing a new one blind):
-vectorized_assembly.scatter_global_stiffness() (Wave 9 addendum item 136)
-ALREADY dispatches on isinstance(ke, np.ndarray) vs. a live torch.Tensor,
-and already returns a numpy/scipy result either way -- it is reused
-VERBATIM here for the tangent-stiffness assembly path
-(assemble_tangent_stiffness_vectorized_torch() below), with no new code
-needed for that half. There is, however, no existing torch-compatible
-FORCE-vector scatter anywhere in this codebase: beam2d_reissner_
-vectorized.scatter_global_force() (item 147's own addition) is numpy-only
-(built on np.add.at, with no torch branch -- vectorized_assembly.py never
-needed a force scatter of any kind, numpy or torch, since it is a
-stiffness-only module), so this module adds scatter_global_force_torch()
-below, mirroring scatter_global_stiffness()'s own dispatch-and-return
-convention (isinstance(fe, np.ndarray) dispatch; always returns numpy).
+Reuse of existing torch-compatible assembly machinery: vectorized_assembly.scatter_global_stiffness() already
+dispatches on isinstance(ke, np.ndarray) versus a live torch.Tensor and returns a numpy/scipy result either way, so
+it is reused verbatim for the tangent-stiffness assembly path (assemble_tangent_stiffness_vectorized_torch()). There
+is no existing torch-compatible FORCE-vector scatter: beam2d_reissner_vectorized.scatter_global_force() is
+numpy-only (built on np.add.at), so this module adds scatter_global_force_torch(), mirroring
+scatter_global_stiffness()'s dispatch-and-return convention (isinstance(fe, np.ndarray) dispatch; always returns
+numpy).
 
 device= parameter: "cpu" (default) or "cuda", the same naming convention
 torch_sparse_solver.py's own device= parameter and vectorized_assembly.py's
 backend="torch", device= parameter already use throughout this codebase.
 
-Output convention (numpy in / numpy out): internal_force_batched_torch()
-and tangent_stiffness_batched_torch() below take the SAME plain-numpy
-elem_coords_all (n,2,2) / u_elem_all (n,6) inputs as beam2d_reissner_
-vectorized.py's internal_force_batched()/tangent_stiffness_batched(), and
-return the SAME plain-numpy f_global (n,6) / K_global (n,6,6) outputs --
-the exact numpy boundary that module's own tests/callers already use, so
-these are drop-in alternatives (with an added device= choice) wherever
-that module's own functions are called today (in particular, tests/
-test_beam2d_reissner_vectorized.py's own CHECK (a) element-level
-comparison, and rom_engine.attractor's sweep drivers, which the roadmap's
-item 146 documents as intending to wrap "item 147's fast vectorized
-solve_nonlinear_transient() path" -- this torch backend is usable there
-too via the SAME `model(param) -> (t, y[, ydot])` FE-callable contract
-attractor.py's own _sweep_driver() dispatch already expects, with no
-change needed to attractor.py itself). assemble_internal_force_vectorized_
-torch()/assemble_tangent_stiffness_vectorized_torch() below keep the
-computation GPU-resident end to end (conversion to torch tensors once, at
-the top; conversion back to numpy only at the final scatter step, exactly
-matching vectorized_assembly.py's own documented "the one place a copy
-back to host is unavoidable is the very end of each chunk" policy) --
-these are the functions to use for the actual sweep-scale speedup this
-item is for, not the two numpy-in/numpy-out functions above (which exist
-primarily for direct, apples-to-apples validation against the numpy
-vectorized path and the original looped element, see this module's own
-test file).
+Output convention (numpy in / numpy out): internal_force_batched_torch() and tangent_stiffness_batched_torch() take
+the same plain-numpy elem_coords_all (n,2,2) / u_elem_all (n,6) inputs as beam2d_reissner_vectorized.py's
+internal_force_batched()/tangent_stiffness_batched() and return the same plain-numpy f_global (n,6) / K_global
+(n,6,6) outputs, so they are drop-in alternatives (with an added device= choice) wherever those functions are
+called, including rom_engine.attractor's sweep drivers via the `model(param) -> (t, y[, ydot])` FE-callable
+contract. assemble_internal_force_vectorized_torch()/assemble_tangent_stiffness_vectorized_torch() keep the
+computation GPU-resident end to end (conversion to torch tensors once at the top; conversion back to numpy only at
+the final scatter step, matching vectorized_assembly.py's policy that the one unavoidable copy back to host is the
+end of each chunk). These are the functions to use for sweep-scale speedups; the two numpy-in/numpy-out functions
+exist primarily for apples-to-apples validation against the numpy vectorized path and the looped element.
 
 STATUS (2026-09-30): structurally complete and carefully reasoned through
 line-by-line against beam2d_reissner_vectorized.py's own batching
@@ -334,7 +279,7 @@ def _pick_block(fesystem, block_name):
 # GPU-resident-end-to-end assembly path -- torch counterparts of
 # beam2d_reissner_vectorized.assemble_internal_force_vectorized()/
 # assemble_tangent_stiffness_vectorized(), the functions to actually use
-# for the sweep-scale speedup this item is for (see module docstring).
+# for the sweep-scale speedup this module is for (see module docstring).
 # =====================================================================
 def assemble_internal_force_vectorized_torch(fesystem, u_global, mat, block_name=None,
                                                device="cpu", dtype=None):
@@ -365,8 +310,7 @@ def assemble_tangent_stiffness_vectorized_torch(fesystem, u_global, mat, block_n
     """Torch-vectorized, GPU-capable counterpart of beam2d_reissner_
     vectorized.assemble_tangent_stiffness_vectorized() -- reuses
     vectorized_assembly.scatter_global_stiffness() VERBATIM (it already
-    dispatches on a live torch.Tensor vs. a plain ndarray, per Wave 9
-    addendum item 136, so no new scatter code is needed here, unlike the
+    dispatches on a live torch.Tensor vs. a plain ndarray, so no new scatter code is needed here, unlike the
     force path above)."""
     _require_torch()
     import torch

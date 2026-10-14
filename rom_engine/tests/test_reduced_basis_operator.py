@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_reduced_basis_operator.py -- Wave 13 item 118 (docs/consolidated_
-future_roadmap.md): validates RegularizedProjectionEncoder's decisive
+test_reduced_basis_operator.py -- validates RegularizedProjectionEncoder's decisive
 claim -- a basis fit at ONE mesh resolution can be encoded/decoded at
 a GENUINELY DIFFERENT resolution's query points, something no existing
 `rom_engine` model (`pod.PodBasis`, any `ReducedForceModel`) supports.
@@ -39,7 +38,7 @@ from fea_fixtures import clamped_clamped_nonlinear_beam_system
 def _v_component(free_dofs, mesh, W):
     """Extract the transverse-displacement (v) DOF component only,
     sorted by node x-coordinate -- Beam2DCorotational's own [u, v,
-    theta] per-node dof convention (see item 115's own recover_stress
+    theta] per-node dof convention (see the recover_stress
     validation for the same node-index-from-dof-index arithmetic:
     free_dofs % 3 == 1 selects the v dof of each node)."""
     free_dofs = np.asarray(free_dofs)
@@ -111,7 +110,7 @@ def test_same_resolution_round_trip_matches_pod_own_reconstruction_error():
 
 
 def test_cross_mesh_resolution_reconstruction_stays_small():
-    """THE decisive claim this item exists to support: a basis fit at
+    """THE decisive claim this operator exists to support: a basis fit at
     n_elem=10 correctly reconstructs a held-out FULL-ORDER solution
     from a DIFFERENT mesh (n_elem=20, disjoint node coordinates,
     solved completely independently) -- something pod.PodBasis.project()

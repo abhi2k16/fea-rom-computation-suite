@@ -1,15 +1,14 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-shell_demo.py -- Phase 7 (general-purpose extensions roadmap) worked
-example: Shell4MITC (MITC4 general shell element -- membrane + bending
+shell_demo.py -- worked example: Shell4MITC (MITC4 general shell element -- membrane + bending
 + MITC4 assumed-strain transverse shear, 6 dof/node).
 
-Two demonstrations, matching the roadmap's own validation plan:
+Two demonstrations, matching the validation plan:
 
 1) Flat-plate limit: a Shell4MITC cantilever strip with ZERO curvature
    should converge, as the mesh refines, to Quad4MindlinPlate's own
-   (already-validated) bending answer -- the roadmap's headline
+   (already-validated) bending answer -- the headline
    requirement. Also confirms the membrane response stays exactly zero
    for a flat, homogeneous single-layer shell under a pure transverse
    load (membrane/bending are uncoupled, as classical plate theory

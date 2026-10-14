@@ -2,8 +2,7 @@
 # SPDX-License-Identifier: MIT
 """
 test_shell_corotational_exact_rotation_extraction.py -- validation for
-Wave 4 item 46 building block A, step 3
-(docs/shell_rotation_coupling_fix_roadmap.md Section 4.1):
+building block A, step 3:
 `Shell4MITCCorotational._local_relative_dofs_exact_rotation()`, the
 NEW, OPT-IN dof_local extraction that replaces the rotational-DOF
 treatment (theta_x, theta_y, theta_z per node) with the exact
@@ -31,7 +30,7 @@ Five lines of evidence:
    come out EXACTLY zero (floating-point noise), at every angle
    0.5-90 degrees -- the direct generalization of
    `test_shell_corotational_exact_drill.py`'s single-axis check to a
-   general axis, and the concrete closing of item 18's own left-open
+   general axis, and the concrete closing of the left-open
    "Known remaining limitation" for the bending block (previously
    ~0.03% at 0.5deg, ~1.8% at 30deg for an in-plane-axis rotation).
 
@@ -172,8 +171,7 @@ def test_bending_perturbation_gives_small_nonzero_rotation_dofs():
 
 
 def test_membrane_force_provably_unaffected_by_exact_rotation_extraction():
-    """Wave 4 item 46, building block B investigation
-    (docs/shell_rotation_coupling_fix_roadmap.md Section 4.2): this is
+    """Building block B investigation: this is
     the DIRECT NUMERICAL CONFIRMATION of a finding derived analytically
     BEFORE writing this test (not the other way around) -- read this
     docstring alongside `shells.py`'s own "Building block B finding"
@@ -199,10 +197,9 @@ def test_membrane_force_provably_unaffected_by_exact_rotation_extraction():
     term -- is mathematically incapable of recovering the elastica
     benchmark's missing foreshortening. This rules out attempting a
     single-shot (non-incremental) "additive Koiter-Sanders split
-    reusing K_local0" as building block B's content -- the roadmap's
-    own Section 4.2 sketch -- BEFORE spending effort implementing and
+    reusing K_local0" as building block B's content -- the Section 4.2 sketch of docs/shells.md -- BEFORE spending effort implementing and
     benchmarking it, the same "derive, then confirm once, don't guess"
-    discipline items 19's own implicit-function-theorem argument used
+    discipline the implicit-function-theorem argument used
     to rule out its own two candidate paths without needing a full
     trial run of each."""
     mat = Material(E=210e9, nu=0.3, rho=7800.0)

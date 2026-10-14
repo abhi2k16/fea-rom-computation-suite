@@ -38,6 +38,9 @@ matrices and adding them -- completely independent of the full model's
 size n_dof. A parameter sweep of a million (E_1, E_2) pairs over a
 100,000-DOF FE model becomes a million tiny (n_modes x n_modes) linear
 solves, not a million full re-assemblies + full solves.
+
+References (methods in this module are adopted from):
+  - G. Rozza, D. B. P. Huynh, A. T. Patera (2008), "Reduced basis approximation and a posteriori error estimation for affinely parametrized elliptic coercive partial differential equations", Arch. Comput. Methods Eng. 15(3)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -53,9 +56,9 @@ def _as_array(x):
     return 0 for that term -- which for a damping coefficient means
     "silently solve the UNDAMPED problem" no matter what C is. That is
     exactly the kind of loud-should-be-quiet failure this project's
-    testing culture exists to catch (see
-    docs/frequency_domain_rom_roadmap.md Section 4); test_affine.py
-    includes a regression test asserting a purely-imaginary theta_q
+    testing culture exists to catch (see the
+    regression test in test_affine.py, which
+    asserts a purely-imaginary theta_q
     actually affects assemble_reduced()'s output."""
     x = np.asarray(x)
     return x if np.iscomplexobj(x) else x.astype(float, copy=False)
@@ -144,8 +147,7 @@ class AffineDecomposition:
         # at the SAME offline cost as reduced_components (same V, same
         # matrix products, just kept before the final contraction).
         # This is what makes assemble_action() below possible without
-        # ever forming the full (n_dof, n_dof) A(mu): see
-        # docs/error_bounds_greedy_roadmap.md Section 2.
+        # ever forming the full (n_dof, n_dof) A(mu).
         self.component_action = [Kq @ V for Kq in self.components]
         self.n_modes = V.shape[1]
         return self
@@ -166,8 +168,7 @@ class AffineDecomposition:
         intermediate. This is the building block for a cheap, EXACT
         residual norm (frequency.FrequencyROM.residual_norm()),
         callable many times inside a greedy training loop's inner
-        sweep over candidate parameters -- see
-        docs/error_bounds_greedy_roadmap.md Section 2.
+        sweep over candidate parameters.
 
         Requires project(basis) to have been called first. q must be
         in the SAME reduced coordinates that basis (V) defines --

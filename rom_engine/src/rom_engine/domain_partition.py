@@ -24,6 +24,9 @@ above `threshold`, and any element touching a potential contact DOF, go to the n
 
 Limit, as in the source: if the nonlinear zone is large the interface B is large and K* is a dense B x B matrix; the
 method pays off only when the nonlinear zone is small.
+
+References (methods in this module are adopted from):
+  - P. Nikiema, V. Denis, F. Matzke, S. Gonzalez, S. Van Der Veen, J.-M. Mencik (2026), "Model order reduction for structural assembly simulations with contact and geometric nonlinearities", Finite Elem. Anal. Des. 260:104605
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

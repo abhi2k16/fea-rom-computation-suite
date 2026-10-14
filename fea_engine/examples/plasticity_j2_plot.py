@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-plasticity_j2_plot.py -- Phase 6 (general-purpose extensions roadmap)
-worked example: visual verification companion to plasticity_j2_demo.py.
+plasticity_j2_plot.py -- worked example: visual verification companion to plasticity_j2_demo.py.
 
 The classic elasto-plastic stress-strain loop: a single Hex8PlasticJ2
 element's sigma-eps response under uniaxial stress, loaded past yield

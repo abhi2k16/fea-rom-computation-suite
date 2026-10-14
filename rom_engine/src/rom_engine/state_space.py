@@ -5,14 +5,10 @@ state_space.py -- convert a second-order structural system (M, C, K),
 plus an explicit INPUT map B and OUTPUT map Cout, into first-order
 state-space form.
 
-Every module in this package before this one (pod, galerkin, affine,
-frequency) works with a full load vector F and a full-order response x --
-there has never been a need for a compressed "a few inputs go in, a few
-outputs come out" view of the model. krylov.py and balanced_truncation.py
-(see docs/classical_mor_roadmap.md) both need exactly that view, in two
-different first-order forms, so this module builds it once and both of
-those modules import from here rather than reimplementing the same
-linear algebra twice.
+The frequency-domain and projection modules (pod, galerkin, affine, frequency) work with a full load vector F and a
+full-order response x. Input/output reduction ("a few inputs go in, a few outputs come out") needs a compressed
+view of the model in first-order form. krylov.py and balanced_truncation.py both need it, in two different
+first-order forms, so this module builds it once and both import from here.
 
 The physics: with state x = [q; q_dot] (the n_dof generalized
 displacements stacked on the n_dof generalized velocities), the equation
@@ -47,10 +43,9 @@ equivalent state-space representations of the SAME system:
   conditioning reason to avoid the M-inversion for BT specifically, since
   BT already pays for an equivalent-cost dense Lyapunov solve regardless.
 
-Both forms are (2*n_dof, 2*n_dof) -- this doubling (not n_dof) is exactly
-why the paper reduces to k=20 states, not 10, when comparing its
-first-order-form methods (MM, BT) against its purely second-order method
-(MD) at "the same order".
+Both forms are (2*n_dof, 2*n_dof). This doubling (not n_dof) is why a first-order-form method (moment matching,
+balanced truncation) at order k is compared with a second-order method (mode displacement) at k/2 modes: the
+same number of states, half as many second-order degrees of freedom.
 
 If B/Cout aren't given, this defaults to every DOF being both an input
 and an (position-only) output -- a reasonable default for exploring a
@@ -152,7 +147,7 @@ def to_state_space(M, K, C=None, B=None, Cout=None, form="E"):
     Cout : ndarray (n_out, n_dof) or (n_dof,), optional
         Output map: row i says which physical DOF(s) output y_i reads
         (and with what weight). Position-only (velocities are never
-        observed by this convention, matching the paper's own
+        observed by this convention, matching typical
         displacement-output examples). Defaults to the identity
         (every DOF's position is its own output) if omitted.
     form : {"E", "A"}

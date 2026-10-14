@@ -1,45 +1,22 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-beam2d_reissner_vectorized.py -- Wave 17 item 147 (docs/consolidated_
-future_roadmap.md): a batched (all-elements-at-once NumPy) internal_
-force()/tangent_stiffness() path for elements.beams.Beam2DReissner,
-built ONLY because item 147's own measurement step found a single
-representative forced-vibration run (80 elements, dt=T_forcing/100, 80
-forcing periods, through nonlinear_solver.solve_nonlinear_transient())
-takes ~4.5 minutes wall clock -- over the item's own "a few minutes"
-threshold for needing either this or a switch to explicit dynamics.
-Explicit dynamics was measured and rejected (its critical timestep,
-h/sqrt(E/rho) ~ 1e-6 s here, needs ~18x more steps than the implicit
-dt used above, and even with no per-step tangent assembly/Newton loop,
-the internal_force()-bound explicit cost estimate came out to ~14
-minutes -- WORSE, not better, confirming the roadmap's own warning that
-this is "a genuinely different cost tradeoff, not a free win"). See
-this item's own row in the roadmap for the full numbers.
+beam2d_reissner_vectorized.py -- a batched (all-elements-at-once NumPy) internal_force()/tangent_stiffness() path
+for elements.beams.Beam2DReissner. A forced-vibration run of 80 elements, dt=T_forcing/100 over 80 forcing periods
+through nonlinear_solver.solve_nonlinear_transient() took about 4.5 minutes of wall-clock time with the per-element
+loop, which motivated this path. Explicit dynamics was measured as an alternative and was slower: its critical
+timestep, h/sqrt(E/rho) ~ 1e-6 s here, needs about 18x more steps than the implicit dt, and the
+internal_force()-bound explicit cost estimate came out at about 14 minutes.
 
-Convention: follows vectorized_assembly.py's own "batch the per-element
-linear algebra into one array-level contraction instead of a Python
-`for element in elements` loop" idea -- the SAME idea, but a from-scratch
-implementation, because vectorized_assembly.py's own machinery
-(MeshTransformation's shape_grad/JxW precompute, build_B_batched()) is
-explicitly scoped (see that module's own docstring) to isoparametric
-continuum elements with dofs_per_node in {2, 3} and a CONSTANT small
-material matrix contracted via multi-Gauss-point quadrature --
-Beam2DReissner is a 2-node, dofs_per_node=3, ONE-POINT-quadrature
-(already collapsed to a single midpoint evaluation, see that class's
-own docstring) NONLINEAR element whose strain measures are closed-form
-trig expressions of the nodal state, not a B-matrix contraction against
-a constant D over several Gauss points -- a genuinely different batched
-computation, so it is its own small module rather than a forced fit
-into vectorized_assembly.py's scope. It DOES reuse
-vectorized_assembly.scatter_global_stiffness() verbatim for scattering
-the batched (n_elements, 6, 6) tangent array into a global matrix (that
-function is already fully generic in dofs_per_node/n_edof, no
-continuum-only assumption baked into IT specifically), and adds the
-one missing piece that module doesn't have: a matching vectorized
-scatter-add for a FORCE vector (needed for internal_force(), which
-vectorized_assembly.py -- a stiffness-only module -- never had to
-provide).
+Convention: like vectorized_assembly.py, it batches the per-element linear algebra into one array-level contraction
+instead of a Python `for element in elements` loop, but it is a separate implementation, because
+vectorized_assembly.py's machinery (MeshTransformation's shape_grad/JxW precompute, build_B_batched()) is scoped to
+isoparametric continuum elements with dofs_per_node in {2, 3} and a CONSTANT small material matrix contracted via
+multi-Gauss-point quadrature. Beam2DReissner is a 2-node, dofs_per_node=3, ONE-POINT-quadrature NONLINEAR element
+whose strain measures are closed-form trig expressions of the nodal state, so it is its own small module. It reuses
+vectorized_assembly.scatter_global_stiffness() verbatim to scatter the batched (n_elements, 6, 6) tangent array into
+a global matrix (that function is generic in dofs_per_node/n_edof), and adds a matching vectorized scatter-add for a
+FORCE vector, which vectorized_assembly.py (stiffness-only) does not provide.
 
 Every array operation below is the exact same closed-form algebra
 elements.beams.Beam2DReissner._local_dofs()/_B_and_H()/internal_force()/
@@ -48,12 +25,9 @@ threaded through instead of a Python loop -- see that class's own
 docstring for the strain-measure/tangent DERIVATION (not repeated here);
 this module only re-shapes the same formulas.
 
-Validation (tests/test_beam2d_reissner_vectorized.py): the batched
-internal_force_batched()/tangent_stiffness_batched() outputs match the
-existing per-element looped Beam2DReissner.internal_force()/
-tangent_stiffness() calls to < 1e-12 relative error, on the same random
-large-rotation states test_beam2d_reissner.py's own CHECK (a) uses --
-this item's own stated validation criterion.
+Validation (tests/test_beam2d_reissner_vectorized.py): the batched internal_force_batched()/
+tangent_stiffness_batched() outputs match the per-element looped Beam2DReissner.internal_force()/
+tangent_stiffness() calls to < 1e-12 relative error on random large-rotation states.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -192,7 +166,7 @@ def assemble_internal_force_vectorized(fesystem, u_global, mat, block_name=None)
     block" scope, same restriction vectorized_assembly.py's own
     tensorized_element_stiffness() already imposes); block_name picks
     which fesystem._blocks entry to use (defaults to the first, the
-    common single-block-mesh case this item's own benchmark uses).
+    common single-block-mesh case).
     Takes u_global explicitly since a Newton loop calls this fresh every
     iteration with the current trial displacement."""
     name, formulation, connectivity = _pick_block(fesystem, block_name)

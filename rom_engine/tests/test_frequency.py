@@ -8,7 +8,7 @@ fea_engine's own solve_harmonic()/solve_frequency_sweep() (already
 validated, already-shipped fea_engine functionality -- not hand-rolled
 here) as ground truth throughout.
 
-Checks (mirroring docs/frequency_domain_rom_roadmap.md Section 6):
+Checks:
   1. Correctness both NEAR a resonance (where A(omega) is closest to
      singular -- the hard case) and OFF resonance (the easy case) --
      both reported, not just the easy one.
@@ -138,7 +138,7 @@ def test_pod_basis_from_frf_snapshots_is_a_real_alternative():
     print(f"same rank (8), held-out omega={omega_test:.2f}: "
           f"POD-basis relative error = {err_pod:.3e}, modal-basis relative error = {err_modal:.3e}")
 
-    # both should be small (an "empirical comparison, not an assumed winner" per the roadmap --
+    # both should be small (an "empirical comparison, not an assumed winner" --
     # we assert each is individually accurate, not that one beats the other)
     assert err_pod < 1e-3, "POD-on-FRF-snapshots basis should accurately predict a held-out frequency"
     assert err_modal < 1e-3, "modal basis should also be accurate here, as a sanity cross-check"
@@ -170,7 +170,7 @@ def test_general_damping_matches_fea_engine_complex_solve():
         "a damped response at a frequency near resonance MUST have a substantial "
         "imaginary (phase-lag) component -- if this is ~0, the i*omega*C term is "
         "being silently dropped (exactly the affine._as_array dtype bug the "
-        "roadmap flagged)")
+        "previously found)")
     err = np.max(np.abs(x_rom - U_true_free)) / np.max(np.abs(U_true_free))
     print(f"general (explicit-C) FrequencyROM vs fea_engine solve_harmonic(): "
           f"relative error = {err:.3e}, max|Im(x_rom)|/max|x_rom| = "
@@ -202,7 +202,7 @@ def test_proportional_damping_collapse_matches_general_form():
     print(f"max abs diff, general 3-term {{M,C,K}} vs collapsed 2-term {{M,K}} "
           f"assembly across {len(rng_omegas)} frequencies: {max_diff:.3e}")
     assert max_diff < 1e-6, (
-        "the proportional-damping collapse (Section 2a of the roadmap) must be "
+        "the proportional-damping collapse must be "
         "algebraically IDENTICAL to the general 3-term form, not just similar")
     print("PASS -- proportional-damping 2-term collapse matches the general 3-term form exactly")
 
@@ -243,11 +243,11 @@ def test_reduced_sweep_faster_than_fea_engine_full_sweep():
 
 
 def test_residual_norm_matches_independent_full_assembly():
-    """Phase 4a regression check: residual_norm() computes A(omega)@x
+    """Regression check: residual_norm() computes A(omega)@x
     via AffineDecomposition.assemble_action() (O(Q*n_dof*n_modes)) --
     this must match an INDEPENDENTLY computed residual built the slow
     way (via the full assemble() this package's own error_estimate()
-    used before Phase 4a), confirming the optimization changed only
+    used previously), confirming the optimization changed only
     the cost, not the value."""
     fx = ff.damped_cantilever_beam_system(n=20)
     free = fx["free_dofs"]
@@ -279,7 +279,7 @@ def test_residual_norm_matches_independent_full_assembly():
     print(f"residual_norm() (fast, assemble_action) = {fast:.6f}, "
           f"independent slow (full assemble()) = {slow:.6f}, relative diff = {rel_diff:.3e}")
     assert rel_diff < 1e-6, "the efficient residual must match the slow, independently computed one"
-    print("PASS -- Phase 4a's efficient residual matches an independent full-assembly computation")
+    print("PASS -- the efficient residual matches an independent full-assembly computation")
 
     # also confirm error_estimate() (the pre-existing public name) now
     # delegates to residual_norm() and gives the identical value

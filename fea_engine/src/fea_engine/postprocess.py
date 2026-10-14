@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-postprocess.py -- Module 7: derived dynamic-response quantities.
+postprocess.py -- derived dynamic-response quantities.
 
 These are quantities computed FROM an already-solved system (modal
 results, a frequency sweep, a PSD) rather than part of solving it --

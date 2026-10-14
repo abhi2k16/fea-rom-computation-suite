@@ -3,31 +3,24 @@
 """
 nonlinear_dynamics.py -- generalized reduced nonlinear time integration.
 
-Generalizes the MFS-NLROM paper's dynamic algorithm (Eq. 19-33) to
-accept ANY `nonlinear_rom.ReducedForceModel`, separating the METHOD
-(Newmark-beta predictor + a surrogate-lag correction scheme, all of it
-NEWTON-FREE -- the entire point of this model family versus a full
-nonlinear Newmark-Newton step every timestep, see
-`fea_engine.nonlinear_solver.solve_nonlinear_transient` for that
-alternative) from the MODEL (whatever concrete `ReducedForceModel`
-supplies `F_nl` via `.predict()`).
+Accepts ANY `nonlinear_rom.ReducedForceModel` and separates the METHOD (a Newmark-beta predictor plus a
+surrogate-lag correction scheme, all NEWTON-FREE, which is the point of this model family versus a full nonlinear
+Newmark-Newton step every timestep; see `fea_engine.nonlinear_solver.solve_nonlinear_transient` for that
+alternative) from the MODEL (whatever concrete `ReducedForceModel` supplies `F_nl` via `.predict()`). The scheme
+follows the dynamic algorithm of He et al. 2023 (Eq. 19-33).
 
-Works in mass-normalized modal coordinates (`M_r = I`, this whole
-model family's standing convention -- see `nonlinear_rom.py`'s module
-docstring and `pod.PodBasis`/`galerkin.GalerkinROM`'s own
-mass-orthonormalization), solving
+Works in mass-normalized modal coordinates (`M_r = I`, the convention of `nonlinear_rom.py`, `pod.PodBasis` and
+`galerkin.GalerkinROM`), solving
 
     qddot_nl + C_r @ qdot_nl + Lambda*q_nl + F_nl(...) = F_ext(t)
 
-where `q_nl` is the physical reduced state (the actual Newmark
-predictor/corrector variable throughout) and `F_nl` is supplied by
-`force_model.predict(q)` at whatever domain that model's own
-convention expects -- see `domain` in `integrate_newmark_surrogate`'s
-docstring for the two cases (`MultiFidelitySurrogate`'s `q_l` vs
-`PolynomialModalROM`'s own native `q_nl`, evaluated directly / bypassing
-its own internal Newton solve, exactly matching
-`docs/nonlinear_surrogate_rom_roadmap.md` Section 5's "PolynomialModalROM
-evaluated in 'direct' mode" phrasing).
+where `q_nl` is the physical reduced state (the Newmark predictor/corrector variable) and `F_nl` is supplied by
+`force_model.predict(q)` in whatever domain that model expects. See `domain` in `integrate_newmark_surrogate`'s
+docstring for the two cases: `MultiFidelitySurrogate`'s `q_l`, versus `PolynomialModalROM`'s native `q_nl`,
+evaluated directly (bypassing its internal Newton solve).
+
+References (methods in this module are adopted from):
+  - He et al. (2023), "A novel geometric nonlinear reduced order modeling method using multi-fidelity surrogate for real-time structural analysis", Struct. Multidisc. Optim. 66:233
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -54,7 +47,7 @@ def integrate_newmark_surrogate(Lambda, C_r, force_model, F_ext,
       it (and to lag into the NEXT step) -- never re-solved with that
       fresh value. The cheapest, least accurate option; included as the
       honest baseline every other mode is compared against, matching
-      the roadmap's own "predict at face value, no lag correction"
+      the "predict at face value, no lag correction"
       description.
     - "fixed_point": Picard-iterate the same lagged-force linear solve
       `n_fixed_point` times, re-evaluating `F_nl` at each iterate before
@@ -76,7 +69,7 @@ def integrate_newmark_surrogate(Lambda, C_r, force_model, F_ext,
       `dF(t+dt) = sign(qddot_nl(t)) * (F_nl(t+dt) - F_nl(t))`: predict
       once with the lagged force, then re-solve ONCE with
       `F_lag + sign(qddot) * (F_pred - F_lag)`. NOT a literal
-      transcription: the paper's Eqs. 28-32 (which DO extract cleanly
+      transcription: Eqs. 28-32 of He et al. 2023 (which DO extract cleanly
       with pymupdf, contrary to what this docstring used to say) apply
       the sign-scaled increment as a one-solve linear EXTRAPOLATION of
       the force history, `F_pred(t+dt) = F_nl(t) + dF(t)`.
@@ -93,8 +86,7 @@ def integrate_newmark_surrogate(Lambda, C_r, force_model, F_ext,
       ~1.1% of "newton". Details: NonLin-HyROM/case2_signdev_diagnostic.py.
       Weakly nonlinear runs may not blow up, but it is never more
       accurate than "fixed_point" (Case 1 flat plate: 21.7% vs 19.8%).
-    - "newton": Wave 12 item 114 (docs/consolidated_future_roadmap.md,
-      `ICE-ROM/GAP_ANALYSIS.md` gap #3) -- genuine Newton-Raphson on the
+    - "newton": genuine Newton-Raphson on the
       full nonlinear reduced equation every step, using `force_model`'s
       own analytic `.jacobian()`, with backtracking line search and an
       optional amplitude clamp (`q_bound`). Promoted, generalized only
@@ -155,8 +147,7 @@ def integrate_newmark_surrogate(Lambda, C_r, force_model, F_ext,
         Newmark parameters -- average-acceleration by default, matching
         `fea_engine.solve_transient_implicit()`/`solve_nonlinear_transient()`'s
         own defaults (this module intentionally uses the same `beta`/
-        `gamma` naming as that package rather than the roadmap draft's
-        own `alpha`/`beta` names, for cross-package consistency).
+        `gamma` naming as that package rather than `alpha`/`beta`, for cross-package consistency).
     n_fixed_point : int, default 4
         Number of Picard iterations for `correction="fixed_point"`
         (unused by the other modes) -- matches the validated

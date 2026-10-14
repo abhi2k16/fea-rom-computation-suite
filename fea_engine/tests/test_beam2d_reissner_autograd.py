@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 """
 test_beam2d_reissner_autograd.py -- validates
-fea_engine.autograd_tangent.beam2d_reissner_tangent_autograd() (Wave 17
-item 140's torch-autograd side-by-side backend, added alongside
+fea_engine.autograd_tangent.beam2d_reissner_tangent_autograd() (the
+torch-autograd side-by-side backend, added alongside
 Beam2DReissner's own analytic tangent_stiffness()) against that
 existing analytic implementation (elements/beams.py). See
 autograd_tangent.py's own "Beam2DReissner cross-check" section

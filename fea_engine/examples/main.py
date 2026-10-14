@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-main.py -- Module 5: post-processing, visualization, and execution
+main.py -- post-processing, visualization, and execution
 pipeline.
 
 Part A runs four physically distinct STATIC problems through the same

@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_shell_corotational_exact_drill.py -- validation for Wave 4 item 18
-(docs/consolidated_future_roadmap.md): the EXACT single-axis (SO(3))
+test_shell_corotational_exact_drill.py -- validation for : the EXACT single-axis (SO(3))
 drilling rotation update in Shell4MITCCorotational, replacing the
 first-order-truncated Rodrigues update the "Known remaining limitation"
 section of shells.py's class docstring previously documented as a real,
@@ -10,15 +9,15 @@ measured, bounded-but-nonzero error at large single-element rigid
 rotation (~1.6% of the element's own stiffness scale at 30 degrees).
 
 Why this is safe to make exact where the general 3-D tilt frame (dead
-ends 1-3, and items 20/22's investigation) is not: drilling is, by this
+ends 1-3, and later investigations of the bending block) is not: drilling is, by this
 element's own construction, ALWAYS a rotation about a single FIXED axis
 (R0's own local z) -- never a general 3-vector rotation. A single-axis
 rotation needs only cos/sin of a scalar angle, both holomorphic
 everywhere (no norm/branching singularity at zero rotation the way a
 general axis-angle Rodrigues formula would need), so making the
 DRILLING frame exact does not reintroduce the class of risk that ruled
-out a general exact-SO(3) treatment for the bending block (item 20) or
-membrane locking (item 22).
+out a general exact-SO(3) treatment for the bending block or
+membrane locking.
 
 Five lines of evidence:
 
@@ -41,12 +40,12 @@ Five lines of evidence:
    with no truncation, so the position-based membrane extraction's
    current-vs-reference comparison is an exact identity for this
    specific motion. Derived and predicted analytically before running
-   (see the Wave 4 item 18 investigation notes), then confirmed
+   (see the investigation notes), then confirmed
    numerically as an unconditional (not approximate) property.
 
-3. test_bending_axis_unaffected -- item 18 deliberately does NOT touch
-   the bending block (still uncorrected, per Phase A's design -- see
-   items 20/22's own investigation for why a real fix there needs a
+3. test_bending_axis_unaffected -- the exact drilling update deliberately does NOT touch
+   the bending block (still uncorrected, per the original design -- see
+   the later bending-block investigations for why a real fix there needs a
    different, riskier construction). A rigid rotation about an IN-PLANE
    axis (y) must reproduce the SAME measured error the old
    "Known remaining limitation" section documented (~0.03% at 0.5deg,
@@ -139,8 +138,7 @@ def test_bending_axis_unaffected(angle_deg, expected_rel_max):
     f = coro.internal_force(RECT, u, D, thickness=h)
     rel = np.linalg.norm(f) / K_scale
     # Should still be BOUNDED SMALL (unchanged, documented) error, not
-    # zero (item 18 doesn't touch this block) and not blown up (item 18
-    # shouldn't have broken anything here either).
+    # zero and not blown up.
     assert 0.0 < rel < expected_rel_max, f"bending-axis rotation at {angle_deg}deg: rel={rel:.3e}"
 
 

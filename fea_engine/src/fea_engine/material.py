@@ -16,6 +16,12 @@ composites, ...):
 No other module needs to change -- fea_engine.elements element classes
 just take whatever D their stiffness() expects as a plain array/tuple
 argument.
+
+References (methods in this module are adopted from):
+  - J. C. Simo, R. L. Taylor (1985), "Consistent tangent operators for rate-independent elastoplasticity", Comput. Methods Appl. Mech. Engrg. 48(1)
+  - J. C. Simo, R. L. Taylor (1986), "A return mapping algorithm for plane stress elastoplasticity", Int. J. Numer. Meth. Engng 22(3)
+  - J. C. Simo, T. J. R. Hughes (1998), "Computational Inelasticity", Springer
+  - P. J. Armstrong, C. O. Frederick (1966), "A mathematical representation of the multiaxial Bauschinger effect", CEGB Report RD/B/N731
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 from dataclasses import dataclass, field
@@ -47,8 +53,7 @@ class Section:
 @dataclass
 class Section3D:
     """Cross-section properties for the 3-D frame element
-    (elements.beams3d.Beam3DEulerBernoulli), Module 18 (general-purpose
-    extensions Phase 3) -- a separate dataclass from `Section` rather
+    (elements.beams3d.Beam3DEulerBernoulli) -- a separate dataclass from `Section` rather
     than extending it, since a 3-D member genuinely needs two bending
     axes plus torsion, not a superset of the 2-D beam's single `I`.
 
@@ -92,7 +97,7 @@ class PlasticMaterial1D:
 @dataclass
 class PlasticMaterialJ2:
     """3-D (or plane-strain) J2/von Mises elasto-plastic material,
-    Module 19 (general-purpose extensions roadmap Phase 6) -- the
+    -- the
     general-continuum generalization of PlasticMaterial1D above, used
     with elements.solids.Hex8PlasticJ2. Linear isotropic hardening
     (H=0 is perfectly plastic, same convention as PlasticMaterial1D).
@@ -119,8 +124,7 @@ class PlasticMaterialJ2:
 
 @dataclass
 class NeoHookeanMaterial:
-    """Compressible Neo-Hookean hyperelastic material, Module 19
-    (general-purpose extensions roadmap Phase 6), used with
+    """Compressible Neo-Hookean hyperelastic material, used with
     elements.solids.Tet4NeoHookean. Isochoric/volumetric strain-energy
     split W(F) = W_iso(bar_F) + W_vol(J):
 
@@ -135,7 +139,7 @@ class NeoHookeanMaterial:
     see Tet4NeoHookean's docstring for the check). Does NOT attempt
     the fully/nearly-incompressible limit (nu -> 0.5, which needs a
     mixed u/p formulation to avoid volumetric locking) -- see
-    docs/general_purpose_extensions_roadmap.md Section 4 for why that
+    docs/ (general-purpose extensions notes, Section 4) for why that
     is deliberately out of scope here."""
     E: float
     nu: float
@@ -202,8 +206,8 @@ def j2_radial_return_3d(eps_voigt, eps_p_n, alpha_n, mat: PlasticMaterialJ2):
     exceeds that radius, the return to the surface is a RADIAL rescaling
     -- closed-form, no local Newton iteration (unlike plane-stress J2,
     where the return path is constrained to a 2-D subspace and genuinely
-    needs one -- see docs/general_purpose_extensions_roadmap.md Section
-    4 for why that case is out of scope here).
+    needs one -- see docs/ (general-purpose extensions notes, Section
+    4) for why that case is out of scope here).
 
     The consistent (algorithmic) tangent modulus below was derived by
     directly differentiating this exact discrete algorithm (not copied
@@ -260,9 +264,8 @@ def j2_radial_return_3d(eps_voigt, eps_p_n, alpha_n, mat: PlasticMaterialJ2):
 
 
 # =====================================================================
-# J2 (von Mises) radial-return plasticity -- PLANE STRESS, Wave 2 item
-# 13 (docs/consolidated_future_roadmap.md, source general_purpose_
-# extensions_roadmap.md / nonlinear_fem_lessons.md)
+# J2 (von Mises) radial-return plasticity -- PLANE STRESS, item
+# 13
 # =====================================================================
 def j2_radial_return_plane_stress(eps_ps_trial, eps_p_n_voigt6, alpha_n,
                                    eps33_n, mat: PlasticMaterialJ2,
@@ -364,10 +367,7 @@ def j2_radial_return_plane_stress(eps_ps_trial, eps_p_n_voigt6, alpha_n,
 @dataclass
 class PlasticMaterialJ2Kinematic(PlasticMaterialJ2):
     """PlasticMaterialJ2 + Armstrong-Frederick (1966) nonlinear kinematic
-    hardening, Wave 2 item 14 (docs/consolidated_future_roadmap.md,
-    source nonlinear_fem_lessons.md appendix's own status-table line:
-    "Non-associative / kinematic hardening -- Not Implemented: Isotropic
-    hardening only, associative (radial) flow only").
+    hardening, flow only").
 
     A separate dataclass SUBCLASSING PlasticMaterialJ2 -- not new fields
     bolted onto PlasticMaterialJ2 itself -- so every existing call site
@@ -377,7 +377,7 @@ class PlasticMaterialJ2Kinematic(PlasticMaterialJ2):
     "keep every existing capability reachable, add the new one
     alongside" principle as Hex8SolidBbar sitting next to Hex8Solid3D
     and hourglass_stabilized_stiffness() sitting next to
-    reduced_stiffness() elsewhere in Wave 2.
+    reduced_stiffness() elsewhere in .
 
     Two new fields, both defaulting to 0.0 (pure isotropic hardening,
     i.e. mathematically identical to plain PlasticMaterialJ2 -- see
@@ -674,8 +674,7 @@ def D_mindlin_plate(mat: Material, h: float, k_shear: float = 5.0 / 6.0):
 
 def D_shell(mat: Material, h: float, k_shear: float = 5.0 / 6.0):
     """Returns (Dm, Db, Ds, h): membrane, bending, and shear
-    constitutive matrices for elements.shells.Shell4MITC (Module 20,
-    general-purpose extensions roadmap Phase 7), plus the thickness
+    constitutive matrices for elements.shells.Shell4MITC, plus the thickness
     itself (needed separately since Dm, unlike Db/Ds, does NOT bake h
     in -- see below).
 

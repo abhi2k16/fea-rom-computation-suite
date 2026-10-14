@@ -1,14 +1,12 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_transient_implicit_sparse.py -- Wave 16 item 134 (docs/
-consolidated_future_roadmap.md, source: TensorMesh's `Time Integration`
-documentation page): validates FESystem.solve_transient_implicit()'s
+test_transient_implicit_sparse.py -- validates FESystem.solve_transient_implicit()'s
 new sparse=True support and its dense-path switch from an explicit
 matrix inversion (np.linalg.inv()) to a one-time LU factorization
 (scipy.linalg.lu_factor()/lu_solve()) reused every time step.
 
-Before this item, solve_transient_implicit() unconditionally called
+Before this change, solve_transient_implicit() unconditionally called
 np.linalg.inv() on Kff+a0c*Mff+a1c*Cff, which silently assumed a dense
 Kff/Mff/Cff -- calling it on a sparse=True FESystem raised
 `LinAlgError: 0-dimensional array given. Array must be at least
@@ -16,7 +14,7 @@ two-dimensional` (numpy trying to treat a scipy.sparse matrix as a
 0-d array). Every test in this file that constructs a sparse=True
 FESystem and calls solve_transient_implicit() successfully is itself
 a regression check against that crash -- it could not have been
-written before this item.
+written before this change.
 
 Decisive checks throughout: agreement between the new sparse and dense
 paths (not just "both run"), agreement of the new dense lu_factor()
@@ -104,7 +102,7 @@ def _independent_old_style_reference(fs, load, T_total, dt, beta=0.25, gamma=0.5
 class TestSparseSupport:
     """Every test here constructs sparse=True and calls
     solve_transient_implicit() -- this crashed unconditionally before
-    item 134 (LinAlgError from np.linalg.inv() on a scipy.sparse
+    sparse support was added (LinAlgError from np.linalg.inv() on a scipy.sparse
     matrix), so successfully running at all is itself the regression
     check for the fixed crash."""
 

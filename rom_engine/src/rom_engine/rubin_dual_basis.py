@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 """
 rubin_dual_basis.py -- Rubin free-interface basis enriched with dual modes, for structures with a (frictional)
-contact patch, and re-identification of the reduced polynomial force from a reduced time history. After
-Mashayekhi and Zucca (2026) in the form recorded in the Wave 21 research notes:
+contact patch, and re-identification of the reduced polynomial force from a reduced time history (after
+Mashayekhi and Zucca, 2026):
 
 - `rubin_dual_basis`  the free-interface (Rubin) basis from `cms.free_interface_cms` with the contact DOFs as
   the interface, plus dual modes from `dual_modes.dual_modes` computed with the OPEN-contact system (the model
@@ -15,12 +15,16 @@ Mashayekhi and Zucca (2026) in the form recorded in the Wave 21 research notes:
   identity on the contact DOFs, i.e. the contact DOFs are carried as physical coordinates (what a contact law
   needs). The span of the basis is unchanged.
 - `reidentify_polynomial_force`  least-squares fit of the quadratic and cubic reduced force from a reduced time
-  history of an intrusive run: M q'' + C q' + K q + g(q) = f. The source finds that coefficients identified from
-  open-contact static solves can be inaccurate in slip-lift-off regimes and that re-fitting from one dynamic run
-  repairs this; the function is the re-fit, the finding itself is the paper's and is not reproduced here.
+  history of an intrusive run: M q'' + C q' + K q + g(q) = f. Coefficients identified from open-contact static
+  solves can be inaccurate in slip-lift-off regimes; re-fitting from one dynamic run is the remedy this function
+  provides (the accuracy gain itself is a finding of the source and is not reproduced here).
 
 Scope: linear-algebra level; K must be non-singular (as in `cms.free_interface_cms`); dual modes need the
 caller's nonlinear static solver; no friction law is built in (see `friction_contact_models`).
+
+References (methods in this module are adopted from):
+  - F. Mashayekhi, S. Zucca (2026), "An efficient reduced order modeling for vibration prediction of geometrically nonlinear structures with friction contact", Nonlinear Dyn. 114:327
+  - S. Rubin (1975), "Improved component-mode representation for structural dynamic analysis", AIAA J. 13(8)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import itertools

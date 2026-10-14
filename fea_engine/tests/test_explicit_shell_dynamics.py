@@ -1,27 +1,24 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_explicit_shell_dynamics.py -- validates Wave 6 item 33 (docs/
-consolidated_future_roadmap.md: "Explicit dynamics for the corotational
-shell"), i.e. that nonlinear_solver.solve_transient_explicit_nonlinear()
-(item 31) actually works end-to-end on Shell4MITCCorotational, not just
-on the 1-D beam/truss fixtures item 31's own tests use.
+test_explicit_shell_dynamics.py -- validates that nonlinear_solver.solve_transient_explicit_nonlinear()
+works end-to-end on Shell4MITCCorotational, not just
+on the 1-D beam/truss fixtures the explicit-driver tests use.
 
-Item 33 was framed in the roadmap as mostly a VALIDATION task, not new
+This is mostly a VALIDATION task, not new
 element code: Shell4MITCCorotational already has a working mass()
 (delegates to the underlying Shell4MITC's) and internal_force(), and
 the explicit driver needs neither a Newton loop nor tangent_stiffness()
-at all -- so this element should "just work" once item 31 exists. This
-file confirms that directly, and along the way exercises the item 32
+at all -- so this element should "just work" once the explicit driver exists. This
+file confirms that directly, and along the way exercises the
 mass-lumping fix (elements/base.py's Element.lumped_mass()) on a
 GENUINELY multi-directional element (Shell4MITCCorotational tracks 3
 translational directions per node, x/y/z -- the exact case that fix
-was for, distinct from item 31/32's own truss/beam fixtures which only
+was for, distinct from the truss/beam fixtures which only
 ever had 1 or 2).
 
 Scope note on timestep size: a full free-vibration run for enough
-periods to show a clean energy-conservation trend (item 31/32's own
-1-D beam energy test) is NOT attempted here -- directly measured, this
+periods to show a clean energy-conservation trend is NOT attempted here -- directly measured, this
 shell mesh's exact global critical timestep (FESystem.critical_
 timestep()) is ~40,000x smaller than its fundamental period, so even a
 few periods would need on the order of 10^5 explicit steps, each
@@ -31,10 +28,10 @@ file runs a SHORT window (hundreds of steps, seconds of wall time) and
 checks what that window CAN honestly establish: the driver produces a
 finite, bounded, physically continuous trajectory (not a crash, not a
 NaN, not an unphysical jump), and never calls tangent_stiffness() --
-the actual content of item 33's "does this element work under the
+the actual content of the "does this element work under the
 explicit driver" question. A full-period energy-conservation demo
 would be a natural follow-up if a real use case needs it (mirroring
-Wave 4 item 24's own "scoped-down probe, not a full run" precedent for
+"scoped-down probe, not a full run" precedent for
 the exact same sandbox constraint).
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
@@ -76,7 +73,7 @@ def _small_cantilever_shell(tip_force=-2.0):
     # rho_matrix = rho*I(6) (isotropic across all 6 dofs/node): the
     # physically load-bearing translational block (indices 0,1,2 local)
     # gets the correct rho*Area*thickness total mass via lumped_mass()'s
-    # PER-DIRECTION correction (item 32's fix); the rotational block
+    # PER-DIRECTION correction; the rotational block
     # (3,4,5) just needs a positive placeholder value here (this test
     # never excites/measures rotary inertia specifically), which
     # rho*I(6) trivially provides.
@@ -114,7 +111,7 @@ class TestExplicitShellRuns:
         assert np.all(U_hist[:, fixed_idx] == 0.0)
 
     def test_never_calls_tangent_stiffness(self):
-        """The actual architectural claim item 31/33 make: an explicit
+        """The actual architectural claim the explicit driver makes: an explicit
         driver needs NO tangent stiffness at all. Verified directly by
         counting calls, not just inferred from reading the driver's
         code -- the same "trust but verify" discipline this project

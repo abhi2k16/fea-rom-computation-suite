@@ -27,6 +27,11 @@ Scope, stated honestly: frictionless, adhesive-free, small-displacement kinemati
 solvers (the gap map B is constant). `solve_contact_newton` handles a nonlinear internal force by
 re-solving the linearised contact problem at every Newton iterate (a sequential-linearisation method);
 B stays constant there too, so large sliding is out of scope. Friction is not handled here.
+
+References (methods in this module are adopted from):
+  - M. Balajewicz, D. Amsallem, C. Farhat (2015), "Projection-based model reduction for contact problems", arXiv:1503.01000 (Int. J. Numer. Meth. Engng, 2016)
+  - D. Manvelyan-Stroot, Y. Filanova, I. Pontes Duff, P. Benner, U. Wever (2025), "Inference of Substructured Reduced-Order Models for Dynamic Contact from Contact-free Simulations", arXiv:2505.18050
+  - R. W. Cottle, J.-S. Pang, R. E. Stone (1992), "The Linear Complementarity Problem", Academic Press
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

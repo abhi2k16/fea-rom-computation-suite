@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_sparse_assembly.py -- validates FESystem(..., sparse=True) (Phase
-2, docs/general_purpose_extensions_roadmap.md Section 7): a storage-
+test_sparse_assembly.py -- validates FESystem(..., sparse=True) (a storage-
 format change (scipy.sparse.lil_matrix -> CSR at solve time, instead
 of a dense numpy array), opt-in via sparse=True, additive to the
 existing dense default.
@@ -13,7 +12,7 @@ solve the SAME model both ways and require near-machine-precision
 agreement (CHECK 1, 2). CHECK 3 is the actual justification for the
 added complexity: measured (not assumed) that sparse pulls ahead of
 dense as problem size grows, on a large-enough model that dense
-assembly/storage genuinely becomes the bottleneck the roadmap doc
+assembly/storage genuinely becomes the bottleneck the design notes
 identifies it as.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"

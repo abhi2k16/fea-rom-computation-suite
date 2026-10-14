@@ -6,6 +6,11 @@ Beam2DCorotational (geometrically nonlinear, large rotation).
 
 Split out of the original monolithic element.py during the
 fea_engine restructuring; no logic changed, only file location.
+
+References (methods in this module are adopted from):
+  - J. C. Simo (1985), "A finite strain beam formulation. The three-dimensional dynamic problem. Part I", Comput. Methods Appl. Mech. Engrg. 49(1)
+  - M. A. Crisfield (1991, 1997), "Non-linear Finite Element Analysis of Solids and Structures", Vols. 1-2, Wiley
+  - R. D. Cook, D. S. Malkus, M. E. Plesha, R. J. Witt (2002), "Concepts and Applications of Finite Element Analysis", 4th ed., Wiley
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -63,7 +68,7 @@ class Beam2DEulerBernoulli(Element):
             [-13*le, -3*le**2,  -22*le,  4*le**2]])
 
     def geometric_stiffness(self, elem_coords, N, thickness=1.0):
-        """Module 19 (general-purpose extensions Phase 4): the
+        """The
         standard consistent geometric ("stress stiffness") matrix for
         a 2-node Euler-Bernoulli beam-column under a constant axial
         force N (TENSION-POSITIVE, see Element.geometric_stiffness's
@@ -84,15 +89,11 @@ class Beam2DEulerBernoulli(Element):
 
 
 # =====================================================================
-# 2-node Total-Lagrangian large-displacement truss (Module 8: geometric
-# nonlinearity, "large displacement / small-to-moderate strain" case --
-# a cable or rod that can swing through large rigid-body rotation while
-# the material itself barely stretches, e.g. the "cable swaying" /
-# "fishing rod" examples). St Venant-Kirchhoff material: 2nd
+# 2-node Total-Lagrangian large-displacement truss. St Venant-Kirchhoff material: 2nd
 # Piola-Kirchhoff stress S is linear in Green-Lagrange strain E_GL, so
 # ALL the nonlinearity here is geometric (E_GL itself is a quadratic
 # function of displacement), none of it is material -- the cleanest
-# possible isolation of Module 8's "Scripting Impact" (Green-Lagrange
+# possible isolation of "Scripting Impact" (Green-Lagrange
 # strain + Piola-Kirchhoff stress replacing the linear engineering
 # strain / Cauchy stress pair every other element in this package
 # uses). This element intentionally overrides internal_force() and
@@ -123,7 +124,7 @@ class Beam2DCorotational(Element):
         configuration -- standard linear elastodynamics mass, like
         every other element in this package (no geometric/nonlinear
         correction to the mass itself, only to the stiffness). Added
-        for Module 15's flat-beam benchmark (He et al. 2023 Sect.
+        for flat-beam benchmark (He et al. 2023 Sect.
         4.1), which needs modal frequencies, not just the static
         elastica/cantilever checks validate_nonlinear_beam.py already
         covers -- this element originally had NO mass() override,
@@ -281,13 +282,12 @@ class Beam2DCorotational(Element):
 
     @classmethod
     def recover_stress(cls, elem_coords, u_elem, mat, y_fiber, xi=0.0):
-        """Wave 12 item 115 (docs/consolidated_future_roadmap.md,
-        `ICE-ROM/GAP_ANALYSIS.md` gap #4): fiber-level axial stress at
+        """Fiber-level axial stress at
         a deformed state -- `internal_force()` returns nodal forces
         only; this is the missing "traditional finite element-based
         stress/strain recovery" piece Hollkamp & Gordon (2008) Figs.
-        3-4's membrane/total stress PSDs need, and depends on Wave 12
-        item 112's membrane-expansion module for anything upstream of
+        3-4's membrane/total stress PSDs need, and depends on
+        the membrane-expansion module for anything upstream of
         this call to actually HAVE a membrane displacement to recover
         stress from (a bending-only ROM prediction has none).
 
@@ -325,7 +325,7 @@ class Beam2DCorotational(Element):
         xi : float, default 0.0
             Natural coordinate along the (undeformed) element at which
             to evaluate, in `[0, 1]` (`0` = node 1, `1` = node 2,
-            `0.5` = midspan). Default `0.0` matches this item's own
+            `0.5` = midspan). Default `0.0` matches the
             simplest single-station formula; pass an array to recover
             stress at several stations along one element in one call.
 
@@ -346,10 +346,7 @@ class Beam2DCorotational(Element):
 
 
 # =====================================================================
-# 2-node small-displacement elasto-plastic truss (Module 9: material
-# nonlinearity, "Elasto-Plasticity" case -- elastic up to a yield
-# point, then permanent/irreversible deformation, e.g. a metal bracket
-# bending permanently). Deliberately built on SMALL-displacement
+# 2-node small-displacement elasto-plastic truss. Deliberately built on SMALL-displacement
 # (engineering-strain) kinematics -- unlike TrussTL2D -- to isolate
 # material nonlinearity from geometric nonlinearity, matching the
 # user's own taxonomy that treats these as separate axes: the D matrix
@@ -371,8 +368,7 @@ class Beam2DCorotational(Element):
 
 # =====================================================================
 # 2-node geometrically EXACT planar (Simo-Reissner) shear-deformable
-# rod -- Wave 17 item 140 (docs/consolidated_future_roadmap.md), built
-# to reproduce Georgiou (2005), "Advanced Proper Orthogonal
+# rod, following Georgiou (2005), "Advanced Proper Orthogonal
 # Decomposition Tools..." (Nonlinear Dynamics 41:69-110), whose planar
 # Cosserat-rod equations (its Eqs. 1-3) this element implements
 # directly (Appendix A.1-A.7 gives the same strain measures in a
@@ -384,8 +380,7 @@ class Beam2DCorotational(Element):
 # large-rotation kinematics. It also carries an INDEPENDENT rotation
 # field theta(s) (a genuine Timoshenko/Reissner shear-deformable rod),
 # unlike Beam2DCorotational's Euler-Bernoulli (rotation tied to slope,
-# no shear strain, no rotary inertia) -- see the roadmap's own gap
-# analysis (Wave 17 section) for the frequency-matching evidence this
+# no shear strain, no rotary inertia) -- the frequency-matching evidence that this
 # distinction matters (Beam2DCorotational is 1.4%/11%/28% off a
 # closed-form Timoshenko pinned-pinned rod on modes 1/3/5; this element
 # is validated to <0.2%, see tests/test_beam2d_reissner.py CHECK 3).
@@ -399,7 +394,7 @@ class Beam2DCorotational(Element):
 # independent DOF). u1, u2 are LOCAL (material-frame) displacement
 # components -- u1 along the reference axis, u2 transverse -- and theta
 # is the cross-section's rotation angle RELATIVE TO THE REFERENCE AXIS,
-# exactly the theta appearing in the paper's Eqs. 1-3. Because linear
+# exactly the theta appearing in Eqs. 1-3 of Georgiou (2005). Because linear
 # shape functions make u1', u2', theta' CONSTANT along the element,
 # only theta(s) itself (linear in s) varies the strain integrands
 # below through cos(theta(s))/sin(theta(s)).
@@ -410,9 +405,9 @@ class Beam2DCorotational(Element):
 #     kap = theta'                                          (curvature)
 # STRESS RESULTANTS: N = EA*eps, Q = kappa_s*GA*gam, M = EI*kap, with
 # kappa_s a shear-correction-factor parameter (mat's 5th entry) --
-# DEFAULT/paper value 1.0 (Georgiou 2005 itself uses kappa_s=1; the
-# roadmap's own frequency-matching derivation confirms this, see the
-# Wave 17 section's opening paragraph -- deliberately NOT the ~5/6
+# DEFAULT value 1.0 (Georgiou 2005 itself uses kappa_s=1; the
+# frequency-matching derivation confirms this, see the
+# section's opening paragraph -- deliberately NOT the ~5/6
 # rectangular-section value a general Timoshenko-beam textbook might
 # otherwise default to, because this element's job here is reproducing
 # THIS paper).
@@ -573,8 +568,8 @@ class Beam2DReissner(Element):
     @staticmethod
     def _unpack_mat(mat):
         """mat = (E, G, A, I, kappa_s) -- kappa_s explicit (not
-        defaulted here) per the roadmap's own convention; pass 1.0 to
-        match Georgiou (2005)'s own value (see class docstring)."""
+        defaulted here); pass 1.0 to
+        match Georgiou (2005)'s value (see class docstring)."""
         E, G, A, I, kappa_s = mat
         return E, G, A, I, kappa_s
 

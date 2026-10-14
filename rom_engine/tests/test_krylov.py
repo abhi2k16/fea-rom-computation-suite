@@ -15,7 +15,7 @@ matching and balanced truncation are both specifically about, and that
 mode displacement/frequency.FrequencyROM (which see the WHOLE response,
 not a compressed port) are not.
 
-Checks (mirroring docs/classical_mor_roadmap.md Section 6):
+Checks:
   1. KrylovROM.frequency_response() matches the true H(i*omega) (from
      fea_engine's own solve_harmonic(), the tip-DOF component divided by
      the unit input amplitude) EXTREMELY closely near the expansion
@@ -33,8 +33,7 @@ Checks (mirroring docs/classical_mor_roadmap.md Section 6):
      answer is self-consistent with directly inspecting the reduced
      pencil's own eigenvalues).
 
-Two-sided (Petrov-Galerkin) extension checks (docs/classical_mor_roadmap.md
-Section 7, Phase 3):
+Two-sided (Petrov-Galerkin) extension checks:
   5. THE central mathematical claim, proved directly rather than taken
      on faith: on a small, well-conditioned synthetic system (so the
      comparison isn't muddied by the real beam fixture's own numerical

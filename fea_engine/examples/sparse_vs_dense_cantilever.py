@@ -1,17 +1,14 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-sparse_vs_dense_cantilever.py -- Phase 2 (general-purpose extensions
-roadmap) worked example: FESystem(..., sparse=True) vs the default
+sparse_vs_dense_cantilever.py -- worked example: FESystem(..., sparse=True) vs the default
 dense path, on a cantilever plane-stress beam of growing mesh
 resolution.
 
 Demonstrates the actual point of sparse storage: identical answers
 (static deflection, modal frequencies) to the dense path, at a
 measured -- not assumed -- speed advantage that grows with problem
-size, exactly the ceiling docs/general_purpose_extensions_roadmap.md
-Section 7 and hpc_translation_roadmap.html both identify as this
-package's biggest scaling limitation. See
+size, exactly the scaling limit of dense assembly. See
 tests/test_sparse_assembly.py for the same comparison run as a pytest
 regression check.
 """

@@ -1,14 +1,10 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-passivity.py -- passivity (positive-realness) diagnostics for a
-collocated force-in/velocity-out structural port. See
-docs/classical_mor_roadmap.md Section 12 for the full derivation and
-an honest account of the scope adjustment this module makes (from
-"positive-real balanced truncation," which needs a Riccati equation
-that is singular for this package's D=0 structural realizations, to a
-closed-form theorem + a diagnostic reusing already-existing machinery
--- a genuinely safer, and no less useful, path).
+passivity.py -- passivity (positive-realness) diagnostics for a collocated force-in/velocity-out structural port.
+Positive-real balanced truncation needs a Riccati equation that is singular for the D=0 structural realizations
+used in this package, so the module instead provides a closed-form passivity-preservation result plus a numerical
+diagnostic built on existing machinery.
 
 THE CLOSED-FORM PASSIVITY CERTIFICATE (no Riccati equation needed):
 for `M q'' + C_damp q' + K q = B u`, `y = B^T q'` (a velocity output

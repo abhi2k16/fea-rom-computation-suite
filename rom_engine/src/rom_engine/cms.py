@@ -31,6 +31,14 @@ must be listed in the same physical order in every substructure that shares them
 CHECKED IN THE TESTS against full-order eigenfrequencies of a beam split into two substructures,
 including the exactness limit (keeping all fixed-interface modes reproduces the full model) and the
 expected monotone improvement with the number of retained modes.
+
+References (methods in this module are adopted from):
+  - W. C. Hurty (1965), "Dynamic analysis of structural systems using component modes", AIAA J. 3(4)
+  - R. R. Craig Jr., M. C. C. Bampton (1968), "Coupling of substructures for dynamic analyses", AIAA J. 6(7)
+  - R. H. MacNeal (1971), "A hybrid method of component mode synthesis", Comput. Struct. 1(4)
+  - S. Rubin (1975), "Improved component-mode representation for structural dynamic analysis", AIAA J. 13(8)
+  - M. P. Castanier, Y.-C. Tan, C. Pierre (2001), "Characteristic constraint modes for component mode synthesis", AIAA J. 39(6)
+  - P. Tiso, M. Karamooz Mahdiabadi, J. Marconi (2021), "Modal methods for reduced order modeling", Chapter 4, ETH Research Collection, doi:10.3929/ethz-b-000526692
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 from dataclasses import dataclass

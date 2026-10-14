@@ -22,6 +22,10 @@ piecewise smooth; the Jacobian there is one of the one-sided derivatives.
 
 Scope: 1-D elements with constant stiffnesses, no Coulomb-friction regularisation, normal-load variation through a
 linear spring, and no 2-D tangential motion (the 2-D macro-slip element is not implemented).
+
+References (methods in this module are adopted from):
+  - M. Krack, J. Gross (2019), "Harmonic Balance for Nonlinear Vibration Problems", Springer
+  - J. Yuan, F. El-Haddad, L. Salles, C. Wong (2019), "Numerical assessment of reduced order modeling techniques for dynamic analysis of jointed structures with contact nonlinearities"
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

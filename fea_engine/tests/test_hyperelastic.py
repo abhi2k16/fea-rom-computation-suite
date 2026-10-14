@@ -1,13 +1,12 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_hyperelastic.py -- validation for Module 19 (general-purpose
-extensions roadmap Phase 6): material.NeoHookeanMaterial /
+test_hyperelastic.py -- validation for  material.NeoHookeanMaterial /
 material.neo_hookean_pk2_stress() / elements.Tet4NeoHookean.
 
 Four lines of evidence:
 
-1. test_small_strain_limit_matches_D_solid3d -- the roadmap's headline
+1. test_small_strain_limit_matches_D_solid3d -- the headline
    requirement for the hyperelastic model: "every hyperelastic model
    must reduce to linear elasticity as strain -> 0". Checks BOTH the
    stress (which should match D_solid3d()@eps with the expected

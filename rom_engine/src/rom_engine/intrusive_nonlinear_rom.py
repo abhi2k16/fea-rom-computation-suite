@@ -1,175 +1,85 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-intrusive_nonlinear_rom.py -- Wave 17 item 144 (fea_engine/docs/
-consolidated_future_roadmap.md): an INTRUSIVE nonlinear Galerkin ROM
-that keeps the reduced mass/damping/stiffness matrices FULL (not
-mass-normalized, not diagonal), matching Georgiou (2005)'s Eqs. 29-39
-POD-Galerkin construction of a planar nonlinear rod's reduced
-equations of motion.
+intrusive_nonlinear_rom.py -- an INTRUSIVE nonlinear Galerkin ROM that keeps the reduced mass/damping/stiffness
+matrices FULL (not mass-normalised, not diagonal): POD-Galerkin reduction of a nonlinear structure's equations of
+motion, with the full-order internal force evaluated at every query. Used for planar nonlinear rods and beams.
 
-WHY THIS IS A SEPARATE MODULE FROM nonlinear_dynamics.py. That module
-(and the `nonlinear_rom.ReducedForceModel` protocol it drives) has a
-STANDING, documented convention -- see both modules' own docstrings --
-of working in MASS-NORMALIZED modal coordinates: `M_r = I` exactly, by
-construction (the basis is always `pod.PodBasis`'s own mass-weighted,
-M-orthonormal output, or an ordinary mass-normalized eigenbasis), so
-`integrate_newmark_surrogate()` never needs to solve a mass-matrix
-linear system at all -- every `a0c*I`/`Keff = diag(Lambda) + ...` term
-in that module hardcodes the identity in place of a real `M_r`. This
-item's own roadmap entry is explicit that `M_r` must NOT be
-normalized here: the POD-RM diagnostics item 145 builds on top of this
-module need the RAW `M_r`/`D_r`/`K_r` (Georgiou's own Eqs. 41-44,
-50-60 are stated directly in terms of the un-normalized reduced
-matrices, not a normalized ratio of them). Forcing this module through
-`nonlinear_dynamics.py`'s `M_r=I` contract would mean silently
-mass-normalizing the basis inside this class, exactly what the roadmap
-says not to do -- so this is a deliberately separate, sibling module,
-not a generalization bolted onto the existing one. Where the algebra
-genuinely IS the same generalization (the reduced Newton-Newmark
-integrator, see `integrate_newton_newmark()` below), that generalization
-is derived explicitly in this module's own docstrings, keyed back to
-`nonlinear_dynamics.integrate_newmark_surrogate`'s own "newton"
-correction mode, rather than re-derived from scratch.
+RELATION TO nonlinear_dynamics.py. That module (and the `nonlinear_rom.ReducedForceModel` protocol it drives)
+works in MASS-NORMALISED modal coordinates: `M_r = I` exactly, because the basis is `pod.PodBasis`'s
+mass-weighted, M-orthonormal output or a mass-normalised eigenbasis, so its integrators never solve a mass-matrix
+system. This module keeps the RAW `M_r`/`D_r`/`K_r`, which diagnostics stated directly in terms of the
+un-normalised reduced matrices need, so it is a separate sibling module rather than a generalisation of the
+existing one. Where the algebra is the same (the reduced Newton-Newmark integrator, see
+`integrate_newton_newmark()`), the generalisation is derived in that method's docstring, keyed to the `"newton"`
+correction mode of `nonlinear_dynamics.integrate_newmark_surrogate`.
 
-THE MODEL. Given a fixed reduced basis `V` (n_dof x n_modes -- from
-`pod.PodBasis`, an eigenbasis, or any other caller-supplied basis; NOT
-assumed mass-orthonormal), a full-order mass matrix `M`, a full-order
-damping matrix `C`, and two full-order callbacks --
-`internal_force_fn(u_full) -> f_int_full` and (optionally)
+THE MODEL. Given a fixed reduced basis `V` (n_dof x n_modes -- from `pod.PodBasis`, an eigenbasis, or any other
+caller-supplied basis; NOT assumed mass-orthonormal), a full-order mass matrix `M`, a full-order damping matrix
+`C`, and two full-order callbacks -- `internal_force_fn(u_full) -> f_int_full` and (optionally)
 `tangent_fn(u_full) -> K_T_full` -- this class builds
 
     M_r = V^T M V          D_r = V^T C V          K_r = V^T K_T(0) V
 
-(`K_r` -- the LINEARIZED reduced stiffness at the undeformed state --
-needs one call to `tangent_fn` at `u_full = 0`, done once here at
-construction) and integrates the reduced nonlinear equation of motion
+(`K_r` -- the LINEARISED reduced stiffness at the undeformed state -- needs one call to `tangent_fn` at
+`u_full = 0`, made once at construction) and integrates the reduced nonlinear equation of motion
 
     M_r qddot + D_r qdot + f_int_r(q) = F_ext_r(t)
 
-where `f_int_r(q) = V^T @ internal_force_fn(V @ q)` is the FULL
-(linear + nonlinear) reduced restoring force, evaluated through the
-REAL full-order element's own `internal_force()` at every query -- the
-FE-consistent analogue of the paper's own Gauss-Legendre integral
-nonlinearity (Eqs. 29-33), with no separate reduced-order
-approximation of the nonlinearity itself (no hyper-reduction: a 1-D
-rod with a few hundred dofs is cheap enough that a full-order
-`internal_force_fn` call every step/stage is fine -- ECSW/DEIM/gappy-POD
-are deliberately out of scope here, per this item's own roadmap row).
-`f_nl(q) = f_int_r(q) - K_r @ q` (the pure NONLINEAR part, `K_r @ q`
-being the linear part already captured by the zero-state tangent) is
-exposed separately as `f_nl()` below since it is the quantity item
-145's diagnostics, and the paper's own Eq. 38 property statement, are
-phrased in terms of.
+where `f_int_r(q) = V^T @ internal_force_fn(V @ q)` is the FULL (linear + nonlinear) reduced restoring force,
+evaluated through the full-order element's own `internal_force()` at every query, with no separate reduced-order
+approximation of the nonlinearity (no hyper-reduction: a 1-D rod with a few hundred DOFs is cheap enough that a
+full-order `internal_force_fn` call every step/stage is fine; ECSW/DEIM/gappy-POD are out of scope here; see
+`hyper_reduction.py`). `f_nl(q) = f_int_r(q) - K_r @ q` (the pure NONLINEAR part, `K_r @ q` being the linear part
+already captured by the zero-state tangent) is exposed separately as `f_nl()`.
 
-INTEGRATORS. Three, all explicitly named, none replacing another (this
-project's standing "keep every valid implementation available" rule --
-see e.g. `nonlinear_dynamics.integrate_newmark_surrogate`'s own four
-named `correction` modes for the precedent):
+INTEGRATORS. Three, all explicitly named, none replacing another:
 
-  - `integrate_rk4()` -- fixed-step, classical 4-stage RK4 on the
-    first-order form `[qdot; qddot]`, the paper's OWN integration
-    choice (Eqs. 34-36 describe exactly this). Built on
-    `parameterized_latent_ode.rk4_step()`/`integrate_rk4()` (Wave 13
-    item 119's own CORRECTLY-implemented, order-of-convergence-
-    validated generic RK4 -- reused directly, not re-derived, per this
-    project's "don't re-derive already-validated math" convention).
-  - `integrate_solve_ivp()` -- `scipy.integrate.solve_ivp` on the
-    IDENTICAL first-order right-hand side (`_rhs()` below), so the two
-    integrators can be cross-checked against each other directly (see
-    this module's own test suite) as well as against the full-order
-    ground truth.
-  - `integrate_newton_newmark()` -- a genuine Newton-Raphson-corrected
-    implicit Newmark-beta step every step, for stiff cases where a
-    fixed-step explicit/adaptive-explicit integrator would need a
-    prohibitively small `dt`. See its own docstring for the exact
-    generalization from `nonlinear_dynamics.integrate_newmark_surrogate`'s
-    `correction="newton"` mode (Wave 12 item 114) to a non-diagonal
-    `M_r`/`D_r`.
+    - `integrate_rk4()` -- fixed-step, classical 4-stage RK4 on the first-order form `[qdot; qddot]`. Built on
+    `parameterized_latent_ode.rk4_step()`/`integrate_rk4()` (a generic RK4 validated by order of convergence and
+    reused directly).
+  - `integrate_solve_ivp()` -- `scipy.integrate.solve_ivp` on the IDENTICAL first-order right-hand side (`_rhs()`
+    below), so the two integrators can be cross-checked against each other as well as against the full-order
+    solution.
+  - `integrate_newton_newmark()` -- a Newton-Raphson-corrected implicit Newmark-beta step every step, for stiff
+    cases where a fixed-step explicit or adaptive-explicit integrator would need a prohibitively small `dt`. See
+    its docstring for the generalisation from `nonlinear_dynamics.integrate_newmark_surrogate`'s
+    `correction="newton"` mode to a non-diagonal `M_r`/`D_r`.
 
-Both `M_r` and the Newton-Newmark effective stiffness are LU-factored
-once (mass) or reassembled analytically (Newmark `Keff`, itself
-constant across steps since only the *nonlinear* part of the tangent
-changes) rather than re-inverted from scratch every call.
+`M_r` is LU-factored once and the Newmark effective stiffness `Keff` is reassembled analytically (it is constant
+across steps because only the *nonlinear* part of the tangent changes), not re-inverted on every call.
 
-TORCH BACKEND (additive addendum to item 144, same roadmap row --
-fea_engine/docs/consolidated_future_roadmap.md). Per this project's
-standing "whenever more than one valid implementation/backend exists
-for the same capability, keep all of them available and give the
-caller an explicit, named choice, never silently prefer or replace
-one" rule (the same rule behind FESystem's own `backend="torch"`
-option in fea_engine/solver.py, fea_engine/torch_sparse_solver.py, and
-this same package's own `torch_linalg.py`), `IntrusiveNonlinearROM`
-gets a handful of `torch_*`/`*_torch` METHODS alongside its existing
-plain-NumPy ones -- not a `device=` parameter bolted onto
-`integrate_rk4()` etc. (that would make the torch path implicit rather
-than an explicit opt-in), matching `torch_linalg.py`'s own convention
-of a separate, explicitly-named parallel function (there: module-level
-`torch_solve_continuous_lyapunov()` beside `scipy.linalg.
-solve_continuous_lyapunov`; here: `integrate_rk4_torch()` beside
-`integrate_rk4()`, etc.) rather than a same-name dispatch parameter.
-Every existing method above is completely untouched -- `import
-rom_engine` and every existing test still needs no torch install at
-all.
+TORCH BACKEND. Where more than one valid backend exists, the caller makes an explicit, named choice (the same
+convention as FESystem's `backend="torch"` option and `torch_linalg.py`). `IntrusiveNonlinearROM` therefore has a
+handful of `torch_*`/`*_torch` METHODS alongside its plain-NumPy ones, rather than a `device=` parameter on
+`integrate_rk4()` etc., which would make the torch path implicit. Every NumPy method is unchanged, and
+`import rom_engine` needs no torch install.
 
-  - `torch_reduced_matrices()` -- an INDEPENDENT torch re-derivation of
-    `M_r = V^T M V`, `D_r = V^T C V`, `K_r = V^T K_T(0) V` (via genuine
-    torch matmuls on `self._K0_full`, the full zero-state tangent
-    stored at construction time for exactly this reuse -- not merely
-    `torch.as_tensor(self.M_r)`, which would just be a dtype cast of an
-    already-trusted NumPy result, not a real cross-check). Kept FULL /
-    non-diagonal, exactly like the NumPy path -- no basis mass-
-    normalization creeps in here either, since it is the identical
-    `V^T A V` projection, just executed with torch ops instead of NumPy
-    ones.
-  - `integrate_rk4_torch()` -- mirrors `integrate_rk4()`'s exact step
-    logic. Reuses `parameterized_latent_ode.rk4_step()` VERBATIM (not
-    reimplemented for torch): that function only ever does `+`, `*`,
-    and calls `func` -- no NumPy-specific operation anywhere in it --
-    so it already works unchanged on `torch.Tensor` state, the same
-    "don't re-derive already-validated math" reasoning the NumPy
-    `integrate_rk4()` itself gives for reusing it. Accepts OPTIONAL
-    `internal_force_fn_torch`/`load_fn_torch` torch-native callbacks;
-    if omitted, falls back to this instance's own plain-NumPy
-    `internal_force_fn`/`load_fn` via a NumPy round-trip every RK4
-    stage (correct, but no GPU-residency benefit). Passing torch-native
-    callables directly is the actual point of this method: it lets a
-    future torch-native full-order model (e.g. a `Beam2DReissner`
-    torch-autograd internal-force/tangent -- checked directly as of
-    this writing, `fea_engine/autograd_tangent.py` covers `Tet4NeoHookean`
-    /`Tet10SolidTL`/`Shell4MITCCorotational` only, NOT `Beam2DReissner`,
-    so this interface is designed for that future addition rather than
-    consuming it now) integrate every RK4 stage on-device with zero
-    NumPy round-trips.
-  - `integrate_newton_newmark_torch()` -- mirrors
-    `integrate_newton_newmark()`'s exact `a0c..a7c`/`Keff`/`G`/`J`
-    algebra (not re-derived, ported mechanically: `np.linalg.solve` ->
-    `torch.linalg.solve`, `np.max(np.abs(.))` -> `torch.max(torch.abs(.))`,
-    etc.), including the same Newton-with-backtracking loop. Same
-    optional `internal_force_fn_torch`/`tangent_fn_torch`/
-    `load_fn_torch` override pattern as `integrate_rk4_torch()`.
-  - `integrate_solve_ivp()` gets NO torch counterpart, deliberately --
-    `scipy.integrate.solve_ivp` has no meaningful torch-tensor
-    equivalent to swap in (torch's own ODE-solver ecosystem lives in a
-    separate `torchdiffeq`-style package, out of scope here and not a
-    bare-torch op the way this module's other torch additions are); the
-    NumPy `integrate_solve_ivp()` above is unaffected and remains the
-    only solve_ivp-based path.
+    - `torch_reduced_matrices()` -- an INDEPENDENT torch recomputation of `M_r = V^T M V`, `D_r = V^T C V`,
+    `K_r = V^T K_T(0) V` using torch matmuls on `self._K0_full` (the full zero-state tangent stored at
+    construction), not a dtype cast of the NumPy result, so it is a real cross-check. The matrices stay FULL and
+    non-diagonal, exactly as in the NumPy path.
+  - `integrate_rk4_torch()` -- mirrors `integrate_rk4()`'s step logic. Reuses `parameterized_latent_ode.rk4_step()`
+    unchanged: it only uses `+`, `*` and calls to `func`, so it works on `torch.Tensor` state as is. Accepts
+    OPTIONAL `internal_force_fn_torch`/`load_fn_torch` torch-native callbacks; if omitted it falls back to the
+    instance's NumPy `internal_force_fn`/`load_fn` through a NumPy round-trip at every RK4 stage (correct, but no
+    GPU-residency benefit). Passing torch-native callables lets a torch-native full-order model integrate every
+    stage on-device with no NumPy round-trips. (`fea_engine/autograd_tangent.py` covers `Tet4NeoHookean`,
+    `Tet10SolidTL` and `Shell4MITCCorotational`, not `Beam2DReissner`, so this interface is for torch-native
+    models supplied by the caller.)
+  - `integrate_newton_newmark_torch()` -- mirrors `integrate_newton_newmark()`'s `a0c..a7c`/`Keff`/`G`/`J` algebra
+    (`np.linalg.solve` -> `torch.linalg.solve`, `np.max(np.abs(.))` -> `torch.max(torch.abs(.))`, etc.), including
+    the same Newton-with-backtracking loop, and the same optional `internal_force_fn_torch`/`tangent_fn_torch`/
+    `load_fn_torch` override pattern.
+  - `integrate_solve_ivp()` has NO torch counterpart: `scipy.integrate.solve_ivp` has no torch-tensor equivalent
+    (torch ODE solvers live in separate packages), so the NumPy method remains the only `solve_ivp` path.
 
-HONESTY NOTE (development-sandbox limitation -- see torch_linalg.py's
-and torch_sparse_solver.py's own identical notes for the full
-explanation of WHY: a CUDA-linked PyPI `torch` wheel cannot actually be
-imported in this project's own development sandbox, `ModuleNotFoundError`/
-import failure confirmed directly). Every `torch_*`/`*_torch` method
-above was written and reasoned through carefully (dtype consistency,
-`.detach().cpu().numpy()`/`torch.as_tensor()` conversions placed only
-at the documented NumPy-fallback boundary, gradients never required to
-flow through the integrator's own step-count bookkeeping) but NOT yet
-executed on a real torch install -- `tests/test_intrusive_nonlinear_rom.py`'s
-own torch-gated tests (see `_HAS_TORCH` there) are written to run for
-real and SHOULD be run at least once on a torch-equipped machine, the
-same status every other torch addition in this codebase carries until
-that happens.
+TESTING NOTE. The torch methods are exercised by the torch-gated tests in `tests/test_intrusive_nonlinear_rom.py`
+(`_HAS_TORCH`), which skip when PyTorch is not importable; run them on a machine with PyTorch installed. See
+`torch_linalg.py` and `torch_sparse_solver.py` for why an `except Exception` import guard is used.
+
+References (methods in this module are adopted from):
+  - I. T. Georgiou (2005), "Advanced proper orthogonal decomposition tools: using reduced order models to identify normal modes of vibration and slow invariant manifolds in the dynamics of planar nonlinear rods", Nonlinear Dyn. 41
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 from typing import NamedTuple
@@ -219,11 +129,11 @@ def _as_array(x):
 
 
 def impulse_to_reduced_velocity(V, M_r, P_full, tau0):
-    """Georgiou (2005) Eqs. 47-48, generalized: an impulsive full-order
+    """Impulsive loading (after Georgiou 2005, Eqs. 47-48), generalized: an impulsive full-order
     load of magnitude/pattern `P_full` (a plain (n_dof,) force vector)
     applied over a short duration `tau0` imparts a full-order momentum
     change `M @ v0 = P_full * tau0`, i.e. `v0 = M^-1 @ (P_full * tau0)`
-    -- the paper's own scalar `v0 = P*tau0/mass` special case for a
+    -- the scalar `v0 = P*tau0/mass` special case for a
     single-dof lumped-mass system. Reducing THAT relation the same way
     `IntrusiveNonlinearROM.initial_conditions()` reduces an initial
     velocity (mass-weighted projection through `M_r`) gives
@@ -238,7 +148,7 @@ def impulse_to_reduced_velocity(V, M_r, P_full, tau0):
     own stored `M`, so it can be reused directly on any `(V, M_r)` pair
     -- e.g. from a script that never builds a full `IntrusiveNonlinearROM`
     -- and so it is generic to ANY full-order load PATTERN `P_full`
-    (not hardcoded to the paper's own single-dof rod problem).
+    (not hardcoded to a single-dof rod problem).
 
     Parameters
     ----------
@@ -299,8 +209,7 @@ class IntrusiveNonlinearROM:
         `__init__` -- see module docstring) and re-used at every
         iteration by `integrate_newton_newmark()` only; `integrate_rk4()`/
         `integrate_solve_ivp()` never call it again after construction.
-        Documented as an optional constructor keyword (matching the
-        roadmap's own signature, since a caller integrating with
+        Documented as an optional constructor keyword (a caller integrating with
         RK4/solve_ivp only conceptually needs it once, not "for every
         step" the way the Newmark integrator does), but genuinely
         required in practice -- `K_r` cannot be computed without it,
@@ -364,7 +273,7 @@ class IntrusiveNonlinearROM:
     def f_nl(self, q):
         """f_nl(q) = f_int_r(q) - K_r @ q -- the pure NONLINEAR part of
         the reduced restoring force (the FE-consistent equivalent of
-        the paper's own Gauss-Legendre integral nonlinearity, Eqs.
+        the Gauss-Legendre integral nonlinearity of Georgiou 2005, Eqs.
         29-33), i.e. what remains after subtracting the linear
         (zero-state-tangent) contribution `K_r` already captures."""
         q = _as_array(q)
@@ -441,12 +350,12 @@ class IntrusiveNonlinearROM:
         return np.concatenate([qdot, qddot])
 
     # -----------------------------------------------------------------
-    # Integrator 1: fixed-step RK4 (the paper's own choice).
+    # Integrator 1: fixed-step RK4.
     # -----------------------------------------------------------------
     def integrate_rk4(self, q0, qdot0, dt, n_steps):
         """Fixed-step, classical 4-stage RK4 on `z = [q; qdot]`, built
-        on `parameterized_latent_ode.rk4_step()` (Wave 13 item 119's
-        already order-of-convergence-validated generic RK4 -- reused,
+        on `parameterized_latent_ode.rk4_step()` (a generic,
+        order-of-convergence-validated RK4 -- reused,
         not re-derived).
 
         Returns
@@ -486,9 +395,9 @@ class IntrusiveNonlinearROM:
         return sol.t, sol.y[:n].T, sol.y[n:].T, sol
 
     # -----------------------------------------------------------------
-    # Integrator 3: reduced Newton-Newmark, generalized from Wave 12
-    # item 114 (nonlinear_dynamics.integrate_newmark_surrogate's
-    # correction="newton" mode) to a non-diagonal M_r/D_r.
+    # Integrator 3: reduced Newton-Newmark, generalized from
+    # nonlinear_dynamics.integrate_newmark_surrogate's
+    # correction="newton" mode to a non-diagonal M_r/D_r.
     # -----------------------------------------------------------------
     def integrate_newton_newmark(self, q0, qdot0, dt, n_steps,
                                   beta=0.25, gamma=0.5,
@@ -496,11 +405,11 @@ class IntrusiveNonlinearROM:
         """Implicit Newmark-beta time integration with a genuine
         Newton-Raphson corrector every step -- for stiff cases where
         `integrate_rk4()`/`integrate_solve_ivp()` would need an
-        impractically small `dt`, per this item's own roadmap row.
+        impractically small `dt`.
 
         DERIVATION (generalizing `nonlinear_dynamics.
         integrate_newmark_surrogate`'s `correction="newton"` mode,
-        Wave 12 item 114, to a non-diagonal `M_r`/`D_r` -- that
+        to a non-diagonal `M_r`/`D_r` -- that
         function cannot be called here directly because it hardcodes
         the `M_r = I` mass-normalized convention throughout, e.g. its
         `Keff = diag(Lambda) + a0c*I + a1c*C_mat` and its
@@ -596,7 +505,7 @@ class IntrusiveNonlinearROM:
 
     # -----------------------------------------------------------------
     # Diagnostics (used directly by this module's own SPD test, and by
-    # item 145's POD-RM diagnostics on top of M_r/D_r/K_r).
+    # the POD-RM diagnostics on top of M_r/D_r/K_r).
     # -----------------------------------------------------------------
     def energy(self, q, qdot, strain_energy_fn=None):
         """Total reduced mechanical energy at one instant:
@@ -615,7 +524,7 @@ class IntrusiveNonlinearROM:
         return ke + float(strain_energy_fn(q))
 
     # -----------------------------------------------------------------
-    # Torch backend (additive addendum to Wave 17 item 144 -- see module
+    # Torch backend (additive -- see module
     # docstring "TORCH BACKEND" section for the full rationale/scope).
     # Every method above this point is plain NumPy and untouched;
     # everything below is opt-in, gated by _require_torch().
@@ -854,19 +763,17 @@ class IntrusiveNonlinearROM:
 
 
 # =========================================================================
-# Wave 17 item 145 -- POD-RM modal diagnostics (fea_engine/docs/
-# consolidated_future_roadmap.md, same module as item 144 per its own
-# roadmap row). Georgiou (2005) Eqs. 41-44, 50-60.
+# POD-RM modal diagnostics (after Georgiou 2005, Eqs. 41-44, 50-60).
 # =========================================================================
 class MatrixSPDReport(NamedTuple):
     """Symmetry / positive-definiteness report for one reduced matrix,
-    reusing exactly the eigenvalue-margin style item 144's own test
-    suite already built (`TestReducedMatricesSPD` in
+    reusing the eigenvalue-margin style of the reduced-matrix
+    SPD tests (`TestReducedMatricesSPD` in
     `tests/test_intrusive_nonlinear_rom.py`): symmetry via max absolute
     asymmetry against a scale-relative tolerance, positive-definiteness
     via `eigvals.min() / eigvals.max()` on the SYMMETRIC PART (`eigh`
     requires an exactly symmetric input; using `0.5*(A+A.T)` is the
-    same margin item 144's test computes when `A` is already symmetric
+    same margin that test computes when `A` is already symmetric
     to floating-point precision, and degrades gracefully -- rather than
     raising -- when it is not, since a damping matrix `D_r` is not
     guaranteed symmetric in general)."""
@@ -907,12 +814,12 @@ class PodRMAnalysis(NamedTuple):
 
 def _sign_align_columns(E):
     """Sign convention: for each column, force the LARGEST-MAGNITUDE
-    entry positive -- the same convention item 143's `MultiFieldPOD`
-    already established (its own docstring: "for each retained mode,
+    entry positive -- the same convention `MultiFieldPOD`
+    uses (its docstring: "for each retained mode,
     ... find the entry with the LARGEST MAGNITUDE ..., and flip the
     whole column's sign ... if that entry is negative"), reused here
     verbatim (not a reference field, since Ê has no field structure --
-    just the whole column) for consistency across this wave's modules."""
+    just the whole column) for consistency across modules."""
     E = E.copy()
     for m in range(E.shape[1]):
         col = E[:, m]
@@ -923,26 +830,25 @@ def _sign_align_columns(E):
 
 
 def pod_rm_analysis(M_r, D_r, K_r, sym_tol=1e-9, pd_margin_tol=1e-8):
-    """Wave 17 item 145: POD-RM modal diagnostics from a fitted (or
+    """POD-RM modal diagnostics from a fitted (or
     plain caller-supplied) reduced mass/damping/stiffness triple
-    `(M_r, D_r, K_r)` -- Georgiou (2005) Eqs. 41-44, 50-60.
+    `(M_r, D_r, K_r)` (after Georgiou 2005, Eqs. 41-44, 50-60).
 
     Deliberately accepts PLAIN ARRAYS rather than an
-    `IntrusiveNonlinearROM` instance (even though item 144 already
+    `IntrusiveNonlinearROM` instance (even though that class
     exposes `.M_r`/`.D_r`/`.K_r` on every instance): this keeps the
-    function independently testable on synthetic matrices (see this
-    item's own validation, below, which never needs to construct a
+    function independently testable on synthetic matrices (this
+    function's validation never needs to construct a
     full FE-backed `IntrusiveNonlinearROM`) and reusable from any other
-    source of a reduced triple, per this item's own roadmap note
-    ("prefer accepting plain arrays if that keeps this function more
-    reusable/testable in isolation"). A caller with a fitted
+    source of a reduced triple (accepting plain arrays keeps this
+    function reusable and testable in isolation). A caller with a fitted
     `IntrusiveNonlinearROM` just calls
     `pod_rm_analysis(rom.M_r, rom.D_r, rom.K_r)`.
 
     THE GENERALIZED EIGENPROBLEM. `scipy.linalg.eigh(K_r, M_r)` solves
     `K_r @ v = lambda * M_r @ v` for a symmetric `K_r` and a symmetric
     POSITIVE DEFINITE `M_r` -- correct for a genuinely non-diagonal,
-    non-identity `M_r` (this is exactly why item 144 keeps `M_r`
+    non-identity `M_r` (this is exactly why `IntrusiveNonlinearROM` keeps `M_r`
     un-normalized: `eigh`'s generalized form handles the full mass
     matrix directly, via an internal Cholesky-based congruence
     transform, with no approximation). `eigvals` are returned ASCENDING
@@ -959,10 +865,10 @@ def pod_rm_analysis(M_r, D_r, K_r, sym_tol=1e-9, pd_margin_tol=1e-8):
     `E_hat = I` EXACTLY, checked below, since only then does each
     eigenvector coincide exactly with a standard basis vector), then
     sign-aligned via `_sign_align_columns()` (positive largest-magnitude
-    entry per column, matching item 143's `MultiFieldPOD` convention).
+    entry per column, matching `MultiFieldPOD`'s convention).
 
-    TWO ORDERINGS, BOTH RETURNED (this item's own roadmap requirement --
-    the paper lists RM frequencies in POD-mode order in some places,
+    TWO ORDERINGS, BOTH RETURNED (the source
+    lists RM frequencies in POD-mode order in some places,
     e.g. Eq. 53, and by inspection/sorted order elsewhere):
 
       - `freq_sorted` / `E_hat_sorted` : `eigh`'s own ascending-eigenvalue
@@ -981,9 +887,9 @@ def pod_rm_analysis(M_r, D_r, K_r, sym_tol=1e-9, pd_margin_tol=1e-8):
         maps to, which need not be the `m`-th smallest eigenvalue.
 
     NEAR-IDENTITY DIAGNOSTIC. `diag_E_hat = diag(E_hat_pod_order)` --
-    the paper's own direct check (Eqs. 51, 54, 60) of whether the POD
+    the source's direct check (Eqs. 51, 54, 60) of whether the POD
     modes are already close to the RM's natural coordinates. Exposed as
-    its own field, not buried in a larger structure, since the paper
+    its own field, not buried in a larger structure, since the source
     checks it directly and finds it near 1 in some cases (weakly
     coupled RM) and clearly not in others (Eqs. 57, 59) -- both outcomes
     are just whatever this array numerically is, no special-casing.
@@ -997,9 +903,8 @@ def pod_rm_analysis(M_r, D_r, K_r, sym_tol=1e-9, pd_margin_tol=1e-8):
 
     SYMMETRY / POSITIVE-DEFINITENESS REPORT. `spd_report` is a dict
     keyed `"M_r"`, `"D_r"`, `"K_r"`, each a `MatrixSPDReport` built by
-    `_spd_report()` (see its own docstring) -- the identical
-    eigenvalue-margin style item 144's own `TestReducedMatricesSPD`
-    test already established, reused rather than reinvented.
+    `_spd_report()` (see its own docstring) -- the same
+    eigenvalue-margin style as `TestReducedMatricesSPD`.
 
     Parameters
     ----------

@@ -1,14 +1,12 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-hyperelastic_neo_hookean_demo.py -- Phase 6 (general-purpose
-extensions roadmap) worked example: Tet4NeoHookean (compressible
+hyperelastic_neo_hookean_demo.py -- worked example: Tet4NeoHookean (compressible
 Neo-Hookean hyperelasticity, large-strain Total Lagrangian).
 
 Two demonstrations: (1) the small-strain limit reducing to
 D_solid3d()'s linear-elastic tangent, with the relative error
-shrinking as strain shrinks (the roadmap's headline hyperelasticity
-requirement); (2) a full incremental Newton-Raphson solve of a single
+shrinking as strain shrinks; (2) a full incremental Newton-Raphson solve of a single
 element pulled by a corner force, checked via total-potential-energy
 conservation (external work = stored strain energy) -- a strong,
 independent physical check that the FINITE-DIFFERENCE tangent_

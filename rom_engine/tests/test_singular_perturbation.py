@@ -6,8 +6,7 @@ rom_engine.balanced_truncation.SingularPerturbationROM (SPA) against a
 REAL, damped fea_engine cantilever beam, using the SAME fixture,
 pre-reduction pattern, and port (tip-force-in/tip-displacement-out) as
 test_balanced_truncation.py, so BalancedTruncationROM and
-SingularPerturbationROM are compared on identical footing throughout
-(docs/classical_mor_roadmap.md Section 8).
+SingularPerturbationROM are compared on identical footing throughout.
 
 Checks:
   1. DC-gain exactness: SPA's transfer_function() at a very small s

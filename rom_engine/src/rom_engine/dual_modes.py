@@ -30,6 +30,11 @@ values (the OCR of the chapter's equation is ambiguous on this point), and the e
 reconstructed from the chapter's partly garbled equation 4.66; the original papers (Kim et al. 2013, Perez et al.
 2014) should be consulted before relying on the ranking for anything but a comparison of bases. The cost is
 m * len(alphas) nonlinear static solves of the full model.
+
+References (methods in this module are adopted from):
+  - K. Kim, A. G. Radu, X. Q. Wang, M. P. Mignolet (2013), "Nonlinear reduced order modeling of isotropic and functionally graded plates", Int. J. Non-Linear Mech. 49
+  - M. P. Mignolet, A. Przekop, S. A. Rizzi, S. M. Spottswood (2013), "A review of indirect/non-intrusive reduced order modeling of nonlinear geometric structures", J. Sound Vib. 332(10):2437-2460
+  - P. Tiso, M. Karamooz Mahdiabadi, J. Marconi (2021), "Modal methods for reduced order modeling", Chapter 4, ETH Research Collection, doi:10.3929/ethz-b-000526692
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

@@ -1,67 +1,39 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-iterative_solvers.py -- Wave 8 items 36-40 (docs/consolidated_future_
-roadmap.md, source fem_implementation_lessons.md Chapters 10-13):
-fill-reducing reordering, preconditioners, conjugate gradients,
-classical stationary iterations, and geometric multigrid for
-structured Quad4 grids.
+iterative_solvers.py -- fill-reducing reordering, preconditioners, conjugate gradients, classical stationary
+iterations, and geometric multigrid for structured Quad4 grids.
 
-Scope and relationship to the rest of the package, stated up front
-(the same "narrow the scope, document the gap explicitly" convention
-this project has used since Wave 5's Notch/Fillet items): every
-solver in this module is a genuinely independent, native NumPy/
-SciPy-sparse-graph implementation -- fill_in_count()/reverse_cuthill_
-mckee() use only scipy.sparse's plain CSR/CSC data structures and
-scipy.sparse.linalg.splu() as a fill-measurement tool (not as a
-substitute for hand-written graph code), and every solver (CG,
-Jacobi/Gauss-Seidel/SOR, multigrid) is hand-written rather than a
-thin wrapper around scipy.sparse.linalg.cg()/etc. None of this
-replaces solver.FESystem.solve_static()'s existing direct-solve path
-(Wave 0 items 3/5/6's SPD-aware Cholesky / eigen-regularized / sparse
-LU dispatch) -- that remains the default and is unaffected. This
-module exists for the case fem_implementation_lessons.md's own
-Chapter 10-13 summary calls out explicitly: "for large problems,
-iterative solvers beat direct solvers because of fill-in" -- a
-genuinely different regime from anything else in this package, meant
-to be reached for explicitly (see tests/test_iterative_solvers.py and
-tests/test_multigrid.py for worked measurements of exactly when/why
-each piece here helps), not wired into FESystem automatically.
+Scope and relationship to the rest of the package: every solver here is an independent, native NumPy/SciPy-sparse
+implementation. fill_in_count()/reverse_cuthill_mckee() use only scipy.sparse's plain CSR/CSC data structures and
+scipy.sparse.linalg.splu() as a fill-measurement tool, and every solver (CG, Jacobi/Gauss-Seidel/SOR, multigrid)
+is hand-written rather than a thin wrapper around scipy.sparse.linalg.cg() and friends. None of this replaces
+solver.FESystem.solve_static()'s direct-solve path (the SPD-aware Cholesky / eigen-regularized / sparse LU
+dispatch), which remains the default. The module is for the regime where iterative solvers beat direct solvers
+because of fill-in on large problems; it is meant to be reached for explicitly (see tests/test_iterative_solvers.py
+and tests/test_multigrid.py for measurements of when each piece helps), not wired into FESystem automatically.
 
-GPU/torch side-by-side path (Wave 9 addendum item 137, docs/
-consolidated_future_roadmap.md)
--------------------------------------------------------------------
-`preconditioned_cg(..., backend="scipy"/"torch", device=)`: the scipy
-path (default) is completely unchanged. The torch path reuses
-`torch_sparse_solver.py`'s own generic `_cg_torch()` loop (item 3's
-Jacobi-preconditioned CG was ALREADY written against a generic
-`matvec`/`precond_inv` callable pair specifically so a second caller
-could reuse it without touching that loop again) -- this item is that
-second caller. `M=None` (unpreconditioned) works unconditionally, on
-the SciPy sparse `A` this module already accepts. For `M != None`,
-`jacobi_preconditioner_torch()`/`ssor_preconditioner_torch()` below are
-the torch-native preconditioners this item actually ports; `ssor_
-preconditioner_torch()` DENSIFIES the triangular factors and uses
-`torch.linalg.solve_triangular` rather than a genuine sparse triangular
-solve -- an honest scope limit (torch's sparse-triangular-solve support
-is not broadly/stably available across versions the way
-`scipy.sparse.linalg.spsolve_triangular` is), acceptable for the
-moderate system sizes this module's own SSOR usage already targets
-(the same "torch_dense_solve() for moderate size" tradeoff `torch_
-sparse_solver.py` already documents for a different function).
-`incomplete_cholesky0()`'s IC(0) factorization is NOT ported to torch
-by this item -- `preconditioned_cg(backend="torch")` given an IC(0)
-preconditioner (or any other numpy-only callable) raises a clear
-`TypeError` rather than silently misbehaving when a numpy array meets a
-torch tensor mid-iteration; solver.py's own `solve_static(method="pcg",
-preconditioner="ic0")` combined with `backend="torch"` raises the same
-way. `solve_static(method="cg"/"pcg")` combined with `backend="torch"`
-on the `FESystem` itself now routes through this torch path (closing
-the gap Wave 16 item 132's own docstring flagged: "method= is only
-supported with backend='scipy'... backend='torch'/'auto' already has
-its own separate CG dispatch"); `backend="auto"` still raises for
-`method=` -- see `solve_static()`'s own updated docstring for why that
-one case remains disallowed.
+GPU/torch side-by-side path
+---------------------------
+`preconditioned_cg(..., backend="scipy"/"torch", device=)`: the scipy path (default) is unchanged. The torch path
+reuses `torch_sparse_solver.py`'s generic `_cg_torch()` loop, which is written against a generic
+`matvec`/`precond_inv` callable pair so a second caller can reuse it. `M=None` (unpreconditioned) works
+unconditionally, on the SciPy sparse `A` this module accepts. For `M != None`, `jacobi_preconditioner_torch()`/
+`ssor_preconditioner_torch()` are the torch-native preconditioners; `ssor_preconditioner_torch()` DENSIFIES the
+triangular factors and uses `torch.linalg.solve_triangular` rather than a sparse triangular solve, a scope limit
+(torch's sparse-triangular-solve support is not broadly stable across versions) that is acceptable for the
+moderate system sizes SSOR targets (the same moderate-size tradeoff as `torch_dense_solve()` in
+`torch_sparse_solver.py`). `incomplete_cholesky0()`'s IC(0) factorization is NOT ported to torch:
+`preconditioned_cg(backend="torch")` given an IC(0) preconditioner (or any other numpy-only callable) raises a clear
+`TypeError` rather than misbehaving when a numpy array meets a torch tensor mid-iteration; solver.py's
+`solve_static(method="pcg", preconditioner="ic0")` combined with `backend="torch"` raises the same way.
+`solve_static(method="cg"/"pcg")` combined with `backend="torch"` routes through this torch path;
+`backend="auto"` still raises for `method=` (see `solve_static()`'s docstring for why).
+
+References (methods in this module are adopted from):
+  - M. R. Hestenes, E. Stiefel (1952), "Methods of conjugate gradients for solving linear systems", J. Res. Natl. Bur. Stand. 49(6)
+  - Y. Saad (2003), "Iterative Methods for Sparse Linear Systems", 2nd ed., SIAM
+  - E. Cuthill, J. McKee (1969), "Reducing the bandwidth of sparse symmetric matrices", Proc. 24th ACM National Conference; A. George, J. W. H. Liu (1981), "Computer Solution of Large Sparse Positive Definite Systems", Prentice-Hall
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -85,7 +57,7 @@ except Exception:
 
 
 # =====================================================================
-# Item 36 -- fill-reducing reordering (min-degree/RCM)
+# Fill-reducing reordering (min-degree/RCM)
 # =====================================================================
 def _adjacency_from_sparsity(A):
     """Undirected adjacency lists from A's sparsity PATTERN (i~j iff
@@ -188,7 +160,7 @@ def permuted_solve(A, b, perm=None):
 
 
 # =====================================================================
-# Item 37 -- preconditioners (each returns a callable z = M^{-1} r)
+# Preconditioners (each returns a callable z = M^{-1} r)
 # =====================================================================
 def jacobi_preconditioner(A):
     """M = diag(A). "Frequently not very helpful" for a constant
@@ -250,7 +222,7 @@ def incomplete_cholesky0(A):
 
     Cost is O(n * (avg nnz/row)^2) using a dict-of-dicts per row,
     which is genuinely cheap on a narrow-bandwidth matrix -- pairing
-    this with reverse_cuthill_mckee() reordering first (item 36) is
+    this with reverse_cuthill_mckee() reordering first is
     the natural, worth-doing-together combination this module is
     built to make easy (see tests/test_iterative_solvers.py).
 
@@ -304,7 +276,7 @@ def incomplete_cholesky0(A):
 
 def jacobi_preconditioner_torch(A, device="cpu", dtype=None):
     """Torch-native counterpart of jacobi_preconditioner() above --
-    Wave 9 addendum item 137. A pure elementwise scaling, so the torch
+    . A pure elementwise scaling, so the torch
     port is a direct, zero-compromise translation (no densification,
     no approximation): M = diag(A), z = r / diag(A). Returns a callable
     z = M^{-1} r taking/returning a 1-D torch.Tensor on `device`, for
@@ -322,8 +294,8 @@ def jacobi_preconditioner_torch(A, device="cpu", dtype=None):
 
 
 def ssor_preconditioner_torch(A, omega=1.0, device="cpu", dtype=None):
-    """Torch-native counterpart of ssor_preconditioner() above -- Wave 9
-    addendum item 137. Same M = (D/omega + L) D^{-1} (D/omega + L^T)
+    """Torch-native counterpart of ssor_preconditioner() above --
+    Same M = (D/omega + L) D^{-1} (D/omega + L^T)
     formula, but DENSIFIES the triangular factors and applies
     torch.linalg.solve_triangular() instead of a genuine sparse
     triangular solve -- see this module's own docstring, 'GPU/torch
@@ -357,7 +329,7 @@ def ssor_preconditioner_torch(A, omega=1.0, device="cpu", dtype=None):
 
 
 # =====================================================================
-# Item 38 -- (preconditioned) conjugate gradients
+# (Preconditioned) conjugate gradients
 # =====================================================================
 def preconditioned_cg(A, b, M=None, x0=None, tol=1e-8, maxiter=None, callback=None,
                        backend="scipy", device="cpu"):
@@ -371,8 +343,7 @@ def preconditioned_cg(A, b, M=None, x0=None, tol=1e-8, maxiter=None, callback=No
 
     backend="scipy" (default) is the ORIGINAL, unchanged behavior --
     every array a plain numpy ndarray, M (if given) a numpy-in-numpy-
-    out callable. backend="torch" (Wave 9 addendum item 137, docs/
-    consolidated_future_roadmap.md) reuses torch_sparse_solver.py's own
+    out callable. backend="torch" reuses torch_sparse_solver.py's own
     generic _cg_torch() loop instead of re-deriving the recurrence a
     second time; `callback` is not supported on this path (raises
     TypeError if given, rather than silently never calling it -- this
@@ -470,13 +441,13 @@ def preconditioned_cg(A, b, M=None, x0=None, tol=1e-8, maxiter=None, callback=No
 
 
 # =====================================================================
-# Item 39 -- classical stationary iterations (Jacobi, Gauss-Seidel, SOR)
+# Classical stationary iterations (Jacobi, Gauss-Seidel, SOR)
 # =====================================================================
 # fem_implementation_lessons.md's own framing (Chapter 12): "building
 # blocks, not competitive solvers" -- their iteration count tracks
 # cond(K) directly (worse than CG's sqrt(cond(K))), so they are not
 # meant to be reached for as a standalone large-problem solver. Their
-# real role in THIS module is as multigrid smoothers (item 40 below),
+# real role in THIS module is as multigrid smoothers,
 # which only need a few sweeps, not convergence to tol -- the
 # standalone *_solve() functions below exist to complete the item as
 # specified and for direct comparison against CG in
@@ -538,10 +509,10 @@ def sor_solve(A, b, omega=1.5, x0=None, tol=1e-8, maxiter=10000):
 
 
 # =====================================================================
-# Item 40 -- geometric multigrid for structured Quad4 rectangle grids
+# Geometric multigrid for structured Quad4 rectangle grids
 # =====================================================================
 # Scope, stated explicitly up front (same "narrow, then document the
-# narrowing" convention as grading.Notch/Fillet in Wave 5): this
+# narrowing" convention as grading.Notch/Fillet in ): this
 # multigrid implementation is GEOMETRIC, not algebraic, and applies
 # only to the structured Quad4 rectangular grids mesh.rectangle_mesh()
 # produces (a plain nx-by-ny grid; no holes/fillets/notches/
@@ -556,8 +527,8 @@ def sor_solve(A, b, omega=1.5, x0=None, tol=1e-8, maxiter=10000):
 # stencil below is exact, not approximate, for THIS pair of grids.
 # Extending this to unstructured/graded meshes needs a materially
 # different (interpolation-based, non-exact) prolongation operator --
-# out of scope here, the same "blocked, not attempted" framing Wave 5
-# gave items 28/29.
+# out of scope here, the same "blocked, not attempted" framing
+# used for the Fillet/Notch meshers.
 def structured_quad_hierarchy(Lx, Ly, nx0, ny0, n_levels, x0=0.0, y0=0.0):
     """Coarsest-first list of n_levels mesh.Mesh objects; level k has
     (nx0*2**k, ny0*2**k) Quad4 elements per direction."""

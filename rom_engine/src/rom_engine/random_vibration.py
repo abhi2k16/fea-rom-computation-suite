@@ -1,22 +1,16 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-random_vibration.py -- PSD (power spectral density) random-vibration
-response, built as a thin layer on top of frequency.FrequencyROM's
-existing sweep. Reuses, rather than re-derives, a formula
-`fea_engine.solver.FESystem.solve_random_vibration()` already
-implements and validates at full order: for a linear system driven by a
-fixed spatial load pattern `F0` with PSD input spectrum `S_in(f)`, the
-steady-state output PSD at a sensor DOF is
+random_vibration.py -- PSD (power spectral density) random-vibration response, a thin layer on top of
+frequency.FrequencyROM's sweep. It reuses a formula `fea_engine.solver.FESystem.solve_random_vibration()` already
+implements and validates at full order: for a linear system driven by a fixed spatial load pattern `F0` with PSD
+input spectrum `S_in(f)`, the steady-state output PSD at a sensor DOF is
 
     S_out(f) = |H(f)|^2 * S_in(f)
 
-where `H(f)` is the system's own transfer function from `F0` to that
-DOF -- a direct, standard consequence of linear-systems PSD propagation
-(no new derivation needed here; see
-docs/frequency_domain_rom_roadmap.md Phase 6 for the design note this
-module implements). The response RMS is the square root of the
-trapezoidal-integrated output PSD, `sigma_out = sqrt(trapz(S_out, f))`.
+where `H(f)` is the system's transfer function from `F0` to that DOF -- a standard consequence of linear-systems
+PSD propagation. The response RMS is the square root of the trapezoidal-integrated output PSD,
+`sigma_out = sqrt(trapz(S_out, f))`.
 
 This module is deliberately a SEPARATE, small module rather than a
 method added to `FrequencyROM` itself, matching this package's
@@ -26,6 +20,9 @@ one-concept-per-module convention (the same reasoning `greedy.py`/
 `FrequencyROM.frequency_response()` (already handles the affine+Galerkin
 machinery) with the two extra lines PSD propagation needs, and nothing
 about it is specific to how the underlying ROM was built.
+
+References (methods in this module are adopted from):
+  - S. A. Hollkamp, R. W. Gordon (2008), "Reduced-order models for nonlinear response prediction: Implicit condensation and expansion", J. Sound Vib. 318(4-5)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -87,10 +84,9 @@ def psd_response(rom_freq, freqs_hz, psd_input, F0_pattern, output_dofs):
 
 
 def band_limited_gaussian_time_history(n_samples, dt, f_max, rms, rng=None):
-    """Wave 12 item 116 (docs/consolidated_future_roadmap.md, sourced
-    from `ICE-ROM/GAP_ANALYSIS.md` gap #5): a band-limited (0 to
+    """A band-limited (0 to
     `f_max` Hz), Gaussian-random, time-domain forcing signal -- the
-    driving input Hollkamp & Gordon (2008)'s own dynamic-response
+    driving input Hollkamp & Gordon (2008)'s dynamic-response
     reproduction needs (Sec. 4, a band-limited random pressure driving
     both the full FOM and the trained ROM identically so their transient
     responses are directly comparable), and a standing need for ANY
@@ -139,8 +135,8 @@ def band_limited_gaussian_time_history(n_samples, dt, f_max, rms, rng=None):
         returned signal's sample RMS matches this exactly, not just in
         expectation over infinitely many realizations.
     rng : numpy.random.Generator, optional
-        Explicit generator (this package's standing convention, see
-        `sampling.py`'s own module docstring on why every randomized
+        Explicit generator (this package's convention, see
+        `sampling.py`'s module docstring on why every randomized
         construction here takes an explicit `rng`, never hidden global
         state) -- a fresh, unseeded `np.random.default_rng()` is used
         if omitted.
@@ -167,7 +163,7 @@ def band_limited_gaussian_time_history(n_samples, dt, f_max, rms, rng=None):
     X = np.fft.rfft(x)
     freqs = np.fft.rfftfreq(n_samples, dt)
     # Zero the DC bin too, not just everything above f_max: a physical
-    # random forcing signal (the paper's own band-limited pressure load)
+    # random forcing signal (a band-limited pressure load)
     # has no static offset, and zeroing DC also makes the RMS-vs-std
     # distinction moot below (RMS == std exactly once the mean is zero).
     X[(freqs > f_max) | (freqs == 0.0)] = 0.0

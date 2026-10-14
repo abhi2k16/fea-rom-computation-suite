@@ -1,9 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_quadrature_order.py -- Wave 15 item 125 (docs/consolidated_future_
-roadmap.md, source: TensorMesh's "Elements and Quadrature" documentation
-page's uniform get_quadrature(order) pattern): validates the new
+test_quadrature_order.py -- pattern): validates the new
 order-PARAMETERIZED simplex quadrature (tri_quadrature(order)/
 tet_quadrature(order), elements/base.py) that generalizes the package's
 previously-fixed tri_quadrature_3pt()/tet_quadrature_4pt() rules.
@@ -15,8 +13,7 @@ Two decisive claims are checked directly, not assumed:
    precision), against the closed-form triangle/tetrahedron moment
    formulas p!q!/(p+q+2)! and p!q!r!/(p+q+r+3)! -- the same "checked
    directly, not assumed" standard this project used for meshio's node
-   order (mesh_io.py) and the corrected RK4's convergence rate (Wave 13
-   item 119), not a claim taken on faith from the collapsed-coordinate
+   order (mesh_io.py) and the corrected RK4's convergence rate, not a claim taken on faith from the collapsed-coordinate
    construction's own literature pedigree.
 
 2. BACKWARD COMPATIBILITY + genuine accuracy improvement: Tri6PlaneStress/

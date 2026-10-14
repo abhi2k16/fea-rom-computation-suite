@@ -1,22 +1,19 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-contact.py -- gap/contact elements: GapContactPenalty (flat-wall,
-fixed normal), GapContactCurvedFriction (updating normal + Coulomb
-friction, curved obstacle), and (Wave 3 items 16-17, docs/
-consolidated_future_roadmap.md) NodeToSegmentContact2D /
-NodeToSegmentContact2DFriction -- real node-to-segment contact between
-a slave node and a MASTER SEGMENT made of two ordinary mesh nodes, so
-both sides of a contact pair can be genuinely deformable (unlike the
-two elements above, whose obstacle is always an analytically-
-prescribed fixed plane/circle), plus find_contact_pairs_2d(), a simple
-broad-phase helper for discovering candidate slave-node/master-segment
-pairs.
+contact.py -- gap/contact elements: GapContactPenalty (flat-wall, fixed normal), GapContactCurvedFriction (updating
+normal + Coulomb friction, curved obstacle), and NodeToSegmentContact2D / NodeToSegmentContact2DFriction: node-to-
+segment contact between a slave node and a MASTER SEGMENT made of two ordinary mesh nodes, so both sides of a
+contact pair can be deformable (unlike the first two elements, whose obstacle is an analytically prescribed fixed
+plane/circle). Also find_contact_pairs_2d(), a simple broad-phase helper for discovering candidate
+slave-node/master-segment pairs.
 
-Split out of the original monolithic element.py during the
-fea_engine restructuring; no logic changed, only file location (this
-docstring paragraph and everything below the historical GapContact*
-classes is new, Wave 3).
+These elements were split out of the original monolithic element.py; the GapContact* classes are unchanged by that
+move.
+
+References (methods in this module are adopted from):
+  - P. Wriggers (2006), "Computational Contact Mechanics", 2nd ed., Springer
+  - P. Nikiema, V. Denis, F. Matzke, S. Gonzalez, S. Van Der Veen, J.-M. Mencik (2026), "Model order reduction for structural assembly simulations with contact and geometric nonlinearities", Finite Elem. Anal. Des. 260:104605
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -67,7 +64,7 @@ class GapContactPenalty(Element):
 
 
 # =====================================================================
-# 3-node constant-strain triangle (CST), Module 12: the linear-simplex
+# 3-node constant-strain triangle (CST), the linear-simplex
 # counterpart to Quad4PlaneStress -- needed because a general (e.g.
 # Gmsh-generated, unstructured) mesh of an arbitrary 2-D shape is
 # triangulated, not quadrilateral. IMPORTANT: this element deliberately
@@ -164,8 +161,7 @@ class GapContactCurvedFriction(Element):
 
 
 # =====================================================================
-# Node-to-segment contact, Wave 3 items 16-17 (docs/consolidated_
-# future_roadmap.md): TWO deformable bodies in contact, discovered by
+# Node-to-segment contact, -17: TWO deformable bodies in contact, discovered by
 # real geometric search, rather than one node against an analytically-
 # prescribed rigid obstacle. GapContactPenalty/GapContactCurvedFriction
 # above are untouched and remain the right, cheaper tool whenever the
@@ -200,7 +196,7 @@ def closest_point_on_segment_2d(p, a, b):
 
 
 def find_contact_pairs_2d(slave_node_ids, master_segments, node_coords, search_radius):
-    """Broad-phase candidate-pair search, Wave 3 item 16. For every
+    """Broad-phase candidate-pair search, . For every
     (slave_node, master_segment) combination, computes the actual
     closest-point distance (via closest_point_on_segment_2d()) and
     keeps the pair if that distance is <= search_radius -- i.e. this is
@@ -244,7 +240,7 @@ def find_contact_pairs_2d(slave_node_ids, master_segments, node_coords, search_r
 
 
 class NodeToSegmentContact2D(Element):
-    """Wave 3 item 16 (docs/consolidated_future_roadmap.md): frictionless
+    """Frictionless
     penalty contact between a single SLAVE node and a MASTER SEGMENT
     made of two ordinary mesh nodes -- the "obstacle" is no longer a
     fixed plane/circle (GapContactPenalty/GapContactCurvedFriction
@@ -367,7 +363,7 @@ class NodeToSegmentContact2D(Element):
 
 
 class NodeToSegmentContact2DFriction(NodeToSegmentContact2D):
-    """Wave 3 item 17 (docs/consolidated_future_roadmap.md): adds
+    """Adds
     Coulomb stick-slip friction to NodeToSegmentContact2D -- the direct
     node-to-segment generalization of GapContactCurvedFriction's
     stick/slip return map above, extended from "arc-length position
@@ -393,7 +389,7 @@ class NodeToSegmentContact2DFriction(NodeToSegmentContact2D):
     k_t. NodeToSegmentContact2D itself (frictionless) remains available
     unchanged as a separate class -- this is an ADDITIVE sibling, not a
     replacement, the same "keep every option available" principle
-    every other Wave 2/3 addition in this package follows.
+    every other /3 addition in this package follows.
 
     DOCUMENTED SIMPLIFICATION: because the master segment can itself
     stretch (its two endpoints are ordinary, independently-moving mesh
@@ -539,7 +535,7 @@ class NodeToSurfaceContact3D(Element):
     convention, as in the 2-D element) and the equal and opposite reaction is split over the master nodes by the
     barycentric weights of the projection, so the three forces sum to zero identically.
 
-    The consistent tangent is the Gauss-Newton form of the paper, K_c = k_p C^T C with C = d(delta)/d(u_elem)
+    The consistent tangent is the Gauss-Newton form of Nikiema et al. (2026), K_c = k_p C^T C with C = d(delta)/d(u_elem)
     obtained with the projection held fixed (n and the weights frozen). It is symmetric positive semidefinite.
     `tangent_stiffness(..., consistent=False)` returns a central-difference tangent of internal_force instead; the
     two differ by the neglected terms and are compared in the tests.

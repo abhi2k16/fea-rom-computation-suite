@@ -16,8 +16,7 @@ sit many orders of magnitude above the lowest structural ones -- e.g. a
 25-element beam here spans eigenvalues from -2.4 to -3*10^8), and scipy's
 dense Bartels-Stewart solver (like any dense Lyapunov solver) loses
 accuracy as that spread grows. This is exactly the "BT has a practical
-size/conditioning ceiling" limitation flagged in
-docs/classical_mor_roadmap.md Section 2c -- the fix used throughout this
+size/conditioning ceiling" limitation -- the fix used throughout this
 file, and the recommended real-world pattern, is to first modally
 truncate the raw FE model down to a moderate size (here: the lowest 15
 undamped modes, via a plain eigh(K,M) -- no new machinery, this is
@@ -27,7 +26,7 @@ This two-stage pattern (coarse modal truncation, then balance-and-
 truncate further) is standard practice for large-scale BT in the
 literature, not a workaround specific to this test.
 
-Checks (mirroring docs/classical_mor_roadmap.md Section 6):
+Checks:
   1. Accuracy stays good across the WHOLE swept range (not just near one
      point) -- the property mode-displacement/plain-Krylov methods don't
      have in general.
@@ -48,7 +47,7 @@ Checks (mirroring docs/classical_mor_roadmap.md Section 6):
      enough that it remains competitive with, or better than, BT at the
      specific far frequencies tried, at these specific reduced orders --
      a real, fixture-dependent finding worth recording honestly rather
-     than forcing a directional assertion the paper's own DIFFERENT
+     than forcing a directional assertion the source's DIFFERENT
      benchmark system doesn't guarantee in general).
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"

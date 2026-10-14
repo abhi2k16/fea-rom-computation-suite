@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_spd_solve.py -- Wave 0 item 5 (docs/consolidated_future_roadmap.md,
-source fem_implementation_lessons.md): validates
+test_spd_solve.py -- validates
 FESystem._dense_spd_solve() / the SPD-aware Cholesky path now wired
 into solve_static().
 
@@ -88,7 +87,7 @@ def test_dense_spd_solve_falls_back_for_non_spd_symmetric_matrix():
     print("right answer -- see _dense_spd_solve()'s own docstring for why")
     print("it deliberately does NOT try np.linalg.solve() as a fallback")
     print("itself anymore (that was tried, and found to be unsafe for the")
-    print("singular case _eigen_solve() also has to handle -- Wave 0 item 6)")
+    print("singular case _eigen_solve() also has to handle -- )")
     print("=" * 70)
     # A small symmetric INDEFINITE matrix (mixed-sign eigenvalues) --
     # cho_factor must fail on this.

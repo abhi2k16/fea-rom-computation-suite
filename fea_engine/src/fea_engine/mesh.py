@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-mesh.py -- Module 2: geometric mesh generation and boundary-node
+mesh.py -- geometric mesh generation and boundary-node
 selection.
 
 Structured/mapped mesh generators for simple 1-D, 2-D, and 3-D
@@ -17,7 +17,7 @@ mesh_generation.py module into the package, with two additions:
 To add a new geometry (e.g. a cylinder, an ellipse-with-notch, ...):
 write one function that returns a Mesh -- nothing else here changes.
 
-MultiBlockMesh (Module 14: mixed-element-type assembly) is a SEPARATE
+MultiBlockMesh (mixed-element-type assembly) is a SEPARATE
 container, not a variant of Mesh, for meshes where more than one
 element TOPOLOGY coexists (e.g. triangles and quads in the same 2-D
 region -- the case a Gmsh "recombine" pass typically produces: quads
@@ -45,11 +45,9 @@ except ImportError:
 
 
 # =====================================================================
-# 3-D face-adjacency tables, Wave 0 item 8 (docs/consolidated_future_
-# roadmap.md, source generalized_mesh_grading_roadmap.md): the
+# 3-D face-adjacency tables: the
 # per-topology face table Mesh.check_grading() previously raised
-# NotImplementedError for want of. Two topologies, exactly what the
-# roadmap named -- Tet4's 4 triangular faces and Hex8's 6 quadrilateral
+# NotImplementedError for want of. Two topologies -- Tet4's 4 triangular faces and Hex8's 6 quadrilateral
 # faces -- expressed as CORNER-node-index tuples into one element's own
 # connectivity row, matched as frozensets (adjacency only needs the
 # SET of shared corner nodes, not winding order).
@@ -90,8 +88,7 @@ def _tet_volume(pts):
     its 4 corner points (scalar triple product / 6) -- unlike a hex, a
     tet's 4 triangular faces are always planar, so there is no
     decomposition ambiguity to worry about the way _hex_volume() below
-    has to. abs() because this is used only as a SIZE metric (Wave 0
-    item 8's grading diagnostic); orientation/inversion is already
+    has to. abs() because this is used only as a SIZE metric; orientation/inversion is already
     Mesh.check_quality()'s job, not this one's."""
     p0, p1, p2, p3 = pts
     return abs(np.dot(p1 - p0, np.cross(p2 - p0, p3 - p0))) / 6.0
@@ -142,7 +139,7 @@ def _unsupported_topology_error(n_nodes):
         f"check_grading(): no 3-D face table for a {n_nodes}-node "
         "element -- supported node counts are 4 or 10 (Tet4/Tet10, "
         "tetrahedral faces) and 8 or 20 (Hex8/Hex20, hexahedral "
-        "faces). See docs/generalized_mesh_grading_roadmap.md.")
+        "faces). See docs/ for the mesh-grading notes.")
 
 
 def _elem_faces_3d(elem):
@@ -270,8 +267,7 @@ class Mesh(_NodeSelectionMixin):
     elements: np.ndarray    # (n_elements, nodes_per_element), int
     dim: int                # 1, 2, or 3
 
-    # Wave 14 item 121 (docs/consolidated_future_roadmap.md), scoped
-    # directly against TensorMesh's own Meshes documentation page
+    # Field attachment, in the style of TensorMesh's Meshes page
     # (https://docs.tensor-mesh.com/user_guide/meshes.html): per-node
     # (`point_data`) and per-element (`cell_data`) field attachment
     # directly on the mesh object, plus mesh-global metadata
@@ -280,7 +276,7 @@ class Mesh(_NodeSelectionMixin):
     # OPTIONALLY be attached back onto the mesh itself, the way
     # TensorMesh's register_point_data()/register_element_data() work.
     # Purely additive: every pre-existing caller that only ever touches
-    # .nodes/.elements/.dim (the entire codebase, before this item) is
+    # .nodes/.elements/.dim (the entire codebase before this feature) is
     # completely unaffected -- these three fields default to empty
     # dicts, and nothing downstream (FESystem, solve_*, check_quality,
     # ...) reads them. `field(default_factory=dict)` (not `= {}`) is
@@ -332,7 +328,7 @@ class Mesh(_NodeSelectionMixin):
         return np.where(np.abs(self.nodes[:, axis] - value) < tol)[0]
 
     def compute_boundary_mask(self, store_as="is_boundary"):
-        """Wave 14 item 123 (docs/consolidated_future_roadmap.md):
+        """
         topology-derived boundary-node detection, complementing
         nodes_on_line()/nodes_on_plane() above -- those only work when
         the boundary of interest happens to be axis/plane-aligned (a
@@ -439,8 +435,7 @@ class Mesh(_NodeSelectionMixin):
 
     def check_grading(self, growth_ratio_cap=None, verbose=True):
         """Realized neighbor-to-neighbor element-size-ratio diagnostic
-        (docs/generalized_mesh_grading_roadmap.md, Section 4's "Quality"
-        validation item) -- complements check_quality()'s detJ-based
+ -- complements check_quality()'s detJ-based
         inversion/degeneracy check with the OTHER thing mesh grading can
         get wrong: every element can be individually well-shaped
         (check_quality() green) and the mesh can still jump abruptly in
@@ -457,8 +452,7 @@ class Mesh(_NodeSelectionMixin):
         ratio itself, for callers that want the number rather than a
         verdict.
 
-        Wave 0 item 8 (docs/consolidated_future_roadmap.md, source
-        generalized_mesh_grading_roadmap.md): extended to 3-D via a
+        : extended to 3-D via a
         per-topology face-adjacency table (Tet4/Tet10's 4 triangular
         faces, Hex8/Hex20's 6 quadrilateral faces -- see the
         module-level _TET4_FACES/_HEX8_FACES tables and their
@@ -515,8 +509,8 @@ class Mesh(_NodeSelectionMixin):
 @dataclass
 class MultiBlockMesh(_NodeSelectionMixin):
     """A mesh with MORE THAN ONE element topology sharing one node
-    array. `blocks` maps a block name (any hashable key -- Module 14's
-    own producers use short topology names like "tri3"/"quad4"/"tet4",
+    array. `blocks` maps a block name (any hashable key; the
+    producers in this package use short topology names like "tri3"/"quad4"/"tet4",
     deliberately NOT tied to any specific element.py class, since the
     mesh doesn't know or care which Element formulation you'll pair
     with each block -- see solver.FESystem) to that block's own
@@ -539,7 +533,7 @@ class MultiBlockMesh(_NodeSelectionMixin):
     blocks: dict             # {block_name: (n_elements_in_block, nodes_per_element) int array}
     dim: int                 # 1, 2, or 3
 
-    # Wave 14 item 121 -- same field-attachment idea as Mesh's own
+    # same field-attachment idea as Mesh's own
     # point_data/cell_data/field_data above, adapted to this class's
     # per-block connectivity: point_data is shared across the whole
     # mesh (one node array), but cell_data is necessarily nested by
@@ -901,8 +895,7 @@ def mirror_mesh(mesh, mirror_x=False, mirror_y=False, tol=1e-9):
 
 
 # =====================================================================
-# Generalized structured grading (Phase 2 of docs/
-# generalized_mesh_grading_roadmap.md): a hole ANYWHERE inside a
+# Generalized structured grading (see docs/): a hole ANYWHERE inside a
 # rectangle, not just at the origin of an already-quarter-symmetric
 # domain. Built by composition on top of rectangle_with_hole_mesh_
 # quarter_full() (unchanged, still validated by its own existing
@@ -999,8 +992,7 @@ def hole_in_rectangle_mesh_graded(Lx, Ly, hole_center, R, nr, ntheta, h_far,
                                    growth_ratio=None, n_extend=None,
                                    weld_tol=1e-9):
     """hole_in_rectangle_mesh(), but `grade_p`/`extend_grade` are DERIVED
-    from a target growth ratio (grading.py, Section 1b of the roadmap
-    doc) instead of hand-picked -- the actual "growth-ratio-driven
+    from a target growth ratio (grading.py) instead of hand-picked -- the actual "growth-ratio-driven
     grading" capability the generalized-grading design calls for, not
     just the geometric generalization above. `h_far` is the caller's
     target element size away from the hole (used only to size the
@@ -1024,11 +1016,8 @@ def hole_in_rectangle_mesh_graded(Lx, Ly, hole_center, R, nr, ntheta, h_far,
 
 
 # =====================================================================
-# Fillet and Notch on the structured path (Wave 5 items 26/27, docs/
-# consolidated_future_roadmap.md) -- the two features generalized_mesh_
-# grading_roadmap.md's Phase 2 explicitly deferred ("Fillet/Notch on
-# the structured path: NOT implemented this session ... Real, concrete
-# future work, not silently dropped."). Both reuse the SAME
+# Fillet and Notch on the structured path -- features that the structured
+# hole mesher did not cover. Both reuse the SAME
 # block-decomposition-and-weld pattern hole_in_rectangle_mesh() already
 # established: independent rectangular (or, for Fillet, one curved)
 # blocks, built so their shared edges coincide EXACTLY (same element
@@ -1090,8 +1079,7 @@ def _quarter_disk_sector_mesh(R, nr, ntheta, grade_p=1.0):
 
 
 def fillet_in_rectangle_mesh(Lx, Ly, corner, R, nx, ny, nr, ntheta=8, corner_grade_p=1.0):
-    """A rectangle [0,Lx] x [0,Ly] with ONE corner rounded off (Wave 5
-    item 27, grading.Fillet) -- `corner` is one of the rectangle's own 4
+    """A rectangle [0,Lx] x [0,Ly] with ONE corner rounded off -- `corner` is one of the rectangle's own 4
     corner points (Lx,Ly), (0,Ly), (0,0), or (Lx,0) (checked against the
     actual rectangle, not guessed from a name/index).
 
@@ -1131,19 +1119,17 @@ def fillet_in_rectangle_mesh(Lx, Ly, corner, R, nx, ny, nr, ntheta=8, corner_gra
     a GLOBAL rotation of an already-mutually-aligned grid, not a
     per-element misalignment), this mesh's corner_sector block has
     genuinely CURVED, non-axis-aligned element edges near the fillet
-    arc -- the same category of topology docs/generalized_mesh_grading_
-    roadmap.md's Section 2 flags as not verified safe for those
-    elements (the existing rectangle_with_hole_mesh_quarter() family
+    arc -- the same category of topology that is not verified safe for
+    rotational-DOF elements (the existing rectangle_with_hole_mesh_quarter() family
     has this same caveat, for the same reason: its near-hole elements
     are curved/mapped too). This function does NOT run the
     ROTATIONAL_DOF_ELEMENTS safety gate build_mesh.py's dispatcher uses
-    for Hole features -- extending that gate to Fillet/Notch is Wave 5
-    items 28/29, deliberately not attempted this pass (still blocked on
-    the same underlying Wave 4 shell-formulation risk, see the roadmap
-    doc). Safe to use freely with any translational-DOF element
+    for Hole features -- extending that gate to Fillet/Notch is
+    not done (still blocked on
+    the same underlying shell-formulation risk). Safe to use freely with any translational-DOF element
     (Quad4PlaneStress, Tri3PlaneStress, ...); do not pair with a
-    rotational-DOF element without the same kind of verification Wave 4
-    items 20/22 attempted (and deferred) for the hole case."""
+    rotational-DOF element without the same kind of verification
+    that was attempted (and deferred) for the hole case."""
     if R <= 0:
         raise ValueError(f"R must be > 0, got {R}")
     if R >= Lx or R >= Ly:
@@ -1183,8 +1169,7 @@ def fillet_in_rectangle_mesh(Lx, Ly, corner, R, nx, ny, nr, ntheta=8, corner_gra
 
 def notch_in_rectangle_mesh(Lx, Ly, edge, s0, s1, depth,
                              n_left, n_mid, n_right, n_depth, n_wall):
-    """A rectangle [0,Lx] x [0,Ly] with a rectangular slot (Wave 5 item
-    27, grading.Notch) cut inward from one boundary edge -- the
+    """A rectangle [0,Lx] x [0,Ly] with a rectangular slot cut inward from one boundary edge -- the
     straight-walled notch geometry grading.Notch's own docstring scopes
     this feature to (see that class for why an arbitrary notch path was
     narrowed down to this).

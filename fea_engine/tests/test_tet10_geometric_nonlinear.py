@@ -66,8 +66,7 @@ import pytest
 
 # Tiers 2/3 below build their mesh fixture via the raw `gmsh` package
 # directly (NOT fea_engine.geometry.gmsh_engine, which was removed from
-# this package -- see build_mesh.py/docs/generalized_mesh_grading_
-# roadmap.md for that removal). `pytest.importorskip("gmsh")` alone is
+# this package -- see build_mesh.py for that removal). `pytest.importorskip("gmsh")` alone is
 # not sufficient here: on a `pip install gmsh` with the system libGLU
 # missing, `import gmsh` raises OSError, not ImportError, so
 # importorskip doesn't catch it and collection hard-errors instead of

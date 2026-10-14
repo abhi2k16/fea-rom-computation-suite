@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_koiter_newton.py -- validation for Module 20:
+test_koiter_newton.py -- validation for
 nonlinear_solver.solve_nonlinear_koiter_newton() (single-branch Koiter-
 Newton predictor/corrector continuation).
 

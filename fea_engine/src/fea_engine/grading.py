@@ -1,44 +1,27 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-grading.py -- Module: geometry-agnostic mesh-grading / sizing-function
-logic, shared by mesh.py's structured front end and geometry/gmsh_engine.py's
-unstructured front end (see docs/generalized_mesh_grading_roadmap.md for the
-full design rationale and research background).
+grading.py -- geometry-agnostic mesh-grading / sizing-function logic, used by mesh.py's structured front end.
 
-This module deliberately knows nothing about Gmsh, nothing about a specific
-mesh topology, and nothing about any specific element formulation -- it is
-pure sizing-function math (Sections 1a/1b/1c/1d of the roadmap doc):
+This module knows nothing about a specific mesh topology or any specific element formulation; it is pure
+sizing-function math:
 
-  - `graded_partition`/`growth_ratio_of_partition`/`grade_for_growth_ratio`:
-    the 1-D power-law grading law fea_engine already used (moved here from
-    mesh.py, `mesh.py` re-exports it for backward compatibility), plus the
-    NEW piece -- solving for the grading exponent that respects a target
-    growth ratio, instead of the caller guessing `grade_p` by hand.
-  - `Hole`/`Fillet`/`EdgeBias`/`Notch`: a small declarative feature-list
-    vocabulary (Section 3b) that both front ends consume. `Notch` (Wave 5
-    item 26, docs/consolidated_future_roadmap.md) is scoped to a
-    rectangular slot cut inward from a straight edge -- see the class's
-    own docstring for why a fully arbitrary notch path was deliberately
-    narrowed, and `mesh.notch_in_rectangle_mesh()` for the structured
-    mesher that consumes it.
-  - `plan()`: combines a feature list into a `GradingPlan`, validating the
-    requested growth ratio against the literature's commonly-cited bounds
-    and warning (not silently accepting) when a feature's target size
-    doesn't make sense relative to the far-field size.
-  - `threshold_field_size`/`dist_max_for_growth_ratio`: the unstructured
-    (Gmsh Threshold-field) analogue of the same growth-ratio law, using
-    Gmsh's own Threshold-field definition exactly (piecewise-linear in
-    distance between DistMin/DistMax) so Phase 3 can wire this straight
-    into `gmsh.model.mesh.field` calls without re-deriving the geometry.
+    - `graded_partition`/`growth_ratio_of_partition`/`grade_for_growth_ratio`: the 1-D power-law grading law
+      (`mesh.py` re-exports it for backward compatibility), plus solving for the grading exponent that respects a
+      target growth ratio, instead of the caller guessing `grade_p` by hand.
+    - `Hole`/`Fillet`/`EdgeBias`/`Notch`: a small declarative feature-list vocabulary. `Notch` is scoped to a
+      rectangular slot cut inward from a straight edge (see the class docstring for why a fully arbitrary notch
+      path is not supported, and `mesh.notch_in_rectangle_mesh()` for the structured mesher that consumes it).
+    - `plan()`: combines a feature list into a `GradingPlan`, validating the requested growth ratio against the
+      literature's commonly cited bounds and warning (not silently accepting) when a feature's target size does
+      not make sense relative to the far-field size.
+    - `threshold_field_size`/`dist_max_for_growth_ratio`: the unstructured (Gmsh Threshold-field) analogue of the
+      same growth-ratio law, piecewise-linear in distance between DistMin/DistMax as in Gmsh's Threshold field.
 
-This module does NOT decide whether a given element formulation is safe to
-receive a curved/unstructured mesh (the rotational-bending-DOF constraint
-documented in the roadmap doc, Section 2) -- that check belongs to the
-dispatcher (Phase 4), which is the layer that actually knows about
-`elements/shells.py` and friends. Keeping that knowledge out of this module
-is deliberate: sizing-function math should be testable without importing any
-element code at all.
+This module does NOT decide whether a given element formulation is safe to receive a curved/unstructured mesh
+(the rotational-bending-DOF constraint); that check belongs to the dispatcher in build_mesh.py, which knows about
+`elements/shells.py` and friends. Keeping that knowledge out of this module keeps sizing-function math testable
+without importing any element code.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 from dataclasses import dataclass, field
@@ -48,12 +31,12 @@ import numpy as np
 class MeshGradingError(Exception):
     """Raised when a requested mesh-grading plan cannot be satisfied (an
     impossible growth ratio, a not-yet-implemented feature type), or by
-    the Phase 4 dispatcher when an element formulation with rotational
+    the build_mesh dispatcher when an element formulation with rotational
     bending DOFs is asked to consume a mesh topology that hasn't been
     verified safe for it."""
 
 
-# Literature-derived defaults (roadmap doc Section 1b): 1.2 is the commonly
+# Literature-derived defaults: 1.2 is the commonly
 # cited target growth ratio between adjacent element edge lengths; ratios
 # above ~1.5 are still meshable but are past what's generally considered
 # acceptable, so plan() warns rather than silently accepting them.
@@ -171,7 +154,7 @@ class Fillet:
     """A rounded corner -- geometrically a Hole restricted to the single
     quadrant at `corner` (a full hole needs 4 quadrants around its
     center; a fillet needs exactly the 1 quadrant that rounds the
-    corner). Phase 2 reuses Hole's structured block construction for
+    corner). The structured mesher reuses Hole's structured block construction for
     this, restricted to one quadrant, rather than a separate code path."""
     corner: tuple
     radius: float
@@ -206,14 +189,12 @@ class EdgeBias:
 @dataclass
 class Notch:
     """A rectangular (right-angle) slot cut inward from a straight
-    boundary edge -- Wave 5 item 26 (docs/consolidated_future_
-    roadmap.md), closing the gap this class's own predecessor left open
-    (declared for feature-list API forward-compatibility in Phase 1,
+    boundary edge -- closing the gap this class's own predecessor left open
+    (declared for feature-list API forward-compatibility,
     but instantiating one always raised `MeshGradingError` until now).
 
     Scoped deliberately narrower than "a general notch/slot along an
-    arbitrary path" (the roadmap doc's original Section 3b wording,
-    `path=[...]`): a fully arbitrary polyline notch needs bespoke block
+    arbitrary path": a fully arbitrary polyline notch needs bespoke block
     topology per shape (real, unbounded work -- there is no single
     generic decomposition for an arbitrary path the way there is for a
     circular Hole/Fillet). A straight-walled rectangular slot is instead
@@ -225,7 +206,7 @@ class Notch:
     `mesh.notch_in_rectangle_mesh()`), not a bespoke one-off.
 
     `path` keeps its original name/type (a list) for API continuity
-    with the roadmap doc's declared field, but its MEANING is now
+    with the originally declared field, but its MEANING is now
     concrete: exactly 2 points, `[mouth_start, mouth_end]`, both lying
     on the SAME straight boundary edge -- the segment of that edge the
     notch opens into (its "mouth"). `depth` is how far inward
@@ -268,8 +249,8 @@ FEATURE_TYPES = (Hole, Fillet, EdgeBias, Notch)
 class GradingPlan:
     """The output of `plan()`: a validated feature list plus the derived
     growth-ratio-respecting grading exponent for each feature. Doesn't
-    mesh anything itself -- `mesh.py` (Phase 2) and `gmsh_engine.py`
-    (Phase 3) consume this to actually build a Mesh."""
+    mesh anything itself -- `mesh.py` and `gmsh_engine.py`
+    consume this to actually build a Mesh."""
     features: list
     h_far: float
     growth_ratio: float
@@ -324,7 +305,7 @@ def plan(features, h_far, growth_ratio=DEFAULT_GROWTH_RATIO):
 
 # =====================================================================
 # Unstructured (Gmsh Threshold-field) sizing law -- Sections 1c/1d,
-# consumed by gmsh_engine.py in Phase 3.
+# consumed by gmsh_engine.py.
 # =====================================================================
 def threshold_field_size(dist, h_min, h_max, dist_min, dist_max):
     """Gmsh's own Threshold-field definition, reproduced exactly (see
@@ -332,7 +313,7 @@ def threshold_field_size(dist, h_min, h_max, dist_min, dist_max):
     dist <= dist_min, h_max for dist >= dist_max, and linearly
     interpolated in between. Implementing this here (rather than only
     inside a `gmsh.model.mesh.field` call) makes the sizing law itself
-    testable without Gmsh installed -- Phase 3 wires the SAME dist_min/
+    testable without Gmsh installed -- gmsh_engine.py wires the SAME dist_min/
     dist_max derived below into the actual Gmsh Field API calls."""
     dist = np.asarray(dist, dtype=float)
     t = np.clip((dist - dist_min) / (dist_max - dist_min), 0.0, 1.0)

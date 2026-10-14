@@ -2,27 +2,32 @@
 # SPDX-License-Identifier: MIT
 """
 hyper_reduced_hbm.py -- ECSW hyper-reduction of the interface elements of a jointed structure in harmonic balance,
-and the residual-based error indicator that needs no full-order solution. After Morsy, Kast and Tiso (2022,
-arXiv:2204.12160), Sections 3.3-3.5, whose training and indicator are used as published:
+and a residual-based error indicator that needs no full-order solution (after Morsy, Kast and Tiso, 2022,
+arXiv:2204.12160, Sections 3.3-3.5):
 
-- TRAINING WITHOUT TIME INTEGRATION (their Eqs. 45-48): the training snapshots are the harmonic components of the
-  nonlinear force that the alternating frequency-time step already produces for a reduced orbit Q, so no
-  high-fidelity simulation is needed. For orbit Q and joint element e, the columns of the training matrix are
+- TRAINING WITHOUT TIME INTEGRATION: the training snapshots are the harmonic components of the nonlinear force
+  that the alternating frequency-time step already produces for a reduced orbit Q, so no high-fidelity simulation
+  is needed. For orbit Q and joint element e, the columns of the training matrix are
   g_{k,e} = (W_e)^T [F_e]_k for the 2H+1 harmonic components k (mean, cos_h, sin_h), the target is their sum over e,
   and weights xi_e >= 0 are found by sparse NNLS (`hyper_reduction.ecsw_weights`, Lawson-Hanson with early stop at
-  ||G xi - b|| <= tau ||b||). The paper reports tau = 0.01 giving sparse, accurate hyper meshes; that is the default.
-- ERROR INDICATOR (their Eqs. 49-50): evaluate the residual of the FULL equations of motion at the displacement
-  reconstructed from the reduced solution, r = M u'' + C u' + K u + f(u) - p, and report the RMS of its component
-  at the excitation DOF divided by the RMS of the excitation there. The paper finds errors below 15 % indicate a
-  hyper-reduced solution that captures the amplitude-dependent stiffness and damping in their two case studies;
-  that threshold is theirs, not validated here beyond the tests in this repository.
+  ||G xi - b|| <= tau ||b||). The default tau = 0.01 follows the source, which reports sparse, accurate hyper
+  meshes at that value.
+- ERROR INDICATOR: evaluate the residual of the FULL equations of motion at the displacement reconstructed from the
+  reduced solution, r = M u'' + C u' + K u + f(u) - p, and report the RMS of its component at the excitation DOF
+  divided by the RMS of the excitation there. The source finds errors below 15 % indicate a hyper-reduced solution
+  that captures the amplitude-dependent stiffness and damping in its case studies; that threshold is the source's
+  and is not validated here beyond the tests in this repository.
 
 Joint elements are given as (dofs, model) pairs: `dofs` the global DOFs of the element and `model` an object with
 `force(q_local_time)` / `jacobian(q_local_time)` over one period (e.g. a one-DOF `JenkinsContact`).
 
-Scope, stated honestly: the weights are trained at one excitation frequency/level (or a few orbits) and reused
-along the sweep, as in the paper; the basis is supplied by the caller (the paper's fictitious-interface vibration
-modes are not built here); only the joint force is hyper-reduced, the linear part is exact.
+Scope: the weights are trained at one excitation frequency/level (or a few orbits) and reused along the sweep; the
+basis is supplied by the caller (no fictitious-interface vibration modes are built here); only the joint force is
+hyper-reduced, the linear part is exact.
+
+References (methods in this module are adopted from):
+  - A. A. Morsy, M. Kast, P. Tiso (2022), arXiv:2204.12160 (ECSW hyper-reduction of jointed structures in harmonic balance)
+  - C. Farhat, P. Avery, T. Chapman, J. Cortial (2014), "Dimensional reduction of nonlinear finite element dynamic models with finite rotations and energy-based mesh sampling and weighting for computational efficiency", Int. J. Numer. Meth. Engng 98(9)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

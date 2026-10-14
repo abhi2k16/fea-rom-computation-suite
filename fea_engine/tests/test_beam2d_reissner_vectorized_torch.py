@@ -1,11 +1,10 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_beam2d_reissner_vectorized_torch.py -- validates the Wave 17 item
-147 torch addendum (docs/consolidated_future_roadmap.md,
-beam2d_reissner_vectorized_torch.py): a side-by-side PyTorch, GPU-capable
+test_beam2d_reissner_vectorized_torch.py -- validates the
+torch backend: a side-by-side PyTorch, GPU-capable
 backend for the batched Beam2DReissner internal_force()/
-tangent_stiffness() path item 147 itself built in NumPy
+tangent_stiffness() path built in NumPy
 (beam2d_reissner_vectorized.py).
 
 torch is an OPTIONAL dependency -- see test_torch_sparse_solver.py's own
@@ -20,7 +19,7 @@ run for real, and SHOULD be run at least once on a torch-equipped
 machine (the user's own Windows/NVIDIA GTX 1050 install, per torch_
 sparse_solver.py's own VALIDATED note).
 
-Three checks, matching this item's own stated validation criteria:
+Three checks, matching this stated validation criteria:
 
 (a) Element level, torch-vectorized vs. the existing per-element looped
     Beam2DReissner.internal_force()/tangent_stiffness(): the SAME 1e-12
@@ -34,7 +33,7 @@ Three checks, matching this item's own stated validation criteria:
     source of MORE floating-point noise than the numpy-vectorized-vs-
     looped comparison sees (which is NumPy compared against NumPy,
     written in the same library with the same reduction conventions
-    throughout). The 1e-12 bar is kept here because it is this item's
+    throughout). The 1e-12 bar is kept here because it is this change's
     own stated criterion and because every operation involved (a small,
     fixed 6-dof contraction, not a large reduction) is unlikely to
     accumulate meaningfully more roundoff than the numpy path already

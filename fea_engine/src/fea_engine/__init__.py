@@ -16,11 +16,11 @@ material         : materials, section properties, constitutive (D) matrices
 damping          : Rayleigh and modal damping models
 mesh             : mesh generation (structured/mapped) and boundary-node selection
 grading          : geometry-agnostic mesh-grading/sizing-function math shared by
-                    mesh.py (see docs/generalized_mesh_grading_roadmap.md)
+                    mesh.py
 build_mesh       : the grading-aware mesh dispatcher (build_mesh()) -- decides
                     whether/how to grade from a feature list and refuses
                     rotational-DOF elements on unverified curved/unstructured
-                    topology (docs/generalized_mesh_grading_roadmap.md, Phase 4)
+                    topology
 geometry         : dimension-driven front end (dim -> mesh -> default element ->
                     FESystem); Gmsh-backed geometry support (arbitrary CAD-like
                     shapes, STEP/IGES/BREP import) has been removed -- see
@@ -41,13 +41,12 @@ batch            : batch.map(fn, items, n_jobs=...) for parameter sweeps and loa
 series           : FieldSeries -- multi-step results (load path, time history, modes) with one access style
 linear_system    : ReducedSystem -- FESystem.form_linear_system(): constrained K, F plus recover()
 export           : export.write_vtu / write_series -- ParaView (.vtu, .pvd) output of meshes and results
-iterative_solvers: Wave 8 items 36-40 (docs/consolidated_future_roadmap.md) --
-                    fill-reducing reordering, preconditioners, conjugate
+iterative_solvers: fill-reducing reordering, preconditioners, conjugate
                     gradients, classical stationary iterations, and geometric
                     multigrid for structured Quad4 grids. Independent of
                     FESystem's own direct-solve path -- opt-in, not a
                     replacement.
-adaptivity       : Wave 8 items 41-45 -- a posteriori error estimation,
+adaptivity       : a posteriori error estimation,
                     marking strategies, conforming (Rivara longest-edge)
                     local refinement, mesh-hierarchy tracking, and the
                     solution-driven adaptive refinement loop. Scoped to

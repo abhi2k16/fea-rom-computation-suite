@@ -1,9 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_random_vibration_time_history.py -- Wave 12 item 116 (docs/
-consolidated_future_roadmap.md, ICE-ROM/GAP_ANALYSIS.md gap #5):
-validates band_limited_gaussian_time_history(), promoted unchanged in
+test_random_vibration_time_history.py -- validates band_limited_gaussian_time_history(), promoted unchanged in
 method from ICE-ROM/validation/dynamic_comparison.py's own ad hoc
 prototype (already used there to validate a real flat-beam ICE-ROM
 dynamic reproduction).

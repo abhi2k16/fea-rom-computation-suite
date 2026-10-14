@@ -1,29 +1,27 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_torch_transient_backend.py -- validation for items 94 AND 95 of the
-PyTorch side-by-side extension (docs/consolidated_future_roadmap.md, "Wave
-9"): the opt-in backend="torch"/device= dispatch wired into
-nonlinear_solver.solve_nonlinear_transient() (item 94) AND
-nonlinear_solver.solve_transient_displacement_control() (item 95)'s
+test_torch_transient_backend.py -- validation of the opt-in backend="torch"/device= dispatch wired into
+nonlinear_solver.solve_nonlinear_transient() AND
+nonlinear_solver.solve_transient_displacement_control()'s
 per-Newton-iteration linear solve (`du_newton = solve(K_eff, -R)`), which
 by default (backend="scipy") still calls plain np.linalg.solve() exactly
-as before this change. Combined into one file since both items are the
+as before this change. Combined into one file since both drivers use the
 SAME dispatch mechanism applied to two different drivers' identically-
 structured Newton loops -- see solve_nonlinear_transient()'s own docstring
 "backend=" section (nonlinear_solver.py) for the shared rationale, and
 solve_transient_displacement_control()'s own docstring "backend=" section
 for the (trivial) cross-reference back to it.
 
-Item 94 is covered by the module-level tests above (test_unknown_backend_
+The solve_nonlinear_transient() dispatch is covered by the module-level tests above (test_unknown_backend_
 raises_immediately through test_torch_matches_scipy_nonlinear_quasistatic).
-Item 95 is covered by TestSolveTransientDisplacementControlBackend below,
+The solve_transient_displacement_control() dispatch is covered by TestSolveTransientDisplacementControlBackend below,
 reusing the SAME von Mises truss fixture test_transient_displacement_
 control.py's own quasi-static check uses, so this file's cross-backend
 comparison is validated against the same already-trusted model rather than
 a new one.
 
-Four lines of evidence, mirroring item 93's own test file's structure:
+Four lines of evidence, mirroring test_torch_autograd_tangent_stiffness.py's structure:
 
 1. test_unknown_backend_raises_immediately -- an unrecognized backend value
    fails loudly (ValueError) BEFORE the time-stepping loop even starts, not
@@ -61,7 +59,7 @@ at all and always runs.
 
 VALIDATED (2026-09-11, on the user's own machine -- Windows, conda base
 env, PyTorch installed): all 7 tests in this file PASSED for real (both
-items 94's and 95's, module-level and TestSolveTransientDisplacement
+drivers', module-level and TestSolveTransientDisplacement
 ControlBackend) -- see test_torch_autograd_tangent_stiffness.py's own
 updated SANDBOX NOTE for the full combined-run result (30 passed, 1
 benign warning, 0 failed across every torch-gated test this wave added).
@@ -185,7 +183,7 @@ def test_torch_matches_scipy_nonlinear_quasistatic():
 
 
 # =====================================================================
-# Item 95: solve_transient_displacement_control()'s own backend= dispatch
+# solve_transient_displacement_control()'s own backend= dispatch
 # =====================================================================
 A_SPAN = 1.0
 H0 = 0.10

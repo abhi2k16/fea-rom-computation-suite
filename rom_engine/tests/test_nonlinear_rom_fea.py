@@ -131,8 +131,7 @@ class TestNeuralSurrogateOnRealBeam:
     genuine drop-in ReducedForceModel alternative, not just correct on
     the decoupled synthetic cases in test_nonlinear_rom.py. Torch-gated;
     needs real pass/fail validation on a machine with PyTorch installed
-    (see NeuralSurrogate's own docstring and the sandbox note in
-    docs/nonlinear_surrogate_rom_roadmap.md)."""
+    (see NeuralSurrogate's own docstring and its note on torch availability)."""
 
     def test_held_out_r_squared_is_high(self, cc_beam_training_data):
         d = cc_beam_training_data

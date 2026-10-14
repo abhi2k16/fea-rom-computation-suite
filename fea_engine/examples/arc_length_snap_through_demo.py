@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-arc_length_snap_through_demo.py -- Phase 5 (general-purpose extensions
-roadmap) worked example: nonlinear_solver.solve_nonlinear_arc_length()
+arc_length_snap_through_demo.py -- worked example: nonlinear_solver.solve_nonlinear_arc_length()
 on the classic von Mises (two-bar) snap-through truss.
 
 Three-part demonstration, in increasing order of what each solver

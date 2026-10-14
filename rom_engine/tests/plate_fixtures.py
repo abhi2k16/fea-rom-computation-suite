@@ -12,7 +12,7 @@ This is a materially harder, materially more realistic validation
 target for `rom_engine.loewner`/`rom_engine.screening` than the
 mass-spring-chain fixture in `loewner_fixtures.py`: a real (if
 hand-rolled, fea_engine-independent) plate finite element model, built
-to the paper's own stated geometry/material/mesh, cross-checked against
+to the source's stated geometry/material/mesh, cross-checked against
 the closed-form Navier solution.
 
 Ported from the working prototype `plate_fe_model.py` (originally a
@@ -22,7 +22,7 @@ script-level side effects (no file I/O, no printing at import time) --
 matching this package's `tests/fea_fixtures.py` convention of plain
 functions returning plain dicts of numpy arrays.
 
-Geometry / material / mesh (as stated in the paper)
+Geometry / material / mesh (as stated in the source)
 -----------------------------------------------------
   Lx = 0.455 m, Ly = 0.379 m, h = 0.003 m
   rho_s = 7850 kg/m^3, E = 2.1e11 Pa, nu = 0.3
@@ -33,7 +33,7 @@ Geometry / material / mesh (as stated in the paper)
          only the low-ka baffled-piston added-mass magnitude is)
   Water: rho_w = 1000 kg/m^3, c_w = 1500 m/s   (same)
 
-Scope note on fluid loading (unchanged from the prototype): the paper
+Scope note on fluid loading (unchanged from the prototype): the source
 couples the plate to the surrounding fluid through a frequency-
 dependent acoustic impedance matrix computed with the boundary element
 method in commercial software, using a much finer (ND=32321),
@@ -44,10 +44,10 @@ low-frequency added mass of a baffled circular piston of equivalent
 area), applied only to translational inertia -- captures the right
 order of magnitude and direction of the fluid effect (water shifts
 frequencies down substantially, air barely shifts them) but does NOT
-include fluid radiation damping (the paper's dominant damping
+include fluid radiation damping (the source's dominant damping
 mechanism). This fixture is a legitimate, independent "truth" system
 for benchmarking non-intrusive identification against -- not a
-reproduction of the paper's exact Table 2 numbers.
+reproduction of the source's exact Table 2 numbers.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -64,7 +64,7 @@ def _shape_derivs(xi, eta):
 
 def plate_mesh(Lx, Ly, nex, ney):
     """Regular structured mesh, origin at plate center (matches the
-    coordinate convention used for the paper's Table 1 node locations)."""
+    coordinate convention used for the source's Table 1 node locations)."""
     nnx, nny = nex + 1, ney + 1
     xs = np.linspace(-Lx / 2, Lx / 2, nnx)
     ys = np.linspace(-Ly / 2, Ly / 2, nny)
@@ -188,10 +188,10 @@ def build_paper_plate_system(nex=16, ney=16,
                               E=2.1e11, nu=0.3, rho_s=7850.0,
                               alpha_R=7.362, beta_R=1.177e-5,
                               rho_air=1.21, rho_water=1000.0):
-    """Build the paper's Example-1 plate FE model: dry, air-loaded, and
+    """Build the source's Example-1 plate FE model: dry, air-loaded, and
     water-loaded mass matrices sharing one stiffness matrix, plus
     Rayleigh damping and the Table-1 sensor-node map. All defaults
-    match the paper's stated values.
+    match the source's stated values.
 
     Returns a dict: coords, elems, K, M_dry, M_air, M_water, C_dry
     (alpha_R*M_dry + beta_R*K), alpha_R, beta_R, free, fixed, n_dof,

@@ -1,20 +1,19 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_torch_mesh_transform.py -- Wave 9 addendum item 135 (docs/
-consolidated_future_roadmap.md): validates MeshTransformation's
+test_torch_mesh_transform.py -- validates MeshTransformation's
 backend="numpy"/"torch" contract (mesh_transform.py).
 
 Split into two parts, mirroring this project's established convention
 (see test_torch_sparse_solver.py's own docstring, and test_torch_
 autograd_tangent_stiffness.py/test_torch_transient_backend.py's own
-Wave 9 precedent):
+precedent):
 
   TestBackendArgumentValidation -- runs UNCONDITIONALLY, no torch
       needed: unknown backend= raises ValueError; backend="numpy" is
-      confirmed byte-for-byte unchanged from before this item (every
+      confirmed byte-for-byte unchanged from before this change (every
       attribute is a plain numpy array, .backend=="numpy"); the two
-      Wave 16 item 128 interpolation helpers still work exactly as
+      interpolation helpers still work exactly as
       before on a backend="numpy" instance.
 
   TestTorchBackendNumericalAgreement -- gated on
@@ -64,8 +63,8 @@ class TestBackendArgumentValidation:
         np.testing.assert_array_equal(mt_default.JxW, mt_explicit.JxW)
 
     def test_interpolation_helpers_unaffected_on_numpy_backend(self):
-        # Wave 16 item 128's own helpers, confirmed still reachable and
-        # correct on a backend="numpy" instance -- this item must not
+        # helpers, confirmed still reachable and
+        # correct on a backend="numpy" instance -- this change must not
         # regress them for the (overwhelmingly common) default path.
         mesh = rectangle_mesh(Lx=2.0, Ly=1.0, nx=3, ny=2)
         mt = MeshTransformation(mesh, Quad4PlaneStress())

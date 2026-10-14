@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_torch_iterative_solvers.py -- Wave 9 addendum item 137 (docs/
-consolidated_future_roadmap.md): validates preconditioned_cg()'s
+test_torch_iterative_solvers.py -- validates preconditioned_cg()'s
 backend="numpy"/"torch" contract directly (iterative_solvers.py),
 independent of the FESystem.solve_static() wiring already covered by
 test_iterative_method_dispatch.py::TestTorchBackendGuard (that file
@@ -25,7 +24,7 @@ convention:
       with the scipy-backend preconditioned_cg() on the SAME SPD
       system, for M=None, jacobi_preconditioner_torch(), and
       ssor_preconditioner_torch() -- plus the explicit-failure
-      contracts this item's docstring commits to: callback= raises
+      contracts this change's docstring commits to: callback= raises
       TypeError on the torch path; a numpy-only preconditioner
       (jacobi_preconditioner()'s own scipy-path return value) raises
       TypeError rather than silently misbehaving mid-iteration; a

@@ -1,33 +1,22 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-ensemble_uq.py -- Wave 10 item 105 (fea_engine/docs/consolidated_
-future_roadmap.md, source Saverio et al. 2026 Section 4.4.2/Fig 16):
-"once ANY of items 99/100/103 introduces a trainable NN or RBF
-correction, train it N times from different random seeds/mini-batch
-orderings and report the ensemble mean/standard-deviation of its
-predictions -- a cheap, well-understood epistemic-uncertainty proxy."
-The paper shows this ensemble spread correlates spatially with regions
-of higher true prediction error; this module provides the aggregation
-machinery a caller checks that correlation with, not the correlation
-check itself (which is inherently data/problem-specific).
+ensemble_uq.py -- ensemble uncertainty quantification for trainable corrections: train an NN or RBF correction N
+times from different random seeds or mini-batch orderings and report the ensemble mean and standard deviation of its
+predictions, a cheap, well-understood epistemic-uncertainty proxy. The ensemble spread tends to correlate spatially
+with regions of higher true prediction error; this module provides the aggregation machinery, not the correlation
+check itself (which is problem-specific).
 
-A thin wrapper around whatever training loop item 99/100/103 already
-uses, not a new algorithm -- exactly the roadmap item's own framing.
-Works with ANY model exposing `fit(X, y) -> self` / `predict(X) ->
-array` (this package's own established `ReducedForceModel` duck-typed
-protocol, nonlinear_rom.py) via a caller-supplied `model_factory(seed)
--> fresh model instance` -- re-instantiating per seed rather than
-re-fitting one shared instance, since a real ensemble member (e.g. an
-NN with random weight initialization) generally needs a FRESH object
-per seed, not just a re-run of `.fit()` on the same one.
+A thin wrapper around any training loop, not a new algorithm. Works with ANY model exposing `fit(X, y) -> self` /
+`predict(X) -> array` (the duck-typed `ReducedForceModel` protocol of nonlinear_rom.py) via a caller-supplied
+`model_factory(seed) -> fresh model instance`. A fresh instance is created per seed, rather than re-fitting one
+shared instance, because a real ensemble member (for example an NN with random weight initialisation) generally
+needs a FRESH object per seed, not a re-run of `.fit()` on the same one.
 
-Independent of torch at the module level -- `EnsembleUQ` itself never
-imports torch; only `neural_surrogate_ensemble()`'s convenience
-constructor touches `NeuralSurrogate` (which is itself torch-optional
-at IMPORT time, per nonlinear_rom.py's own `_HAS_TORCH` pattern --
-constructing a `NeuralSurrogate` is what actually requires torch, not
-importing the module that defines it)."""
+Independent of torch at the module level: `EnsembleUQ` never imports torch; only the convenience constructor
+`neural_surrogate_ensemble()` touches `NeuralSurrogate`, which is itself torch-optional at import time
+(nonlinear_rom.py's `_HAS_TORCH` pattern). Constructing a `NeuralSurrogate` is what requires torch, not importing
+the module that defines it."""
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
 
@@ -67,8 +56,8 @@ class EnsembleUQ:
         reflects only the model family's own training stochasticity
         (random init, mini-batch order, etc.), not a data-sampling
         effect (bootstrap/bagging ensembles are a different, also
-        legitimate, technique -- out of scope for this item, which the
-        roadmap frames specifically around seed variation)."""
+        legitimate, technique -- out of scope here, which is
+        specifically about seed variation)."""
         self.members = []
         for seed in self.seeds:
             model = self.model_factory(seed)
@@ -98,9 +87,9 @@ def neural_surrogate_ensemble(n_modes, q_samples, F_samples, n_members=5, seeds=
                                **surrogate_kwargs):
     """Convenience constructor: builds and fits an EnsembleUQ of
     `NeuralSurrogate` instances (rom_engine's own trainable, seed-
-    sensitive `ReducedForceModel` -- Wave 7 item 35) -- the concrete,
-    real use case this whole item exists for ("once ANY of items 99/
-    100/103 introduces a trainable NN ... correction"). Requires torch
+    sensitive `ReducedForceModel`) -- the concrete use
+    case for an ensemble (any trainable NN correction
+    is seed-dependent). Requires torch
     (NeuralSurrogate's own constructor does; this function itself adds
     no additional torch dependency beyond that).
 

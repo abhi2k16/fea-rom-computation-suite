@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_mixed_assembly.py -- Wave 11 item 110 (docs/consolidated_future_
-roadmap.md): validates mixed_assembly.py's Taylor-Hood P2(Tet10)-
+test_mixed_assembly.py -- validates mixed_assembly.py's Taylor-Hood P2(Tet10)-
 P1(Tet4-corner) mixed u-p formulation -- BlockDofLayout's own split/cat
 round trip, the bilinearity self-check guard (both on a synthetic
 matrix and on the REAL assembled Kup coupling block), D_deviatoric_3d()
@@ -133,7 +132,7 @@ def test_bilinearity_guard_on_the_real_assembled_Kup_block():
 
 
 # ---------------------------------------------------------------------
-# Wave 16 item 130: automatic bilinearity guard (TensorMesh's Mixed
+# automatic bilinearity guard (TensorMesh's Mixed
 # Assembly page runs an analogous check automatically on every
 # forward(); assemble_mixed_tet10_p1() now does the same by default).
 # ---------------------------------------------------------------------
@@ -354,10 +353,7 @@ def test_solve_mixed_static_matches_manual_elimination_on_a_cantilevered_tet():
 def test_near_incompressible_limit_remains_solvable():
     """As kappa grows (nu -> 0.5), the system should remain solvable
     (finite, no blow-up) -- the actual payoff this formulation exists
-    for (Wave 2 item 11's B-bar already relieves LOCKING; this checks
-    the mixed system itself doesn't become numerically pathological as
-    the incompressible limit is approached, which a naive displacement-
-    only formulation's stiffness matrix conditioning famously does)."""
+    for."""
     coords = _single_tet10_coords()
     connectivity = np.arange(10).reshape(1, 10)
 

@@ -3,7 +3,7 @@
 """
 test_multi_field_pod.py -- validates rom_engine.pod.MultiFieldPOD.
 
-Checks (per the Wave 17 item 143 roadmap entry):
+Checks:
   1. Synthetic separable-field recovery: snapshots built from a KNOWN
      rank-2 separable field Q(t) * Phi(s), with a KNOWN per-mode
      component split C_km and known normalized shapes phi_km(s), are
@@ -32,7 +32,7 @@ from rom_engine import MultiFieldPOD, assemble_field_weight_matrix, trapezoidal_
 
 def _make_two_field_problem(n_nodes=5, L=4.0, seed=0):
     """Build a 2-field (n_nodes each), block-diagonal weight matrix W
-    (Georgiou's own (2/L) * integral convention, via the trapezoidal
+    (Georgiou's (2/L) * integral convention, via the trapezoidal
     lumped Gram as a dependency-free stand-in for a real FE shape-
     function Gram), plus two W-orthonormal "ground truth" mode shapes
     with a KNOWN, chosen component split.

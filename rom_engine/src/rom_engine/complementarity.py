@@ -11,6 +11,10 @@ dense, dependency-free form (same algorithms, same tests). The problem is
 Reduced unilateral contact (Balajewicz et al. 2015, Eq. 7) is  A_r u = b_r + B_r^T lam,  B_r u >= c_r,
 lam >= 0, lam . (B_r u - c_r) = 0, with A_r = U^T K U SPD, and is reduced to an LCP in the multipliers by
 `solve_reduced_contact`. Functions: lcp_lemke, lcp_active_set, solve_lcp, solve_reduced_contact.
+
+References (methods in this module are adopted from):
+  - M. Balajewicz, D. Amsallem, C. Farhat (2015), "Projection-based model reduction for contact problems", arXiv:1503.01000 (Int. J. Numer. Meth. Engng, 2016)
+  - R. W. Cottle, J.-S. Pang, R. E. Stone (1992), "The Linear Complementarity Problem", Academic Press
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

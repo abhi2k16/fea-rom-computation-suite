@@ -32,6 +32,12 @@ WHAT IS NOT CLAIMED. The manifold is exact only to second order about the origin
 range of q is not guaranteed and the quadratic form is only as good as the data (or derivatives) it comes from.
 The reduced dynamics use an explicit RK4 integrator suited to testing and small problems, not a production
 time integrator; the sparsity/cost benefit of ECSW is measured by the user, not asserted here.
+
+References (methods in this module are adopted from):
+  - S. Jain, P. Tiso, J. B. Rutzmoser, D. J. Rixen (2017), "A quadratic manifold for model order reduction of nonlinear structural dynamics", Comput. Struct. 188
+  - J. B. Rutzmoser, D. J. Rixen, P. Tiso, S. Jain (2017), "Generalization of quadratic manifolds for reduced order modeling of nonlinear structural dynamics", Comput. Struct. 192
+  - S. Geelen, S. Wright, K. Willcox (2023), "Operator inference for non-intrusive model reduction with quadratic manifolds", Comput. Methods Appl. Mech. Engrg. 403
+  - P. Tiso, M. Karamooz Mahdiabadi, J. Marconi (2021), "Modal methods for reduced order modeling", Chapter 4, ETH Research Collection, doi:10.3929/ethz-b-000526692
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

@@ -1,12 +1,11 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_vectorized_assembly.py -- Wave 11 item 107 (docs/consolidated_
-future_roadmap.md): validates assemble_stiffness_vectorized() /
+test_vectorized_assembly.py -- validates assemble_stiffness_vectorized() /
 FESystem.assemble_stiffness(vectorized=True) (vectorized_assembly.py)
 against the existing, already-validated per-element Python-loop path --
-the item's own headline claim is "changes only the SCHEDULING, never
-the numbers" (the same phrasing this project used for Wave 10 item
+the headline claim is "changes only the SCHEDULING, never
+the numbers" (the same phrasing this project used for item
 102's vmap batching), so the decisive check here is numerical agreement
 with the default path, not merely "produces something plausible".
 """
@@ -114,8 +113,7 @@ def test_build_B_batched_shapes():
 
 
 class TestMemoryChunking:
-    """Wave 16 item 129 (docs/consolidated_future_roadmap.md, source:
-    TensorMesh's `Forms` page `batch_size` argument): chunk_size must
+    """chunk_size must
     produce the SAME fesystem.K as chunk_size=None regardless of the
     chunk size chosen -- including chunk sizes that don't evenly divide
     the element count (forcing a shorter tail chunk), a chunk size of 1
@@ -134,7 +132,7 @@ class TestMemoryChunking:
     landing in different chunks -- floating-point addition is not
     associative, so a different grouping can give a different rounding,
     exactly the same "changes the SCHEDULING, not the numbers, but
-    summation order is part of scheduling" caveat item 107's own
+    summation order is part of scheduling" caveat the
     vectorized-vs-looped comparison already documents and tests at
     atol=1e-3/rtol=1e-8 for these same steel/SI-unit magnitudes -- the
     identical tolerance is reused here for the identical reason."""
@@ -237,7 +235,7 @@ class TestMemoryChunking:
             fs.assemble_stiffness(D, chunk_size=3)
 
     def test_chunk_size_on_simplex_family(self):
-        # Wave 15 item 126 brought Tri3/Tet4/Tri6/Tet10 into
+        # brought Tri3/Tet4/Tri6/Tet10 into
         # MeshTransformation's scope; chunking must work identically
         # there since it's built on the same connectivity= mechanism.
         from fea_engine import Tri3PlaneStress

@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-shell_plot.py -- Phase 7 (general-purpose extensions roadmap) worked
-example: visual verification companion to shell_demo.py.
+shell_plot.py -- worked example: visual verification companion to shell_demo.py.
 
 Two panels: (1) the flat-plate-limit ratio (Shell4MITC / Quad4MindlinPlate
 tip deflection) converging to 1 as the mesh refines -- a converging

@@ -28,6 +28,12 @@ Honest scope. NMF is non-convex and initialisation matters; the dual basis is fa
 one at equal size (Fauque et al. 2018 report the same). The dual basis size should not exceed the number of
 independent reduced constraints the primal basis can carry (the rank condition `ContactROM.inf_sup_report`
 measures). Frictionless, small-displacement contact only.
+
+References (methods in this module are adopted from):
+  - M. Balajewicz, D. Amsallem, C. Farhat (2015), "Projection-based model reduction for contact problems", arXiv:1503.01000 (Int. J. Numer. Meth. Engng, 2016)
+  - A. Fauque, I. Ramiere, D. Ryckelynck (2018), "Hybrid hyper-reduced modeling for contact mechanics problems", Int. J. Numer. Meth. Engng 115(1):117-139
+  - C. Boutsidis, E. Gaussier (2008), "SVD based initialization: a head start for nonnegative matrix factorization", Pattern Recognition 41(4)
+  - C. L. Lawson, R. J. Hanson (1974), "Solving Least Squares Problems", Prentice-Hall (non-negative least squares)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

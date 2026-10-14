@@ -1,24 +1,12 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-autograd_tangent.py -- Wave 0 item 2 (docs/consolidated_future_
-roadmap.md, source tensormesh_comparative_analysis.md Section 6.3): an
-independent, PyTorch-autograd-based cross-check of the element tangent
-stiffnesses this package's nonlinear solid elements already compute by
-other means -- Tet4NeoHookean's central finite difference and
-Tet10SolidTL's analytic (hand-derived) tangent (see elements/
-nonlinear_solids.py's own module docstring and each class's
-tangent_stiffness() docstring for what those existing methods do and
-why).
+autograd_tangent.py -- an independent, PyTorch-autograd-based cross-check of the element tangent stiffnesses that
+the nonlinear solid elements compute by other means: Tet4NeoHookean's central finite difference and Tet10SolidTL's
+analytic (hand-derived) tangent (see elements/nonlinear_solids.py and each class's tangent_stiffness() docstring).
 
-Deviation from the roadmap doc's suggested path (`fea_engine/
-materials/autograd_tangent.py`, implying a new `materials/`
-subpackage): this codebase's actual convention is a flat module per
-concern (material.py, solver.py, mesh.py, ... -- no subpackages except
-elements/ and geometry/, both genuinely multi-file families). A single
-new file with no siblings doesn't warrant a new subpackage, so this
-lives at `fea_engine/autograd_tangent.py` instead, alongside
-material.py it cross-checks.
+This is a flat module (like material.py and solver.py) rather than a subpackage, since it has no siblings; it sits
+alongside material.py, whose elements it cross-checks.
 
 WHY an autograd cross-check adds real value on top of the existing
 finite-difference/complex-step tangents: autograd computes the EXACT
@@ -35,19 +23,10 @@ complex-step noise floor was initially, and incorrectly, blamed for an
 unrelated Newton-convergence issue -- exactly the kind of ambiguity an
 exact third method resolves).
 
-SCOPE: this module ONLY validates existing physics, exactly like the
-roadmap item says ("adds no new physics") -- it is not wired into any
-solve path, element, or FESystem. `torch` stays an OPTIONAL dependency
-(the codebase's established pattern, previously also used for gmsh
-before Gmsh-backed geometry support was removed from this package --
-see docs/generalized_mesh_grading_roadmap.md -- via
-`_HAS_GMSH`/`_require_gmsh()`) mirrored here as
-`_HAS_TORCH`/`_require_torch()`): importing this module never requires
-torch to be installed, only CALLING its functions does. Per the user's
-explicit instruction earlier in this project's development, this
-module uses bare `torch` ops only -- no `tensormesh`/`torch-sla`
-package import anywhere, TensorMesh's own docs were consulted only as
-design inspiration for §6.3's suggested approach.
+SCOPE: this module only validates existing physics; it is not wired into any solve path, element, or FESystem.
+`torch` is an OPTIONAL dependency, mirrored as `_HAS_TORCH`/`_require_torch()`: importing this module never
+requires torch, only CALLING its functions does. It uses bare `torch` ops only (no `tensormesh`/`torch-sla`
+package).
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -234,7 +213,7 @@ def tet10_solid_tl_tangent_autograd(elem_coords, u_elem, mat, formulation=None):
     Venant-Kirchhoff uses the SAME linear elastic D as
     Tet10Solid3D's own linear stiffness(), see nonlinear_solids.py's
     module docstring. formulation: an existing Tet10SolidTL instance
-    to reuse for its cached shape-function evaluations (Wave 0 item 4,
+    to reuse for its cached shape-function evaluations (,
     see elements/base.py's _cached_shape_and_derivs()) -- optional,
     a fresh instance is created if omitted since the cache is a pure
     performance optimization, not required for correctness.
@@ -274,9 +253,9 @@ def tet10_solid_tl_tangent_autograd(elem_coords, u_elem, mat, formulation=None):
 
 
 # =====================================================================
-# Wave 10 item 102 (docs/consolidated_future_roadmap.md): batched
+# batched
 # (torch.func.vmap/jacrev) multi-element autograd tangent assembly --
-# a GPU-throughput item, independent of Wave 10's other items (98-101,
+# a GPU-throughput item, independent of other items (98-101,
 # fea_engine/differentiable.py). tet4_neo_hookean_tangent_autograd()
 # above is exact but still a Python-level, one-element-at-a-time loop
 # (and within each element, a row-by-row torch.autograd.grad loop) --
@@ -304,7 +283,7 @@ def tet4_neo_hookean_tangent_autograd_batched(elem_coords_batch, u_elem_batch, m
     u_elem_batch: (n_elem, 12) array-like (node-major per element).
     mat: a single material.NeoHookeanMaterial, shared by every element
     in the batch (a homogeneous-material batch -- the common case
-    within one FESystem block; matches Wave 11 item 107's own
+    within one FESystem block; matches
     "homogeneous-element-type mesh region" scoping precedent).
 
     Returns (K_batch (n_elem,12,12), f_int_batch (n_elem,12)) numpy
@@ -344,8 +323,7 @@ def tet4_neo_hookean_tangent_autograd_batched(elem_coords_batch, u_elem_batch, m
 
 
 # =====================================================================
-# Shell4MITCCorotational cross-check (Wave 9 item 96, docs/consolidated_
-# future_roadmap.md): an autograd replacement for the state=... branch's
+# Shell4MITCCorotational cross-check: an autograd replacement for the state=... branch's
 # production tangent, _tangent_stiffness_committed_complex_step()
 # (elements/shells.py) -- NOT a correctness fix (that method's own
 # docstring already establishes complex-step recovers the EXACT
@@ -518,8 +496,8 @@ def shell4_mitc_corotational_committed_tangent_autograd(elem_coords, u_elem, D, 
     complex_step() already recovers the exact derivative to machine
     precision (see that method's own docstring) -- so this addition is
     NOT a correctness improvement. Its value is the same "keep every
-    valid implementation available, explicit opt-in" principle Wave 0
-    item 3 established for backend="torch" generally: (1) a THIRD,
+    valid implementation available, explicit opt-in" principle
+    used for backend="torch" generally: (1) a THIRD,
     independently-implemented method agreeing with the existing
     complex-step AND analytic (state=None path) tangents is stronger
     evidence of correctness than either alone (same reasoning this
@@ -630,8 +608,7 @@ def shell4_mitc_corotational_committed_tangent_autograd(elem_coords, u_elem, D, 
 
 
 # =====================================================================
-# Beam2DReissner cross-check (Wave 17 item 140, docs/consolidated_
-# future_roadmap.md): an independent torch.autograd.grad cross-check of
+# Beam2DReissner cross-check: an independent torch.autograd.grad cross-check of
 # Beam2DReissner's existing hand-derived ANALYTIC tangent_stiffness()
 # (elements/beams.py) -- see that class's own docstring, "ANALYTIC
 # TANGENT DERIVATION" section, for the chain-rule-through-eps/gam/kap
@@ -691,7 +668,7 @@ def shell4_mitc_corotational_committed_tangent_autograd(elem_coords, u_elem, D, 
 # is awaiting real execution on the user's own PyTorch-equipped machine
 # (Windows, NVIDIA GPU) the same way every other torch addition in this
 # module already was (see e.g. this module's own comment on the
-# Tet4/Tet10 cross-checks above, and Wave 0 item 2's own roadmap row) --
+# Tet4/Tet10 cross-checks above) --
 # no relative-error number is claimed here until that run happens.
 # =====================================================================
 def _beam2d_reissner_strain_energy_torch(L0, q_t, EA, kappa_s_GA, EI):
@@ -726,8 +703,7 @@ def _beam2d_reissner_strain_energy_torch(L0, q_t, EA, kappa_s_GA, EI):
 def beam2d_reissner_tangent_autograd(elem_coords, u_elem, mat, device="cpu"):
     """Independent torch.autograd.grad tangent stiffness for
     Beam2DReissner, cross-checking its ANALYTIC tangent_stiffness()
-    (Wave 17 item 140, see elements/beams.py's own class docstring for
-    the hand chain-rule derivation this validates).
+.
 
     elem_coords: (2,2) array-like (REFERENCE nodal coordinates, same
     convention as internal_force()/tangent_stiffness()). u_elem: (6,)

@@ -16,18 +16,13 @@ measured/experimental vibration data or on a proprietary/black-box
 model's exported harmonic response, not just on a system this package
 (or any FE code) can assemble directly.
 
-Method (Eqs. 21-28 of the reference below): given complex response
-samples `x_alpha` at one interpolation-frequency set `omega_alpha` and
-`x_beta` at a disjoint second set `omega_beta`, build the Loewner pencil
-`(A~, E~)` (Eqs. 21-22) whose generalized eigenvalues are exactly the
-system's (squared, complex) poles -- no state-space realization is ever
-formed. Solving `A~ Phi~ = E~ Phi~ Lambda~` (Eq. 25) and converting each
-eigenvalue `lambda_i` to `omega_i = sqrt(lambda_i)` gives a natural
-frequency `f_i = Re(omega_i) / 2*pi` (Eq. 26) and a loss-factor-like
-modal damping ratio `eta_i = Im(omega_i) / Re(omega_i)` (Eq. 27). The
-ROM eigenvectors `Phi~` can then be used to reconstruct full mode
-shapes from multi-DOF response data sampled at the same `omega_beta`
-points (Eq. 28).
+Method (Eqs. 21-28 of the reference below): given complex response samples `x_alpha` at one interpolation-frequency
+set `omega_alpha` and `x_beta` at a disjoint second set `omega_beta`, build the Loewner pencil `(A~, E~)` whose
+generalized eigenvalues are the system's (squared, complex) poles; no state-space realization is ever formed.
+Solving `A~ Phi~ = E~ Phi~ Lambda~` and converting each eigenvalue `lambda_i` to `omega_i = sqrt(lambda_i)` gives a
+natural frequency `f_i = Re(omega_i) / 2*pi` and a loss-factor-like modal damping ratio
+`eta_i = Im(omega_i) / Re(omega_i)`. The ROM eigenvectors `Phi~` can then be used to reconstruct full mode shapes
+from multi-DOF response data sampled at the same `omega_beta` points.
 
 Reference
 ---------
@@ -40,14 +35,12 @@ Mayo, A.J. & Antoulas, A.C. (2007). "A framework for the solution of
 the generalized realization problem." Linear Algebra and its
 Applications, 425(2-3):634-662. (The underlying Loewner framework.)
 
-This module is a direct, from-scratch port of the working prototype
-`rom_modal_identification.py`'s `build_rom()`/`reconstruct_mode_shapes()`
-functions, wrapped as a class (`LoewnerROM.fit()` /
-`.reconstruct_mode_shapes()`) so a caller keeps the fitted ROM's state
-(the eigenvectors, the omega_beta grid it was fit against) instead of
-re-threading a bare tuple through every later call. See
-docs/loewner_modal_identification_roadmap.md for the full design
-background and phased plan.
+`LoewnerROM` wraps `fit()` and `reconstruct_mode_shapes()` as a class so a caller keeps the fitted ROM's state (the
+eigenvectors, the omega_beta grid it was fit against) instead of re-threading a bare tuple through later calls.
+
+References (methods in this module are adopted from):
+  - A. J. Mayo, A. C. Antoulas (2007), "A framework for the solution of the generalized realization problem", Linear Algebra Appl. 425(2-3)
+  - J. Liu, S. Li (2026), "A Reduced-Order Model for Modal Parameter Identification of Fluid-Structure Interaction Systems Based on Vibration Responses", J. Vib. Eng. Technol. 14:335
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np

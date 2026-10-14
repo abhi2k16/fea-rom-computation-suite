@@ -1,21 +1,12 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-backend_dispatch.py -- Wave 11 item 108 (docs/consolidated_future_
-roadmap.md, source tensormesh_analysis_report.md Sec 5 "Sparse
-Solvers"): a unified `backend="auto"` dispatcher for
-`FESystem.solve_static()`, plus the `verbose=True` one-line diagnostic
-TensorMesh's own torch-sla layer prints (`[torch-sla] solve: n=...,
-nnz=..., dtype=..., device=..., symmetric=..., spd=..., backend=...,
-method=...`) -- already flagged as "worth copying" in
-tensormesh_comparative_analysis.md Sec.6.1, never actually built until
-now.
+backend_dispatch.py -- a unified `backend="auto"` dispatcher for `FESystem.solve_static()`, plus a `verbose=True`
+one-line diagnostic (`[solve] n=..., nnz=..., dtype=..., device=..., symmetric=..., spd=..., backend=...,
+method=...`) that reports what was solved and how.
 
-Integration policy: same as every other Wave 11 module -- no
-`tensormesh`/`torch-sla` runtime dependency, native reuse of this
-package's own existing pieces (Wave 0 item 5's SPD-aware Cholesky path,
-Wave 0 item 3's `backend="torch"` dispatch) behind one new
-`backend="auto"` choice on `FESystem`.
+No `tensormesh`/`torch-sla` runtime dependency: the dispatcher reuses this package's own pieces (the SPD-aware
+Cholesky path and the `backend="torch"` dispatch) behind one `backend="auto"` choice on `FESystem`.
 
 Why "auto" is decided at SOLVE time, not construction time
 ------------------------------------------------------------
@@ -30,22 +21,14 @@ appropriate) `_require_torch()` fail-fast fire.
 
 The size/SPD heuristic
 ------------------------
-TensorMesh's own backend-selection table (tensormesh_analysis_report.md
-Sec.5, approximate, DOF-count-based) is the design reference for the
-threshold below -- not imported, just mirrored in spirit: a small system
-(a few thousand DOF) is cheap enough that a direct SciPy solve wins on
-latency alone (no factorization-amortization or GPU-transfer overhead
-to justify); a larger, genuinely SPD system is where an iterative/GPU
-path can plausibly pay off. Two hard constraints, not heuristics:
-  - A non-SPD (or non-symmetric) `Kff` NEVER gets routed to CG --
-    `torch_sparse_cg_solve()` (torch_sparse_solver.py) is documented
-    SPD-only, so "auto" falls back to the existing SciPy direct/eigen
-    chain (Wave 0 items 5/6) unconditionally whenever the SPD probe
-    fails, regardless of size.
-  - `backend="auto"` therefore can NEVER silently produce a wrong
-    answer by using CG where it doesn't apply -- worst case it simply
-    doesn't get the GPU/CG speedup and uses the same safe SciPy path
-    `backend="scipy"` would have used anyway.
+A small system (a few thousand DOF) is cheap enough that a direct SciPy solve wins on latency alone (no
+factorization-amortization or GPU-transfer overhead to justify); a larger, genuinely SPD system is where an
+iterative/GPU path can plausibly pay off. Two hard constraints, not heuristics:
+    - A non-SPD (or non-symmetric) `Kff` NEVER gets routed to CG: `torch_sparse_cg_solve()`
+      (torch_sparse_solver.py) is SPD-only, so "auto" falls back to the SciPy direct/eigen chain whenever the SPD
+      probe fails, regardless of size.
+    - `backend="auto"` therefore cannot silently produce a wrong answer by using CG where it does not apply; the
+      worst case is that it does not get the GPU/CG speedup and uses the same SciPy path `backend="scipy"` would.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -72,7 +55,7 @@ def _is_symmetric(Kff, tol=1e-8):
 
 def _is_spd(Kff):
     """Attempts a Cholesky factorization -- the SAME cheap SPD test
-    `FESystem._dense_spd_solve()` (Wave 0 item 5) already relies on,
+    `FESystem._dense_spd_solve()` already relies on,
     reused here purely as a detection probe (the factorization itself
     is discarded, not reused as an actual solve -- keeping this
     function a pure yes/no check with no side effect on which method
@@ -127,8 +110,7 @@ def format_diagnostic_line(diag):
     """The `verbose=True` one-line summary
     (`FESystem.solve_static(verbose=True)`), mirroring TensorMesh's own
     `[torch-sla] solve: n=..., nnz=..., dtype=..., device=...,
-    symmetric=..., spd=..., backend=..., method=...` convention
-    (tensormesh_comparative_analysis.md Sec.6.1)."""
+    symmetric=..., spd=..., backend=..., method=...` convention."""
     return (f"[fea_engine backend={diag['backend']}] solve: n={diag['n']}, "
             f"nnz={diag['nnz']}, dtype={diag['dtype']}, device={diag['device']}, "
             f"symmetric={diag['symmetric']}, spd={diag['spd']}, "

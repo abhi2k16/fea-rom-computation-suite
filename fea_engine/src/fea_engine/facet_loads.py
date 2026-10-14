@@ -1,73 +1,38 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-facet_loads.py -- Wave 15 item 127 (docs/consolidated_future_roadmap.md,
-source: TensorMesh's "Elements and Quadrature" documentation page's
-facet_quadrature()/facet_shape_val()/nanson_scale()/FxW machinery): a
-bounded, quadrature-based facet (edge for a 2-D element, face for a 3-D
-solid) traction/pressure loader for the EXISTING element library.
+facet_loads.py -- a bounded, quadrature-based facet (edge for a 2-D element, face for a 3-D solid)
+traction/pressure loader for the existing element library, built on facet quadrature, facet shape functions, the
+Nanson scale factor and the FxW weight product.
 
-WHAT THIS IS NOT (read this before reaching for it): NOT a generic
-weak-form assembler -- Wave 14's own Meshes-page comparison already
-found that gap (a facet-based Neumann/traction element is "inert
-without the generic weak-form assembler abstraction fea_engine doesn't
-have at all") and deliberately left it out of scope as a materially
-bigger undertaking than anything else in either wave; this module does
-NOT change that. What it DOES close is the narrower, concrete gap the
-Elements-and-Quadrature comparison found on the QUADRATURE side of the
-same issue: FESystem.add_nodal_force() (a flat even-split, no shape
-functions at all) and FESystem.add_consistent_edge_load() (a
-closed-form linear formula for straight 2-node edges only) have no way
-to correctly load a CURVED/quadratic edge (Tri6/Quad8) or a 3-D element
-FACE (Tet4/Tet10/Hex8/Hex20) with a properly shape-function-weighted,
-Gauss-quadrature-integrated consistent nodal load. Same scalar-
-traction-along-one-global-DOF convention add_consistent_edge_load()
-already uses -- not a directional/pressure-normal-to-facet convention
-(that would need a documented, consistent outward-normal orientation
-across the whole element library, a bigger undertaking not attempted
-here; a caller wanting an approximately-normal load can still call this
-once per Cartesian direction with the traction component in that
-direction).
+WHAT THIS IS NOT: a generic weak-form assembler. A facet-based Neumann/traction element would be inert without
+a generic weak-form assembler abstraction, which fea_engine does not have. What this module provides is correct
+quadrature-based loading of facets: FESystem.add_nodal_force() (a flat even split, no shape functions) and
+FESystem.add_consistent_edge_load() (a closed-form linear formula for straight 2-node edges only) cannot correctly
+load a CURVED/quadratic edge (Tri6/Quad8) or a 3-D element FACE (Tet4/Tet10/Hex8/Hex20) with a properly
+shape-function-weighted, Gauss-quadrature-integrated consistent nodal load. It uses the same scalar-traction-along-
+one-global-DOF convention as add_consistent_edge_load(), not a pressure-normal-to-facet convention (that would need
+a consistent outward-normal orientation across the whole element library); a caller wanting an approximately
+normal load can call this once per Cartesian direction with the traction component in that direction.
 
-THE MECHANICS, briefly: every facet (edge/face) of a solid/plane-stress
-element in this package's library is itself EXACTLY one of the six
-lower-dimensional element types this package ALREADY has real,
-already-validated shape functions for -- line2/line3 (a facet's own
-1-D restriction, written directly below since no standalone Line
-element class exists in this package) for 2-D-element edges, and
-Tri3PlaneStress/Tri6PlaneStress/Quad4PlaneStress/Quad8PlaneStress's own
-shape_and_derivs() (reused AS-IS, not re-derived) for 3-D-element
-faces. So "restrict shape_and_derivs() to a facet" reduces to: (1) know
-which of the parent element's local node indices, in which order,
-belong to that facet (EDGE_TABLES/FACE_TABLES below), (2) evaluate the
-matching lower-dimensional element's OWN shape functions at facet-local
-quadrature points (item 125's tri_quadrature()/gauss_product() for
-2-D faces, gauss_legendre() for 1-D edges), (3) get the facet's own
-physical length/area measure via jacobian_measure() (elements/base.py,
-Wave 6's embedded-element fix -- ALREADY handles the "facet dim <
-embedding dim" case a 1-D-edge-in-2-D or 2-D-face-in-3-D needs, exactly
-the same formula Wave 6 found TrussTL2D/every shell formulation
-needed). No new Jacobian math, no new shape-function math -- this
-module is pure REUSE-and-restrict, wired together.
+THE MECHANICS, briefly: every facet (edge/face) of a solid/plane-stress element in this package is exactly one of
+the six lower-dimensional element types whose shape functions already exist: line2/line3 (a facet's 1-D
+restriction, written directly below since no standalone Line element class exists) for 2-D-element edges, and
+Tri3PlaneStress/Tri6PlaneStress/Quad4PlaneStress/Quad8PlaneStress's `shape_and_derivs()` (reused as-is) for
+3-D-element faces. Restricting `shape_and_derivs()` to a facet reduces to: (1) know which of the parent element's
+local node indices, in which order, belong to that facet (EDGE_TABLES/FACE_TABLES below), (2) evaluate the
+matching lower-dimensional element's shape functions at facet-local quadrature points (tri_quadrature()/
+gauss_product() for 2-D faces, gauss_legendre() for 1-D edges), (3) get the facet's physical length/area measure
+via jacobian_measure() (elements/base.py), which already handles the "facet dim < embedding dim" case (the same
+formula the embedded truss and shell elements need). No new Jacobian or shape-function math is introduced.
 
-EDGE_TABLES/FACE_TABLES themselves are NOT hand-trusted -- every single
-entry (which local nodes, in which order, belong to each facet) was
-checked directly against the parent element's own shape_and_derivs()
-before being written here: at several points spanning each facet, (a)
-every node NOT listed for that facet has shape value ~0 there (checked
-directly, "on this facet" isn't guessed), and (b) the listed nodes' own
-shape values, evaluated via the facet's natural_coord_map into the
-parent's full natural coordinates, reproduce the matching lower-
-dimensional element's shape function values to machine precision (not
-merely "close") -- see tests/test_facet_loads.py's own
-TestFacetTablesAreCorrect class, which re-runs exactly this check as
-part of the normal test suite, not just once by hand while writing this
-module. This caught (and this file's own final natural_coord_map
-lambdas reflect the fix for) three genuinely wrong first-guess Hex20
-face parametrizations during development -- exactly the kind of subtle
-node-ordering mistake this project's history (GMSH_NODE_ORDER,
-meshio's node-order finding) has repeatedly found by checking directly
-rather than trusting a hand derivation.
+EDGE_TABLES/FACE_TABLES entries were each checked directly against the parent element's `shape_and_derivs()`: at
+several points spanning each facet, (a) every node NOT listed for that facet has shape value ~0 there, and (b) the
+listed nodes' shape values, evaluated via the facet's natural_coord_map into the parent's full natural
+coordinates, reproduce the matching lower-dimensional element's shape function values to machine precision.
+tests/test_facet_loads.py's `TestFacetTablesAreCorrect` re-runs this check as part of the normal test suite. The
+check caught three wrong first-guess Hex20 face parametrizations during development, the kind of subtle node-
+ordering mistake that is better found by checking directly than by trusting a hand derivation.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import math
@@ -151,7 +116,7 @@ EDGE_TABLES = {
 # FACE_TABLES -- 3-D solid parent elements. Tet4/Tet10's four faces are
 # the natural tetrahedron's own coordinate-plane faces (t=0, s=0, r=0,
 # r+s+t=1); Hex8/Hex20's six faces reuse mesh.py's own already-
-# validated _TET4_FACES/_HEX8_FACES corner ordering (Wave 0 item 8),
+# validated _TET4_FACES/_HEX8_FACES corner ordering,
 # extended with each element's own mid-edge nodes for the quadratic
 # case (Tet10Solid3D._edges, Hex20Solid3D's own documented 8-19
 # bottom/top/vertical mid-edge grouping).
@@ -239,13 +204,13 @@ def facet_quadrature(family, order=2):
     factor is applied here, once, so every caller of this function
     never has to know which family produced these weights.
 
-    order: exact polynomial degree to integrate (item 125's own
+    order: exact polynomial degree to integrate (the
     order-parameterized tri_quadrature()/the plain n=ceil((order+1)/2)
     point-count rule for line/quad families) -- default 2, matching
     this package's other default-2 fixed rules (a uniform traction is
     itself degree-0, so order=2 is already generous for that case;
     pass a higher order for a spatially-varying, higher-degree
-    traction field, the same reasoning item 125's own quad_order=
+    traction field, the same reasoning the quad_order=
     parameter documents)."""
     if family in ("line2", "line3"):
         n = max(1, math.ceil((order + 1) / 2))
@@ -305,11 +270,9 @@ def consistent_facet_load_shares(parent_dim, facet_coords, traction, quad_order=
     (elements/base.py) rather than plain jacobian() -- a facet is
     ALWAYS embedded (facet dim < parent_dim: 1-D-in-2-D for an edge,
     2-D-in-3-D for a face), the exact case jacobian_measure()'s own
-    Gram-determinant branch exists for (Wave 6's TrussTL2D/shell mass-
-    matrix fix), so this measure is always non-negative by
+    Gram-determinant branch exists for, so this measure is always non-negative by
     construction -- no abs()/orientation convention to get wrong, the
-    way the simplex-family volumetric case (Wave 15 item 126's own
-    module docstring note) needed one."""
+    way the simplex-family volumetric case needed one."""
     facet_coords = np.asarray(facet_coords, dtype=float)
     n_facet = facet_coords.shape[0]
     family = facet_family(parent_dim, n_facet)

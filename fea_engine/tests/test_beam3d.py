@@ -1,8 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_beam3d.py -- validation for Beam3DEulerBernoulli (Module 18,
-general-purpose extensions roadmap Phase 3).
+test_beam3d.py -- validation for Beam3DEulerBernoulli.
 
 Beam3DEulerBernoulli is built entirely from closed-form blocks (no
 Gauss quadrature to converge), so every check here is an EXACT

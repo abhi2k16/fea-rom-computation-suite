@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 """
 test_shell_corotational_mixed_formulation.py -- validation for the
-Module 23 mixed-formulation ATTEMPT at Shell4MITCCorotational's von
+mixed-formulation ATTEMPT at Shell4MITCCorotational's von
 Karman bending-membrane coupling (D5 in the NonLin-HyROM paper-
 reproduction project's own terms; see shells.py's "Design history"
 comment, "DEAD END 7" for the full account).

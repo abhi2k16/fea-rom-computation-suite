@@ -1,27 +1,18 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-scm_lp.py -- the genuine classical Successive Constraint Method (SCM;
-Huynh, Rozza, Sen, Patera 2007): a rigorous lower bound on
-sigma_min(A(omega)) computed via a small ONLINE LINEAR PROGRAM over
-offline-selected reference ("control") points, rather than
-scm.py's simplified single-Lipschitz-constant construction. See
-docs/error_bounds_greedy_roadmap.md Section 9 for the full
-derivation and the honest scoping decision this module makes -- read
-that before using this module for anything beyond what its docstrings
-below already say.
+scm_lp.py -- the classical Successive Constraint Method (SCM; Huynh, Rozza, Sen, Patera 2007): a rigorous lower
+bound on sigma_min(A(omega)) computed via a small ONLINE LINEAR PROGRAM over offline-selected reference ("control")
+points, rather than scm.py's simplified single-Lipschitz-constant construction. See the design notes in docs/ (the
+error-bounds note, Section 9) for the derivation and the scoping decision this module makes; read that before using
+this module for anything beyond what its docstrings below say.
 
-Scoping decision, in brief (full reasoning: Section 9 of the roadmap
-doc above): the sharper "natural-norm" SCM (Chen et al. 2010/2015) is
-NOT implemented here, because its literature is written for real
-symmetric/real non-symmetric operators, and rom_engine's
-A(omega) = -omega^2 M + i*omega*C + K is complex and non-Hermitian for
-any omega with damping present -- extending the natural-norm
-construction to this case requires an unverified real-part convention
-neither source paper treats explicitly. Rather than implement an
-unverified "certified" bound (worse than an honestly narrow one, if
-subtly wrong), this module implements the ORIGINAL classical SCM,
-applied via the standard "SCM-squared" reduction:
+Scoping decision, in brief: the sharper "natural-norm" SCM (Chen et al. 2010/2015) is NOT implemented here, because
+its literature is written for real symmetric or real non-symmetric operators, and rom_engine's
+A(omega) = -omega^2 M + i*omega*C + K is complex and non-Hermitian for any omega with damping present. Extending the
+natural-norm construction to this case requires an unverified real-part convention that neither source treats
+explicitly. Rather than implement an unverified "certified" bound (worse than an honestly narrow one, if subtly
+wrong), this module implements the ORIGINAL classical SCM, applied via the standard "SCM-squared" reduction:
 
     sigma_min(A(omega))^2 = lambda_min(A(omega)^H A(omega))
 
@@ -68,6 +59,9 @@ tests/test_scm_lp.py, which measures this bound's useful radius
 against scm.py's already-measured ~1e-7 one on the SAME reference
 point of the SAME real fea_engine fixture, rather than assuming this
 LP-based construction is automatically sharper.
+
+References (methods in this module are adopted from):
+  - D. B. P. Huynh, G. Rozza, S. Sen, A. T. Patera (2007), "A successive constraint linear optimization method for lower bounds of parametric coercivity and inf-sup stability constants", C. R. Math. Acad. Sci. Paris 345(8)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
@@ -85,8 +79,7 @@ class LPSingularValueLowerBound:
     A(omega) = sum_q theta_q(omega) A_q, computed via the genuine
     classical Successive Constraint Method's online linear program
     (see module docstring for the SCM-squared reduction this uses, and
-    docs/error_bounds_greedy_roadmap.md Section 9 for the full
-    derivation and honest scoping note).
+    docs/ for the full derivation and scoping note).
 
     Parameters
     ----------

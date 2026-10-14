@@ -1,14 +1,9 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-hankel_norm.py -- optimal Hankel norm approximation (Adamjan-Arov-Krein
-1971 theory; explicit state-space realization due to Glover, "All
-optimal Hankel-norm approximations of linear multivariable systems and
-their L-infinity error bounds", 1984) -- the last of the classical MOR
-roadmap's explicitly-named Phase 5 balanced-truncation-family
-extensions. docs/classical_mor_roadmap.md Section 14 has the full
-derivation and the numerical-risk investigation this docstring
-summarizes.
+hankel_norm.py -- optimal Hankel norm approximation (Adamjan-Arov-Krein theory; explicit state-space realisation due
+to Glover, "All optimal Hankel-norm approximations of linear multivariable systems and their L-infinity error
+bounds", 1984), an extension of the balanced-truncation family. This docstring summarises the derivation and the numerical-risk investigation.
 
 THE IDEA: balanced_truncation.BalancedTruncationROM answers "which
 order-r model minimizes some norm of the approximation error" only
@@ -92,47 +87,27 @@ or a Sylvester solve at all). This mirrors why krylov.py is kept
 separate from balanced_truncation.py despite both being "systems and
 control" ROMs: shared FAMILY, genuinely different algorithm.
 
-A GENUINE, MEASURED NUMERICAL LIMITATION (found via a deliberate
-stress-testing sweep across many random synthetic SISO systems before
-this module was written -- see docs/classical_mor_roadmap.md Section 14
-for the full sweep): this construction can become numerically
-unreliable -- the stable/antistable eigenvalue split silently returning
-the wrong COUNT, or (more insidiously) returning the RIGHT count with a
-WRONG reduced model -- when sigma_(r+1) is very small relative to the
-largest Hankel singular value hsv[0] (roughly, within about 6-8 orders
-of magnitude of hsv[0] times machine epsilon in the swept examples,
-though the failure was NOT cleanly predicted by any single simple a
-priori quantity tried, including cond(Gamma) -- two cases with
-identical cond(Gamma) had wildly different actual error, ruling that
-out as a reliable a priori guard on its own). Rather than ship an
-unreliable a priori conditioning threshold, THIS MODULE INSTEAD RUNS AN
-EXACT EMPIRICAL SELF-CHECK ON EVERY CONSTRUCTION: the AAK theorem
-guarantees the Hankel norm of the ERROR system G - G_r equals
-sigma_(r+1) exactly, and since that error system's Hankel singular
-values can be computed by the SAME already-validated
-hankel_singular_values() function used for balancing, every
-OptimalHankelNormROM checks this agreement itself (see
-measured_hankel_norm_error / numerically_reliable below) and warns
-loudly, rather than silently, when it does not hold -- turning an
-open-ended numerical risk into a concrete, always-on, self-reported
-diagnostic. In practice, for the moderately-sized, modally-pre-truncated
-structural models this package's own workflow already recommends (see
-balanced_truncation.py's "PRACTICAL SCALE NOTE"), the Hankel singular
-value spread stays far from this danger zone -- see
-tests/test_hankel_norm.py for the measurement on this package's own
-real fea_engine fixture.
+A MEASURED NUMERICAL LIMITATION (found by a stress-testing sweep across many random synthetic SISO systems): this construction can become numerically unreliable -- the
+stable/antistable eigenvalue split silently returning the wrong COUNT, or (more insidiously) the right count with a
+WRONG reduced model -- when sigma_(r+1) is very small relative to the largest Hankel singular value hsv[0]
+(roughly within about 6-8 orders of magnitude of hsv[0] times machine epsilon in the swept examples). No single
+simple a priori quantity predicted the failure cleanly, including cond(Gamma): two cases with identical cond(Gamma)
+had very different actual error. Rather than ship an unreliable a priori conditioning threshold, THIS MODULE RUNS AN
+EXACT EMPIRICAL SELF-CHECK ON EVERY CONSTRUCTION: the AAK theorem guarantees that the Hankel norm of the ERROR system
+G - G_r equals sigma_(r+1) exactly, and that error system's Hankel singular values can be computed by the same
+validated hankel_singular_values() function used for balancing, so every OptimalHankelNormROM checks this agreement
+itself (see measured_hankel_norm_error / numerically_reliable below) and warns when it does not hold, turning an
+open-ended numerical risk into an always-on, self-reported diagnostic. For the moderately sized, modally
+pre-truncated structural models this package's workflow recommends (see balanced_truncation.py's "PRACTICAL SCALE
+NOTE"), the Hankel singular value spread stays far from this danger zone; tests/test_hankel_norm.py records the
+measurement on a real fea_engine fixture.
 
-GPU/torch side-by-side path (Wave 9 addendum item 138, docs/
-consolidated_future_roadmap.md): from_MCK()/__init__() gained a
-backend="numpy" (default) / backend="torch" + device= parameter,
-threaded into every hankel_singular_values() call this class makes --
-both the main balancing step AND the constructor's own empirical
-self-check (whose augmented Ae system is LARGER than the full-order
-model alone, making it the single most expensive call here). The
-Schur-plus-Sylvester decoupling construction itself is NOT ported --
-it operates on the small, r-sized reduced system regardless of the
-full-order model's size, so there is no real GPU win to chase there;
-see torch_linalg.py's own module docstring for the full reasoning.
+GPU/torch side-by-side path: from_MCK()/__init__() accept backend="numpy" (default) / backend="torch" and a
+device= parameter, threaded into every hankel_singular_values() call this class makes -- both the main balancing
+step AND the constructor's own empirical self-check (whose augmented Ae system is LARGER than the full-order model
+alone, making it the most expensive call here). The Schur-plus-Sylvester decoupling construction itself is NOT
+ported: it operates on the small r-sized reduced system regardless of the full-order model's size, so there is no
+real GPU gain there; see torch_linalg.py's module docstring for the reasoning.
 
 THE L-INFINITY BOUND -- DELIBERATELY NOT EXPOSED: Glover's own paper
 also gives a TIGHT (non-doubled) L-infinity bound, sigma_(r+1) <=
@@ -147,6 +122,10 @@ of honestly omitting a method it cannot back with a verified guarantee
 -- callers wanting an L-infinity estimate should measure
 frequency_response() directly against the full-order model, exactly
 like those two classes' own tests already do.
+
+References (methods in this module are adopted from):
+  - K. Glover (1984), "All optimal Hankel-norm approximations of linear multivariable systems and their L-infinity error bounds", Int. J. Control 39(6)
+  - B. Besselink, U. Tabak, A. Lutowska, N. van de Wouw, H. Nijmeijer, D. J. Rixen, M. E. Hochstenbach, W. H. A. Schilders (2013), "A comparison of model reduction techniques from structural dynamics, numerical mathematics and systems and control", J. Sound Vib. 332(19)
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import warnings
@@ -329,7 +308,7 @@ class OptimalHankelNormROM:
         # This self-check's own Ae is LARGER than the full-order system
         # alone (n_full + n_red states) -- the single most expensive
         # hankel_singular_values() call this class makes, so it gets
-        # the same backend=/device= (Wave 9 addendum item 138) this
+        # the same backend=/device= this
         # instance was built with, not left hardcoded to NumPy.
         hsv_err = hankel_singular_values(Ae, Be, Ce, backend=self._backend, device=self._device)
         measured = float(hsv_err[0])
@@ -379,7 +358,7 @@ class OptimalHankelNormROM:
             Passed through to the constructor -- see its docstring and
             the module docstring's numerical-limitation discussion.
         backend, device
-            Wave 9 addendum item 138: backend="numpy" (default,
+            backend="numpy" (default,
             unchanged) / backend="torch" (+ device="cpu"/"cuda").
             Accelerates BOTH the main hankel_singular_values() balancing
             call below AND the constructor's own empirical self-check

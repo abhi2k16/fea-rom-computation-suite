@@ -1,13 +1,12 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_batched_solve.py -- Wave 11 item 109 (docs/consolidated_future_
-roadmap.md): validates solve_batched()/solve_static_batched()
+test_batched_solve.py -- validates solve_batched()/solve_static_batched()
 (batched_solve.py) -- agreement with N independent np.linalg.solve()/
-FESystem.solve_static() calls (the thing this item is a throughput
+FESystem.solve_static() calls (the thing this change is a throughput
 optimization OF, so every batched answer must match its own
 independently-solved reference exactly), for both dense and sparse K,
-and the real end-to-end multi-load-case FESystem use case this item was
+and the real end-to-end multi-load-case FESystem use case this change was
 built for (a ROM/surrogate training-snapshot sweep).
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"

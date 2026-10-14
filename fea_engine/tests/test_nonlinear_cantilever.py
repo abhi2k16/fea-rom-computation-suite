@@ -8,7 +8,7 @@ deflection bending, as opposed to the pure-axial-stretch / von-Mises-
 truss-snap-through checks already covered by validate_nonlinear.py.
 
 fea_engine has no geometrically nonlinear BEAM element (only the
-Total-Lagrangian TRUSS, TrussTL2D -- see element.py's Module 8 section).
+Total-Lagrangian TRUSS, TrussTL2D -- see element.py's section).
 So the cantilever "beam" here is built the standard way any truss-only
 package represents a beam: a pin-jointed, triangulated (Pratt-truss)
 lattice --

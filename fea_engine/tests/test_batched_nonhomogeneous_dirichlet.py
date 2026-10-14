@@ -1,10 +1,10 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_batched_nonhomogeneous_dirichlet.py -- Wave 16 item 133: closes a
-gap item 109's solve_static_batched() (batched_solve.py) created
-relative to item 131 (non-homogeneous Dirichlet BCs). solve_static_
-batched() predates item 131 and, until this item, silently treated
+test_batched_nonhomogeneous_dirichlet.py -- closes a
+gap solve_static_batched() (batched_solve.py) had
+relative to non-homogeneous Dirichlet BCs. solve_static_
+batched() predated that support and, until this change, silently treated
 EVERY fixed DOF as zero regardless of fix_dofs(..., value=...) -- a
 batched load-sweep on a mesh with a nonzero prescribed displacement got
 a silently wrong answer at every column.
@@ -13,7 +13,7 @@ Decisive checks throughout: agreement with an independent per-column
 solve_static() reference (not just "the prescribed value shows up
 somewhere"), across every column of the batch (not just column 0), and
 confirmed backward compatibility (an all-zero-BC batch is bit-for-bit
-unaffected by this item, matching solve_static()'s own IDENTICAL-cost-
+unaffected by this change, matching solve_static()'s own IDENTICAL-cost-
 when-unused convention).
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
@@ -107,7 +107,7 @@ class TestNonHomogeneousDirichletHonoredInBatch:
 
 class TestBackwardCompatibility:
     """An all-homogeneous (value=0.0 / no value=) BC batch must be
-    unaffected by this item -- same convention as every other item in
+    unaffected by this change -- same convention as every other item in
     this Wave (128-132): IDENTICAL behavior when the new feature isn't
     used."""
 

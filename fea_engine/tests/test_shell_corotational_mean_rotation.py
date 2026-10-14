@@ -1,11 +1,10 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_shell_corotational_mean_rotation.py -- validation for Wave 4 item 46
-building block A (docs/shell_rotation_coupling_fix_roadmap.md,
-docs/consolidated_future_roadmap.md): the general, exact SO(3)
+test_shell_corotational_mean_rotation.py -- validation for
+building block A: the general, exact SO(3)
 rigid-rotation extraction `Shell4MITCCorotational._mean_rigid_rotation()`
-(plus its `_exp_map`/`_log_map` primitives), generalizing item 18's
+(plus its `_exp_map`/`_log_map` primitives), generalizing the
 exact single-axis drilling update to a genuine 3-vector rotation.
 
 Scope, precisely: this is an ISOLATED validation of the extraction

@@ -1,12 +1,11 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-test_differentiable.py -- Wave 10 (docs/consolidated_future_
-roadmap.md), source Saverio et al. 2026: validates fea_engine.
-differentiable's items 98-101 (generic trainable additive-correction
+test_differentiable.py -- source Saverio et al. 2026: validates fea_engine.
+differentiable's functions (generic trainable additive-correction
 Newton driver, explicit residual-minimization calibration, the
 whole-solver implicit-differentiation adjoint layer, and metric-
-consistent gradient scaling), plus item 102 (batched vmap autograd
+consistent gradient scaling), plus the batched vmap autograd
 tangents, tested in test_autograd_tangent.py instead, next to the
 per-element functions it batches).
 
@@ -120,7 +119,7 @@ class _NumpyToyCorrection(AdditiveCorrection):
 
 
 # =====================================================================
-# Item 99: additive-correction Newton driver -- unconditional (no
+# Additive-correction Newton driver -- unconditional (no
 # torch needed: _NumpyToyCorrection is pure NumPy).
 # =====================================================================
 class TestAdditiveCorrectionDriver:
@@ -214,7 +213,7 @@ def _count_iterations(fesystem, mat, correction, F_ext, tol=1e-12, max_iter=50):
 
 
 # =====================================================================
-# Item 98: adjoint math -- unconditional (no torch needed).
+# Adjoint math -- unconditional (no torch needed).
 # =====================================================================
 class TestAdjointMath:
     def test_adjoint_gradient_matches_finite_difference_single_dof(self):
@@ -289,7 +288,7 @@ class TestAdjointMath:
 
 
 # =====================================================================
-# Item 101: metric-consistent gradient scaling -- unconditional (no
+# Metric-consistent gradient scaling -- unconditional (no
 # torch needed).
 # =====================================================================
 class TestMetricConsistentScaling:
@@ -314,8 +313,8 @@ class TestMetricConsistentScaling:
 
 # =====================================================================
 # Torch-gated: concrete trainable corrections, explicit calibration
-# (item 100), and the implicit adjoint layer's torch.autograd.Function
-# wrapper (item 98).
+#, and the implicit adjoint layer's torch.autograd.Function
+# wrapper.
 # =====================================================================
 @pytest.mark.skipif(not _HAS_TORCH, reason="PyTorch not installed in this environment")
 class TestScalarFieldCorrection:
