@@ -51,11 +51,14 @@ adaptivity       : a posteriori error estimation,
                     local refinement, mesh-hierarchy tracking, and the
                     solution-driven adaptive refinement loop. Scoped to
                     Tri3PlaneStress -- see the module's own docstring.
-visualization    : plotting helpers; the Gmsh-native geometry/mesh/result
-                    screenshot renderer (visualization.gmsh_plot) has been
-                    removed -- see visualization/__init__.py; mesh.py's
-                    matplotlib plot_mesh_2d/plot_mesh_3d/plot_mesh_annotated
-                    remain the supported path
+visualization    : optional 3-D visualization with PyVista
+                    (visualization.pyvista_plot, `pip install fea_engine[viz]`):
+                    Mesh -> pyvista grid, field contours, deformed shapes,
+                    VTK export, animations, slices/clips, full-vs-reduced
+                    comparison plots; mesh.py's matplotlib plot_mesh_2d/
+                    plot_mesh_3d/plot_mesh_annotated stay available. The
+                    Gmsh-native renderer (visualization.gmsh_plot) was
+                    removed -- see visualization/__init__.py
 
 Design principle: every axis of variation (new material law, new
 geometry, new element type, new load type, new solution strategy) lives

@@ -160,10 +160,13 @@ fea_engine/                     (project root)
 │   │                        (Module 12, gmsh_engine.py, a Gmsh-driven
 │   │                        unstructured mesh generator, was removed --
 │   │                        see "Removed: Gmsh support" below)
-│   ├── visualization/  (Module 16, gmsh_plot.py, a Gmsh-native rendering
-│   │                    path, was removed -- see "Removed: Gmsh support"
-│   │                    below; mesh.py's matplotlib plot_mesh_* functions
-│   │                    remain the supported rendering path)
+│   ├── visualization/  pyvista_plot.py — optional 3-D plots with PyVista
+│   │                    (`pip install fea_engine[viz]`): Mesh -> pyvista grid,
+│   │                    field contours, deformed shapes, .vtu export,
+│   │                    pyvista_animation / _sections / _comparison. (The
+│   │                    Gmsh-native gmsh_plot.py was removed -- see "Removed:
+│   │                    Gmsh support" below; mesh.py's matplotlib plot_mesh_*
+│   │                    functions remain available)
 │   ├── elements/       Module 3 — Gauss-Legendre integration engine +
 │   │   │                element formulations, split by family (no logic
 │   │   │                changed, see restructuring note above)
@@ -1688,11 +1691,39 @@ S_out, sigma = sys.solve_random_vibration(freqs_hz, psd_input, F0_unit, output_d
 
 ### N. Visualization (geometry / mesh / result plots)
 
-Gmsh-native visualization (`visualization/gmsh_plot.py`, Module 16 — a
+**3-D plots with PyVista (optional, `pip install fea_engine[viz]`).** `fea_engine.visualization` converts a `Mesh` /
+`MultiBlockMesh` to a `pyvista.UnstructuredGrid` (line2, tri3, quad4, tet4, hex8, tri6, quad8, tet10, hex20; the node
+order of the quadratic cells is the VTK order, checked in `tests/test_pyvista_plot.py`) and provides:
+
+- `pyvista_plot`: `to_pyvista`, `plot_field` (nodal/element field contours, optionally on the deformed mesh, `field`
+  may be a name, an `FEField`, an array or a callable `field(U)`), `plot_deformed`, `save_vtk` (`.vtu`/`.vtk` for ParaView).
+- `pyvista_animation`: `animate_history` (a `(n_steps, n_dof)` history to GIF/MP4, colour limits and displacement scale
+  fixed over all frames), `animate_mode`, `mode_history`.
+- `pyvista_sections` (3-D meshes): `slice_field`, `clip_field`, `threshold_field`, `plot_slice` (one or several parallel
+  planes), `plot_clipped`, `plot_threshold`.
+- `pyvista_comparison`: `compare_fields(mesh, U_full, U_rom)` draws the full-order field, the reduced field and the
+  pointwise error and returns relative L2 / max error metrics; `field_error` returns the metrics only.
+
+```python
+from fea_engine.visualization import plot_field, animate_mode, plot_slice, compare_fields
+plot_field(mesh, sys.von_mises(U), component="von_mises", U=U, scale="auto")
+animate_mode(mesh, shapes[:, 0], "mode1.gif", freq=freq[0])
+plot_slice(mesh, vm, component="von_mises", normal="x", n_slices=3, U=U, scale="auto")
+plotter, met = compare_fields(mesh, U, U_rom)           # met["rel_l2_displacement"], met["rel_max"], ...
+```
+
+Tests: `tests/test_pyvista_plot.py`, `test_pyvista_animation.py`, `test_pyvista_sections.py`,
+`test_pyvista_comparison.py` (64 tests; 11 that render need a display, e.g. `xvfb-run -a` on headless Linux). Examples:
+`examples/gallery/fea_07_pyvista_visualization.py`, `fea_08_pyvista_animation_sections_rom.py`. Beams, trusses and
+shells are not `Mesh` objects and are not drawn by these functions. See `USER_GUIDE.md`, "3-D visualization with
+PyVista", for the full description.
+
+**Plain matplotlib (no extra dependency beyond matplotlib).** The Gmsh-native visualization
+(`visualization/gmsh_plot.py`, Module 16 — a
 second, non-default OpenGL rendering path) was removed along with Gmsh
-support entirely; see "Removed: Gmsh support" above. Use `mesh.py`'s
-matplotlib functions instead, which remain the supported path and are
-what every example script in this package actually uses:
+support entirely; see "Removed: Gmsh support" above. `mesh.py`'s
+matplotlib functions remain available and are
+what most example scripts in this package use:
 `mesh.plot_mesh_2d(mesh, filename, ...)`/`mesh.plot_mesh_3d(mesh,
 filename, ...)` for geometry/mesh figures, and
 `mesh.plot_mesh_annotated(...)` for result overlays (deformed shape,

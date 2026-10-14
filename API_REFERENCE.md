@@ -41,7 +41,7 @@ flowchart LR
 
 | | 🧱 Classes | 🔧 Functions | ⚙️ Methods | 📦 Modules |
 |---|---:|---:|---:|---:|
-| **`fea_engine`** | 61 | 158 | 227 | 35 |
+| **`fea_engine`** | 61 | 177 | 227 | 39 |
 | **`rom_engine`** | 53 | 110 | 179 | 44 |
 
 > [!NOTE]
@@ -56,7 +56,7 @@ flowchart LR
 | 📚 [Part 3](#part3) | Full inventory by module |
 | ⚠️ [Part 4](#part4) | Conventions and gotchas |
 
-**🏗️ `fea_engine` modules:** [adaptivity.py](#mod-adaptivity-py) &#183; [autograd_tangent.py](#mod-autograd-tangent-py) &#183; [backend_dispatch.py](#mod-backend-dispatch-py) &#183; [batched_solve.py](#mod-batched-solve-py) &#183; [beam2d_reissner_vectorized.py](#mod-beam2d-reissner-vectorized-py) &#183; [beam2d_reissner_vectorized_torch.py](#mod-beam2d-reissner-vectorized-torch-py) &#183; [build_mesh.py](#mod-build-mesh-py) &#183; [damping.py](#mod-damping-py) &#183; [differentiable.py](#mod-differentiable-py) &#183; [elements/base.py](#mod-elements-base-py) &#183; [elements/beams.py](#mod-elements-beams-py) &#183; [elements/beams3d.py](#mod-elements-beams3d-py) &#183; [elements/contact.py](#mod-elements-contact-py) &#183; [elements/nonlinear_solids.py](#mod-elements-nonlinear-solids-py) &#183; [elements/plates.py](#mod-elements-plates-py) &#183; [elements/shells.py](#mod-elements-shells-py) &#183; [elements/shells_director.py](#mod-elements-shells-director-py) &#183; [elements/solids.py](#mod-elements-solids-py) &#183; [elements/trusses.py](#mod-elements-trusses-py) &#183; [facet_loads.py](#mod-facet-loads-py) &#183; [geometry/shapes.py](#mod-geometry-shapes-py) &#183; [grading.py](#mod-grading-py) &#183; [iterative_solvers.py](#mod-iterative-solvers-py) &#183; [loads.py](#mod-loads-py) &#183; [material.py](#mod-material-py) &#183; [mesh.py](#mod-mesh-py) &#183; [mesh_io.py](#mod-mesh-io-py) &#183; [mesh_transform.py](#mod-mesh-transform-py) &#183; [mixed_assembly.py](#mod-mixed-assembly-py) &#183; [nonlinear_solver.py](#mod-nonlinear-solver-py) &#183; [postprocess.py](#mod-postprocess-py) &#183; [solver.py](#mod-solver-py) &#183; [topopt.py](#mod-topopt-py) &#183; [torch_sparse_solver.py](#mod-torch-sparse-solver-py) &#183; [vectorized_assembly.py](#mod-vectorized-assembly-py)
+**🏗️ `fea_engine` modules:** [adaptivity.py](#mod-adaptivity-py) &#183; [autograd_tangent.py](#mod-autograd-tangent-py) &#183; [backend_dispatch.py](#mod-backend-dispatch-py) &#183; [batched_solve.py](#mod-batched-solve-py) &#183; [beam2d_reissner_vectorized.py](#mod-beam2d-reissner-vectorized-py) &#183; [beam2d_reissner_vectorized_torch.py](#mod-beam2d-reissner-vectorized-torch-py) &#183; [build_mesh.py](#mod-build-mesh-py) &#183; [damping.py](#mod-damping-py) &#183; [differentiable.py](#mod-differentiable-py) &#183; [elements/base.py](#mod-elements-base-py) &#183; [elements/beams.py](#mod-elements-beams-py) &#183; [elements/beams3d.py](#mod-elements-beams3d-py) &#183; [elements/contact.py](#mod-elements-contact-py) &#183; [elements/nonlinear_solids.py](#mod-elements-nonlinear-solids-py) &#183; [elements/plates.py](#mod-elements-plates-py) &#183; [elements/shells.py](#mod-elements-shells-py) &#183; [elements/shells_director.py](#mod-elements-shells-director-py) &#183; [elements/solids.py](#mod-elements-solids-py) &#183; [elements/trusses.py](#mod-elements-trusses-py) &#183; [facet_loads.py](#mod-facet-loads-py) &#183; [geometry/shapes.py](#mod-geometry-shapes-py) &#183; [grading.py](#mod-grading-py) &#183; [iterative_solvers.py](#mod-iterative-solvers-py) &#183; [loads.py](#mod-loads-py) &#183; [material.py](#mod-material-py) &#183; [mesh.py](#mod-mesh-py) &#183; [mesh_io.py](#mod-mesh-io-py) &#183; [mesh_transform.py](#mod-mesh-transform-py) &#183; [mixed_assembly.py](#mod-mixed-assembly-py) &#183; [nonlinear_solver.py](#mod-nonlinear-solver-py) &#183; [postprocess.py](#mod-postprocess-py) &#183; [solver.py](#mod-solver-py) &#183; [topopt.py](#mod-topopt-py) &#183; [torch_sparse_solver.py](#mod-torch-sparse-solver-py) &#183; [vectorized_assembly.py](#mod-vectorized-assembly-py) &#183; [visualization/pyvista_animation.py](#mod-visualization-pyvista-animation-py) &#183; [visualization/pyvista_comparison.py](#mod-visualization-pyvista-comparison-py) &#183; [visualization/pyvista_plot.py](#mod-visualization-pyvista-plot-py) &#183; [visualization/pyvista_sections.py](#mod-visualization-pyvista-sections-py)
 
 **📉 `rom_engine` modules:** [affine.py](#mod-affine-py) &#183; [attractor.py](#mod-attractor-py) &#183; [balanced_truncation.py](#mod-balanced-truncation-py) &#183; [cms.py](#mod-cms-py) &#183; [dataset_diagnostics.py](#mod-dataset-diagnostics-py) &#183; [differentiable_correction.py](#mod-differentiable-correction-py) &#183; [dual_modes.py](#mod-dual-modes-py) &#183; [ensemble_uq.py](#mod-ensemble-uq-py) &#183; [frequency.py](#mod-frequency-py) &#183; [galerkin.py](#mod-galerkin-py) &#183; [greedy.py](#mod-greedy-py) &#183; [hankel_norm.py](#mod-hankel-norm-py) &#183; [hyper_reduction.py](#mod-hyper-reduction-py) &#183; [intrusive_nonlinear_rom.py](#mod-intrusive-nonlinear-rom-py) &#183; [krylov.py](#mod-krylov-py) &#183; [linear_dynamics.py](#mod-linear-dynamics-py) &#183; [loewner.py](#mod-loewner-py) &#183; [membrane_expansion.py](#mod-membrane-expansion-py) &#183; [metrics.py](#mod-metrics-py) &#183; [modal_derivatives.py](#mod-modal-derivatives-py) &#183; [mode_correction.py](#mod-mode-correction-py) &#183; [neural_operator.py](#mod-neural-operator-py) &#183; [nnm.py](#mod-nnm-py) &#183; [nonlinear_dynamics.py](#mod-nonlinear-dynamics-py) &#183; [nonlinear_rom.py](#mod-nonlinear-rom-py) &#183; [parameterized_latent_ode.py](#mod-parameterized-latent-ode-py) &#183; [parametric_modes.py](#mod-parametric-modes-py) &#183; [passivity.py](#mod-passivity-py) &#183; [pod.py](#mod-pod-py) &#183; [quadratic_manifold.py](#mod-quadratic-manifold-py) &#183; [random_vibration.py](#mod-random-vibration-py) &#183; [reduced_basis_operator.py](#mod-reduced-basis-operator-py) &#183; [sampling.py](#mod-sampling-py) &#183; [scm.py](#mod-scm-py) &#183; [scm_lp.py](#mod-scm-lp-py) &#183; [screening.py](#mod-screening-py) &#183; [slow_fast.py](#mod-slow-fast-py) &#183; [soar.py](#mod-soar-py) &#183; [state_space.py](#mod-state-space-py) &#183; [subspace_nnm.py](#mod-subspace-nnm-py) &#183; [torch_linalg.py](#mod-torch-linalg-py) &#183; [torch_system_bases.py](#mod-torch-system-bases-py) &#183; [validation.py](#mod-validation-py) &#183; [cross_configuration_validation.py](#mod-cross-configuration-validation-py)
 
@@ -84,6 +84,10 @@ flowchart LR
 | Faster assembly on big meshes | vectorised assembly | `fea_engine.vectorized_assembly` |
 | Run on GPU / torch | `FESystem(..., backend="torch", device="cuda")` | `fea_engine.solver`, `fea_engine.torch_sparse_solver` |
 | Topology optimisation | SIMP optimiser | `fea_engine.topopt` |
+| Plot a mesh or result in 3-D (contours, deformed shape, ParaView export) | `to_pyvista`, `plot_field`, `plot_deformed`, `save_vtk` | `fea_engine.visualization.pyvista_plot` |
+| Animate a transient, load path or mode shape (GIF/MP4) | `animate_history`, `animate_mode` | `fea_engine.visualization.pyvista_animation` |
+| Slice, clip or threshold a 3-D result | `plot_slice`, `plot_clipped`, `plot_threshold`, `slice_field` | `fea_engine.visualization.pyvista_sections` |
+| Compare a full-order and a reduced-order solution (side by side, with error) | `compare_fields`, `field_error` | `fea_engine.visualization.pyvista_comparison` |
 | Reduce a model with POD + Galerkin | `PodBasis`, `GalerkinROM` | `rom_engine.pod`, `rom_engine.galerkin` |
 | Fast parameter sweeps | `AffineDecomposition` | `rom_engine.affine` |
 | Frequency-domain ROM and certified error bounds | `FrequencyROM`, greedy training, SCM bounds | `rom_engine.frequency`, `.greedy`, `.scm`, `.scm_lp` |
@@ -1185,6 +1189,73 @@ Tensorised global stiffness assembly with no Python loop over elements. Use it f
 
 </details>
 
+<a id="mod-visualization-pyvista-plot-py"></a>
+
+### 📦 `visualization/pyvista_plot.py`
+
+
+3-D visualization of meshes and FE results with PyVista (optional dependency, `pip install fea_engine[viz]`). Supports line2, tri3, quad4, tet4, hex8, tri6, quad8, tet10 and hex20 cells; fea_engine's node ordering for them is the VTK ordering.
+
+<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🧱 0 classes &nbsp;·&nbsp; 🔧 8 functions</summary>
+
+- 🔧 **`to_pyvista(mesh, point_data=None, cell_data=None)`** — Convert a `Mesh` / `MultiBlockMesh` to a `pyvista.UnstructuredGrid`. Arrays registered on the mesh are attached; `point_data` / `cell_data` (dicts name -> array) are added on top.
+- 🔧 **`displacement_vectors(mesh, U)`** — Nodal translations as an `(n_nodes, 3)` array (z padded with 0 for 2-D meshes). `U` is a flat vector or `(n_nodes, k)`; rotation DOFs are ignored.
+- 🔧 **`add_displacement(grid, U, dim=None, name='displacement')`** — Attach the nodal displacement vector and its norm (`name + "_magnitude"`) to `grid` in place.
+- 🔧 **`deformed_grid(mesh, U, scale=1.0)`** — The grid with node positions moved by `scale * displacement`.
+- 🔧 **`plot_field(mesh, field, U=None, component=None, scale=0.0, cmap='turbo', show_edges=True, edge_color='black', clim=None, title=None, scalar_bar_title=None, window_size=(900, 650), screenshot=None, show=True, off_screen=None)`** — Colour-contour plot of a nodal or element field (`"displacement"`, `"ux"`/`"uy"`/`"uz"`, a registered array name, an `FEField` with `component=`, or a plain array) with a colorbar; optionally on the deformed mesh (`U=`, `scale=` or `"auto"`). Returns the `pyvista.Plotter`.
+- 🔧 **`plot_deformed(mesh, U, scale='auto', field='displacement', component=None, show_undeformed=True, cmap='turbo', show_edges=True, clim=None, title=None, window_size=(900, 650), screenshot=None, show=True, off_screen=None)`** — Deformed shape coloured by a field (default displacement magnitude), with the undeformed mesh as a wire outline. Returns the `pyvista.Plotter`.
+- 🔧 **`save_vtk(mesh, path, U=None, point_data=None, cell_data=None)`** — Write the mesh (+ displacement and extra arrays) to a `.vtu`/`.vtk` file that ParaView opens. Returns the grid.
+- 🔧 **`set_off_screen(flag=True)`** — Render without opening a window for every later plot (`pyvista.OFF_SCREEN`).
+
+</details>
+
+<a id="mod-visualization-pyvista-animation-py"></a>
+
+### 📦 `visualization/pyvista_animation.py`
+
+
+GIF/MP4 animations of time histories, load paths and mode shapes with PyVista (optional, `pip install fea_engine[viz]`, which includes `imageio` for GIF output). Colour limits and displacement scale are fixed over all frames.
+
+<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🧱 0 classes &nbsp;·&nbsp; 🔧 3 functions</summary>
+
+- 🔧 **`animate_history(mesh, U_hist, path, times=None, field='displacement', component=None, scale='auto', fps=15, frames=None, n_frames=None, clim='global', cmap='turbo', show_edges=True, show_undeformed=True, title=None, window_size=(900, 600), loop=0)`** — Animate the rows of `U_hist` (n_steps, n_dof) to `path` (.gif or .mp4).
+- 🔧 **`animate_mode(mesh, mode_shape, path, n_frames=24, n_cycles=1, field='displacement', component=None, scale='auto', fps=15, freq=None, clim='global', cmap='turbo', show_edges=True, show_undeformed=True, window_size=(900, 600), loop=0)`** — Animate a mode shape (n_dof,) oscillating through `n_cycles` periods of `n_frames` frames each (see `mode_history`).
+- 🔧 **`mode_history(mode_shape, n_frames=24, n_cycles=1)`** — `(n_frames * n_cycles, n_dof)` array `phi * sin(2 pi k / n_frames)`: one full period every `n_frames` rows, last row one step short of a repeat of the first, so the loop is seamless.
+
+</details>
+
+<a id="mod-visualization-pyvista-sections-py"></a>
+
+### 📦 `visualization/pyvista_sections.py`
+
+
+Slices, clips and thresholds of 3-D meshes with PyVista (optional, `pip install fea_engine[viz]`), for looking inside a solid.
+
+<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🧱 0 classes &nbsp;·&nbsp; 🔧 6 functions</summary>
+
+- 🔧 **`slice_field(mesh, field, normal='x', origin=None, U=None, scale=0.0, component=None)`** — The cut surface (`pyvista.PolyData`) where the plane through `origin` with `normal` meets the mesh, with the field attached under its title (e.g.
+- 🔧 **`clip_field(mesh, field, normal='x', origin=None, invert=True, U=None, scale=0.0, component=None)`** — The part of the mesh on one side of the plane, as an `UnstructuredGrid`.
+- 🔧 **`threshold_field(mesh, field, value, U=None, scale=0.0, component=None, all_scalars=True)`** — The cells whose field lies in `value = (lo, hi)` (either bound may be `None`).
+- 🔧 **`plot_slice(mesh, field, normal='x', origin=None, n_slices=1, U=None, scale=0.0, component=None, cmap='turbo', clim=None, show_edges=False, show_mesh=True, title=None, window_size=(900, 650), screenshot=None, show=True, off_screen=None)`** — Plot one slice (`origin`) or `n_slices` parallel slices evenly spaced across the mesh along `normal`, coloured by `field` on shared colour limits (default: the field's range over the whole mesh, so a slice shows where it sits in the global range).
+- 🔧 **`plot_clipped(mesh, field, normal='x', origin=None, invert=True, U=None, scale=0.0, component=None, cmap='turbo', clim=None, show_edges=True, title=None, window_size=(900, 650), screenshot=None, show=True, off_screen=None)`** — Plot the part of the mesh on one side of a plane (the cut face shows the interior field).
+- 🔧 **`plot_threshold(mesh, field, value, U=None, scale=0.0, component=None, cmap='turbo', clim=None, show_edges=True, title=None, window_size=(900, 650), screenshot=None, show=True, off_screen=None, all_scalars=True)`** — Plot only the cells whose field lies in `value = (lo, hi)` (for example the highly stressed region), with the whole mesh as an outline for context.
+
+</details>
+
+<a id="mod-visualization-pyvista-comparison-py"></a>
+
+### 📦 `visualization/pyvista_comparison.py`
+
+
+Full-order versus reduced-order side-by-side plots with PyVista (optional, `pip install fea_engine[viz]`): full field, reduced field and pointwise error, with relative L2 / max error metrics.
+
+<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🧱 0 classes &nbsp;·&nbsp; 🔧 2 functions</summary>
+
+- 🔧 **`compare_fields(mesh, U_full, U_rom, field='displacement', component=None, scale='auto', cmap='turbo', err_cmap='magma', clim=None, show_edges=False, labels=('full-order', 'reduced-order', 'error'), title=None, window_size=(1500, 520), screenshot=None, show=True, off_screen=None)`** — Three linked panels: full-order field, reduced-order field, pointwise error.
+- 🔧 **`field_error(mesh, U_full, U_rom, field='displacement', component=None)`** — The three arrays plotted by `compare_fields` and the metrics dict, without any plotting.
+
+</details>
+
 ## 📉 `rom_engine` — reduced-order modeling
 
 
@@ -2064,7 +2135,7 @@ Validation harness tying together the neural-operator, reduced-basis-operator an
 - **Degrees of freedom:** `FESystem.n_dof` counts all nodes; `fix_dofs(nodes, [dof indices])` constrains per node; `free_dofs` lists what remains. ROM functions expect plain arrays, usually the free-DOF blocks of K, M and F.
 - **Load first or constrain first:** `add_nodal_force` accumulates into `sys.F`. Reset `sys.F[:] = 0.0` between load cases (E5 does this).
 - **Backends:** SciPy/NumPy is the default everywhere. `backend="torch"` and `device="cuda"` are opt-in and need PyTorch; asking for torch without it raises `ImportError` immediately. See the "Multi-core, CPU and GPU" section of `USER_GUIDE.md`.
-- **Optional dependencies:** PyTorch (autograd, GPU, neural/research modules, topology optimisation), `meshio` (mesh file I/O), `matplotlib` (plotting). A plain `import fea_engine` / `import rom_engine` needs none of them.
+- **Optional dependencies:** PyTorch (autograd, GPU, neural/research modules, topology optimisation), `meshio` (mesh file I/O), `matplotlib` (plotting), `pyvista` (3-D visualization, `pip install fea_engine[viz]`). A plain `import fea_engine` / `import rom_engine` needs none of them.
 - **Aliases and constants at the top level:** `grading_plan` is `grading.plan`, `grading_graded_partition` is `grading.graded_partition`, `certified_error_bound_lp` is `scm_lp.certified_error_bound` (renamed on import to avoid a clash with `scm.certified_error_bound`). Registries and defaults exported from the top level: `ELEMENT_REGISTRY`, `CONSTITUTIVE_REGISTRY`, `ROTATIONAL_DOF_ELEMENTS`, `DEFAULT_GROWTH_RATIO` (`fea_engine`) and `KERNEL_REGISTRY` (`rom_engine`). Submodules (`solver`, `mesh`, `material`, ...) are importable by name too.
 - **Private names:** anything starting with an underscore is internal and not listed. Docstrings in the source are the authority for edge cases.
 > [!WARNING]

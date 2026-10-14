@@ -1,11 +1,12 @@
 # fea_engine Example Gallery
 
-Six runnable, self-contained scripts mirroring the structure of
+Eight runnable, self-contained scripts mirroring the structure of
 [TensorMesh's Example Gallery](https://docs.tensor-mesh.com/example_gallery/index.html),
 built against this package's own actual capabilities rather than the
 PDE domains (Poisson, wave, Helmholtz, fluids, Maxwell) `fea_engine`
 doesn't cover. Each script prints its own validation numbers to
-stdout and saves one PNG; run any of them directly:
+stdout and saves one PNG (scripts 7 and 8 save several images, GIFs or `.vtu` files and need the optional `pyvista` package, script 8 also
+uses `imageio`, included in the extra; on a headless Linux machine run them as `xvfb-run -a python fea_07_pyvista_visualization.py`); run any of them directly:
 
 ```
 cd fea_engine/examples/gallery
@@ -27,6 +28,8 @@ package's reduced-order-modeling tools instead (see that folder's own
 | 4 | `fea_04_plasticity_strip.py` | J2 plasticity with isotropic hardening on a plate-with-a-hole (Quad4PlasticJ2PlaneStress + the `hole_in_rectangle_mesh`) | Permanent plastic strain localizes at the hole boundary (stress-concentration-driven local yield well below nominal sigma_y) -- shown via the hardening variable `state["alpha"]`, not assumed |
 | 5 | `fea_05_modal_analysis.py` | Generalized eigenproblem modal analysis (`FESystem.solve_modal()`) on a steel cantilever: first four mode shapes | First two bending-mode frequencies checked against the closed-form Euler-Bernoulli cantilever formula (agreement within ~2-3%) |
 | 6 | `fea_06_topology_optimization.py` | SIMP density-based compliance topology optimization (`topopt.py`) on the short-cantilever benchmark: density evolution + compliance history | 86.8% compliance reduction at an exactly-held volume fraction -- the same signature `test_topopt.py`'s own end-to-end test validates |
+| 7 | `fea_07_pyvista_visualization.py` | PyVista 3-D plots (`fea_engine.visualization`, needs `pip install fea_engine[viz]`): von Mises stress on the deformed 2-D cantilever, a 3-D Hex8 cantilever's displacement magnitude, `.vtu` export for ParaView | Tip deflections against Euler-Bernoulli `P L^3 / (3 E I)`: ratio 1.035 (2-D Quad4) and 0.989 (3-D Hex8), printed by the script |
+| 8 | `fea_08_pyvista_animation_sections_rom.py` | PyVista animation, sections and ROM comparison (needs `pip install fea_engine[viz]`): a transient step response as a von Mises GIF, the first mode as a GIF, slices and a stress threshold of a 3-D Hex8 cantilever, and full-order vs POD-reconstructed fields with pointwise error at two ranks | Mode 1 frequency 21.107 Hz vs Euler-Bernoulli 20.955 Hz (ratio 1.007); step-response peak / static = 1.927 (1 % damping, below the linear limit of 2); POD rank 1 / rank 4 relative error 2.91e-2 / 4.97e-4, equal to the directly computed projection error |
 
 ## Related: solver-backend benchmark
 

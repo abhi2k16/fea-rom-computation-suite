@@ -26,6 +26,7 @@ classifiers = [
 [project.optional-dependencies]
 plot = ["matplotlib"]
 meshio = ["meshio"]
+viz = ["pyvista", "imageio"]
 dev = ["pytest", "pytest-cov"]
 docs = ["sphinx", "sphinx-rtd-theme", "myst-parser"]
 

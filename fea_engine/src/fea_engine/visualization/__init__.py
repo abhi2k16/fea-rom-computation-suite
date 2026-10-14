@@ -3,15 +3,28 @@
 """
 visualization -- optional plotting helpers.
 
-Gmsh-native geometry/mesh/result screenshot rendering (formerly ``gmsh_plot.py``, a second, non-default OpenGL
-rendering path) has been REMOVED from this package: it required ``pip install gmsh`` plus, on a minimal Linux
-install, the system libGLU library, which could not be reliably provided, and every plot it produced already had a
-matplotlib equivalent used by every example script in this package.
+pyvista_plot   3D mesh and result visualization with PyVista (``pip install fea_engine[viz]``): Mesh/MultiBlockMesh to
+               ``pyvista.UnstructuredGrid``, field contours, deformed shapes, VTK export. See that module's docstring.
 
-fea_engine.mesh's own plot_mesh_2d/plot_mesh_3d/plot_mesh_annotated
-(plain matplotlib, no Gmsh dependency) remain in mesh.py, unchanged, and
-are the supported rendering path.
+pyvista_animation   GIF/MP4 animations of time histories, load paths and mode shapes.
+pyvista_sections    slices, clips and thresholds of 3-D meshes.
+pyvista_comparison  full-order versus reduced-order side-by-side plots with error metrics.
+
+The functions are re-exported here and import PyVista lazily, so ``import fea_engine`` works without it.
+Plain-matplotlib mesh plots (``fea_engine.mesh.plot_mesh_2d/plot_mesh_3d/plot_mesh_annotated``) and the matplotlib
+field/series plots on ``FEField`` / ``FieldSeries`` are independent of this sub-package and need only matplotlib.
+
+A Gmsh-native screenshot renderer (formerly ``gmsh_plot.py``) has been removed: it needed ``pip install gmsh`` plus the
+system libGLU library, which could not be reliably provided.
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
+from .pyvista_plot import (to_pyvista, add_displacement, displacement_vectors, deformed_grid, plot_field,
+                           plot_deformed, save_vtk, set_off_screen, VTK_CELL_TYPES)
 
-__all__: list = []
+from .pyvista_animation import animate_history, animate_mode, mode_history
+from .pyvista_sections import slice_field, clip_field, threshold_field, plot_slice, plot_clipped, plot_threshold
+from .pyvista_comparison import compare_fields, field_error
+
+__all__ = ["animate_history", "animate_mode", "mode_history", "slice_field", "clip_field", "threshold_field",
+           "plot_slice", "plot_clipped", "plot_threshold", "compare_fields", "field_error", "to_pyvista", "add_displacement", "displacement_vectors", "deformed_grid", "plot_field", "plot_deformed",
+           "save_vtk", "set_off_screen", "VTK_CELL_TYPES"]

@@ -170,9 +170,14 @@ Reduced-order   7.45 ms  ▏                                                    
 <td align="center"><a href="rom_engine/examples/gallery/rom_04_balanced_truncation.py"><img src="rom_engine/examples/gallery/rom_04_balanced_truncation.png" width="330"></a><br><sub><b>Balanced truncation</b>: actual error stays below the certified bound</sub></td>
 <td align="center"><a href="rom_engine/examples/gallery/rom_05_nonlinear_modal_rom.py"><img src="rom_engine/examples/gallery/rom_05_nonlinear_modal_rom.png" width="330"></a><br><sub><b>Nonlinear modal ROM</b>: 2 modes vs 51-DOF full-order beam, max error 3.3 %</sub></td>
 </tr>
+<tr>
+<td align="center"><a href="fea_engine/examples/gallery/fea_07_pyvista_visualization.py"><img src="fea_engine/examples/gallery/fea_07_pyvista_2d_von_mises.png" width="330"></a><br><sub><b>PyVista contour</b>: von Mises stress on the deformed cantilever (optional <code>viz</code> extra)</sub></td>
+<td align="center"><a href="fea_engine/examples/gallery/fea_08_pyvista_animation_sections_rom.py"><img src="fea_engine/examples/gallery/fea_08_threshold.png" width="330"></a><br><sub><b>Sections</b>: only the cells above half the peak von Mises stress</sub></td>
+<td align="center"><a href="fea_engine/examples/gallery/fea_08_pyvista_animation_sections_rom.py"><img src="fea_engine/examples/gallery/fea_08_rom_rank4.png" width="330"></a><br><sub><b>Full vs reduced</b>: POD rank 4, relative error 5.0e-4, with the error field</sub></td>
+</tr>
 </table>
 
-Click an image to open the script that produced it. All twelve gallery figures are in `fea_engine/examples/gallery/` and `rom_engine/examples/gallery/`.
+Click an image to open the script that produced it. The gallery figures are in `fea_engine/examples/gallery/` and `rom_engine/examples/gallery/`; `fea_08` also writes two animated GIFs (a transient von Mises response and the first mode shape).
 
 <a id="s-1"></a>
 
@@ -192,7 +197,7 @@ run time (the `fea` extra only installs it for the examples and tests).
 - **Elements:** trusses (linear, large-displacement, plastic); 2-D and 3-D beams (Euler-Bernoulli, corotational, geometrically exact Reissner); plane stress/strain triangles and quadrilaterals (linear and quadratic); 3-D solids (hexahedra and tetrahedra, linear and quadratic, B-bar); Mindlin plates; MITC shells (linear, corotational, director-based); contact elements (gap, node-to-segment, with friction).
 - **Analyses:** static, linear buckling, modal, harmonic / frequency sweep, random vibration (PSD), implicit and explicit transient, nonlinear static with load stepping, displacement control, arc-length and Koiter-Newton, nonlinear transient (Newmark-Newton).
 - **Nonlinearity:** large displacement and rotation, J2 plasticity (isotropic and kinematic hardening), Neo-Hookean hyperelasticity, penalty and Lagrange-multiplier contact.
-- **Mesh and loads:** structured mesh generators (lines, rectangles, boxes, with holes and notches), graded meshes, multi-block meshes, mesh file I/O (`meshio`), edge and face pressure loads by quadrature, adaptive refinement with error estimators.
+- **Mesh and loads:** structured mesh generators (lines, rectangles, boxes, with holes and notches), graded meshes, multi-block meshes, mesh file I/O (`meshio`), 3-D contour, deformed-shape, animation, slice and full-vs-reduced comparison plots (`pyvista`, optional), edge and face pressure loads by quadrature, adaptive refinement with error estimators.
 - **Performance and GPU:** vectorised assembly, sparse and iterative solvers (CG with Jacobi/SSOR preconditioning), batched multi-load solves, torch CPU/GPU solve backends, autograd tangents, topology optimisation.
 
 ### What `rom_engine` covers
@@ -270,12 +275,13 @@ python -c "import fea_engine, rom_engine; print(fea_engine.__version__, rom_engi
 |---|---|
 | Plotting | `matplotlib` (the `plot` extra of `fea_engine`) |
 | Mesh file I/O | `pip install meshio` |
+| 3-D visualization (contours, deformed shape, animation, slices, ROM comparison, VTK export) | `pip install pyvista imageio` (the `viz` extra of `fea_engine`) |
 | PyTorch, CPU only | `pip install torch --index-url https://download.pytorch.org/whl/cpu` |
 | PyTorch, NVIDIA GPU | `pip install torch --index-url https://download.pytorch.org/whl/cu126` (match the `cuXXX` to your driver) |
 
 There is no generic `[torch]` extra on purpose, because the right wheel depends
 on your hardware. A plain `import fea_engine` or `import rom_engine` never
-needs torch or matplotlib. See `USER_GUIDE.md` for known torch problems
+needs torch, matplotlib or pyvista. See `USER_GUIDE.md` for known torch problems
 (Pascal GPUs, the OpenMP error on Windows with Anaconda).
 
 <a id="s-3"></a>

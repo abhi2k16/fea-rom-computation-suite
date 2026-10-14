@@ -6,6 +6,19 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 
 ## Unreleased
 
+### Added (fea_engine, visualization)
+- `visualization/pyvista_plot.py` (optional `pip install fea_engine[viz]`, PyVista): `to_pyvista` (Mesh / MultiBlockMesh to
+  `pyvista.UnstructuredGrid`, nine cell types), `displacement_vectors`, `add_displacement`, `deformed_grid`, `plot_field`
+  (nodal/element field contours, optionally on the deformed mesh), `plot_deformed`, `save_vtk`, `set_off_screen`.
+  `tests/test_pyvista_plot.py` (31 tests; 28 run without a display) checks the VTK node order of the quadratic cells.
+  Example `examples/gallery/fea_07_pyvista_visualization.py`.
+- `visualization/pyvista_animation.py` (`animate_history`, `animate_mode`, `mode_history`: GIF/MP4, colour limits and scale fixed
+  over all frames), `visualization/pyvista_sections.py` (`slice_field`, `clip_field`, `threshold_field`, `plot_slice`,
+  `plot_clipped`, `plot_threshold`), `visualization/pyvista_comparison.py` (`compare_fields`, `field_error`: full-order, reduced-order
+  and error panels with relative L2 / max metrics). `plot_field` and the other plot functions accept a callable `field(U)`.
+  Tests `test_pyvista_animation.py`, `test_pyvista_sections.py`, `test_pyvista_comparison.py` (64 PyVista tests in all; 53 run without a
+  display); the display fixture lives in `tests/conftest.py`. Example `examples/gallery/fea_08_pyvista_animation_sections_rom.py`.
+
 ### Added (fea_engine, contact)
 - `contact_solvers.py`: exact multi-node Signorini contact on plain arrays. LCP solvers (`lcp_active_set`, `lcp_lemke`,
   `lcp_projected_gauss_seidel`, `solve_lcp`), `solve_contact_static`, `solve_contact_dynamics` (implicit two-step scheme)

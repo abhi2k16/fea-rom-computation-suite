@@ -99,6 +99,7 @@ Reference, Multi-core/CPU/GPU usage, Performance, and pointers for going deeper.
 cd fea_engine
 pip install -e .                 # core: numpy>=1.22, scipy>=1.8 only
 pip install -e ".[plot]"         # + matplotlib, for mesh.py's plot_*
+pip install -e ".[viz]"          # + pyvista and imageio: 3-D plots, animations (GIF), slices, ROM comparison
 pip install -e ".[dev]"          # + pytest/pytest-cov, to run the test suite
 ```
 
@@ -108,7 +109,8 @@ pip install -e ".[dev]"          # + pytest/pytest-cov, to run the test suite
 > been removed from `fea_engine` entirely -- it required a system libGLU
 > library that could not be reliably provided, and no verified example or
 > result in this package depended on it. `mesh.py`'s structured mesh
-> generation and matplotlib `plot_*` functions remain the supported path.
+> generation and matplotlib `plot_*` functions remain the supported path. 3-D rendering is now provided by
+> `visualization/pyvista_plot.py` (PyVista, `.[viz]` extra; see "3-D visualization with PyVista" below).
 
 ```bash
 cd rom_engine
@@ -244,6 +246,12 @@ cd ../rom_engine && python -m pytest tests -q -rs -n auto  # ~460 tests, about 2
 ```
 
 A few tests skip when an optional dependency is missing (for example `meshio`); `-rs` lists them with the reason.
+
+The PyVista visualization tests (`tests/test_pyvista_plot.py`, `test_pyvista_animation.py`, `test_pyvista_sections.py`,
+`test_pyvista_comparison.py`, 64 tests) need `pip install -e ".[viz]"` and skip without PyVista. The 11 that render a
+picture also skip when there is no display for VTK; on a headless Linux machine run them as
+`xvfb-run -a python -m pytest tests/test_pyvista_*.py -q -rs`. On a Windows desktop with the extra installed all 64
+passed (20.55 s), and gallery scripts 7 and 8 reproduced the numbers quoted in `fea_README.md`.
 
 Minimal install + smoke test for both packages together:
 
@@ -633,6 +641,81 @@ Translations are written as one 3-component vector named after the field, other 
 as scalars, mode shapes as one array per mode, complex fields as `_re` / `_im` / `_abs`. Quadratic elements
 are drawn through their corner nodes by default (correct for every node ordering); `high_order="native"`
 writes true quadratic cells and assumes VTK's node order, so check Tet10 and Hex20 on a small model first.
+
+**3-D visualization with PyVista.** For interactive or off-screen 3-D plots (contours, deformed shape, colorbar),
+install the optional extra (`pip install -e ".[viz]"`). `fea_engine.visualization` converts a `Mesh` /
+`MultiBlockMesh` to a `pyvista.UnstructuredGrid` and plots a field on it; a plain `import fea_engine` never
+imports PyVista.
+
+```python
+from fea_engine.visualization import to_pyvista, plot_field, plot_deformed, save_vtk
+
+U  = sys.solve_static()
+vm = sys.von_mises(U)
+
+plot_field(mesh, vm, component="von_mises", U=U, scale="auto")        # stress contour on the deformed mesh
+plot_deformed(mesh, U, scale="auto")                                  # displacement magnitude + undeformed outline
+plot_field(mesh, "ux", U=U, screenshot="ux.png", show=False)          # headless: render to a PNG, no window
+grid = to_pyvista(mesh, point_data={"vm": vm.component("von_mises")}) # the raw pyvista grid, for your own filters
+save_vtk(mesh, "result.vtu", U=U)                                     # open in ParaView
+```
+
+`field` can be a registered array name, `"displacement"`, `"ux"`/`"uy"`/`"uz"`, an `FEField` (pick one component
+with `component=`), or a plain array of length `n_nodes` (point data) or `n_elements` (cell data). `scale` is the
+displacement magnification; `"auto"` draws the largest displacement as 10 % of the model size. Supported cells are
+line2, tri3, quad4, tet4, hex8, tri6, quad8, tet10 and hex20; beams, trusses and shells are not `Mesh` objects and are
+not drawn by this module. fea_engine's node order for the quadratic cells is the VTK order (checked in
+`tests/test_pyvista_plot.py`), so the quadratic cells are drawn correctly. On a headless Linux machine run under a
+virtual display: `xvfb-run -a python script.py`. This is separate from `U.plot(...)` (matplotlib) and from
+`export.write_vtu` (no dependencies, writes ParaView files without PyVista).
+
+**Animations.** `animate_history` writes one frame per row of a `(n_steps, n_dof)` history (a transient from
+`solve_transient_implicit`, a load-step or arc-length path, a ROM reconstruction) to a GIF or MP4; `animate_mode`
+oscillates a mode shape. The colour limits and the displacement magnification are computed once over all frames, so
+colours and scale stay comparable from frame to frame, and `field` can be a callable, evaluated per frame:
+
+```python
+from fea_engine.visualization import animate_history, animate_mode
+
+freq, shapes = sys.solve_modal(n_modes=3)
+animate_mode(mesh, shapes[:, 0], "mode1.gif", freq=freq[0])                       # GIF output uses imageio (in the `.[viz]` extra)
+t, U = sys.solve_transient_implicit(load, T_total, dt)
+animate_history(mesh, U, "response.gif", times=t, n_frames=60,                    # 60 evenly spaced steps
+                field=lambda W: sys.von_mises(W), component="von_mises")         # stress, evaluated per frame
+```
+
+MP4 output additionally needs `imageio-ffmpeg`. The returned dict has `n_frames`, `clim` and `scale`.
+
+**Slices, clips and thresholds (3-D meshes).** To see inside a solid, `plot_slice` (one plane, or `n_slices=k`
+parallel planes across the span), `plot_clipped` (one side of a plane) and `plot_threshold` (only the cells whose
+field is in a range, e.g. the highly stressed region) take the same `field`, `U` and `scale` as `plot_field`; the
+geometry functions `slice_field`, `clip_field` and `threshold_field` return the PyVista objects themselves:
+
+```python
+from fea_engine.visualization import plot_slice, plot_threshold
+
+plot_slice(mesh, vm, component="von_mises", normal="x", n_slices=3, U=U, scale="auto")
+plot_threshold(mesh, vm, (0.5 * vm_max, None), component="von_mises", U=U, scale="auto")
+```
+
+**Full-order versus reduced-order.** `compare_fields(mesh, U_full, U_rom)` draws the full-order field, the reduced
+field and the pointwise error side by side (shared colour limits for the first two, its own colorbar for the error)
+and returns `(plotter, metrics)` with `rel_l2`, `rel_max`, `max_abs_error` and `rel_l2_displacement`. The error of a
+displacement is the norm of the vector difference, not the difference of magnitudes. `field_error` returns the same
+numbers without plotting. With a POD basis `V` (for example from `rom_engine.pod.PodBasis`) and a full-order solution
+`U`:
+
+```python
+from fea_engine.visualization import compare_fields
+
+U_rom = V @ (V.T @ U)                                   # projection of U onto the basis (best a rank-r basis can do)
+plotter, met = compare_fields(mesh, U, U_rom, screenshot="rom_vs_fom.png", show=False)
+print(met["rel_l2_displacement"])                       # 2.9e-02 at rank 1, 5.0e-04 at rank 4 in gallery script 8
+```
+
+The numbers in the last comment are measured by `examples/gallery/fea_08_pyvista_animation_sections_rom.py` (a 2-D
+cantilever, POD of 8 static load cases); `U_rom` for a ROM that is solved rather than projected is its reconstruction
+`V @ q`.
 
 <a id="s-15b"></a>
 
@@ -1579,7 +1662,7 @@ Runnable, end-to-end scripts, grouped by workflow.
 
 For a guided, numbered tour instead of this topic-by-topic list, see the
 dedicated galleries: `fea_engine/examples/gallery/` (`fea_01_...` through
-`fea_06_...`, plus the related `fea_scipy_vs_torch_gpu_benchmark.py`
+`fea_08_...`, plus the related `fea_scipy_vs_torch_gpu_benchmark.py`
 solver-backend benchmark one level up) and `rom_engine/examples/gallery/`
 (`rom_01_...` through `rom_06_...`) — each script is self-contained,
 prints its own validation numbers, and saves a plot; see each folder's
@@ -1601,6 +1684,10 @@ breakdown.
   worked models.
 - **Sparse vs. dense timing, higher-order elements** — direct
   performance comparisons.
+- **3-D visualization (PyVista)** — `examples/gallery/fea_07_pyvista_visualization.py` (von Mises contour on the
+  deformed mesh, deformed 3-D cantilever, `.vtu` export) and `fea_08_pyvista_animation_sections_rom.py` (transient and
+  mode-shape GIFs, slices and thresholds of a 3-D result, full-order vs POD-reconstructed comparison with error
+  metrics). Both need `pip install -e ".[viz]"`; see "3-D visualization with PyVista" in the Results section.
 
 See `fea_engine/examples/` for the full, runnable set.
 
@@ -2055,7 +2142,7 @@ every number above.
 - `fea_engine/examples/` — runnable scripts for buckling, arc-length
   snap-through, plasticity, hyperelasticity, shells, 3-D frames,
   sparse-vs-dense timing, higher-order elements.
-- `fea_engine/examples/gallery/` — the numbered `fea_01_...`–`fea_06_...`
+- `fea_engine/examples/gallery/` — the numbered `fea_01_...`–`fea_08_...`
   gallery (see its own `fea_README.md`) and the sibling
   `fea_scipy_vs_torch_gpu_benchmark.py` solver-backend benchmark.
 - `fea_engine/docs/geometry_meshing_alternatives_research.md` — how to
