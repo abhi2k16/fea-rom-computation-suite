@@ -6,6 +6,9 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 
 ## Unreleased
 
+### Added (fea_engine, batched 3-D contact)
+- `contact_batch.ContactSet3D` (node-to-triangle penalty pairs in array form; the law, force split and consistent Gauss-Newton tangent of `NodeToSurfaceContact3D`, or its central-difference tangent on request; optional named smoothing and nearest-candidate selection, both off by default), `candidate_pairs_3d` (KD-tree broad phase) and `closest_point_on_triangles` (array form of the scalar region test, same precedence). `tests/test_contact_set_3d.py` (21 tests); timing script `tests/batch_timing_contact_3d.py` (1152 pairs: contact force 92x, tangent 69x, system CSR tangent 6.4x faster than one element per pair, 2 cores). Note: with the consistent tangent Newton stalls on the test model for k_p >= 700 (also with the per-element registration); `consistent_tangent=False` converged for all k_p tried.
+
 ### Added (fea_engine, batched 2-D contact)
 - `contact_batch.ContactSet2D` (many node-to-segment penalty pairs in one array evaluation; the law, force split and central-difference tangent of `NodeToSegmentContact2D`; optional named smoothing, off by default), `candidate_pairs_2d` (KD-tree broad phase, same pairs as `find_contact_pairs_2d`) and `FESystem.add_contact_set` (force, dense and CSR tangent). `tests/test_contact_set_2d.py` (19 tests); timing script `tests/batch_timing_contact.py` (80 pairs: contact force 20x and tangent 21x faster than one element per pair, system CSR tangent 4.8x, 2 cores).
 

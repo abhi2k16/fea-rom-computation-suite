@@ -369,10 +369,13 @@ Chooses SciPy or torch for a given stiffness matrix (backend="auto") and prints 
 <a id="mod-contact-batch-py"></a>
 ### 📦 `contact_batch.py`
 
-Node-to-segment penalty contact for all pairs at once: `ContactSet2D` (same law as one `NodeToSegmentContact2D` per pair; optional, named smoothing, off by default) and a KD-tree broad-phase search with the same result as `find_contact_pairs_2d`. Register with `FESystem.add_contact_set`. 2-D, frictionless, stateless.
+Penalty contact for all pairs at once: `ContactSet2D` (node to segment, same law as one `NodeToSegmentContact2D` per pair) and `ContactSet3D` (node to triangle, `NodeToSurfaceContact3D`), with KD-tree broad-phase searches that return the same pairs as `find_contact_pairs_2d` / `_3d`. Optional smoothing (and, in 3-D, nearest-candidate selection) is off by default and named in `describe()`. Register with `FESystem.add_contact_set`. Frictionless, stateless, fixed pair list.
 
-<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🧱 1 class &nbsp;·&nbsp; 🔧 1 function</summary>
+<details markdown="1"><summary><b>Show API</b> &nbsp;·&nbsp; 🧱 2 classes &nbsp;·&nbsp; 🔧 3 functions</summary>
 
+- 🔧 **`candidate_pairs_3d(node_coords, slave_node_ids, master_triangles, search_radius)`** — KD-tree broad phase; same pairs and order as `find_contact_pairs_3d`.
+- 🔧 **`closest_point_on_triangles(p, a, b, c)`** — Array form of `closest_point_on_triangle_3d` (same region precedence); returns weights and points.
+- 🧱 **`class ContactSet3D(pairs, k_p, smoothing_length=0.0, consistent_tangent=True, nearest_only=False)`** — Many 3-D node-to-triangle penalty pairs in array form; same methods as `ContactSet2D` (`from_search`, `gaps`, `active`, `pair_forces`, `pair_tangents`, `internal_force`, `tangent_entries`, `describe`).
 - 🔧 **`candidate_pairs_2d(node_coords, slave_node_ids, master_segments, search_radius)`** — KD-tree broad phase; same pairs and order as `find_contact_pairs_2d`.
 - 🧱 **`class ContactSet2D(pairs, k_p, smoothing_length=0.0)`** — Many 2-D node-to-segment penalty pairs evaluated in array form.
   - `ContactSet2D.from_search(node_coords, slave_node_ids, master_segments, search_radius, k_p, smoothing_length=0.0)`
