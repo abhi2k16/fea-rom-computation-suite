@@ -6,6 +6,9 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 
 ## Unreleased
 
+### Added (fea_engine, torch backend of the batched kernels)
+- `batched_kernels_torch.py`: `tl_internal_force` / `tl_tangent` (total-Lagrangian kernels written once for numpy and torch, 2-D and 3-D), `internal_force_batch_torch` / `tangent_stiffness_batch_torch` (numpy in / numpy out, `device=`), `assemble_internal_force_torch` / `assemble_tangent_stiffness_torch` (structural blocks of Quad4PlaneStressTL, Hex8SolidTL, Hex20SolidTL, Tet10SolidTL; contact, springs, constraints and element state refused). `tests/test_batched_kernels_torch.py` (30 tests): 29 passed, 1 skipped (the torch-absent case), 0 failed on the user's machine, including the CUDA test. No timing.
+
 ### Added (fea_engine, linear constraints in nonlinear analysis)
 - `constraint_elimination.EliminatedSystem` and `FESystem.eliminate_constraints()`: the linear constraints of `add_constraint` / `tie` are eliminated exactly (`u = T q`, `f_q = T^T f(Tq)`, `K_q = T^T K T`, dense or CSR). `solve_nonlinear_static` and `solve_nonlinear_arc_length` now accept constrained systems automatically (displacements returned in the full numbering); `solve_nonlinear_displacement_control` works on the explicit object. Homogeneous constraints and zero prescribed values only; not the transient driver. `tests/test_constraint_elimination.py` (9 tests); constrained patch test (two halves tied vs one piece, large displacement) agrees to 9e-16.
 

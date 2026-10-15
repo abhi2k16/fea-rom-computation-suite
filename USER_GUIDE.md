@@ -781,6 +781,12 @@ iterations. `lu_ordering` is problem dependent; no ordering is faster by default
 plane-stress plate: 3362 DOFs, dense solve 609 ms against sparse LU 18 ms; a 20,402-DOF plate (3.3 GB as a dense
 tangent) assembles and solves with a 51 MB peak. Details and limits: `fea_engine/docs/batched_nonlinear_kernels_plan.md`.
 
+**Torch backend for the batched kernels (optional).** `fea_engine.batched_kernels_torch` has torch versions of the batched total-Lagrangian
+kernels (`internal_force_batch_torch`, `tangent_stiffness_batch_torch`, and `assemble_internal_force_torch` / `assemble_tangent_stiffness_torch` for a whole
+system, `device="cpu"` or `"cuda"`) for `Quad4PlaneStressTL`, `Hex8SolidTL`, `Hex20SolidTL` and `Tet10SolidTL`; the kernel algebra is checked against
+the NumPy kernels, and the torch tests pass (29 passed, 1 skipped, 0 failed, including a CUDA check, on the author's machine); no timing of the torch path exists yet. Contact, springs, constraints and element state are refused; the Newton drivers keep
+using the NumPy assembly.
+
 **Constraints and ties in nonlinear analysis.** Linear constraints (`add_constraint`, `tie`) are eliminated exactly (`u = T q`), so
 `solve_nonlinear_static` and `solve_nonlinear_arc_length` accept them and return displacements in the full numbering; for
 `solve_nonlinear_displacement_control` use `es = sys.eliminate_constraints()`, pass `es` as the system (the control DOF is then an index into
