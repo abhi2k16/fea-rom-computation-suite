@@ -15,8 +15,13 @@ Per Gauss point, with dN = dN/dX (3 x n) from the reference geometry and u the n
     f_int    = sum_gp  B_nl^T S                 detJ w
     K_T      = sum_gp (B_nl^T D B_nl + (dN^T S dN) (x) I_3)  detJ w          S = D E_voigt as a 3 x 3 tensor
 
-This file holds the per-Gauss-point REFERENCE implementation, written in the style of Tet10SolidTL so it can serve as an
-independent check on the batched kernels (added separately). It is a subclass of the linear element, so shape
+This file holds two separately written implementations of the same formulas: the per-Gauss-point REFERENCE
+(``internal_force`` / ``tangent_stiffness``, written in the style of Tet10SolidTL) and the opt-in BATCHED kernels
+(``internal_force_batch`` / ``tangent_stiffness_batch``, all elements of a block at once, with the Gauss-point sum folded
+into one matrix product). ``FESystem.assemble_*(vectorized=True)`` uses the batched kernels; the reference stays the
+default and the oracle that the batched kernels are tested against. A 3-D hexahedron is compute-bound, so batching removes
+much less interpreter overhead than for the 2-D quadrilateral; measured ratios are in tests/batch_timing_hex.py output and
+in docs/batched_nonlinear_kernels_plan.md. It is a subclass of the linear element, so shape
 functions, node order and mass are those of Hex8Solid3D (Hex20Solid3D for Hex20SolidTL, whose mid-edge nodes follow
 the order 8-11 bottom edges (0-1, 1-2, 2-3, 3-0), 12-15 top edges, 16-19 vertical edges (0-4, 1-5, 2-6, 3-7); a mesh
 from Gmsh needs ``Hex20Solid3D.GMSH_NODE_ORDER`` first).
@@ -121,11 +126,90 @@ class _HexTLReference:
         return K
 
 
-class Hex8SolidTL(_HexTLReference, Hex8Solid3D):
+class _HexTLBatch:
+    """Batched total-Lagrangian kernels for a 3-D hexahedron: E elements at once, ``coords`` (E, n, 3), ``u`` (E, 3n),
+    ``mat`` a Material or the 6 x 6 elasticity matrix (constant over the block), results (E, 3n) and (E, 3n, 3n).
+
+    ``geometry`` is an optional precomputed pair (dN/dX with shape (E, Q, n, 3), det(J0) * w with shape (E, Q)) for these
+    elements and this element's Gauss rule; ``FESystem`` passes its cached one. Without it the pair is computed from
+    ``coords``. Written independently of ``_HexTLReference`` (array expressions instead of per-point loops)."""
+
+    supports_batch = True
+
+    def batch_bytes_per_element(self, kind="tangent"):
+        """Working bytes per element: the generic estimate (strain-displacement array and the element matrix) plus the
+        deformation-gradient / strain / stress arrays; see batched_kernels.default_bytes_per_element."""
+        from ..batched_kernels import default_bytes_per_element
+        return default_bytes_per_element(self.gauss_order ** 3, 3 * self.n_nodes, 3, kind)
+
+    def _reference_geometry_batch(self, coords):
+        pts, wts = gauss_product(self.gauss_order, 3)
+        dN_nat = np.stack([self._cached_shape_and_derivs(tuple(p))[1] for p in pts])           # (Q, 3, n)
+        coords = np.asarray(coords, float)
+        J = np.einsum('qin,enj->eqij', dN_nat, coords)                                         # (E, Q, 3, 3)
+        detJ = np.linalg.det(J)
+        rhs = np.ascontiguousarray(np.broadcast_to(dN_nat, (coords.shape[0],) + dN_nat.shape))
+        dN = np.transpose(np.linalg.solve(J, rhs), (0, 1, 3, 2))                               # (E, Q, n, 3)
+        return dN, detJ * np.asarray(wts)[None, :]
+
+    def _batch_kinematics(self, coords, u, mat, geometry):
+        D = self._elasticity(mat)
+        dN, JxW = self._reference_geometry_batch(coords) if geometry is None else geometry
+        n = self.n_nodes
+        u = np.asarray(u, float).reshape(-1, n, 3)
+        F = np.eye(3) + np.einsum('eai,eqaj->eqij', u, dN)                                      # F[i,j] = d_ij + u_a,i dN_a,j
+        C = np.einsum('eqki,eqkj->eqij', F, F)
+        Ev = np.empty(F.shape[:2] + (6,))
+        Ev[..., 0] = 0.5 * (C[..., 0, 0] - 1.0)
+        Ev[..., 1] = 0.5 * (C[..., 1, 1] - 1.0)
+        Ev[..., 2] = 0.5 * (C[..., 2, 2] - 1.0)
+        Ev[..., 3], Ev[..., 4], Ev[..., 5] = C[..., 0, 1], C[..., 1, 2], C[..., 0, 2]          # 2 E_xy, 2 E_yz, 2 E_xz
+        S = Ev @ D.T                                                                            # (E, Q, 6)
+        nx, ny, nz = dN[..., 0], dN[..., 1], dN[..., 2]                                         # (E, Q, n)
+        B = np.empty(F.shape[:2] + (6, n, 3))
+        for i in range(3):
+            f0, f1, f2 = F[:, :, i, 0, None], F[:, :, i, 1, None], F[:, :, i, 2, None]         # (E, Q, 1)
+            B[:, :, 0, :, i] = f0 * nx
+            B[:, :, 1, :, i] = f1 * ny
+            B[:, :, 2, :, i] = f2 * nz
+            B[:, :, 3, :, i] = f0 * ny + f1 * nx
+            B[:, :, 4, :, i] = f1 * nz + f2 * ny
+            B[:, :, 5, :, i] = f0 * nz + f2 * nx
+        return D, dN, B.reshape(B.shape[:3] + (3 * n,)), S, JxW
+
+    def internal_force_batch(self, coords, u, mat, thickness=1.0, geometry=None, **kwargs):
+        """Internal forces (E, 3n): sum over Gauss points of B_nl^T S detJ w."""
+        _, _, B, S, c = self._batch_kinematics(coords, u, mat, geometry)
+        return np.einsum('eqsd,eqs,eq->ed', B, S, c, optimize=True)
+
+    def tangent_stiffness_batch(self, coords, u, mat, thickness=1.0, geometry=None, **kwargs):
+        """Tangent matrices (E, 3n, 3n): sum over Gauss points of detJ w (B_nl^T D B_nl + (dN^T S dN) (x) I3), each
+        sum folded into one batched matrix product (contraction lengths Q*6 and Q*3)."""
+        D, dN, B, S, c = self._batch_kinematics(coords, u, mat, geometry)
+        E, Q = c.shape
+        n = self.n_nodes
+        nd = 3 * n
+        Bc = (B * c[:, :, None, None]).reshape(E, Q * 6, nd)
+        DB = (D @ B).reshape(E, Q * 6, nd)
+        K = Bc.transpose(0, 2, 1) @ DB                                                          # (E, 3n, 3n)
+        S3 = np.empty((E, Q, 3, 3))
+        S3[..., 0, 0], S3[..., 1, 1], S3[..., 2, 2] = S[..., 0], S[..., 1], S[..., 2]
+        S3[..., 0, 1] = S3[..., 1, 0] = S[..., 3]
+        S3[..., 1, 2] = S3[..., 2, 1] = S[..., 4]
+        S3[..., 0, 2] = S3[..., 2, 0] = S[..., 5]
+        SdN = S3 @ dN.transpose(0, 1, 3, 2)                                                     # (E, Q, 3, n): S dN_b
+        A = (dN * c[:, :, None, None]).transpose(0, 1, 3, 2).reshape(E, Q * 3, n)               # c dN_a,k
+        Kg = A.transpose(0, 2, 1) @ SdN.reshape(E, Q * 3, n)                                    # (E, n, n)
+        for i in range(3):
+            K[:, i::3, i::3] += Kg
+        return K
+
+
+class Hex8SolidTL(_HexTLReference, _HexTLBatch, Hex8Solid3D):
     """Hex8Solid3D with Total-Lagrangian geometric nonlinearity and a St. Venant-Kirchhoff law (see the module
     docstring). Default 2 x 2 x 2 integration; shear-locks in bending like its linear parent."""
 
 
-class Hex20SolidTL(_HexTLReference, Hex20Solid3D):
+class Hex20SolidTL(_HexTLReference, _HexTLBatch, Hex20Solid3D):
     """Hex20Solid3D (20-node serendipity hexahedron) with Total-Lagrangian geometric nonlinearity and a
     St. Venant-Kirchhoff law (see the module docstring). Default 3 x 3 x 3 integration."""
