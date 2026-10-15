@@ -16,6 +16,15 @@
 
 </div>
 
+> [!IMPORTANT]
+> **Wave 22 is closed (2026-10-15): batched nonlinear element kernels, opt-in.** `Quad4PlaneStressTL`, `Hex8SolidTL`, `Hex20SolidTL` and `Tet10SolidTL`
+> now have batched (no Python loop over elements) force and tangent kernels, a sparse Newton path, batched 2-D / 3-D contact sets
+> (`ContactSet2D`, `ContactSet3D`), batched hyper-reduction hooks (`ECSW.fit_batched`), constraint elimination (`FESystem.eliminate_constraints`)
+> and a torch backend (`fea_engine.batched_kernels_torch`). The loop versions stay the default and the reference.
+> Measured on the author's machine (12 CPUs): kernel force speedups of 102x (Quad4), 47x (Hex8), 23x (Hex20) and 41x (Tet10) over the loop,
+> agreement to about 1e-14. The GPU (GTX 1050) was no faster than torch on the CPU for the one case timed. Record, limits and all numbers:
+> [`fea_engine/docs/batched_nonlinear_kernels_plan.md`](fea_engine/docs/batched_nonlinear_kernels_plan.md); benchmark: `paper/experiments/e10_batched_kernels.py`.
+
 ## 🧭 Contents
 
 | | |

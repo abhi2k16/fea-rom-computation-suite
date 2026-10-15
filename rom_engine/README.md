@@ -14,6 +14,13 @@
 
 </div>
 
+> [!IMPORTANT]
+> **Wave 22 closed (2026-10-15), `rom_engine` part: batched hyper-reduction.** `ECSW` takes keyword-only `elem_forces_fn` / `elem_tangents_fn`
+> (callbacks `fn(elements, U_local)`, e.g. `FESystem.element_forces_local`), `ecsw_training_matrix_batched` and `ECSW.fit_batched` build the training
+> matrix without a Python loop over elements, and `nonlinearity_indicator_batched` does the same for the domain-partition indicator. Measured on 400 elements
+> (sandbox): training matrix 95x, reduced force 13x, indicator 77x; the same 13 elements were selected. Not covered: DEIM/QDEIM and `ManifoldECSW`
+> batched routes. Details: `fea_engine/docs/batched_nonlinear_kernels_plan.md` (M5.1).
+
 ## 🧭 Contents
 
 | | |

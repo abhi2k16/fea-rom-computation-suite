@@ -15,6 +15,15 @@
 </div>
 
 > [!IMPORTANT]
+> **Wave 22 closed (2026-10-15): batched nonlinear element kernels (opt-in).** Total-Lagrangian `Quad4PlaneStressTL`, `Hex8SolidTL`, `Hex20SolidTL` and
+> `Tet10SolidTL` have batched `internal_force_batch` / `tangent_stiffness_batch`; `FESystem` assembles them with a cached sparse CSR position map
+> (`assemble_tangent_stiffness(sparse=True)`, `NewtonOptions.sparse_tangent`), chunks by a byte budget, and adds `ContactSet2D` / `ContactSet3D`
+> (`add_contact_set`), the element-level hooks `element_forces` / `element_tangents`, `eliminate_constraints` (homogeneous constraints) and the
+> torch path `fea_engine.batched_kernels_torch`. Loop versions remain the default and the reference. Measured kernel force speedups over the loop:
+> Quad4 102x, Hex8 47x, Hex20 23x, Tet10 41x (max relative difference 8.4e-15). Not tested: 10^5-element meshes, batched friction, pair updating
+> during a solve. See [`docs/batched_nonlinear_kernels_plan.md`](docs/batched_nonlinear_kernels_plan.md).
+
+> [!IMPORTANT]
 > **Behaviour changes in the interface (v1.0.1).** Silent mistakes now fail loudly; valid calls are unchanged.
 > `assemble_stiffness` / `assemble_mass` / `assemble_lumped_mass` called a second time now **replace** the matrix
 > instead of silently doubling it (one-time `UserWarning`; pass `accumulate=True` to add on purpose).

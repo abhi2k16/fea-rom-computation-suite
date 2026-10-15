@@ -6,6 +6,9 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 
 ## Unreleased
 
+### Wave 22 closed (2026-10-15)
+Batched nonlinear element kernels (opt-in) are complete: items 198-210 as listed below and in `fea_engine/docs/batched_nonlinear_kernels_plan.md`. Loop versions remain the default. Open at closing: the full pytest run on the author's machine had not been reported; not tested: 10^5-element meshes, batched friction, pair updating during a solve.
+
 ### Added (paper experiments, batched kernels)
 - `paper/experiments/e10_batched_kernels.py` (+ `run_all.py` entry, README row): one block per element family, 2-D and 3-D contact, hyper-reduction, constraint-elimination overhead and the torch kernels, with the maximum difference reported next to every ratio; writes `paper/results/batched_kernels.json` (environment included). A run on the 2-core sandbox is stored there; rerun on your machine to replace it (the torch block runs only where torch is importable).
 
