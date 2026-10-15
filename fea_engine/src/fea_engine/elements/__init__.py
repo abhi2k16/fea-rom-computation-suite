@@ -43,6 +43,7 @@ from .contact import (GapContactPenalty, GapContactCurvedFriction,
                        closest_point_on_segment_2d, find_contact_pairs_2d)
 from .nonlinear_solids import (Hex8PlasticJ2, Tet4NeoHookean, Tet10SolidTL,
                                 Quad4PlasticJ2PlaneStress, Hex8PlasticJ2Kinematic, Quad4PlaneStressTL)
+from .hex_tl import Hex8SolidTL, Hex20SolidTL
 from .shells import Shell4MITC, Shell4MITCCorotational
 from .shells_director import Shell4Director
 
@@ -68,6 +69,8 @@ ELEMENT_REGISTRY = {
     "tet4_neo_hookean": Tet4NeoHookean,
     "tet10_solid_tl": Tet10SolidTL,
     "quad4_plane_stress_tl": Quad4PlaneStressTL,
+    "hex8_solid_tl": Hex8SolidTL,
+    "hex20_solid_tl": Hex20SolidTL,
     "shell4_mitc": Shell4MITC,
     "shell4_mitc_corotational": Shell4MITCCorotational,
     "shell4_director": Shell4Director,
@@ -93,7 +96,7 @@ __all__ = [
     "NodeToSurfaceContact3D", "closest_point_on_triangle_3d", "find_contact_pairs_3d",
     "closest_point_on_segment_2d", "find_contact_pairs_2d",
     "Quad8PlaneStress", "Hex20Solid3D", "Tet10Solid3D",
-    "Hex8PlasticJ2", "Tet4NeoHookean", "Tet10SolidTL", "Quad4PlaneStressTL",
+    "Hex8PlasticJ2", "Tet4NeoHookean", "Tet10SolidTL", "Quad4PlaneStressTL", "Hex8SolidTL", "Hex20SolidTL",
     "Shell4MITC", "Shell4MITCCorotational", "Shell4Director",
     "Tri6PlaneStress",
     "Hex8SolidBbar",

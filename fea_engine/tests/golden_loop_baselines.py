@@ -17,7 +17,7 @@ Contents of tests/data/golden_loop_baselines.npz (all float64):
 
 Size of the geometric nonlinearity in the two Newton paths (measured on 2026-10-15 with this generator): the
 converged TL displacement norm is 0.956 of the linear-static norm for the Quad4 plate (max |u| = 1.77 on a 6 x 2
-plate, load 40) and 0.994 for the Tet10 box (max |u| = 0.236 on a 2 x 1 x 1 box, load 60). The Tet10 case is only
+plate, total tip force -8) and 0.994 for the Tet10 box (max |u| = 0.236 on a 2 x 1 x 1 box, total tip force -6.67). The Tet10 case is only
 mildly nonlinear; it pins current behaviour but is a weak test of the nonlinear terms.
 
 Regenerate (only when the loop code is changed ON PURPOSE, and say so in the commit/CHANGELOG):
