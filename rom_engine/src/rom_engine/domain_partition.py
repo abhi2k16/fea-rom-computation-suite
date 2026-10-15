@@ -33,7 +33,7 @@ import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 
-__all__ = ["nonlinearity_indicator", "select_nonlinear_elements", "PartitionedModel"]
+__all__ = ["nonlinearity_indicator", "nonlinearity_indicator_batched", "select_nonlinear_elements", "PartitionedModel"]
 
 
 def nonlinearity_indicator(elem_dofs, elem_force_fn, elem_tangent_fn, states):
@@ -52,6 +52,26 @@ def nonlinearity_indicator(elem_dofs, elem_force_fn, elem_tangent_fn, states):
             den = np.linalg.norm(lin)
             if den > 1e-300:
                 kappa[e] = max(kappa[e], np.linalg.norm(nl) / den)
+    return kappa
+
+
+def nonlinearity_indicator_batched(elem_dofs, elem_forces_fn, elem_tangents_fn, states):
+    """`nonlinearity_indicator` with batched callbacks: ``fn(elements, U_local)`` returning (E, ndof) forces and
+    (E, ndof, ndof) tangents for all elements in one call (see `ecsw_training_matrix_batched`). Same kappa_e, equal
+    to the per-element version to rounding."""
+    S = np.asarray(states, float)
+    from .hyper_reduction import _uniform_dofs
+    D = _uniform_dofs(elem_dofs)
+    allE = np.arange(D.shape[0])
+    K0 = np.asarray(elem_tangents_fn(allE, np.zeros(D.shape)), float)
+    kappa = np.zeros(D.shape[0])
+    for k in range(S.shape[1]):
+        ul = S[D, k]
+        lin = np.einsum("enm,em->en", K0, ul)
+        nl = np.asarray(elem_forces_fn(allE, ul), float) - lin
+        den = np.linalg.norm(lin, axis=1)
+        ok = den > 1e-300
+        kappa[ok] = np.maximum(kappa[ok], np.linalg.norm(nl, axis=1)[ok] / den[ok])
     return kappa
 
 

@@ -329,6 +329,124 @@ class FESystem:
                                                      geometry=(geo.shape_grad[s], geo.JxW[s]), **kwargs)
             bk.scatter_add_matrix(K_T, geo.dofs[s], ke)
 
+    # -----------------------------------------------------------------
+    # Per-element responses: hooks for hyper-reduction (ECSW training, nonlinearity indicators).
+    # Element numbers run over the blocks in order (block 0 first); a single-block mesh uses its own numbering.
+    # -----------------------------------------------------------------
+    @property
+    def n_elements(self):
+        """Total number of elements in the main mesh (all blocks; contact elements and springs not counted)."""
+        return sum(len(c) for _, _, c in self._blocks)
+
+    def _select_elements(self, elements):
+        """Resolve ``elements`` (None = all) to a list of (block_index, positions_in_request, local_indices)."""
+        n = self.n_elements
+        if elements is None:
+            req = np.arange(n)
+        else:
+            req = np.asarray(elements)
+            if req.ndim != 1 or req.dtype.kind not in "iu":
+                raise ValueError("elements must be a 1-D integer array of element numbers (or None for all)")
+            if req.size and (req.min() < 0 or req.max() >= n):
+                raise IndexError(f"element numbers must lie in [0, {n}); got range [{req.min()}, {req.max()}]")
+        out, start = [], 0
+        for b, (_, _, conn) in enumerate(self._blocks):
+            m = (req >= start) & (req < start + len(conn))
+            if m.any():
+                out.append((b, np.flatnonzero(m), req[m] - start))
+            start += len(conn)
+        return req, out
+
+    def element_dofs(self, elements=None):
+        """Global DOF numbers of the selected elements, (E_sel, ndof_per_element), in the order of ``elements``
+        (default all). All selected elements must have the same number of DOFs (one element type, or blocks of
+        equal DOF count); otherwise ValueError (call per block instead)."""
+        from . import batched_kernels as bk
+        req, parts = self._select_elements(elements)
+        out = None
+        for b, pos, loc in parts:
+            d = bk.element_dof_map(np.asarray(self._blocks[b][2])[loc], self.npn)
+            if out is None:
+                out = np.empty((len(req), d.shape[1]), dtype=np.int64)
+            elif d.shape[1] != out.shape[1]:
+                raise ValueError("element_dofs: the selected elements have different numbers of DOFs; select one "
+                                 "block at a time")
+            out[pos] = d
+        return out if out is not None else np.empty((0, 0), dtype=np.int64)
+
+    def _element_response(self, kind, elements, mat, u_global=None, U_local=None, vectorized=None, chunk_size=None,
+                          **kwargs):
+        """Shared body of element_forces / element_tangents (+ the *_local variants). Exactly one of u_global
+        (gathered through the DOF map) or U_local ((E_sel, ndof), already local) is given."""
+        from . import batched_kernels as bk
+        use_batch = self.batched if vectorized is None else bool(vectorized)
+        req, parts = self._select_elements(elements)
+        dofs = self.element_dofs(elements)
+        if U_local is None:
+            U_local = np.asarray(u_global, float)[dofs]
+        else:
+            U_local = np.asarray(U_local, float)
+            if U_local.shape != dofs.shape:
+                raise ValueError(f"U_local has shape {U_local.shape}, expected {dofs.shape} (one row per element)")
+        nd = dofs.shape[1]
+        out = np.empty((len(req), nd) if kind == "force" else (len(req), nd, nd))
+        nodes = np.asarray(self.mesh.nodes)
+        self.last_assembly_modes = {}
+        for b, pos, loc in parts:
+            name, formulation, connectivity = self._blocks[b]
+            block_mat = self._per_block_arg(mat, name)
+            block_states = self.state[name] if self.state is not None else None
+            block_iter_states = self.iter_state[name] if self.iter_state is not None else None
+            why = self._batch_block_reason(name, formulation, use_batch, block_states, block_iter_states)
+            if why is None:
+                geo = self._geometry_cache.get(name, self.mesh.nodes, formulation, connectivity)
+                bpe = bk.bytes_per_element(formulation, "force" if kind == "force" else "tangent",
+                                           n_gauss=geo.JxW.shape[1])
+                fn = formulation.internal_force_batch if kind == "force" else formulation.tangent_stiffness_batch
+                for s in bk.chunk_slices(len(loc), chunk_size, bpe):
+                    sel = loc[s]
+                    out[pos[s]] = fn(nodes[geo.connectivity[sel]], U_local[pos[s]], block_mat,
+                                     geometry=(geo.shape_grad[sel], geo.JxW[sel]), **kwargs)
+                self.last_assembly_modes[name] = "batched"
+                continue
+            self.last_assembly_modes[name] = f"loop ({why})"
+            fn = formulation.internal_force if kind == "force" else formulation.tangent_stiffness
+            for p, i in zip(pos, loc):
+                call_kwargs = dict(kwargs)
+                if block_states is not None:
+                    call_kwargs["state"] = block_states[i]
+                if block_iter_states is not None:
+                    call_kwargs["iter_state"] = block_iter_states[i]
+                out[p] = fn(nodes[connectivity[i]], U_local[p], block_mat, **call_kwargs)
+        return out
+
+    def element_forces(self, u_global, mat, elements=None, vectorized=None, chunk_size=None, **kwargs):
+        """Internal force of each selected element at the global displacement ``u_global``: (E_sel, ndof) array,
+        row k for ``elements[k]`` (default all elements, block order). The DOFs of the rows are ``element_dofs(elements)``.
+        Same ``mat`` / ``vectorized`` / ``chunk_size`` conventions as assemble_internal_force (batched kernels
+        where the block supports them, per-element loop otherwise; ``last_assembly_modes`` is set). Contact elements
+        and springs are not elements of the mesh and are not included. The sum of the rows scattered by
+        ``element_dofs`` equals ``assemble_internal_force`` minus contact and springs."""
+        return self._element_response("force", elements, mat, u_global=u_global, vectorized=vectorized,
+                                      chunk_size=chunk_size, **kwargs)
+
+    def element_tangents(self, u_global, mat, elements=None, vectorized=None, chunk_size=None, **kwargs):
+        """Tangent stiffness of each selected element, (E_sel, ndof, ndof); see element_forces."""
+        return self._element_response("tangent", elements, mat, u_global=u_global, vectorized=vectorized,
+                                      chunk_size=chunk_size, **kwargs)
+
+    def element_forces_local(self, elements, U_local, mat, vectorized=None, chunk_size=None, **kwargs):
+        """Like element_forces but with the element displacements given directly: ``U_local[k]`` is the local
+        displacement vector of ``elements[k]`` (ordering of ``element_dofs``). This is the callback form that
+        hyper-reduction needs, where the local displacement is ``V[dofs] @ q`` and no global vector exists."""
+        return self._element_response("force", elements, mat, U_local=U_local, vectorized=vectorized,
+                                      chunk_size=chunk_size, **kwargs)
+
+    def element_tangents_local(self, elements, U_local, mat, vectorized=None, chunk_size=None, **kwargs):
+        """Tangent counterpart of element_forces_local: (E_sel, ndof, ndof)."""
+        return self._element_response("tangent", elements, mat, U_local=U_local, vectorized=vectorized,
+                                      chunk_size=chunk_size, **kwargs)
+
     def clear_block_geometry(self):
         """Drop every cached block geometry and sparse pattern (rebuilt on next use)."""
         self._geometry_cache.clear()

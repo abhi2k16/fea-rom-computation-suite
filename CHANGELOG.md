@@ -6,6 +6,18 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 
 ## Unreleased
 
+### Added (fea_engine and rom_engine, hyper-reduction hooks)
+- `FESystem.element_forces(u, mat, elements=None, vectorized=None, chunk_size=None)`, `element_tangents(...)`, the callback forms
+  `element_forces_local(elements, U_local, mat)` / `element_tangents_local(...)`, `element_dofs(elements=None)` and `n_elements`:
+  per-element internal forces (E, ndof) and tangents (E, ndof, ndof) of a chosen subset, using the batched kernels where a block
+  supports them and the per-element loop otherwise. Rows scatter to `assemble_internal_force` / `assemble_tangent_stiffness`
+  (no contact or springs). `tests/test_element_response_hooks.py` (9 tests).
+- `rom_engine`: `ecsw_training_matrix_batched`, `ECSW.fit_batched` and keyword-only `elem_forces_fn` / `elem_tangents_fn` on `ECSW`,
+  `nonlinearity_indicator_batched`: one callback call per snapshot (or per reduced force) instead of one per element. The per-element
+  functions are unchanged. `rom_engine/tests/test_hyper_reduction_batched.py` (8 tests); timing script
+  `rom_engine/tests/hyper_reduction_timing.py` (measured 92-112x for the training matrix, 74-87x for the indicator on a 400-element
+  Quad4PlaneStressTL plate, 2 cores).
+
 ### Added (fea_engine, elements)
 - `Quad4PlaneStressTL` (element `"quad4_plane_stress_tl"`, `elements/nonlinear_solids.py`): 4-node plane-stress quadrilateral with
   Total-Lagrangian geometric nonlinearity and a St. Venant-Kirchhoff law (`material.D_plane_stress` on the Green-Lagrange strain),

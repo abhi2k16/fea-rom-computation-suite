@@ -315,7 +315,7 @@ from .cms import (guyan, craig_bampton, couple, GuyanModel, CraigBamptonModel, C
                   free_interface_cms, reduce_interface, FreeInterfaceModel, InterfaceReducedModel)
 from .hyper_reduction import (
     deim_indices, qdeim_indices, DEIM, gappy_reconstruct, ecsw_weights,
-    ecsw_training_matrix, ECSW, reduced_force_error, HyperReducedNonlinearROM,
+    ecsw_training_matrix, ecsw_training_matrix_batched, ECSW, reduced_force_error, HyperReducedNonlinearROM,
 )
 from .linear_dynamics import newmark_linear, modal_superposition, piecewise_linear_exact, galerkin_transient
 from .validation import (validate_rom, convergence_study, select_basis_size, ValidationReport,
@@ -344,7 +344,7 @@ from .contact_rid import (pod_by_information_rate, rid_elements, rid_dofs, conta
 from .contact_hyper_reduction import (ecsw_weights_with_required, fit_contact_aware_ecsw, complete_constraint_elements,
                                       reconstruct_contact_forces, rank_deficiency, enrich_basis_for_constraints,
                                       solve_reduced_contact_newton, ReducedContactNewtonResult)
-from .domain_partition import nonlinearity_indicator, select_nonlinear_elements, PartitionedModel
+from .domain_partition import nonlinearity_indicator, nonlinearity_indicator_batched, select_nonlinear_elements, PartitionedModel
 from .contact_validation import max_normalised_error, contact_errors, ContactErrors, contact_set_agreement
 
 from .friction_contact_models import JenkinsContact, jenkins_hysteresis_energy
@@ -409,7 +409,7 @@ __all__ = [
     "SweepPoint", "SweepResult", "frequency_sweep", "amplitude_sweep",
     "guyan", "craig_bampton", "couple", "GuyanModel", "CraigBamptonModel", "CoupledModel",
     "deim_indices", "qdeim_indices", "DEIM", "gappy_reconstruct", "ecsw_weights",
-    "ecsw_training_matrix", "ECSW", "reduced_force_error", "HyperReducedNonlinearROM",
+    "ecsw_training_matrix", "ecsw_training_matrix_batched", "ECSW", "reduced_force_error", "HyperReducedNonlinearROM",
     "newmark_linear", "modal_superposition", "piecewise_linear_exact", "galerkin_transient",
     "validate_rom", "convergence_study", "select_basis_size", "ValidationReport",
     "effective_speedup", "break_even_queries", "compare_bases",
@@ -421,7 +421,7 @@ __all__ = [
     "QuadraticManifold", "fit_quadratic_manifold", "manifold_from_derivatives", "lifted_training_states",
     "ManifoldECSW", "QuadraticManifoldROM", "SlowFastROM", "diagonalize_basis", "nnm_backbone_in_subspace",
     "mode_sensitivities", "updated_modes",
-    "lcp_lemke", "lcp_active_set", "solve_lcp", "solve_reduced_contact", "complementarity_violation", "nonneg_dual_basis", "svd_dual_basis", "active_snapshot_columns", "ContactROM", "ContactROMResult", "NMFBasis", "sparse_dictionary_fit", "contact_condition_indicator", "GreedyContactHistory", "greedy_contact_sampling", "ecsw_weights_with_required", "fit_contact_aware_ecsw", "complete_constraint_elements", "reconstruct_contact_forces", "rank_deficiency", "enrich_basis_for_constraints", "solve_reduced_contact_newton", "ReducedContactNewtonResult", "nonlinearity_indicator", "select_nonlinear_elements", "PartitionedModel", "max_normalised_error", "contact_errors", "ContactErrors", "contact_set_agreement",
+    "lcp_lemke", "lcp_active_set", "solve_lcp", "solve_reduced_contact", "complementarity_violation", "nonneg_dual_basis", "svd_dual_basis", "active_snapshot_columns", "ContactROM", "ContactROMResult", "NMFBasis", "sparse_dictionary_fit", "contact_condition_indicator", "GreedyContactHistory", "greedy_contact_sampling", "ecsw_weights_with_required", "fit_contact_aware_ecsw", "complete_constraint_elements", "reconstruct_contact_forces", "rank_deficiency", "enrich_basis_for_constraints", "solve_reduced_contact_newton", "ReducedContactNewtonResult", "nonlinearity_indicator", "nonlinearity_indicator_batched", "select_nonlinear_elements", "PartitionedModel", "max_normalised_error", "contact_errors", "ContactErrors", "contact_set_agreement",
     "JenkinsContact", "jenkins_hysteresis_energy", "ForcedHBM", "PolynomialForce", "ForcedResponse", "forced_response_continuation", "equivalent_resonance", "equivalent_properties_vs_force", "DualCraigBamptonModel", "dual_craig_bampton", "couple_dual", "joint_interface_modes", "jim_craig_bampton", "gram_schmidt_interface_modes", "interface_reduced_craig_bampton", "fourier_interface_basis", "multistage_fourier_basis", "trial_vector_derivative_basis", "natural_frequency_errors", "mac_matrix", "mac_diagonal", "InterfaceReducedBasis", "legendre_interface_parametrisation", "component_snapshots", "ComponentBasis", "ReducedAssembly", "ReducedAssemblyResult", "static_coupling", "lstsq_coupling", "craig_bampton_transformation", "fit_spd_operators", "OperatorInferenceModel", "infer_contact_operators", "JointElementSet", "harmonic_training_matrix", "fit_harmonic_ecsw", "HyperReducedJointForce", "residual_error_indicator", "rubin_dual_basis", "select_by_representation_error", "physical_contact_basis", "PolynomialForceFit", "reidentify_polynomial_force", "compare_contact_models", "format_contact_comparison",
     "pod_by_information_rate", "rid_elements", "rid_dofs", "contact_rows_in_rid", "HybridHRContact", "HybridHRResult", "restricted_fom_solve", "snapshot_interpolator", "h1_norm", "dual_h1_norm", "interpolation_indicator", "deim_rid_indices",
 ]

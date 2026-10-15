@@ -216,6 +216,41 @@ def ecsw_training_matrix(V, snapshots, elem_dofs, elem_force_fn):
     return G, G.sum(axis=1)
 
 
+def _uniform_dofs(elem_dofs):
+    """(E, ndof) integer array from a list of equal-length DOF arrays, or ValueError."""
+    try:
+        D = np.asarray([np.asarray(g) for g in elem_dofs], dtype=np.int64)
+    except ValueError:
+        D = None
+    if D is None or D.ndim != 2:
+        raise ValueError("the batched routes need every element to have the same number of DOFs "
+                         "(elem_dofs must stack into an (n_elem, ndof) array)")
+    return D
+
+
+def ecsw_training_matrix_batched(V, snapshots, elem_dofs, elem_forces_fn):
+    """`ecsw_training_matrix` with ONE callback call per snapshot instead of one per element and snapshot.
+
+    elem_forces_fn : callable(elements, U_local) -> (len(elements), ndof) element internal forces, where
+        `elements` is an integer array of element numbers and `U_local[k]` the local displacement of
+        `elements[k]` (rows ordered like `elem_dofs`). For a fea_engine system this is
+        ``lambda e, U: fes.element_forces_local(e, U, mat, vectorized=True)``.
+    Returns the same (G, b) as the per-element version (equal to rounding, about 1e-15 relative)."""
+    V = _as_array(V)
+    S = _as_array(snapshots)
+    D = _uniform_dofs(elem_dofs)
+    n_elem, r = D.shape[0], V.shape[1]
+    everything = np.arange(n_elem)
+    Vd = V[D, :]                                           # (E, ndof, r)
+    G = np.zeros((S.shape[1] * r, n_elem))
+    for k in range(S.shape[1]):
+        F = _as_array(elem_forces_fn(everything, S[D, k]))
+        if F.shape != D.shape:
+            raise ValueError(f"elem_forces_fn returned shape {F.shape}, expected {D.shape}")
+        G[k * r:(k + 1) * r, :] = np.einsum("enr,en->re", Vd, F)
+    return G, G.sum(axis=1)
+
+
 class ECSW:
     """Hyper-reduced reduced internal force from a weighted element subset.
 
@@ -223,7 +258,12 @@ class ECSW:
     element tangent callback was given). Only the selected elements are evaluated.
     """
 
-    def __init__(self, V, elem_dofs, elem_force_fn, weights, elem_tangent_fn=None, info=None):
+    def __init__(self, V, elem_dofs, elem_force_fn, weights, elem_tangent_fn=None, info=None, *,
+                 elem_forces_fn=None, elem_tangents_fn=None):
+        """elem_forces_fn / elem_tangents_fn (keyword-only, optional): batched callbacks
+        ``fn(elements, U_local) -> (E, ndof)`` / ``(E, ndof, ndof)``. When given, `reduced_force` /
+        `reduced_tangent` evaluate all selected elements in one call (elem_force_fn / elem_tangent_fn may then be
+        None). The per-element callbacks keep working and take precedence only when no batched one is given."""
         self.V = _as_array(V)
         self.weights = _as_array(weights)
         self.elements = np.flatnonzero(self.weights > 0)
@@ -232,8 +272,13 @@ class ECSW:
         self._Ve = [self.V[g, :] for g in self._dofs]
         self.elem_force_fn = elem_force_fn
         self.elem_tangent_fn = elem_tangent_fn
+        self.elem_forces_fn = elem_forces_fn
+        self.elem_tangents_fn = elem_tangents_fn
         self.n_total = len(elem_dofs)
         self.info = info or {}
+        self._Vstack = None
+        if elem_forces_fn is not None or elem_tangents_fn is not None:
+            self._Vstack = self.V[_uniform_dofs(self._dofs), :] if len(self._dofs) else np.empty((0, 0, self.V.shape[1]))
 
     @classmethod
     def fit(cls, V, snapshots, elem_dofs, elem_force_fn, elem_tangent_fn=None, tol=1e-6, max_elements=None):
@@ -241,18 +286,39 @@ class ECSW:
         w, info = ecsw_weights(G, b, tol=tol, max_elements=max_elements)
         return cls(V, elem_dofs, elem_force_fn, w, elem_tangent_fn, info)
 
+    @classmethod
+    def fit_batched(cls, V, snapshots, elem_dofs, elem_forces_fn, elem_tangents_fn=None, tol=1e-6,
+                    max_elements=None):
+        """`fit` with batched callbacks (see `ecsw_training_matrix_batched`); the returned ECSW evaluates its
+        selected elements in one call per reduced force / tangent."""
+        G, b = ecsw_training_matrix_batched(V, snapshots, elem_dofs, elem_forces_fn)
+        w, info = ecsw_weights(G, b, tol=tol, max_elements=max_elements)
+        return cls(V, elem_dofs, None, w, None, info, elem_forces_fn=elem_forces_fn,
+                   elem_tangents_fn=elem_tangents_fn)
+
     @property
     def n_selected(self):
         return len(self.elements)
 
     def reduced_force(self, q):
         q = _as_array(q)
+        if self.elem_forces_fn is not None:
+            if len(self.elements) == 0:
+                return np.zeros(self.V.shape[1])
+            F = _as_array(self.elem_forces_fn(self.elements, self._Vstack @ q))
+            return np.einsum("e,enr,en->r", self._w, self._Vstack, F)
         f = np.zeros(self.V.shape[1])
         for e, wv, Ve in zip(self.elements, self._w, self._Ve):
             f += wv * (Ve.T @ _as_array(self.elem_force_fn(int(e), Ve @ q)))
         return f
 
     def reduced_tangent(self, q):
+        if self.elem_tangents_fn is not None:
+            q = _as_array(q)
+            if len(self.elements) == 0:
+                return np.zeros((self.V.shape[1],) * 2)
+            Ke = _as_array(self.elem_tangents_fn(self.elements, self._Vstack @ q))
+            return np.einsum("e,enr,enm,ems->rs", self._w, self._Vstack, Ke, self._Vstack, optimize=True)
         if self.elem_tangent_fn is None:
             raise RuntimeError("ECSW was built without elem_tangent_fn")
         q = _as_array(q)
