@@ -285,7 +285,8 @@ class BlockGeometryCache:
     """Per-block ``BlockGeometry`` store with exact invalidation. Keys are block names (None for a single-block mesh).
 
     ``get(key, mesh_nodes, formulation, connectivity, gauss_order=None)`` returns a current entry, building it with
-    ``MeshTransformation`` if none exists or the inputs changed. ``builds`` counts rebuilds (for tests and reports)."""
+    ``MeshTransformation`` (or, for an element with ``own_batch_geometry = True``, with its ``_reference_geometry_batch``; the
+    ``gauss_order`` argument is then ignored) if none exists or the inputs changed. ``builds`` counts rebuilds (for tests and reports)."""
 
     def __init__(self):
         self._entries = {}
@@ -313,13 +314,18 @@ class BlockGeometryCache:
         if entry is not None and entry.is_current(nodes, conn, order):
             return entry
 
-        class _Mesh:                                   # MeshTransformation only needs .nodes (+ .elements)
-            pass
-        m = _Mesh()
-        m.nodes, m.elements = nodes, conn
-        mt = MeshTransformation(m, formulation, gauss_order=order, connectivity=conn)
+        if getattr(formulation, "own_batch_geometry", False):
+            # the element supplies its own reference geometry (its quadrature differs from MeshTransformation's; Tet10SolidTL)
+            shape_grad, JxW = formulation._reference_geometry_batch(nodes[conn])
+        else:
+            class _Mesh:                                   # MeshTransformation only needs .nodes (+ .elements)
+                pass
+            m = _Mesh()
+            m.nodes, m.elements = nodes, conn
+            mt = MeshTransformation(m, formulation, gauss_order=order, connectivity=conn)
+            shape_grad, JxW = mt.shape_grad, mt.JxW
         entry = BlockGeometry(
-            shape_grad=np.ascontiguousarray(mt.shape_grad), JxW=np.ascontiguousarray(mt.JxW),
+            shape_grad=np.ascontiguousarray(shape_grad), JxW=np.ascontiguousarray(JxW),
             dofs=element_dof_map(conn, formulation.dofs_per_node), connectivity=conn.copy(),
             gauss_order=order, nodes_copy=nodes.copy())
         self._entries[key] = entry

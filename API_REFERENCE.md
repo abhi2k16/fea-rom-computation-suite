@@ -41,8 +41,8 @@ flowchart LR
 
 | | 🧱 Classes | 🔧 Functions | ⚙️ Methods | 📦 Modules |
 |---|---:|---:|---:|---:|
-| **`fea_engine`** | 67 | 190 | 245 | 41 |
-| **`rom_engine`** | 53 | 110 | 179 | 44 |
+| **`fea_engine`** | 69 | 193 | 270 | 42 |
+| **`rom_engine`** | 53 | 112 | 180 | 44 |
 
 > [!NOTE]
 > The inventory (Part 3) is generated from the source code, so signatures are exact. Purposes are the first sentence of each docstring; module descriptions and the task table are hand-written. ★ marks names importable straight from the package. The examples in Part 2 were all executed and show real output. For explanations and more worked examples see [`USER_GUIDE.md`](USER_GUIDE.md).
@@ -716,6 +716,7 @@ Nonlinear continuum elements: J2 plasticity (hexahedron), Neo-Hookean tetrahedro
   - `.internal_force(elem_coords, u_elem, mat, thickness=1.0, **kwargs)` — f_int = sum_gp w_gp * (V0 weight) * (F @ S @ dN/dX), the same per-Gauss-point virtual-work expression Tet4NeoHookean.
   - `.tangent_stiffness(elem_coords, u_elem, mat, thickness=1.0, **kwargs)` — Analytic Total-Lagrangian/St.
   - `.stiffness(elem_coords, mat, thickness=1.0)` — Initial (zero-displacement) tangent -- interface completeness only, matching Tet4NeoHookean/TrussTL2D's own stiffness().
+  - `.internal_force_batch(coords, u, mat, thickness=1.0, geometry=None)`, `.tangent_stiffness_batch(...)` — batched kernels, E elements at once ((E, 30) and (E, 30, 30)); own 4-point rule; `mat` a Material or a 6 x 6 matrix.
 - 🧱 **`class Quad4PlaneStressTL()`** ★ (extends `Quad4PlaneStress`) — Quad4PlaneStress + Total-Lagrangian geometric nonlinearity, St. Venant-Kirchhoff law (`D_plane_stress` on the Green-Lagrange strain); `mat` is the 3x3 plane-stress matrix. Full 2x2 integration, no hourglass control; shear-locks in bending like its parent. Provides opt-in batched `internal_force_batch` / `tangent_stiffness_batch` (equal to the per-element methods to about 1e-15 relative).
   - `.internal_force(elem_coords, u_elem, D, thickness=1.0, **kwargs)` — f_int = sum_gp w * detJ * t * B_nl(F)^T S, with F = I + du/dX and S = D E(F) (Voigt, engineering shear).
   - `.tangent_stiffness(elem_coords, u_elem, D, thickness=1.0, **kwargs)` — Analytic K_T = sum_gp (B_nl^T D B_nl + (dN_a . S dN_b) I_2) w detJ t; symmetric, matches central differences of internal_force().

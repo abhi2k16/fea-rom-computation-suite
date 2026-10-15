@@ -28,6 +28,7 @@ __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
 
 from .base import gauss_product, jacobian, tet_quadrature_4pt
+from .hex_tl import _HexTLBatch, _HexTLReference
 from .solids import Hex8Solid3D, Tet4Solid3D, Tet10Solid3D, Quad4PlaneStress
 from ..material import (j2_radial_return_3d, j2_radial_return_plane_stress,
                          j2_radial_return_3d_kinematic,
@@ -448,7 +449,34 @@ class Tet4NeoHookean(Tet4Solid3D):
 # deleted) as the independent reference the analytic tangent was
 # validated against and as a debugging fallback.
 # =====================================================================
-class Tet10SolidTL(Tet10Solid3D):
+class _Tet10TLBatch(_HexTLBatch):
+    """Batched total-Lagrangian kernels for the 10-node tetrahedron: the generic St. Venant-Kirchhoff array kernels of
+    ``hex_tl._HexTLBatch`` (E elements at once, ``coords`` (E, 10, 3), ``u`` (E, 30), results (E, 30) and (E, 30, 30))
+    with this element's own 4-point rule (``tet_quadrature_4pt``) and weight ``|det J| w / 6``. The reference per-point
+    code in ``Tet10SolidTL.internal_force`` / ``tangent_stiffness`` (and the complex-step tangent) is the oracle in the tests.
+
+    ``own_batch_geometry = True`` tells ``FESystem``'s geometry cache to take (dN/dX, JxW) from ``_reference_geometry_batch``
+    instead of ``MeshTransformation``, whose simplex rule has 8 points and would give a different quadrature."""
+
+    own_batch_geometry = True
+    _elasticity = staticmethod(_HexTLReference._elasticity)
+
+    def batch_bytes_per_element(self, kind="tangent"):
+        from ..batched_kernels import default_bytes_per_element
+        return default_bytes_per_element(4, 30, 3, kind)
+
+    def _reference_geometry_batch(self, coords):
+        pts, wts = tet_quadrature_4pt()
+        dN_nat = np.stack([self._cached_shape_and_derivs(p)[1] for p in pts])                  # (4, 3, 10)
+        coords = np.asarray(coords, float)
+        J = np.einsum('qin,enj->eqij', dN_nat, coords)                                         # (E, 4, 3, 3)
+        detJ = np.linalg.det(J)
+        rhs = np.ascontiguousarray(np.broadcast_to(dN_nat, (coords.shape[0],) + dN_nat.shape))
+        dN = np.transpose(np.linalg.solve(J, rhs), (0, 1, 3, 2))                               # (E, 4, 10, 3)
+        return dN, np.abs(detJ) * np.asarray(wts)[None, :] / 6.0
+
+
+class Tet10SolidTL(_Tet10TLBatch, Tet10Solid3D):
     """Tet10Solid3D + Total-Lagrangian geometric nonlinearity, LINEAR
     elastic material (material.D_solid3d) applied to the Green-Lagrange
     strain -- see this module's own comment block above for the full

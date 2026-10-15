@@ -274,6 +274,11 @@ class ContactSet3D:
     nearest_only : False (default) = every listed pair acts, exactly like one element per pair. True = of all rows that share a slave
         node only the one whose closest point is nearest to the slave acts at each evaluation (a sliding slave then hands over to the next
         triangle). This is a DIFFERENT model from registering all pairs; ``describe()`` says so. Ties go to the lower row number.
+
+    Convergence note (measured, see docs/batched_nonlinear_kernels_plan.md, M5.4): with the plain ramp and the consistent tangent, Newton
+    can stall for stiff penalties (k_p of about 0.7 E and above on the test model) because the set of pairs in contact changes from
+    iteration to iteration; the per-element registration behaves the same. ``consistent_tangent=False`` or a small ``smoothing_length``
+    converged in every case tried. Use either only knowingly: both change what is solved or how it is solved, and ``describe()`` names them.
     """
     npn = 3
 

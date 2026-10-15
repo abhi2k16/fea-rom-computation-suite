@@ -250,6 +250,24 @@ def test_newton_solve_with_the_set_equals_the_solve_with_the_elements(kp, consis
     assert np.max(np.abs(res["set sparse batched"] - res["elements"])) <= 1e-8 * scale
 
 
+def test_smoothing_lets_the_consistent_tangent_converge_where_the_plain_law_stalls():
+    """Measured on this model (see the M5.3 / M5.4 notes in the plan): with the plain ramp and the consistent tangent, Newton stalls
+    at k_p = 1000 (the active set changes between iterations); with smoothing_length = 0.005 it converges. Only the converging
+    run is asserted (a stall is not asserted: it depends on the path), and the result must agree with the central-difference
+    tangent on the same smoothed law."""
+    res = {}
+    for name, cons in (("consistent", True), ("central difference", False)):
+        fes, mat, nodes, tris, slaves, off, top = two_bodies(gap=-0.01)
+        pairs = find_contact_pairs_3d(slaves, tris, nodes, 0.45)
+        cs = fes.add_contact_set(ContactSet3D(_rows(pairs), 1000.0, smoothing_length=0.005, consistent_tangent=cons))
+        fes.fix_dofs(top, [0, 1])
+        fes.add_nodal_force(top, 2, -40.0)
+        _, U = nls.solve_nonlinear_static(fes, mat, n_steps=4, tol=1e-7, max_iter=60, vectorized=True)
+        res[name] = np.asarray(U)[-1]
+    assert cs.active(nodes, res["consistent"]).sum() > 0
+    assert np.max(np.abs(res["consistent"] - res["central difference"])) <= 1e-8 * np.max(np.abs(res["consistent"]))
+
+
 # ----------------------------------------------------------------------------- options
 def _flat_pair(delta, x=0.5, y=0.25):
     X = np.array([[x, y, 0.0], [0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])    # slave + one master triangle, normal +z

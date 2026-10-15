@@ -762,8 +762,8 @@ lf, hist = solve_nonlinear_static(sys, mat, n_steps=10, options=opts)
 lf, hist = solve_nonlinear_arc_length(sys, mat, delta_L=0.05, n_steps=40, options=opts)
 ```
 
-**Large nonlinear models: batched assembly and a sparse Newton path (opt-in).** `Quad4PlaneStressTL`, `Hex8SolidTL` and
-`Hex20SolidTL` can assemble their force and tangent for all elements at once, and the drivers can keep the tangent sparse. Nothing changes
+**Large nonlinear models: batched assembly and a sparse Newton path (opt-in).** `Quad4PlaneStressTL`, `Hex8SolidTL`,
+`Hex20SolidTL` and `Tet10SolidTL` can assemble their force and tangent for all elements at once, and the drivers can keep the tangent sparse. Nothing changes
 unless you ask; results agree with the default path to rounding (about 1e-14 relative in the tests):
 
 ```python
@@ -775,11 +775,30 @@ print(sys.last_assembly_modes)                        # {'q': 'batched'}  (or "l
 K = sys.assemble_tangent_stiffness(u, mat, thickness=t, sparse=True)   # CSR matrix
 ```
 
-Blocks whose element has no batched kernel, blocks with path-dependent state, contact elements and springs stay on
-the per-element loop. `reuse_factorization=True` (static driver) is modified Newton: fewer tangent assemblies, more
+Blocks whose element has no batched kernel, blocks with path-dependent state, contact elements added one by one with
+`add_contact_element`, and springs stay on the per-element loop. `reuse_factorization=True` (static driver) is modified Newton: fewer tangent assemblies, more
 iterations. `lu_ordering` is problem dependent; no ordering is faster by default. Measured on 2 CPU cores for a
 plane-stress plate: 3362 DOFs, dense solve 609 ms against sparse LU 18 ms; a 20,402-DOF plate (3.3 GB as a dense
 tangent) assembles and solves with a 51 MB peak. Details and limits: `fea_engine/docs/batched_nonlinear_kernels_plan.md`.
+
+**Many contact pairs at once.** `ContactSet2D` (node to segment) and `ContactSet3D` (node to triangle) hold all pairs and evaluate
+force and tangent in array form; the law is the one of `NodeToSegmentContact2D` / `NodeToSurfaceContact3D` (frictionless penalty), the pair list is fixed:
+
+```python
+from fea_engine import ContactSet3D
+pairs = ContactSet3D.from_search(nodes, slave_nodes, master_triangles, search_radius=0.45, k_p=400.0)   # KD-tree broad phase
+sys.add_contact_set(pairs)          # force, dense and CSR tangent now include it; also with vectorized / sparse_tangent
+print(pairs.describe())             # says if smoothing or nearest-candidate selection is on (both off by default)
+```
+
+With 1152 pairs the contact force was 92x and the contact tangent 69x faster than one element per pair (2 cores, sandbox). Penalty
+caveat measured on a two-block test model: the default consistent (Gauss-Newton) tangent made Newton stall for `k_p` of about 0.7 E and above
+(the per-element registration does the same); `consistent_tangent=False` or `smoothing_length > 0` converged there.
+
+**Element responses for hyper-reduction.** `sys.element_forces(u, mat, elements=None)` and `sys.element_tangents(...)` return one row per element
+(batched kernels where available); `element_forces_local(elements, U_local, mat)` takes the element displacements directly.
+`rom_engine` has matching `ecsw_training_matrix_batched`, `ECSW.fit_batched` and `nonlinearity_indicator_batched`
+(training matrix about 90-110x faster on a 400-element plate; same selected elements as the per-element route).
 
 **Independent runs in parallel.** `fea_engine.batch.map` runs a function over a list of cases, in order,
 serially or on threads or processes, and can collect failures instead of stopping:
