@@ -239,6 +239,7 @@ class FESystem:
                              # unchanged from every existing usage. Structured
                              # exactly like self.state:
                              # {block_name: [iter_state_or_None, ...]}.
+        self.contact_sets = []       # batched contact sets (contact_batch.ContactSet2D), see add_contact_set()
         self.contact_elements = []   # auxiliary (elem, node_ids, mat) triples,
                                       # see add_contact_element() -- lets a
                                       # contact/gap element act on
@@ -507,6 +508,9 @@ class FESystem:
             c_kwargs = dict(kwargs)
             c_kwargs["state"] = self.contact_state[i]
             add_coo(g, celem.tangent_stiffness(self.mesh.nodes[node_ids], u_global[g], cmat, **c_kwargs))
+        for cset in self.contact_sets:
+            r, c, v = cset.tangent_entries(self.mesh.nodes, u_global)
+            rows.append(r); cols.append(c); vals.append(v)
         self._reject_constraints("nonlinear analysis")
         for g, ke in self._extra_K:
             add_coo(g, ke)
@@ -1130,6 +1134,8 @@ class FESystem:
             c_kwargs = dict(kwargs)
             c_kwargs["state"] = self.contact_state[i]
             F_int[g] += celem.internal_force(elem_coords, u_elem, cmat, **c_kwargs)
+        for cset in self.contact_sets:
+            F_int += cset.internal_force(self.mesh.nodes, u_global, self.n_dof)
         self._reject_constraints("nonlinear analysis")
         for g, ke in self._extra_K:                       # linear springs / foundations
             F_int[g] += ke @ u_global[g]
@@ -1196,10 +1202,27 @@ class FESystem:
             c_kwargs = dict(kwargs)
             c_kwargs["state"] = self.contact_state[i]
             K_T[np.ix_(g, g)] += celem.tangent_stiffness(elem_coords, u_elem, cmat, **c_kwargs)
+        for cset in self.contact_sets:
+            if cset.n_pairs:
+                from .batched_kernels import scatter_add_matrix
+                scatter_add_matrix(K_T, cset.dofs, cset.pair_tangents(self.mesh.nodes, u_global))
         self._reject_constraints("nonlinear analysis")
         for g, ke in self._extra_K:                       # linear springs / foundations
             K_T[np.ix_(g, g)] += ke
         return K_T
+
+    def add_contact_set(self, cset):
+        """Registers a batched contact set (``contact_batch.ContactSet2D``): many node-to-segment pairs evaluated in
+        one array call by ``assemble_internal_force`` and ``assemble_tangent_stiffness`` (dense and ``sparse=True``),
+        instead of one ``add_contact_element`` call per pair. The node numbers refer to the MAIN mesh. Contact sets
+        are always evaluated (they do not depend on ``vectorized``) and are not path-dependent. Returns the set."""
+        if getattr(cset, "npn", None) != self.npn:
+            raise ValueError(f"add_contact_set: the set has {getattr(cset, 'npn', None)} DOFs per node, the system {self.npn}")
+        if cset.n_pairs and cset.pairs.max() >= len(self.mesh.nodes):
+            raise ValueError(f"add_contact_set: node number {int(cset.pairs.max())} is outside the mesh "
+                             f"({len(self.mesh.nodes)} nodes)")
+        self.contact_sets.append(cset)
+        return cset
 
     def add_contact_element(self, elem, node_ids, mat):
         """Registers a contact/constraint element (e.g.

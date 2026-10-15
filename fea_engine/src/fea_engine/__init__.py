@@ -136,6 +136,7 @@ from .adaptivity import (
     RefinementRecord, refine_triangle_mesh_longest_edge, adaptive_refine_solve,
 )
 
+from .contact_batch import ContactSet2D, candidate_pairs_2d
 from .contact_solvers import (lcp_lemke, lcp_active_set, lcp_projected_gauss_seidel, solve_lcp,
                               contact_complementarity_residual, solve_contact_static, solve_contact_dynamics,
                               solve_contact_newton, ContactResult)
@@ -171,7 +172,7 @@ __all__ = [
     "Shell4MITC", "Shell4MITCCorotational", "Shell4Director",
     "Tri6PlaneStress", "Hex8SolidBbar", "Quad4PlasticJ2PlaneStress",
     "Hex8PlasticJ2Kinematic",
-    "NodeToSegmentContact2D", "NodeToSegmentContact2DFriction",
+    "NodeToSegmentContact2D", "NodeToSegmentContact2DFriction", "ContactSet2D", "candidate_pairs_2d",
     "lcp_lemke", "lcp_active_set", "lcp_projected_gauss_seidel", "solve_lcp", "contact_complementarity_residual",
     "solve_contact_static", "solve_contact_dynamics", "solve_contact_newton", "ContactResult",
     "dual_mortar_operator", "MortarTie2D",
