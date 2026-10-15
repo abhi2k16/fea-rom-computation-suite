@@ -6,6 +6,9 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 
 ## Unreleased
 
+### Added (paper experiments, batched kernels)
+- `paper/experiments/e10_batched_kernels.py` (+ `run_all.py` entry, README row): one block per element family, 2-D and 3-D contact, hyper-reduction, constraint-elimination overhead and the torch kernels, with the maximum difference reported next to every ratio; writes `paper/results/batched_kernels.json` (environment included). A run on the 2-core sandbox is stored there; rerun on your machine to replace it (the torch block runs only where torch is importable).
+
 ### Added (fea_engine, torch backend of the batched kernels)
 - `batched_kernels_torch.py`: `tl_internal_force` / `tl_tangent` (total-Lagrangian kernels written once for numpy and torch, 2-D and 3-D), `internal_force_batch_torch` / `tangent_stiffness_batch_torch` (numpy in / numpy out, `device=`), `assemble_internal_force_torch` / `assemble_tangent_stiffness_torch` (structural blocks of Quad4PlaneStressTL, Hex8SolidTL, Hex20SolidTL, Tet10SolidTL; contact, springs, constraints and element state refused). `tests/test_batched_kernels_torch.py` (30 tests): 29 passed, 1 skipped (the torch-absent case), 0 failed on the user's machine, including the CUDA test. No timing.
 

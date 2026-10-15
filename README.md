@@ -198,7 +198,7 @@ run time (the `fea` extra only installs it for the examples and tests).
 - **Analyses:** static, linear buckling, modal, harmonic / frequency sweep, random vibration (PSD), implicit and explicit transient, nonlinear static with load stepping, displacement control, arc-length and Koiter-Newton, nonlinear transient (Newmark-Newton).
 - **Nonlinearity:** large displacement and rotation, J2 plasticity (isotropic and kinematic hardening), Neo-Hookean hyperelasticity, penalty and Lagrange-multiplier contact.
 - **Mesh and loads:** structured mesh generators (lines, rectangles, boxes, with holes and notches), graded meshes, multi-block meshes, mesh file I/O (`meshio`), 3-D contour, deformed-shape, animation, slice and full-vs-reduced comparison plots (`pyvista`, optional), edge and face pressure loads by quadrature, adaptive refinement with error estimators.
-- **Performance and GPU:** vectorised assembly, sparse and iterative solvers (CG with Jacobi/SSOR preconditioning), batched multi-load solves, torch CPU/GPU solve backends, autograd tangents, topology optimisation.
+- **Performance and GPU:** opt-in batched nonlinear element kernels (Quad4/Hex8/Hex20/Tet10 total-Lagrangian), sparse Newton path, batched contact sets and hyper-reduction hooks (`fea_engine/docs/batched_nonlinear_kernels_plan.md`), vectorised assembly, sparse and iterative solvers (CG with Jacobi/SSOR preconditioning), batched multi-load solves, torch CPU/GPU solve backends, autograd tangents, topology optimisation.
 
 ### What `rom_engine` covers
 
