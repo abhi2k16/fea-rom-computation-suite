@@ -362,6 +362,10 @@ class Element:
                                     # quadrature engine to precompute with,
                                     # rather than re-deriving that fact from
                                     # which stiffness() method got overridden.
+    supports_batch = False   # opt-in batched nonlinear kernels (see batched_kernels.py): a subclass that sets this
+                              # True defines internal_force_batch(coords, u, mat, thickness=1.0, **kw) -> (E, ndof)
+                              # and tangent_stiffness_batch(...) -> (E, ndof, ndof) for all elements of a block at
+                              # once. False (every element today) means the per-element loop is used.
     translational_dof_mask = None   # None -> every DOF is translational
                                      # (correct default for Quad4/Hex8);
                                      # override with e.g. [True, False, False]

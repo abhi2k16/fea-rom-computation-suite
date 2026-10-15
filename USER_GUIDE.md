@@ -761,6 +761,25 @@ lf, hist = solve_nonlinear_static(sys, mat, n_steps=10, options=opts)
 lf, hist = solve_nonlinear_arc_length(sys, mat, delta_L=0.05, n_steps=40, options=opts)
 ```
 
+**Large nonlinear models: batched assembly and a sparse Newton path (opt-in).** `Quad4PlaneStressTL` can assemble
+its force and tangent for all elements at once, and the drivers can keep the tangent sparse. Nothing changes
+unless you ask; results agree with the default path to rounding (about 1e-14 relative in the tests):
+
+```python
+sys.batched = True                                    # or pass vectorized=True to a call
+lf, hist = solve_nonlinear_static(sys, mat, n_steps=10, thickness=t, sparse_tangent=True)
+# same keywords on solve_nonlinear_displacement_control, _arc_length and _transient;
+# NewtonOptions(sparse_tangent=True, lu_ordering="COLAMD") works too
+print(sys.last_assembly_modes)                        # {'q': 'batched'}  (or "loop (reason)" per block)
+K = sys.assemble_tangent_stiffness(u, mat, thickness=t, sparse=True)   # CSR matrix
+```
+
+Blocks whose element has no batched kernel, blocks with path-dependent state, contact elements and springs stay on
+the per-element loop. `reuse_factorization=True` (static driver) is modified Newton: fewer tangent assemblies, more
+iterations. `lu_ordering` is problem dependent; no ordering is faster by default. Measured on 2 CPU cores for a
+plane-stress plate: 3362 DOFs, dense solve 609 ms against sparse LU 18 ms; a 20,402-DOF plate (3.3 GB as a dense
+tangent) assembles and solves with a 51 MB peak. Details and limits: `fea_engine/docs/batched_nonlinear_kernels_plan.md`.
+
 **Independent runs in parallel.** `fea_engine.batch.map` runs a function over a list of cases, in order,
 serially or on threads or processes, and can collect failures instead of stopping:
 

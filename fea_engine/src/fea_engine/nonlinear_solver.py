@@ -177,6 +177,58 @@ import copy
 import warnings
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve, eigh
+import scipy.sparse as _sp
+import scipy.sparse.linalg as _spla
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Sparse Newton path (opt-in). The drivers that accept ``sparse_tangent=True`` ask the system for a CSR tangent
+# (``assemble_tangent_stiffness(..., sparse=True)``), slice the free block and factor it with SuperLU instead of
+# forming a dense matrix and calling np.linalg.solve. With ``sparse_tangent=False`` (default) every helper below
+# reduces to exactly the dense calls the drivers always made.
+# ---------------------------------------------------------------------------------------------------------------
+LU_ORDERINGS = ("NATURAL", "MMD_ATA", "MMD_AT_PLUS_A", "COLAMD", "symmetric")
+
+
+def _free_block(K, free):
+    """K[free, free] for a dense array or a sparse matrix (CSR in, CSR out)."""
+    if _sp.issparse(K):
+        return K.tocsr()[free][:, free]
+    return K[np.ix_(free, free)]
+
+
+def _factor_free(K_ff, lu_ordering=None, reuse=False):
+    """Return a function ``solve(rhs)`` for the free block ``K_ff``.
+
+    Dense: ``np.linalg.solve`` on every call (identical to the original driver code), or one LU factorization reused
+    for every right-hand side when ``reuse`` is True. Sparse: one SuperLU factorization reused for every right-hand
+    side. ``lu_ordering`` (sparse only): None = SuperLU's default column ordering (COLAMD); a SuperLU ``permc_spec``
+    name; or "symmetric" = MMD_AT_PLUS_A with diag_pivot_thresh=0 and SymmetricMode, which the sibling project found
+    faster on its own contact joint and which gave no gain on a generic Hex20 box mesh -- a measured, per-problem
+    choice, never a default."""
+    if lu_ordering is not None and lu_ordering not in LU_ORDERINGS:
+        raise ValueError(f"lu_ordering must be None or one of {LU_ORDERINGS}, got {lu_ordering!r}")
+    if _sp.issparse(K_ff):
+        csc = K_ff.tocsc()
+        if lu_ordering is None:
+            lu = _spla.splu(csc)
+        elif lu_ordering == "symmetric":
+            lu = _spla.splu(csc, permc_spec="MMD_AT_PLUS_A", diag_pivot_thresh=0.0,
+                            options=dict(SymmetricMode=True))
+        else:
+            lu = _spla.splu(csc, permc_spec=lu_ordering)
+        return lu.solve
+    if reuse:
+        fac = lu_factor(K_ff)
+        return lambda rhs: lu_solve(fac, rhs)
+    return lambda rhs: np.linalg.solve(K_ff, rhs)
+
+
+def _assemble_free_tangent(fesystem, u, mat, free, sparse_tangent, kwargs):
+    """Free block of the tangent at ``u``: dense by default, CSR when ``sparse_tangent``."""
+    if sparse_tangent:
+        return _free_block(fesystem.assemble_tangent_stiffness(u, mat, sparse=True, **kwargs), free)
+    return _free_block(fesystem.assemble_tangent_stiffness(u, mat, **kwargs), free)
 
 
 def _extra_convergence_ok(R_free, du_free, u_free, F_ext_free, F_int_free,
@@ -592,6 +644,7 @@ def solve_contact_augmented_lagrange_static(fesystem, mat, contact_node, n_hat, 
 def solve_nonlinear_static(fesystem, mat, n_steps=10, tol=1e-8, max_iter=30,
                             verbose=False, load_factors=None,
                             du_tol=None, energy_tol=None, line_search=True,
+                            sparse_tangent=False, lu_ordering=None, reuse_factorization=False,
                             **kwargs):
     """Load-controlled incremental Newton-Raphson. F_ext at step i is
     load_factors[i] * fesystem.F (whatever add_nodal_force()/etc.
@@ -626,7 +679,16 @@ def solve_nonlinear_static(fesystem, mat, n_steps=10, tol=1e-8, max_iter=30,
     default to their original-behavior values (du_tol=energy_tol=None,
     line_search=True but never invoked unless plain Newton actually
     fails) -- an existing caller passing none of these gets IDENTICAL
-    results to before this wave, at identical cost."""
+    results to before this wave, at identical cost.
+
+    sparse_tangent: False (default) is the original dense path. True assembles the tangent as a CSR matrix
+    (fesystem.assemble_tangent_stiffness(sparse=True)), slices the free block and solves it with SuperLU, so no
+    n_dof x n_dof array is formed; converged displacements agree with the dense path to solver tolerance.
+    lu_ordering: sparse only, see _factor_free (None = SuperLU default). reuse_factorization: modified Newton --
+    factor the tangent once per Newton attempt and reuse it for later iterations (the tangent is not reassembled);
+    the factorization is dropped and rebuilt whenever an iteration fails to reduce the residual. Convergence is then
+    linear rather than quadratic, so more iterations are normal; it only pays when assembly + factorization cost
+    more than the extra iterations."""
     free = fesystem.free_dofs
     F_total = fesystem.F.copy()
     n_dof = fesystem.n_dof
@@ -672,6 +734,7 @@ def solve_nonlinear_static(fesystem, mat, n_steps=10, tol=1e-8, max_iter=30,
             R_free, F_int = _residual(u_free)
             Rn = np.linalg.norm(R_free)
             converged = False
+            solve_fn = None                      # kept across iterations only when reuse_factorization is set
             for it in range(max_iter):
                 if verbose:
                     tag = " [line search]" if mode == "line_search" else ""
@@ -680,8 +743,10 @@ def solve_nonlinear_static(fesystem, mat, n_steps=10, tol=1e-8, max_iter=30,
                 if residual_ok and du_tol is None and energy_tol is None:
                     converged = True
                     break
-                K_T = fesystem.assemble_tangent_stiffness(u, mat, **kwargs)
-                du = np.linalg.solve(K_T[np.ix_(free, free)], R_free)
+                if solve_fn is None or not reuse_factorization:
+                    solve_fn = _factor_free(_assemble_free_tangent(fesystem, u, mat, free, sparse_tangent, kwargs),
+                                            lu_ordering, reuse=reuse_factorization)
+                du = solve_fn(R_free)
                 if residual_ok:
                     du_ok, energy_ok = _extra_convergence_ok(
                         R_free, du, u_free, F_ext[free], F_int[free],
@@ -702,6 +767,8 @@ def solve_nonlinear_static(fesystem, mat, n_steps=10, tol=1e-8, max_iter=30,
                 delta_u = np.zeros(n_dof)
                 delta_u[free] = u_new - u_free
                 fesystem.update_iter_states(u, delta_u, mat, **kwargs)
+                if reuse_factorization and Rn_new >= Rn:
+                    solve_fn = None              # stale tangent stopped helping: reassemble and refactor
                 u_free, R_free, F_int, Rn = u_new, R_new, F_int_new, Rn_new
             return converged, u_free, Rn
 
@@ -730,7 +797,8 @@ def solve_nonlinear_displacement_control(fesystem, mat, control_dof,
                                           u_target_array, tol=1e-10,
                                           max_iter=50, verbose=False,
                                           du_tol=None, energy_tol=None,
-                                          line_search=True, **kwargs):
+                                          line_search=True, sparse_tangent=False,
+                                          lu_ordering=None, **kwargs):
     """Prescribes u[control_dof] = u_target_array[i] at each step i
     (control_dof is treated as an extra support with a nonzero,
     changing prescribed value -- it must NOT already be in
@@ -750,6 +818,9 @@ def solve_nonlinear_displacement_control(fesystem, mat, control_dof,
     algorithm. This driver's own convergence check stays the ABSOLUTE
     `Rn < tol` it always used (no `ref`-relative form, unlike the other
     three drivers) -- du_tol/energy_tol/line_search do not change that.
+
+    sparse_tangent / lu_ordering: as in solve_nonlinear_static (CSR tangent and SuperLU; default is the
+    original dense path).
 
     Returns (U_hist (n_steps, n_dof), reaction_hist (n_steps,)) -- no
     trivial zero-state prepended (u_target_array should start at its
@@ -798,8 +869,8 @@ def solve_nonlinear_displacement_control(fesystem, mat, control_dof,
                     # says (trivially True, Rn is always 0.0 here) is final.
                     converged = residual_ok
                     break
-                K_T = fesystem.assemble_tangent_stiffness(u, mat, **kwargs)
-                du = np.linalg.solve(K_T[np.ix_(free, free)], R_free)
+                du = _factor_free(_assemble_free_tangent(fesystem, u, mat, free, sparse_tangent, kwargs),
+                                  lu_ordering)(R_free)
                 if residual_ok:
                     du_ok, energy_ok = _extra_convergence_ok(
                         R_free, du, u_free, F_ext[free], F_int[free],
@@ -850,6 +921,7 @@ def solve_nonlinear_displacement_control(fesystem, mat, control_dof,
 def solve_nonlinear_arc_length(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
                                 max_iter=30, verbose=False,
                                 du_tol=None, energy_tol=None, line_search=True,
+                                sparse_tangent=False, lu_ordering=None,
                                 **kwargs):
     """Crisfield
     cylindrical arc-length continuation -- see the module docstring
@@ -944,8 +1016,8 @@ def solve_nonlinear_arc_length(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
         # per step, common ground for every corrector attempt below
         # (never itself retried/line-searched -- see this function's
         # own docstring addendum). ----
-        K_T0 = fesystem.assemble_tangent_stiffness(u, mat, **kwargs)
-        du_t0 = np.linalg.solve(K_T0[np.ix_(free, free)], F_ref)
+        du_t0 = _factor_free(_assemble_free_tangent(fesystem, u, mat, free, sparse_tangent, kwargs),
+                             lu_ordering)(F_ref)
         sign = 1.0 if prev_total_du is None or np.dot(prev_total_du, du_t0) >= 0 else -1.0
         dlam0 = sign * delta_L / np.linalg.norm(du_t0)
         u_pred_free = u_n[free] + dlam0 * du_t0
@@ -979,9 +1051,10 @@ def solve_nonlinear_arc_length(fesystem, mat, delta_L, n_steps=50, tol=1e-8,
                     converged = True
                     break
 
-                K_T = fesystem.assemble_tangent_stiffness(u, mat, **kwargs)
-                du_r = np.linalg.solve(K_T[np.ix_(free, free)], R_free)
-                du_t = np.linalg.solve(K_T[np.ix_(free, free)], F_ref)
+                solve_free = _factor_free(_assemble_free_tangent(fesystem, u, mat, free, sparse_tangent, kwargs),
+                                          lu_ordering)                    # one factorization, two right-hand sides
+                du_r = solve_free(R_free)
+                du_t = solve_free(F_ref)
                 a1 = du_t @ du_t
                 a2 = 2.0 * (du_total + du_r) @ du_t
                 a3 = (du_total + du_r) @ (du_total + du_r) - delta_L ** 2
@@ -2576,7 +2649,8 @@ def solve_nonlinear_static_koiter_newton(fesystem, mat, tol=1e-8, max_iter=30,
 def solve_nonlinear_transient(fesystem, mat, load, T_total, dt, beta=0.25, gamma=0.5,
                                u0=None, v0=None, tol=1e-8, max_iter=30, verbose=False,
                                line_search=True, trust_region=True,
-                               backend="scipy", device="cpu", **kwargs):
+                               backend="scipy", device="cpu", sparse_tangent=False, lu_ordering=None,
+                               **kwargs):
     """Newmark-beta implicit time integration for a GEOMETRICALLY (or
     materially) NONLINEAR structure -- see the module docstring above
     and docs/ (nonlinear transient dynamics notes) for the full design
@@ -2818,11 +2892,18 @@ def solve_nonlinear_transient(fesystem, mat, load, T_total, dt, beta=0.25, gamma
     Validated (tests/test_torch_transient_backend.py) against the
     scipy path to near machine precision on a linear-limit case, same
     validation strategy solve_transient_explicit_nonlinear()
-    used against solve_transient_explicit()."""
+    used against solve_transient_explicit().
+
+    sparse_tangent / lu_ordering: as in solve_nonlinear_static. With sparse_tangent=True the effective tangent
+    K_eff = K_T[free,free] + a0c*M + a1c*C is a CSR matrix factored by SuperLU every Newton iteration (M and C are
+    converted to CSR once, so a dense M / C stored by the system still costs its own memory). Not available with
+    backend="torch" (ValueError)."""
     if backend not in ("scipy", "torch"):
         raise ValueError(
             f"solve_nonlinear_transient: unknown backend={backend!r} -- "
             "expected 'scipy' (default) or 'torch'.")
+    if sparse_tangent and backend == "torch":
+        raise ValueError("solve_nonlinear_transient: sparse_tangent=True is not available with backend='torch'.")
     if backend == "torch":
         from .torch_sparse_solver import _require_torch, torch_dense_solve
         _require_torch()
@@ -2835,6 +2916,8 @@ def solve_nonlinear_transient(fesystem, mat, load, T_total, dt, beta=0.25, gamma
 
     Mff = fesystem.M[np.ix_(free, free)]
     Cff = fesystem.C[np.ix_(free, free)]
+    if sparse_tangent:
+        Mff_sp, Cff_sp = _sp.csr_matrix(Mff), _sp.csr_matrix(Cff)
 
     a0c = 1 / (beta * dt**2); a1c = gamma / (beta * dt); a2c = 1 / (beta * dt)
     a3c = 1 / (2 * beta) - 1; a6c = dt * (1 - gamma); a7c = dt * gamma
@@ -2922,12 +3005,17 @@ def solve_nonlinear_transient(fesystem, mat, load, T_total, dt, beta=0.25, gamma
                     converged = True
                     break
 
-                K_T = fesystem.assemble_tangent_stiffness(u, mat, **kwargs)
-                K_eff = K_T[np.ix_(free, free)] + a0c * Mff + a1c * Cff
-                if backend == "torch":
-                    du_newton = torch_dense_solve(K_eff, -R, device=device)
+                if sparse_tangent:
+                    K_eff = (_assemble_free_tangent(fesystem, u, mat, free, True, kwargs)
+                             + a0c * Mff_sp + a1c * Cff_sp).tocsr()
+                    du_newton = _factor_free(K_eff, lu_ordering)(-R)
                 else:
-                    du_newton = np.linalg.solve(K_eff, -R)
+                    K_T = fesystem.assemble_tangent_stiffness(u, mat, **kwargs)
+                    K_eff = K_T[np.ix_(free, free)] + a0c * Mff + a1c * Cff
+                    if backend == "torch":
+                        du_newton = torch_dense_solve(K_eff, -R, device=device)
+                    else:
+                        du_newton = np.linalg.solve(K_eff, -R)
 
                 if mode == "trust_region":
                     # Trust-region-capped Newton -- see this function's

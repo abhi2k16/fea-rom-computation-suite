@@ -183,6 +183,11 @@ class FESystem:
             self._blocks = [(None, elem_formulation, mesh.elements)]
 
         self.n_dof = len(mesh.nodes) * self.npn
+        from .batched_kernels import BlockGeometryCache, SparsePatternCache
+        self._geometry_cache = BlockGeometryCache()      # reference-configuration data for batched kernels
+        self._pattern_cache = SparsePatternCache()       # CSR pattern + position map per block (sparse tangent)
+        self.batched = False             # default for assemble_internal_force/assemble_tangent_stiffness(vectorized=None)
+        self.last_assembly_modes = {}    # {block: "batched" | "loop (reason)"} of the most recent nonlinear assembly
         self.K = self._zeros_matrix()
         self.M = None
         self.M_lumped = None
@@ -275,6 +280,131 @@ class FESystem:
     def _global_dofs(self, elem_conn):
         npn = self.npn
         return np.array([npn * n + k for n in elem_conn for k in range(npn)])
+
+    # -----------------------------------------------------------------
+    # Batched-kernel support (see batched_kernels.py). Nothing below changes any assembly path.
+    # -----------------------------------------------------------------
+    def block_geometry(self, block=None, gauss_order=None):
+        """Reference-configuration shape gradients, JxW and DOF map of one block, cached.
+
+        ``block`` is the block name (None for a single-block mesh); ``gauss_order`` defaults to the element's own.
+        The entry is rebuilt automatically if ``mesh.nodes``, the block connectivity or the Gauss order changed since
+        it was built. Returns a ``batched_kernels.BlockGeometry``. Only elements supported by
+        ``MeshTransformation`` (isoparametric, parametric dimension equal to the embedding dimension) can be used."""
+        for name, formulation, connectivity in self._blocks:
+            if name == block:
+                return self._geometry_cache.get(block, self.mesh.nodes, formulation, connectivity, gauss_order)
+        raise KeyError(f"block_geometry: no block named {block!r}; blocks are {[n for n, _, _ in self._blocks]}")
+
+    def _batch_block_reason(self, name, formulation, requested, block_states, block_iter_states):
+        """None if this block is assembled with the batched kernels, else the reason the per-element loop is used."""
+        from .batched_kernels import batch_unavailable_reason
+        if not requested:
+            return "vectorized not requested"
+        why = batch_unavailable_reason(formulation)
+        if why is not None:
+            return why
+        for st in (block_states, block_iter_states):
+            if st is not None and any(s is not None for s in st):
+                return "path-dependent element state in use"
+        return None
+
+    def _batched_block_force(self, F_int, name, formulation, connectivity, u_global, block_mat, chunk_size, kwargs):
+        from . import batched_kernels as bk
+        geo = self._geometry_cache.get(name, self.mesh.nodes, formulation, connectivity)
+        bpe = bk.bytes_per_element(formulation, "force", n_gauss=geo.JxW.shape[1])
+        nodes = np.asarray(self.mesh.nodes)
+        for s in bk.chunk_slices(len(connectivity), chunk_size, bpe):
+            fe = formulation.internal_force_batch(nodes[geo.connectivity[s]], u_global[geo.dofs[s]], block_mat,
+                                                  geometry=(geo.shape_grad[s], geo.JxW[s]), **kwargs)
+            F_int += bk.scatter_add_vector(self.n_dof, geo.dofs[s], fe)
+
+    def _batched_block_tangent(self, K_T, name, formulation, connectivity, u_global, block_mat, chunk_size, kwargs):
+        from . import batched_kernels as bk
+        geo = self._geometry_cache.get(name, self.mesh.nodes, formulation, connectivity)
+        bpe = bk.bytes_per_element(formulation, "tangent", n_gauss=geo.JxW.shape[1])
+        nodes = np.asarray(self.mesh.nodes)
+        for s in bk.chunk_slices(len(connectivity), chunk_size, bpe):
+            ke = formulation.tangent_stiffness_batch(nodes[geo.connectivity[s]], u_global[geo.dofs[s]], block_mat,
+                                                     geometry=(geo.shape_grad[s], geo.JxW[s]), **kwargs)
+            bk.scatter_add_matrix(K_T, geo.dofs[s], ke)
+
+    def clear_block_geometry(self):
+        """Drop every cached block geometry and sparse pattern (rebuilt on next use)."""
+        self._geometry_cache.clear()
+        self._pattern_cache.clear()
+
+    def _batched_block_tangent_csr(self, name, formulation, connectivity, u_global, block_mat, chunk_size, kwargs):
+        """One block's tangent as a CSR matrix: batched kernels, cached pattern, bincount into the CSR data array."""
+        import scipy.sparse as sps
+        from . import batched_kernels as bk
+        geo = self._geometry_cache.get(name, self.mesh.nodes, formulation, connectivity)
+        pat = self._pattern_cache.get(name, geo.dofs, self.n_dof)
+        data = np.zeros(pat.nnz)
+        bpe = bk.bytes_per_element(formulation, "tangent", n_gauss=geo.JxW.shape[1])
+        nodes = np.asarray(self.mesh.nodes)
+        for s in bk.chunk_slices(len(connectivity), chunk_size, bpe):
+            ke = formulation.tangent_stiffness_batch(nodes[geo.connectivity[s]], u_global[geo.dofs[s]], block_mat,
+                                                     geometry=(geo.shape_grad[s], geo.JxW[s]), **kwargs)
+            bk.scatter_add_csr_data(data, pat, s, ke)
+        return sps.csr_matrix((data, pat.indices, pat.indptr), shape=(self.n_dof, self.n_dof))
+
+    def _assemble_tangent_sparse(self, u_global, mat, use_batch, chunk_size, kwargs):
+        """CSR tangent: batched blocks through the cached pattern, everything else (loop blocks, contact elements,
+        springs) through COO triplets; the sum is a CSR matrix equal to the dense assembly."""
+        import scipy.sparse as sps
+        n = self.n_dof
+        blocks_csr, rows, cols, vals = [], [], [], []
+
+        def add_coo(g, ke):
+            g = np.asarray(g)
+            rows.append(np.repeat(g, len(g)))
+            cols.append(np.tile(g, len(g)))
+            vals.append(np.asarray(ke, float).ravel())
+
+        self.last_assembly_modes = {}
+        u_global = np.asarray(u_global)
+        for name, formulation, connectivity in self._blocks:
+            block_mat = self._per_block_arg(mat, name)
+            block_states = self.state[name] if self.state is not None else None
+            block_iter_states = self.iter_state[name] if self.iter_state is not None else None
+            why = self._batch_block_reason(name, formulation, use_batch, block_states, block_iter_states)
+            if why is None:
+                blocks_csr.append(self._batched_block_tangent_csr(name, formulation, connectivity, u_global,
+                                                                  block_mat, chunk_size, kwargs))
+                self.last_assembly_modes[name] = "batched"
+                continue
+            self.last_assembly_modes[name] = f"loop ({why})"
+            for i, elem_conn in enumerate(connectivity):
+                call_kwargs = dict(kwargs)
+                if block_states is not None:
+                    call_kwargs["state"] = block_states[i]
+                if block_iter_states is not None:
+                    call_kwargs["iter_state"] = block_iter_states[i]
+                g = self._global_dofs(elem_conn)
+                add_coo(g, formulation.tangent_stiffness(self.mesh.nodes[elem_conn], u_global[g], block_mat,
+                                                         **call_kwargs))
+        for i, (celem, node_ids, cmat) in enumerate(self.contact_elements):
+            g = self._global_dofs(node_ids)
+            c_kwargs = dict(kwargs)
+            c_kwargs["state"] = self.contact_state[i]
+            add_coo(g, celem.tangent_stiffness(self.mesh.nodes[node_ids], u_global[g], cmat, **c_kwargs))
+        self._reject_constraints("nonlinear analysis")
+        for g, ke in self._extra_K:
+            add_coo(g, ke)
+        K = sps.csr_matrix((n, n))
+        for b in blocks_csr:
+            K = K + b
+        if vals:
+            K = K + sps.coo_matrix((np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))),
+                                   shape=(n, n)).tocsr()
+        return K.tocsr()
+
+    def batch_support_report(self):
+        """Per block: ``(name, element class name, n_elements, None or reason)``; the reason is None when the block's
+        formulation provides batched kernels, otherwise a short text saying why the per-element loop is used."""
+        from .batched_kernels import batch_unavailable_reason
+        return [(name, type(f).__name__, len(conn), batch_unavailable_reason(f)) for name, f, conn in self._blocks]
 
     # -----------------------------------------------------------------
     # v1.0.1 input validation / safe re-assembly helpers. They only add checks and clearer
@@ -827,8 +957,17 @@ class FESystem:
     # once per Newton-Raphson iteration; they do not touch self.K/self.F,
     # so a linear analysis on the same mesh/FESystem is unaffected.
     # -----------------------------------------------------------------
-    def assemble_internal_force(self, u_global, mat, **kwargs):
-        """Global internal-force vector F_int(u_global). mat is passed
+    def assemble_internal_force(self, u_global, mat, vectorized=None, chunk_size=None, **kwargs):
+        """Global internal-force vector F_int(u_global).
+
+        vectorized: True evaluates every block whose element provides batched kernels (``supports_batch``, see
+        batched_kernels.py) for all its elements at once; other blocks, blocks with path-dependent state, contact
+        elements and springs use the per-element loop. None (default) follows ``self.batched`` (False unless set), so
+        existing calls are unchanged. chunk_size: elements per batch call (default: sized to a 256 MB working
+        budget). After the call ``self.last_assembly_modes`` says, per block, "batched" or "loop (reason)".
+        Batched and loop results agree to rounding (about 1e-15 relative for Quad4PlaneStressTL), not bit for bit.
+
+        mat is passed
         straight through to element.internal_force() (e.g. (E, A) for
         TrussTL2D) -- same homogeneous-material convention as D in
         assemble_stiffness() (may be a dict per-block, see
@@ -842,10 +981,19 @@ class FESystem:
         the mat argument here, which is the MAIN mesh's material) --
         see that method's docstring."""
         F_int = np.zeros(self.n_dof)
+        use_batch = self.batched if vectorized is None else bool(vectorized)
+        self.last_assembly_modes = {}
         for name, formulation, connectivity in self._blocks:
             block_mat = self._per_block_arg(mat, name)
             block_states = self.state[name] if self.state is not None else None
             block_iter_states = self.iter_state[name] if self.iter_state is not None else None
+            why = self._batch_block_reason(name, formulation, use_batch, block_states, block_iter_states)
+            if why is None:
+                self._batched_block_force(F_int, name, formulation, connectivity, np.asarray(u_global), block_mat,
+                                          chunk_size, kwargs)
+                self.last_assembly_modes[name] = "batched"
+                continue
+            self.last_assembly_modes[name] = f"loop ({why})"
             for i, elem_conn in enumerate(connectivity):
                 elem_coords = self.mesh.nodes[elem_conn]
                 g = self._global_dofs(elem_conn)
@@ -883,17 +1031,35 @@ class FESystem:
             raise NotImplementedError(f"{who} does not include springs / elastic foundations "
                                       f"(add_spring / add_elastic_foundation).")
 
-    def assemble_tangent_stiffness(self, u_global, mat, **kwargs):
+    def assemble_tangent_stiffness(self, u_global, mat, vectorized=None, chunk_size=None, sparse=False, **kwargs):
         """Global tangent stiffness K_T(u_global) = d(F_int)/d(u), at
         the current displacement state -- must be reassembled every
         Newton-Raphson iteration (unlike the linear self.K, which is
         assembled once). Same state= passthrough, per-block mat, and
-        contact-element summation as assemble_internal_force()."""
+        contact-element summation as assemble_internal_force(), which
+        also documents ``vectorized`` and ``chunk_size`` (batched evaluation
+        of the block's elements, per-block loop fallback).
+
+        sparse: False (default) returns the dense (n_dof, n_dof) array as before. True returns a
+        scipy.sparse.csr_matrix with the same entries (agreement to rounding): batched blocks scatter through a
+        cached per-block CSR pattern (no n x n array is ever allocated); loop blocks, contact elements and springs are
+        added as COO triplets."""
+        use_batch = self.batched if vectorized is None else bool(vectorized)
+        if sparse:
+            return self._assemble_tangent_sparse(u_global, mat, use_batch, chunk_size, kwargs)
         K_T = np.zeros((self.n_dof, self.n_dof))
+        self.last_assembly_modes = {}
         for name, formulation, connectivity in self._blocks:
             block_mat = self._per_block_arg(mat, name)
             block_states = self.state[name] if self.state is not None else None
             block_iter_states = self.iter_state[name] if self.iter_state is not None else None
+            why = self._batch_block_reason(name, formulation, use_batch, block_states, block_iter_states)
+            if why is None:
+                self._batched_block_tangent(K_T, name, formulation, connectivity, np.asarray(u_global), block_mat,
+                                            chunk_size, kwargs)
+                self.last_assembly_modes[name] = "batched"
+                continue
+            self.last_assembly_modes[name] = f"loop ({why})"
             for i, elem_conn in enumerate(connectivity):
                 elem_coords = self.mesh.nodes[elem_conn]
                 g = self._global_dofs(elem_conn)

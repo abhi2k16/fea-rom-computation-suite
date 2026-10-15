@@ -52,6 +52,14 @@ class NewtonOptions:
         Enable the Armijo backtracking line search (drivers that support it).
     verbose : bool, optional
         Print per-iteration progress.
+    sparse_tangent : bool, optional
+        Use a CSR tangent and SuperLU instead of a dense tangent and ``np.linalg.solve`` (static,
+        displacement-control, arc-length and nonlinear-transient drivers; ignored by the others).
+    lu_ordering : str, optional
+        SuperLU ordering for the sparse path: ``"NATURAL"``, ``"MMD_ATA"``, ``"MMD_AT_PLUS_A"``, ``"COLAMD"`` or
+        ``"symmetric"`` (symmetric-mode MMD_AT_PLUS_A). Problem dependent; no ordering is assumed faster.
+    reuse_factorization : bool, optional
+        Modified Newton: factor the tangent once per Newton attempt and reuse it (``solve_nonlinear_static`` only).
     """
     tol: Optional[float] = None
     max_iter: Optional[int] = None
@@ -59,6 +67,9 @@ class NewtonOptions:
     energy_tol: Optional[float] = None
     line_search: Optional[bool] = None
     verbose: Optional[bool] = None
+    sparse_tangent: Optional[bool] = None
+    lu_ordering: Optional[str] = None
+    reuse_factorization: Optional[bool] = None
 
     def __post_init__(self):
         if self.tol is not None and not self.tol > 0:
@@ -69,6 +80,10 @@ class NewtonOptions:
             v = getattr(self, name)
             if v is not None and not v > 0:
                 raise ValueError(f"NewtonOptions.{name} must be > 0, got {v!r}")
+        if self.lu_ordering is not None and self.lu_ordering not in (
+                "NATURAL", "MMD_ATA", "MMD_AT_PLUS_A", "COLAMD", "symmetric"):
+            raise ValueError(f"NewtonOptions.lu_ordering must be one of NATURAL, MMD_ATA, MMD_AT_PLUS_A, COLAMD, "
+                             f"symmetric, got {self.lu_ordering!r}")
 
     def updated(self, **changes) -> "NewtonOptions":
         """Return a copy with some fields changed (the object itself is frozen)."""

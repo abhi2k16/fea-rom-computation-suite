@@ -751,3 +751,67 @@ class Quad4PlaneStressTL(Quad4PlaneStress):
                     K[2 * a, 2 * b] += Kg[a, b] * c
                     K[2 * a + 1, 2 * b + 1] += Kg[a, b] * c
         return K
+
+    # ------------------------------------------------------------------
+    # Batched kernels (opt-in, see batched_kernels.py): the same Total-Lagrangian expressions as internal_force() /
+    # tangent_stiffness() above, evaluated for E elements at once. The per-element methods above are untouched and
+    # remain the reference; tests/test_quad4_tl_batched.py compares the two.
+    # ------------------------------------------------------------------
+    supports_batch = True
+
+    def _reference_geometry_batch(self, coords):
+        """(dN/dX with shape (E, Q, 4, 2), det(J0)*w with shape (E, Q)) for coords (E, 4, 2); the same Jacobian
+        formula as ``_gp_kinematics``, with the Gauss weight folded in."""
+        pts, wts = gauss_product(self.gauss_order, 2)
+        dN_nat = np.stack([self._cached_shape_and_derivs(tuple(p))[1] for p in pts])         # (Q, 2, 4)
+        coords = np.asarray(coords, float)
+        J = np.einsum('qin,enj->eqij', dN_nat, coords)                                       # (E, Q, 2, 2)
+        detJ = np.linalg.det(J)
+        rhs = np.ascontiguousarray(np.broadcast_to(dN_nat, (coords.shape[0],) + dN_nat.shape))
+        dN = np.transpose(np.linalg.solve(J, rhs), (0, 1, 3, 2))                             # (E, Q, 4, 2)
+        return dN, detJ * np.asarray(wts)[None, :]
+
+    def _batch_kinematics(self, coords, u, D, thickness, geometry):
+        if geometry is None:
+            dN, JxW = self._reference_geometry_batch(coords)
+        else:
+            dN, JxW = geometry
+        u = np.asarray(u, float).reshape(-1, 4, 2)
+        F = np.eye(2) + np.einsum('eai,eqaj->eqij', u, dN)                                   # F[i,j] = d + u_a,i dN_a,j
+        Ev = np.empty(F.shape[:2] + (3,))
+        C = np.einsum('eqki,eqkj->eqij', F, F)                                               # F^T F
+        Ev[..., 0] = 0.5 * (C[..., 0, 0] - 1.0)
+        Ev[..., 1] = 0.5 * (C[..., 1, 1] - 1.0)
+        Ev[..., 2] = C[..., 0, 1]                                                            # 2 E01
+        S = Ev @ np.asarray(D, float).T                                                      # (E, Q, 3), D symmetric
+        # B[e,q,s,a,i]: s = (xx, yy, xy), a = node, i = displacement component
+        B = np.empty(F.shape[:2] + (3, 4, 2))
+        nx, ny = dN[..., 0], dN[..., 1]                                                      # (E, Q, 4)
+        for i in range(2):
+            B[:, :, 0, :, i] = F[:, :, i, 0][..., None] * nx
+            B[:, :, 1, :, i] = F[:, :, i, 1][..., None] * ny
+            B[:, :, 2, :, i] = F[:, :, i, 0][..., None] * ny + F[:, :, i, 1][..., None] * nx
+        c = JxW * thickness                                                                  # (E, Q)
+        return dN, B.reshape(B.shape[:3] + (8,)), S, c
+
+    def internal_force_batch(self, coords, u, mat, thickness=1.0, geometry=None, **kwargs):
+        """Internal forces (E, 8) of E elements; coords (E, 4, 2), u (E, 8), mat = D (3, 3). ``geometry`` is an
+        optional precomputed (dN/dX, det(J0)*w) pair for these elements (FESystem passes its cached one)."""
+        _, B, S, c = self._batch_kinematics(coords, u, mat, thickness, geometry)
+        return np.einsum('eqsd,eqs,eq->ed', B, S, c, optimize=True)
+
+    def tangent_stiffness_batch(self, coords, u, mat, thickness=1.0, geometry=None, **kwargs):
+        """Tangent stiffness matrices (E, 8, 8): sum_q c * (B^T D B + dN^T S dN (x) I2). The Gauss-point sum is folded
+        into one matrix product with contraction length Q*3."""
+        dN, B, S, c = self._batch_kinematics(coords, u, mat, thickness, geometry)
+        E, Q = c.shape
+        D = np.asarray(mat, float)
+        Bc = (B * c[:, :, None, None]).reshape(E, Q * 3, 8)
+        DB = (D @ B).reshape(E, Q * 3, 8)
+        K = Bc.transpose(0, 2, 1) @ DB                                                       # (E, 8, 8)
+        S2 = np.empty((E, Q, 2, 2))
+        S2[..., 0, 0], S2[..., 1, 1], S2[..., 0, 1], S2[..., 1, 0] = S[..., 0], S[..., 1], S[..., 2], S[..., 2]
+        Kg = np.einsum('eq,eqai,eqij,eqbj->eab', c, dN, S2, dN, optimize=True)               # (E, 4, 4)
+        K[:, 0::2, 0::2] += Kg
+        K[:, 1::2, 1::2] += Kg
+        return K

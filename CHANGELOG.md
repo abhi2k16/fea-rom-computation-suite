@@ -16,6 +16,47 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
   (80x4 mesh of the BE7 cantilever: linear Q4 tip 3.8 against 33.2 analytic), so beam-theory benchmarks are not valid for it.
   `solve_nonlinear_static` ignores `FESystem(thickness=...)`; pass `thickness=` to the solver call.
 
+### Added (fea_engine, sparse tangent and sparse Newton path)
+- `FESystem.assemble_tangent_stiffness(..., sparse=True)` returns a `scipy.sparse.csr_matrix` (default `sparse=False` is the
+  unchanged dense array). Batched blocks scatter through a per-block CSR pattern and entry-to-data position map built once
+  (`batched_kernels.SparsePatternCache`, `build_sparse_pattern`, `scatter_add_csr_data`); loop blocks, contact elements and
+  springs are added as COO triplets. The pattern survives mesh motion and is rebuilt if the element-to-DOF map changes.
+- `sparse_tangent=False` and `lu_ordering=None` keywords on `solve_nonlinear_static`, `solve_nonlinear_displacement_control`,
+  `solve_nonlinear_arc_length` and `solve_nonlinear_transient` (CSR free block, SuperLU; arc length factors once per iteration
+  for its two right-hand sides; not available with `backend="torch"`); `reuse_factorization=False` on `solve_nonlinear_static`
+  (modified Newton: tangent factored once per attempt, dropped when an iteration fails to reduce the residual). Matching
+  `NewtonOptions` fields `sparse_tangent`, `lu_ordering` (NATURAL, MMD_ATA, MMD_AT_PLUS_A, COLAMD, symmetric) and
+  `reuse_factorization`. Defaults reproduce the previous dense calls exactly.
+  Measured (2 CPU cores, Quad4PlaneStressTL plates, best of 2-3): 3362 DOFs, dense solve 609 ms against sparse LU 17.9 ms
+  (34x); 10,082 DOFs, 14.0 s against 124 ms (113x); CSR tangent assembly 15.4 ms against 31.7 ms for the batched dense one
+  at 3362 DOFs. End-to-end `solve_nonlinear_static` (3 load steps, mildly nonlinear, tol 1e-8) on a 20x20 plate:
+  2.86 s loop, 0.25 s batched dense, 0.06 s batched sparse; 40x40 plate: 5.23 s batched dense, 0.25 s batched sparse;
+  results agree to 1e-14 relative. A 100x100 plate (20,402 DOFs; the dense tangent alone would need 3.3 GB) assembles and
+  solves in 0.18 s + 0.26 s with a 51 MB peak (tracemalloc). `tests/test_sparse_newton.py` (22 tests). The symmetric-mode LU
+  ordering is a measured opt-in: it gave no gain on a generic Hex20 box mesh in the planning study.
+
+### Added (fea_engine, batched Quad4PlaneStressTL and vectorized assembly)
+- `Quad4PlaneStressTL.internal_force_batch` / `tangent_stiffness_batch` (any Gauss order, thickness; Gauss-point sum folded into
+  one matrix product) and `FESystem.assemble_internal_force` / `assemble_tangent_stiffness` with new keyword arguments
+  `vectorized=None` and `chunk_size=None`, plus the attribute `FESystem.batched` (default False) and
+  `FESystem.last_assembly_modes` ("batched" or "loop (reason)" per block). Blocks without batch kernels, with path-dependent
+  state, contact elements and springs stay on the per-element loop. `batched_kernels.scatter_add_matrix`. Default behaviour is
+  unchanged: with no new argument the loop runs and the result type is the same dense array. Batched and loop results agree to
+  about 1e-15 relative (tests require 1e-12). Measured on 2 CPU cores, 324 elements / 722 DOFs, best of 5: internal force 118.9 ms
+  (loop) against 1.09 ms (batched), 109x; dense tangent 150.0 against 7.87 ms, 19x (includes the dense scatter); 1600 elements /
+  3362 DOFs, best of 3: 135x and 24x. One machine, so orders of magnitude, not exact ratios.
+  `tests/test_quad4_tl_batched.py` (26 tests), including the golden loop Newton path reproduced to 1e-9.
+
+### Added (fea_engine, batched-kernel foundation; no behaviour change)
+- `batched_kernels.py`: the opt-in batch-method protocol (`supports_batch`, `internal_force_batch`, `tangent_stiffness_batch`),
+  memory-bounded chunking (`chunk_slices`, `map_chunks`, byte estimates), a vectorised element-DOF map and bincount scatter, and
+  `BlockGeometryCache` (reference shape gradients and JxW from `MeshTransformation`, rebuilt when nodes, connectivity or Gauss
+  order change). `FESystem.block_geometry`, `clear_block_geometry` and `batch_support_report`; `Element.supports_batch = False`.
+  No element implements the batch methods yet and no assembly path calls them, so existing results are unchanged.
+  Tests: `tests/test_batched_kernels_foundation.py` (18), `tests/test_golden_loop_baselines.py` (10, frozen loop results for
+  `Quad4PlaneStressTL` and `Tet10SolidTL`), helpers `tests/batch_conformance.py` and `tests/batch_timing.py`.
+  Plan: `fea_engine/docs/batched_nonlinear_kernels_plan.md`.
+
 ### Added (fea_engine, visualization)
 - `visualization/pyvista_plot.py` (optional `pip install fea_engine[viz]`, PyVista): `to_pyvista` (Mesh / MultiBlockMesh to
   `pyvista.UnstructuredGrid`, nine cell types), `displacement_vectors`, `add_displacement`, `deformed_grid`, `plot_field`
