@@ -781,6 +781,12 @@ iterations. `lu_ordering` is problem dependent; no ordering is faster by default
 plane-stress plate: 3362 DOFs, dense solve 609 ms against sparse LU 18 ms; a 20,402-DOF plate (3.3 GB as a dense
 tangent) assembles and solves with a 51 MB peak. Details and limits: `fea_engine/docs/batched_nonlinear_kernels_plan.md`.
 
+**Constraints and ties in nonlinear analysis.** Linear constraints (`add_constraint`, `tie`) are eliminated exactly (`u = T q`), so
+`solve_nonlinear_static` and `solve_nonlinear_arc_length` accept them and return displacements in the full numbering; for
+`solve_nonlinear_displacement_control` use `es = sys.eliminate_constraints()`, pass `es` as the system (the control DOF is then an index into
+`es.independent_dofs`) and expand the result with `es.expand(...)`. Constraints must be homogeneous and prescribed values zero; the
+transient driver is not supported. A plate built in two halves and tied agrees with the one-piece plate to 9e-16 in a large-displacement test.
+
 **Many contact pairs at once.** `ContactSet2D` (node to segment) and `ContactSet3D` (node to triangle) hold all pairs and evaluate
 force and tangent in array form; the law is the one of `NodeToSegmentContact2D` / `NodeToSurfaceContact3D` (frictionless penalty), the pair list is fixed:
 

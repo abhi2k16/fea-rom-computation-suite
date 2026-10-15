@@ -6,6 +6,9 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 
 ## Unreleased
 
+### Added (fea_engine, linear constraints in nonlinear analysis)
+- `constraint_elimination.EliminatedSystem` and `FESystem.eliminate_constraints()`: the linear constraints of `add_constraint` / `tie` are eliminated exactly (`u = T q`, `f_q = T^T f(Tq)`, `K_q = T^T K T`, dense or CSR). `solve_nonlinear_static` and `solve_nonlinear_arc_length` now accept constrained systems automatically (displacements returned in the full numbering); `solve_nonlinear_displacement_control` works on the explicit object. Homogeneous constraints and zero prescribed values only; not the transient driver. `tests/test_constraint_elimination.py` (9 tests); constrained patch test (two halves tied vs one piece, large displacement) agrees to 9e-16.
+
 ### Added (fea_engine, batched Tet10SolidTL)
 - `Tet10SolidTL.internal_force_batch` / `tangent_stiffness_batch` (the generic total-Lagrangian array kernels with the element's own 4-point rule) and the geometry-cache hook `own_batch_geometry` (the cache takes the element's own `_reference_geometry_batch` instead of `MeshTransformation`'s 8-point rule). `tests/test_tet10_tl_batched.py` (14 tests); timing script `tests/batch_timing_tet10.py` (768 elements: kernel force 20.6x, tangent 33x, system force 30x, CSR tangent 10x faster than the dense tangent assembly, 2 cores).
 

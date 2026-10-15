@@ -1141,11 +1141,22 @@ class FESystem:
             F_int[g] += ke @ u_global[g]
         return F_int
 
+    _constraints_eliminated = False   # True only while an EliminatedSystem calls into this system
+
+    def eliminate_constraints(self):
+        """The system in the independent coordinates of its linear constraints (``add_constraint`` / ``tie``): an object
+        ``EliminatedSystem`` with ``u = T q`` that the nonlinear drivers accept in place of the system (see
+        constraint_elimination.py for scope: homogeneous constraints and zero prescribed values). ``solve_nonlinear_static`` and
+        ``solve_nonlinear_arc_length`` do this by themselves when the system has constraints."""
+        from .constraint_elimination import EliminatedSystem
+        return EliminatedSystem(self)
+
     def _reject_constraints(self, who):
-        if self._constraints:
+        if self._constraints and not self._constraints_eliminated:
             raise NotImplementedError(
                 f"{who}: linear constraints (add_constraint / tie) are supported by solve_static and "
-                f"solve_modal only. Remove them with clear_constraints(), or impose the relation another way.")
+                f"solve_modal only (and, through eliminate_constraints(), solve_nonlinear_static / _arc_length / displacement control). "
+                f"Remove them with clear_constraints(), or impose the relation another way.")
 
     def _require_plain_system(self, who):
         """Guard for code paths that assemble from elements only (springs / foundations / constraints
@@ -1646,7 +1657,8 @@ class FESystem:
         >>> system.add_constraint([(7, "ux", 1.0), (12, "ux", -1.0)])   # u_7 = u_12   # doctest: +SKIP
 
         Constraints are eliminated exactly (see ``fea_engine.boundary``); supported by ``solve_static`` and
-        ``solve_modal``. Terms on prescribed DOFs move to the right-hand side.
+        ``solve_modal``, and by ``solve_nonlinear_static`` / ``solve_nonlinear_arc_length`` (and, through
+        ``eliminate_constraints()``, ``solve_nonlinear_displacement_control``) when homogeneous, see ``constraint_elimination.py``. Terms on prescribed DOFs move to the right-hand side.
         """
         if not terms:
             raise ValueError("add_constraint: no terms given.")

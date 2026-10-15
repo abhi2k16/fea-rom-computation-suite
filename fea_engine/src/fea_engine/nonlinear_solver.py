@@ -175,6 +175,7 @@ References (methods in this module are adopted from):
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import copy
 import warnings
+import functools
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve, eigh
 import scipy.sparse as _sp
@@ -3711,4 +3712,24 @@ for _name in ("solve_contact_lagrange_static", "solve_contact_augmented_lagrange
               "solve_nonlinear_koiter_newton_generic", "solve_nonlinear_static_koiter_newton",
               "solve_nonlinear_transient", "solve_transient_displacement_control"):
     globals()[_name] = accepts_options(globals()[_name])
+del _name
+
+
+# ---------------------------------------------------------------------------
+# Linear constraints (add_constraint / tie) in the static and arc-length drivers: eliminated through u = T q
+# (constraint_elimination.EliminatedSystem); the returned displacements are expanded to the full numbering.
+# ---------------------------------------------------------------------------
+def _eliminating_constraints(driver):
+    @functools.wraps(driver)
+    def wrapper(fesystem, *args, **kwargs):
+        if getattr(fesystem, "_constraints", None) and not getattr(fesystem, "_constraints_eliminated", False):
+            es = fesystem.eliminate_constraints()
+            load_factors, U = driver(es, *args, **kwargs)
+            return load_factors, es.expand(U)
+        return driver(fesystem, *args, **kwargs)
+    return wrapper
+
+
+for _name in ("solve_nonlinear_static", "solve_nonlinear_arc_length"):
+    globals()[_name] = _eliminating_constraints(globals()[_name])
 del _name
