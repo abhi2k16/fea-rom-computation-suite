@@ -16,6 +16,25 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
   (80x4 mesh of the BE7 cantilever: linear Q4 tip 3.8 against 33.2 analytic), so beam-theory benchmarks are not valid for it.
   `solve_nonlinear_static` ignores `FESystem(thickness=...)`; pass `thickness=` to the solver call.
 
+### Added (fea_engine, 3-D total-Lagrangian hexahedra)
+- `Hex8SolidTL` and `Hex20SolidTL` (`elements/hex_tl.py`; registered as `"hex8_solid_tl"`, `"hex20_solid_tl"`): 8- and 20-node
+  hexahedra with Total-Lagrangian geometric nonlinearity and a St. Venant-Kirchhoff law (`mat` = 6x6 `D_solid3d` matrix or the
+  `Material`), a per-Gauss-point reference implementation and independently written batched kernels (`internal_force_batch`,
+  `tangent_stiffness_batch`) that work with `FESystem(vectorized=True)`, the CSR tangent and `sparse_tangent=True`. `gauss_order`
+  constructor argument (defaults 2 and 3). `Hex20SolidTL(gauss_order<3)` warns: the 2x2x2 rule has 6 spurious zero-energy modes
+  per isolated element and a single-row mesh keeps them (singular tangent at zero, Newton raises at load step 1; meshes with two
+  elements across the width or the thickness had none).
+  Measured in the package (2 CPU cores, best of 3): batched against the per-Gauss-point reference loop, kernel force / tangent
+  41.6x / 29.3x for 1536 Hex8 elements, 19.3x / 13.3x for 720 Hex20 elements (11,319 DOFs); `FESystem` force 50.0x and 20.2x;
+  agreement 2e-16 to 1.7e-14 relative. Locking, 60x12x2 mm strip against Timoshenko: Hex8 0.282, 0.575, 0.804 (meshes 12x2x2,
+  24x2x2, 48x2x4), Hex20 2x2x2 0.928 to 0.979, Hex20 3x3x3 0.897 to 0.974. Large-deflection cantilever (P L^2/(E I) = 1, nu = 0)
+  against the elastica 0.3017 / 0.0561: Hex20 0.3016 / 0.0564 (3x3x3, 12x1x1) and 0.3020 / 0.0565 (2x2x2, 12x1x2); Hex8 locks
+  (0.080 / 0.004). The values agree with the sibling project's to three decimals; the project's "0.1641" for single-row 2x2x2
+  Hex20 was an unconverged state (its script prints 0.7518 now), which the package reports as a Newton failure.
+  Tests: `test_hex_tl.py` (25), `test_hex_tl_batched.py` (27), `test_hex_tl_validation.py` (26); `tests/batch_timing_hex.py`.
+  Use the Newton tolerance 1e-7 for stiff 3-D cantilevers (residual floor about 2e-9). Not done: neo-Hookean or other laws,
+  batched path-dependent state.
+
 ### Added (fea_engine, sparse tangent and sparse Newton path)
 - `FESystem.assemble_tangent_stiffness(..., sparse=True)` returns a `scipy.sparse.csr_matrix` (default `sparse=False` is the
   unchanged dense array). Batched blocks scatter through a per-block CSR pattern and entry-to-data position map built once

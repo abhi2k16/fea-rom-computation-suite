@@ -402,6 +402,7 @@ m4 = rectangle_with_hole_mesh_quarter(a=2.0, b=1.0, R=0.3, nr=8, ntheta=12)  # m
 | `Shell4MITC` | `elements.shells` | 2-D→3-D | 6 | Combined membrane + bending (curved shells) |
 | `Tet4Solid3D`, `Tet10Solid3D`, `Hex8Solid3D`, `Hex20Solid3D` | `elements.solids` | 3-D | 3 | General 3-D solids |
 | `Hex8PlasticJ2`, `Tet4NeoHookean` | `elements.nonlinear_solids` | 3-D | 3 | Elastoplastic / hyperelastic solids |
+| `Hex8SolidTL`, `Hex20SolidTL` | `elements.hex_tl` | 3-D | 3 | Large-displacement 3-D solids (St. Venant-Kirchhoff, Total Lagrangian), with batched kernels. `Hex8SolidTL` shear-locks in bending (tip deflection 0.28 to 0.80 of Timoshenko for a 30:1 strip); `Hex20SolidTL` does not (0.90 to 0.98) and reproduces the large-deflection cantilever (elastica) to 3e-4 (tip deflection) and 4e-4 (shortening). Keep the default 3x3x3 rule for `Hex20SolidTL`: `gauss_order=2` warns because a single row of elements has a singular tangent. Pass the total force to `add_nodal_force` |
 | `Quad4PlaneStressTL` | `elements.nonlinear_solids` | 2-D | 2 | Large-displacement plane-stress plates (St. Venant-Kirchhoff, Total Lagrangian); shear-locks in bending like `Quad4PlaneStress`, and `solve_nonlinear_static` needs `thickness=` passed to the call |
 | `GapContactPenalty`, `GapContactCurvedFriction` | `elements.contact` | — | — | Contact/boundary constraints |
 
@@ -761,8 +762,8 @@ lf, hist = solve_nonlinear_static(sys, mat, n_steps=10, options=opts)
 lf, hist = solve_nonlinear_arc_length(sys, mat, delta_L=0.05, n_steps=40, options=opts)
 ```
 
-**Large nonlinear models: batched assembly and a sparse Newton path (opt-in).** `Quad4PlaneStressTL` can assemble
-its force and tangent for all elements at once, and the drivers can keep the tangent sparse. Nothing changes
+**Large nonlinear models: batched assembly and a sparse Newton path (opt-in).** `Quad4PlaneStressTL`, `Hex8SolidTL` and
+`Hex20SolidTL` can assemble their force and tangent for all elements at once, and the drivers can keep the tangent sparse. Nothing changes
 unless you ask; results agree with the default path to rounding (about 1e-14 relative in the tests):
 
 ```python

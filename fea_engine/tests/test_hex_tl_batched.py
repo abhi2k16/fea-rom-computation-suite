@@ -31,6 +31,9 @@ from fea_engine import batched_kernels as bk
 from fea_engine import mesh as meshlib
 from fea_engine.elements import Hex8SolidTL, Hex20SolidTL
 
+# 2x2x2 Hex20 is used on purpose in some tests; its construction warns (checked in test_hex_tl_validation.py)
+pytestmark = pytest.mark.filterwarnings("ignore:.*spurious zero-energy modes.*:UserWarning")
+
 CLASSES = [Hex8SolidTL, Hex20SolidTL]
 MESH_DIMS = {Hex8SolidTL: (4, 2, 2), Hex20SolidTL: (3, 1, 1)}
 

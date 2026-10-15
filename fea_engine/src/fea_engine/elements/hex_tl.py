@@ -31,10 +31,13 @@ Material itself, as Tet10SolidTL takes. A Material is converted with D_solid3d o
 
 Quadrature: ``gauss_order`` points per direction. Defaults are those of the linear parents: 2 (2 x 2 x 2) for
 Hex8SolidTL and 3 (3 x 3 x 3) for Hex20SolidTL; pass ``Hex20SolidTL(gauss_order=2)`` or set the attribute to change it.
-Reduced 2 x 2 x 2 integration of the 20-node element is cheaper (27 against 8 Gauss points per element), but the
-sibling project reported that a single layer of such elements failed at large rotation; that claim has not been
-reproduced in this package yet, so no warning is issued and the 3 x 3 x 3 default stays. Like Hex8Solid3D, Hex8SolidTL
-shear-locks in bending-dominated problems on coarse meshes (measured in this package, see the tests).
+Reduced 2 x 2 x 2 integration of the 20-node element is cheaper (8 against 27 Gauss points per element) but has
+spurious zero-energy modes: an isolated element has 6 beyond the 6 rigid-body modes, and a mesh that is a single row of
+elements (one element across both width and thickness) keeps them after clamping (one per element in the meshes tried),
+so its tangent at zero displacement is singular and Newton fails at the first load step. Meshes with two elements across
+either direction had none. ``Hex20SolidTL(gauss_order=2)`` therefore warns; the 3 x 3 x 3 default has no spurious modes.
+Measured in this package (tests/test_hex_tl_validation.py). Like Hex8Solid3D, Hex8SolidTL shear-locks in bending-dominated
+problems on coarse meshes (tip deflection 0.28 to 0.80 of Timoshenko for a 30:1 strip against 0.90 to 0.98 for Hex20).
 
 References (methods in this module are adopted from):
   - K.-J. Bathe (1996), "Finite Element Procedures", Prentice Hall (total-Lagrangian formulation, Sec. 6.3)
@@ -43,6 +46,8 @@ References (methods in this module are adopted from):
   - O. C. Zienkiewicz, R. L. Taylor (2000), "The Finite Element Method", 5th ed., Butterworth-Heinemann
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
+import warnings
+
 import numpy as np
 
 from .base import gauss_product, jacobian
@@ -60,6 +65,13 @@ class _HexTLReference:
             if int(gauss_order) != gauss_order or gauss_order < 1:
                 raise ValueError(f"gauss_order must be a positive integer, got {gauss_order!r}")
             self.gauss_order = int(gauss_order)
+        if self.n_nodes == 20 and self.gauss_order < 3:
+            warnings.warn(
+                f"{type(self).__name__}(gauss_order={self.gauss_order}): {self.gauss_order}x{self.gauss_order}x"
+                f"{self.gauss_order} integration of the 20-node hexahedron has 6 spurious zero-energy modes per isolated "
+                f"element; a mesh that is a single row of elements (one element across both width and thickness) keeps "
+                f"them, its tangent is singular and Newton fails. Use gauss_order=3 (default) or at least two elements "
+                f"across the width or the thickness.", UserWarning, stacklevel=2)
 
     @staticmethod
     def _elasticity(mat):

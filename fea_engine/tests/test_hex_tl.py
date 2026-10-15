@@ -33,6 +33,9 @@ from fea_engine.material import D_solid3d
 from fea_engine.elements import Hex8Solid3D, Hex20Solid3D, Hex8SolidTL, Hex20SolidTL, TrussTL2D, ELEMENT_REGISTRY
 import hex_meshes
 
+# 2x2x2 Hex20 is used on purpose in some tests; its construction warns (checked in test_hex_tl_validation.py)
+pytestmark = pytest.mark.filterwarnings("ignore:.*spurious zero-energy modes.*:UserWarning")
+
 HEX_CLASSES = [Hex8SolidTL, Hex20SolidTL]
 LINEAR = {Hex8SolidTL: Hex8Solid3D, Hex20SolidTL: Hex20Solid3D}
 MAT = Material(E=1.0e3, nu=0.3)
