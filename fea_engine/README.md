@@ -15,16 +15,6 @@
 </div>
 
 > [!IMPORTANT]
-> **Contact modelling added, Wave 23 closed (2026-10-16).** `solve_contact_static_sparse(K, f, B, c, route="auto")` is a primal-dual active-set solver with the
-> routes `reduced` (B selects nodes), `saddle` (general sparse B) and `condensed` (dense); a failing route returns `reason`, `message` and
-> `suggestion`, `fallback=True` is opt-in, and the dense route is guarded by `max_dense_bytes`. `solve_contact_static(..., method="pdas")` calls it.
-> `solve_contact_dynamics(..., scheme="bdf2", return_info=True)` adds a second-order scheme with a `ContactDynamicsInfo` record (`two_step` stays the
-> default). `Quad4Laplace` (`quad4_laplace`) is a scalar element with one DOF per node. Measured (12 CPUs): 39,601 DOFs, 9,425 active constraints,
-> 30 iterations: reduced 4.5 s, saddle 7.6 s, differences up to 7.4e-15 (dense not run, about 25 GB). BDF2 error 28x to 60x below `two_step` at the two
-> finer steps. Limits: no convergence guarantee for a K that is not an M-matrix; BDF2 gained up to 0.72% energy in the impact test; friction and
-> Newmark not built. See `docs/consolidated_future_roadmap.md`, Wave 23.
-
-> [!IMPORTANT]
 > **Wave 22 closed (2026-10-15): batched nonlinear element kernels (opt-in).** Total-Lagrangian `Quad4PlaneStressTL`, `Hex8SolidTL`, `Hex20SolidTL` and
 > `Tet10SolidTL` have batched `internal_force_batch` / `tangent_stiffness_batch`; `FESystem` assembles them with a cached sparse CSR position map
 > (`assemble_tangent_stiffness(sparse=True)`, `NewtonOptions.sparse_tangent`), chunks by a byte budget, and adds `ContactSet2D` / `ContactSet3D`
@@ -119,6 +109,7 @@
 | 🗂️ [Package layout](#s-1) | 🪜 [Implementation steps](#s-4) |
 | 🔀 [How a problem flows through the modules](#s-2) | 🧰 [General-purpose extensions (Phases 1-7)](#s-5) |
 | 📚 [Module reference](#s-3) | ⚠️ [Known limitations (by design, not oversights)](#s-6) |
+| 🧲 [Contact module](#contact) | |
 
 ---
 
@@ -134,6 +125,79 @@ Every number this package produces has been checked against an
 independent reference (closed-form beam/plate theory, a previously
 validated script, or a second numerical method) — see `main.py`, which
 doubles as a regression test.
+
+<a id="contact"></a>
+
+## 🧲 Contact module
+
+Unilateral (frictionless) contact is solved exactly with Lagrange multipliers, in both packages, on plain arrays and without an element class:
+
+```
+K u = f + Bᵀλ,    B u − c ≥ 0,    λ ≥ 0,    λ·(B u − c) = 0
+```
+
+`fea_engine` solves the full-order problem; `rom_engine` reduces it (a POD basis for the displacements, a non-negative basis for the contact forces) and never imports `fea_engine`. Penalty contact elements, which came earlier, are listed for completeness. **Bold** marks what was added by the contact work of 2026-10-16 (Wave 23).
+
+### `fea_engine`: contact modules, elements and methods
+
+| Module | What it provides | Status |
+|---|---|---|
+| `contact_solvers.py` | `solve_contact_static` (dense: `active_set`, `lemke`, `pgs`, and now `pdas`), `solve_contact_newton`, `solve_contact_dynamics` | earlier waves; extended below |
+| `contact_solvers.py` | **`solve_contact_static_sparse(K, f, B, c, route="auto")`**: primal-dual active set with the routes `reduced`, `saddle`, `condensed`, warm start `active0`, opt-in `fallback=True`, `max_dense_bytes` guard | **new** |
+| `contact_solvers.py` | **`solve_contact_dynamics(..., scheme="bdf2", return_info=True)`** and the record **`ContactDynamicsInfo`** (scheme, ok, failed_step, reason, message, suggestion, V, iterations) | **new** (default `two_step` unchanged) |
+| `elements/scalar.py` | **`Quad4Laplace`** (registry key `quad4_laplace`): 4-node scalar-field element, one DOF `"u"` per node; stiffness, consistent and lumped mass, source vector | **new** element |
+| `elements/contact.py` | `GapContactPenalty`, `GapContactCurvedFriction`, `NodeToSegmentContact2D`, `NodeToSegmentContact2DFriction`, `find_contact_pairs_2d` | earlier waves |
+| `contact_batch.py` | `ContactSet2D`, `ContactSet3D`, `candidate_pairs_2d/3d`: penalty contact for many pairs at once | Wave 22 |
+| `nonlinear_solver.py` | `solve_contact_lagrange_static` (one node, exact) | earlier waves |
+
+**Changes to existing code (all opt-in; a call that worked before gives the same result):**
+
+| Where | Change |
+|---|---|
+| `solve_contact_static(..., method="pdas")` | new method value; it calls `solve_contact_static_sparse` |
+| `ContactResult` | new fields `route`, `reason`, `message`, `suggestion`, `active_mask`, `fallbacks` and the alias `ok`; a failing route says why and which route to try next |
+| `solve_contact_dynamics` | new keywords `scheme` (`"two_step"` default, `"bdf2"`), `return_info`, `route`, `fallback`; `method="pdas"` for BDF2 only |
+| `FESystem` assembly | no change in this work. The assembly-side contact changes are from Wave 22: `add_contact_set`, the cached sparse CSR tangent, `eliminate_constraints`. `Quad4Laplace` works with the unchanged `assemble_stiffness`, `assemble_mass`, `assemble_lumped_mass`, `fix_dofs`, `solve_modal` |
+| package exports | `solve_contact_static_sparse`, `ContactDynamicsInfo`, `Quad4Laplace` exported from `fea_engine` |
+
+### What was measured
+
+| Claim | Measured | Where |
+|---|---|---|
+| The sparse routes agree with the dense solvers | differences 5.4e-16 to 1.3e-15 on the 361 to 3,481-unknown membrane obstacle problems of the gallery; 7.4e-15 between the two sparse routes at 39,601 unknowns | `fea_09`; `fea_engine/tests/sparse_contact_timing.py` |
+| The sparse routes scale | 39,601 unknowns, 9,425 active constraints, 30 iterations: `reduced` 4.5 s, `saddle` 7.6 s (12-CPU Windows machine); the dense route was not run (it needs about 25 GB) | `sparse_contact_timing.py` |
+| Sparse beats dense where both fit | 3,481 unknowns: `reduced` 0.17 s, `saddle` 0.22 s, dense 3.97 s (sandbox, 2 CPUs) | `fea_09` figure |
+| BDF2 is second order | free-membrane error at t = 2: 1.15e-2 / 2.96e-3 / 7.2e-4 for dt = 0.01 / 0.005 / 0.0025, observed order 1.96 and 2.03; `two_step` 0.162 / 0.0859 / 0.0454, order 0.92 | `fea_10` |
+| BDF2 is not contact-stabilised | bar impact, h = 0.002: energy rises to 1.0060 of the initial value (up to 0.72% in the test suite), ends at 0.976; `two_step` never exceeds 1.000 and ends at 0.938. The BDF2 wall force shows spikes during the impact | `fea_10` |
+| Complete bases reproduce the full order | reduced BDF2 trajectory equals the full-order one to 3.3e-11 | `rom_engine/tests/test_contact_dynamic_rom.py` |
+| The reduced dynamic model is accurate | 324 DOFs, 120 steps, up to 54 active constraints: relative error 0.81% / 0.20% / 0.023% for p = p_λ = 10 / 30 / 40; reduced contact conditions hold (KKT residual at most 2.7e-18) | `rom_07` |
+| Greedy sampling beats random sampling (static) | mean error on six held-out obstacles with 2 / 4 / 6 / 8 snapshots: greedy 4.75 / 1.55 / 1.23 / 0.82%, random median 7.37 / 2.94 / 2.11 / 1.63% | `rom_07` |
+| The cached indicator is cheap | 0.04 to 0.45 ms per call up to 40,000 constraints; the reference function took 3.3 s at 2,500 | `rom_engine/tests/contact_indicator_timing.py` |
+
+Times come from one run on one machine and are not asserted by any test; the gallery figures are the sandbox run named in each figure. Not covered: friction in the new solvers, Newmark contact dynamics, parametric prediction of the dynamic ROM, a dense-route run at 39,601 unknowns. Convergence of the active-set iteration is not guaranteed when `K` is not an M-matrix. Record: `fea_engine/docs/consolidated_future_roadmap.md`, Wave 23.
+
+### Contact results from the example gallery
+
+<table>
+<tr>
+<td align="center"><a href="examples/gallery/fea_03_hertzian_contact.py"><img src="examples/gallery/fea_03_hertzian_contact.png" width="330"></a><br><sub><b>Penalty contact</b>: block pressed onto a rigid circular obstacle (<code>fea_03</code>, earlier)</sub></td>
+<td align="center"><a href="examples/gallery/fea_09_sparse_obstacle_contact.py"><img src="examples/gallery/fea_09_sparse_obstacle_contact.png" width="330"></a><br><sub><b>Sparse exact contact</b>: <code>Quad4Laplace</code> membrane on an obstacle, contact set, route timing (<code>fea_09</code>)</sub></td>
+<td align="center"><a href="examples/gallery/fea_10_bdf2_contact_dynamics.py"><img src="examples/gallery/fea_10_bdf2_contact_dynamics.png" width="330"></a><br><sub><b>BDF2 contact dynamics</b>: order 2 against order 1, bar impact (<code>fea_10</code>)</sub></td>
+</tr>
+</table>
+
+Click an image to open the script that produced it; each script prints the numbers quoted above.
+
+### Tests
+
+| File | Tests | Covers |
+|---|---|---|
+| `tests/test_contact_solvers_sparse.py` | 28 | routes against dense solvers on six obstacles, failure reports, fallback, warm start, memory guard |
+| `tests/test_quad4_laplace.py` | 17 | element matrices, patch test on distorted meshes, Poisson convergence, membrane eigenvalues |
+| `tests/test_contact_dynamics_bdf2.py` | 14 | order of accuracy, contact conditions at every step, impact, input checks |
+
+All of these passed on the author's machine. In the full-suite runs there, `fea_engine` had 0 failures; `rom_engine` had the known operator-inference failure and one `test_domain_partition.py` failure that was a rounding-sensitive assertion and has since been rewritten (that file passes).
+
 
 <a id="s-1"></a>
 

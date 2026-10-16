@@ -15,16 +15,6 @@
 </div>
 
 > [!IMPORTANT]
-> **Contact ROMs added, Wave 23 closed (2026-10-16).** `ContactROM.solve_dynamic(force, c, dt, n_steps, scheme="bdf2")` runs reduced contact dynamics with the reduced
-> matrices factored once, a warm-started LCP and a KKT guard that flags wrong LCP solutions. `greedy_contact_sampling(..., rel_tol=, pass_round=)`
-> builds the bases from trajectory snapshots (`trajectory_indicator`, `linear_basis_schedule`). `ContactConditionIndicator(K, B, f, weights)` caches
-> the pseudo-inverse and skips the least-squares step for `B = I`; `contact_condition_indicator` stays as the reference. `lcp_active_set` and
-> `solve_lcp` accept `active0`. Measured: complete bases reproduce the full-order trajectory to 3.3e-11; POD + NMF error 0.81%, 0.20%, 0.023% for
-> p = p_lambda = 10, 30, 40; greedy worst error over 12 candidates 6.7% after one round, 4.0% after five; indicator 0.04 to 0.45 ms per call for up to
-> 40,000 constraints. Not tested: parametric prediction in the dynamic case, friction. The `rel_tol` rule is the author's reading of line 15 of
-> Algorithm 2. Details: `fea_engine/docs/consolidated_future_roadmap.md`, Wave 23.
-
-> [!IMPORTANT]
 > **Wave 22 closed (2026-10-15), `rom_engine` part: batched hyper-reduction.** `ECSW` takes keyword-only `elem_forces_fn` / `elem_tangents_fn`
 > (callbacks `fn(elements, U_local)`, e.g. `FESystem.element_forces_local`), `ecsw_training_matrix_batched` and `ECSW.fit_batched` build the training
 > matrix without a Python loop over elements, and `nonlinearity_indicator_batched` does the same for the domain-partition indicator. Measured on 400 elements
@@ -40,6 +30,7 @@
 | ⚙️ [Installation](#s-3) | ⚠️ [A certified-bound caveat (read before using `scm.py`)](#s-8) |
 | 🚀 [Quick start](#s-4) | 🔢 [A dtype note (why this matters more than it sounds)](#s-9) |
 | 🗂️ [Package layout](#s-5) | 🗺️ [Roadmap](#s-10) |
+| 🧲 [Contact module](#contact) | |
 
 ---
 
@@ -49,6 +40,68 @@ structural engineering analysis. It is the companion package to
 [`fea_engine`](../fea_engine): fea_engine assembles and solves
 full-order finite element models, rom_engine compresses and
 accelerates them.
+
+<a id="contact"></a>
+
+## 🧲 Contact module
+
+Unilateral (frictionless) contact is solved exactly with Lagrange multipliers, in both packages, on plain arrays and without an element class:
+
+```
+K u = f + Bᵀλ,    B u − c ≥ 0,    λ ≥ 0,    λ·(B u − c) = 0
+```
+
+`fea_engine` solves the full-order problem; `rom_engine` reduces it (a POD basis for the displacements, a non-negative basis for the contact forces) and never imports `fea_engine`. Penalty contact elements, which came earlier, are listed for completeness. **Bold** marks what was added by the contact work of 2026-10-16 (Wave 23).
+
+### `rom_engine`: contact modules and methods
+
+| Module | What it provides | Status |
+|---|---|---|
+| `contact_dual_basis.py` | `ContactROM`, `nonneg_dual_basis`, `active_snapshot_columns`; **`ContactROM(..., M=)`** and **`ContactROM.solve_dynamic(force, c, dt, n_steps, scheme="bdf2")`** returning **`ContactROMDynamicResult`** (reduced matrices factored once, warm-started LCP, a KKT guard that reports wrong LCP solutions) | static: earlier; **dynamic: new** |
+| `contact_greedy.py` | `greedy_contact_sampling`, `contact_condition_indicator` (the reference); **trajectory snapshots**, **`rel_tol`**, **`pass_round`**, **`trajectory_indicator`**, **`linear_basis_schedule`**, **`ContactConditionIndicator`** (cached pseudo-inverse; skips the least-squares step for `B = I`) | extended / **new** |
+| `complementarity.py` | `lcp_lemke`, `lcp_active_set`, `solve_lcp`, `solve_reduced_contact`; **`active0=`** warm start on `lcp_active_set` and `solve_lcp` | extended |
+| `contact_hyper_reduction.py`, `contact_rid.py`, `domain_partition.py` | contact-aware ECSW, hybrid hyper-reduction on a reduced integration domain, linear/nonlinear partition with static condensation | earlier waves |
+| `contact_comparison.py`, `contact_validation.py` | compare reduced contact models; error metrics | earlier waves |
+| `friction_contact_models.py`, `torch_contact_bases.py` | dry-friction elements for harmonic balance; PyTorch counterparts of the dense contact bases | earlier waves |
+
+**Changes to existing code (all opt-in):** `ContactROM` takes an optional mass matrix `M` and keeps `M_r`; `lcp_active_set` and `solve_lcp` take `active0`; `greedy_contact_sampling` accepts trajectory-valued snapshots and the keywords `rel_tol` and `pass_round`, and a call without them behaves as before. The `rel_tol` rule is the author's reading of line 15 of Algorithm 2 of Balajewicz, Amsallem and Farhat, which is printed with `>` and is probably a typo.
+
+### What was measured
+
+| Claim | Measured | Where |
+|---|---|---|
+| The sparse routes agree with the dense solvers | differences 5.4e-16 to 1.3e-15 on the 361 to 3,481-unknown membrane obstacle problems of the gallery; 7.4e-15 between the two sparse routes at 39,601 unknowns | `fea_09`; `fea_engine/tests/sparse_contact_timing.py` |
+| The sparse routes scale | 39,601 unknowns, 9,425 active constraints, 30 iterations: `reduced` 4.5 s, `saddle` 7.6 s (12-CPU Windows machine); the dense route was not run (it needs about 25 GB) | `sparse_contact_timing.py` |
+| Sparse beats dense where both fit | 3,481 unknowns: `reduced` 0.17 s, `saddle` 0.22 s, dense 3.97 s (sandbox, 2 CPUs) | `fea_09` figure |
+| BDF2 is second order | free-membrane error at t = 2: 1.15e-2 / 2.96e-3 / 7.2e-4 for dt = 0.01 / 0.005 / 0.0025, observed order 1.96 and 2.03; `two_step` 0.162 / 0.0859 / 0.0454, order 0.92 | `fea_10` |
+| BDF2 is not contact-stabilised | bar impact, h = 0.002: energy rises to 1.0060 of the initial value (up to 0.72% in the test suite), ends at 0.976; `two_step` never exceeds 1.000 and ends at 0.938. The BDF2 wall force shows spikes during the impact | `fea_10` |
+| Complete bases reproduce the full order | reduced BDF2 trajectory equals the full-order one to 3.3e-11 | `rom_engine/tests/test_contact_dynamic_rom.py` |
+| The reduced dynamic model is accurate | 324 DOFs, 120 steps, up to 54 active constraints: relative error 0.81% / 0.20% / 0.023% for p = p_λ = 10 / 30 / 40; reduced contact conditions hold (KKT residual at most 2.7e-18) | `rom_07` |
+| Greedy sampling beats random sampling (static) | mean error on six held-out obstacles with 2 / 4 / 6 / 8 snapshots: greedy 4.75 / 1.55 / 1.23 / 0.82%, random median 7.37 / 2.94 / 2.11 / 1.63% | `rom_07` |
+| The cached indicator is cheap | 0.04 to 0.45 ms per call up to 40,000 constraints; the reference function took 3.3 s at 2,500 | `rom_engine/tests/contact_indicator_timing.py` |
+
+Times come from one run on one machine and are not asserted by any test; the gallery figures are the sandbox run named in each figure. Not covered: friction in the new solvers, Newmark contact dynamics, parametric prediction of the dynamic ROM, a dense-route run at 39,601 unknowns. Convergence of the active-set iteration is not guaranteed when `K` is not an M-matrix. Record: `fea_engine/docs/consolidated_future_roadmap.md`, Wave 23.
+
+### Contact results from the example gallery
+
+<table>
+<tr>
+<td align="center"><a href="examples/gallery/rom_07_contact_rom_dynamics.py"><img src="examples/gallery/rom_07_contact_rom_dynamics.png" width="330"></a><br><sub><b>Contact ROM</b>: reduced dynamics against full order, error against basis size, greedy against random snapshots (<code>rom_07</code>)</sub></td>
+</tr>
+</table>
+
+Click an image to open the script that produced it; each script prints the numbers quoted above.
+
+### Tests
+
+| File | Tests | Covers |
+|---|---|---|
+| `tests/test_contact_dynamic_rom.py` | 13 | complete bases against full order, KKT guard, warm start, POD + NMF accuracy |
+| `tests/test_contact_greedy.py` | 13 | greedy selection (three of the 13 predate this work), trajectories, `rel_tol`, `pass_round` |
+| `tests/test_contact_indicator.py` | 37 | `ContactConditionIndicator` routes against the reference |
+
+All of these passed on the author's machine. In the full-suite runs there, `fea_engine` had 0 failures; `rom_engine` had the known operator-inference failure and one `test_domain_partition.py` failure that was a rounding-sensitive assertion and has since been rewritten (that file passes).
+
 
 <a id="s-1"></a>
 

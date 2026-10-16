@@ -1,6 +1,6 @@
 # rom_engine Example Gallery
 
-Six runnable, self-contained scripts mirroring `fea_engine`'s own
+Seven runnable, self-contained scripts mirroring `fea_engine`'s own
 example gallery (`fea_engine/examples/gallery/`), covering
 `rom_engine`'s reduced-order-modeling toolkit end to end: from
 building a basis, through both linear (Galerkin/affine, frequency-
@@ -40,6 +40,7 @@ torch-gated surface this gallery deliberately doesn't exercise).
 | 4 | `rom_04_balanced_truncation.py` | State-space balanced truncation (`balanced_truncation.py`) with a genuine a priori H-infinity error bound, on a damped cantilever beam | The actual `\|H_rom - H_fom\|` over a frequency sweep is checked against `h_infinity_error_bound()` and confirmed to hold (1.6e-10 actual vs. 6.5e-9 bound) -- using the two-stage modal-pre-reduction pattern `tests/test_balanced_truncation.py` itself establishes, since applying balanced truncation directly to a raw, poorly-conditioned beam state-space is a known numerically-unreliable shortcut, not a legitimate use of the method |
 | 5 | `rom_05_nonlinear_modal_rom.py` | Nonlinear modal ROM (`nonlinear_rom.py`'s `PolynomialModalROM`) on a geometrically nonlinear (von Karman) clamped-clamped beam, trained via `AppliedLoadStrategy` | Held-out static load-deflection sweep vs. the full-order `fea_engine` nonlinear solve: max relative error 3.26% over the sweep, 2 ROM modes vs. 51 full-order DOF, correctly tracking geometric stiffening |
 | 6 | `rom_06_dataset_diagnostics_uq.py` | Training-dataset diagnostics (`dataset_diagnostics.py`: coverage, PCA dimensionality, Sobol' sensitivity) and ensemble epistemic UQ (`ensemble_uq.py`'s `EnsembleUQ`) on the same two-region beam parameter study | Sobol' indices correctly identify the root-side region (EI1) as dominating tip-deflection variance (ST=0.94 vs. 0.04), matching cantilever bending-moment physics; ensemble std vs. true error correlation = 0.73 over a held-out sweep, using a torch-free random-features ensemble member in place of `NeuralSurrogate` |
+| 7 | `rom_07_contact_rom_dynamics.py` | Contact ROMs on a membrane obstacle problem: `ContactROM.solve_dynamic` (POD + non-negative dual basis, p = 10 / 30 / 40) against the full-order BDF2 trajectory, and `greedy_contact_sampling` with `ContactConditionIndicator` against random snapshots (static) | Relative error 0.81% / 0.20% / 0.023%; reduced KKT residual at most 2.7e-18; greedy 0.82% against random median 1.63% at 8 snapshots |
 
 ## Notes
 

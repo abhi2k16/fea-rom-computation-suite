@@ -1,6 +1,6 @@
 # fea_engine Example Gallery
 
-Eight runnable, self-contained scripts mirroring the structure of
+Ten runnable, self-contained scripts mirroring the structure of
 [TensorMesh's Example Gallery](https://docs.tensor-mesh.com/example_gallery/index.html),
 built against this package's own actual capabilities rather than the
 PDE domains (Poisson, wave, Helmholtz, fluids, Maxwell) `fea_engine`
@@ -30,6 +30,8 @@ package's reduced-order-modeling tools instead (see that folder's own
 | 6 | `fea_06_topology_optimization.py` | SIMP density-based compliance topology optimization (`topopt.py`) on the short-cantilever benchmark: density evolution + compliance history | 86.8% compliance reduction at an exactly-held volume fraction -- the same signature `test_topopt.py`'s own end-to-end test validates |
 | 7 | `fea_07_pyvista_visualization.py` | PyVista 3-D plots (`fea_engine.visualization`, needs `pip install fea_engine[viz]`): von Mises stress on the deformed 2-D cantilever, a 3-D Hex8 cantilever's displacement magnitude, `.vtu` export for ParaView | Tip deflections against Euler-Bernoulli `P L^3 / (3 E I)`: ratio 1.035 (2-D Quad4) and 0.989 (3-D Hex8), printed by the script |
 | 8 | `fea_08_pyvista_animation_sections_rom.py` | PyVista animation, sections and ROM comparison (needs `pip install fea_engine[viz]`): a transient step response as a von Mises GIF, the first mode as a GIF, slices and a stress threshold of a 3-D Hex8 cantilever, and full-order vs POD-reconstructed fields with pointwise error at two ranks | Mode 1 frequency 21.107 Hz vs Euler-Bernoulli 20.955 Hz (ratio 1.007); step-response peak / static = 1.927 (1 % damping, below the linear limit of 2); POD rank 1 / rank 4 relative error 2.91e-2 / 4.97e-4, equal to the directly computed projection error |
+| 9 | `fea_09_sparse_obstacle_contact.py` | Membrane pushed onto a rigid obstacle: `Quad4Laplace` assembly and `solve_contact_static_sparse` (routes `reduced` and `saddle`), contact set, contact force, wall time against the dense `solve_contact_static` | Routes agree with the dense solver to 1.3e-15 or better (361 to 3,481 unknowns); the KKT conditions are printed |
+| 10 | `fea_10_bdf2_contact_dynamics.py` | `solve_contact_dynamics(..., scheme="bdf2")` against the default `two_step`: error against the exact modal solution of a free `Quad4Laplace` membrane, and a bar impact on a rigid wall (wall force and energy) | Observed order 1.96 / 2.03 (BDF2) against 0.92 (`two_step`); BDF2 energy rises to 1.0060 of the initial value in the impact, `two_step` does not exceed 1.000 |
 
 ## Related: solver-backend benchmark
 
