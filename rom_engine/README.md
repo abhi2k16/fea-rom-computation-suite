@@ -226,7 +226,7 @@ Click an image to open the script that produced it. Gallery figures are in `exam
 ## ⚡ Important note: batched nonlinear element kernels and vectorised assembly
 
 > [!IMPORTANT]
-> **Wave 22, closed 2026-10-15. Opt-in, off by default.** The nonlinear elements `Quad4PlaneStressTL`, `Hex8SolidTL`, `Hex20SolidTL` and `Tet10SolidTL` can evaluate force and tangent for all elements of a block at once, and `FESystem` can assemble them without a Python loop over elements, into a sparse tangent that a sparse Newton solve uses. The loop versions remain the default and the reference; every batched result is tested against them. Measured on the author's machine (12 CPUs): kernel force 102x (Quad4), 47x (Hex8), 23x (Hex20) and 41x (Tet10) faster than the loop, agreeing to 8.4e-15 relative or better.
+> ** Opt-in, off by default.** The nonlinear elements `Quad4PlaneStressTL`, `Hex8SolidTL`, `Hex20SolidTL` and `Tet10SolidTL` can evaluate force and tangent for all elements of a block at once, and `FESystem` can assemble them without a Python loop over elements, into a sparse tangent that a sparse Newton solve uses. The loop versions remain the default and the reference; every batched result is tested against them. Measured on the author's machine (12 CPUs): kernel force 102x (Quad4), 47x (Hex8), 23x (Hex20) and 41x (Tet10) faster than the loop, agreeing to 8.4e-15 relative or better.
 
 ### Why it is needed
 
