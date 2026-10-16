@@ -1,0 +1,94 @@
+\contentsline {part}{I\hspace {1em}Architectural foundations}{1}{part.1}%
+\gdef \the@ipfilectr {@-1}
+\contentsline {chapter}{\numberline {1}The design of a decoupled scientific engine}{2}{chapter.1}%
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-2}
+\contentsline {chapter}{\numberline {2}Mesh topologies and structural domain partitioning}{3}{chapter.2}%
+\gdef \the@ipfilectr {}
+\contentsline {part}{II\hspace {1em}Full-order physics (\texttt {fea\_engine})}{4}{part.2}%
+\gdef \the@ipfilectr {@-3}
+\contentsline {chapter}{\numberline {3}Linear continua and structural elements}{5}{chapter.3}%
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-4}
+\contentsline {chapter}{\numberline {4}Dynamics: modal, transient, harmonic and random response}{6}{chapter.4}%
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-5}
+\contentsline {chapter}{\numberline {5}Material and geometric nonlinearity}{7}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Why a nonlinear solver is different}{7}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Total-Lagrangian kinematics}{8}{section.5.2}%
+\contentsline {paragraph}{The truss: the smallest complete example.}{8}{section*.5}%
+\contentsline {paragraph}{Why total Lagrangian: rotation invariance.}{8}{section*.6}%
+\contentsline {section}{\numberline {5.3}Material nonlinearity}{9}{section.5.3}%
+\contentsline {paragraph}{Hyperelasticity.}{9}{section*.8}%
+\contentsline {paragraph}{$J_2$ plasticity: history variables.}{9}{section*.9}%
+\contentsline {section}{\numberline {5.4}Verification of the elements}{10}{section.5.4}%
+\contentsline {paragraph}{Tangent consistency.}{10}{section*.11}%
+\contentsline {paragraph}{Elastica.}{10}{section*.13}%
+\contentsline {section}{\numberline {5.5}Following the response}{11}{section.5.5}%
+\contentsline {paragraph}{The snap-through truss.}{11}{section*.14}%
+\contentsline {paragraph}{Choosing a driver.}{11}{section*.16}%
+\contentsline {section}{\numberline {5.6}Solver settings}{11}{section.5.6}%
+\contentsline {section}{\numberline {5.7}Summary}{13}{section.5.7}%
+\contentsline {section}{References}{14}{section*.20}%
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-6}
+\contentsline {chapter}{\numberline {6}Computational acceleration: vectorised assembly and batched kernels}{15}{chapter.6}%
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-7}
+\contentsline {chapter}{\numberline {7}Exact unilateral contact: sparse active sets and BDF2}{16}{chapter.7}%
+\contentsline {section}{\numberline {7.1}The problem}{16}{section.7.1}%
+\contentsline {paragraph}{The model problem.}{16}{section*.21}%
+\contentsline {section}{\numberline {7.2}Why not a penalty?}{17}{section.7.2}%
+\contentsline {section}{\numberline {7.3}Mathematical structure}{17}{section.7.3}%
+\contentsline {paragraph}{A minimisation problem.}{17}{section*.24}%
+\contentsline {paragraph}{The condensed problem.}{18}{section*.25}%
+\contentsline {paragraph}{Complementarity as an equation.}{18}{section*.26}%
+\contentsline {section}{\numberline {7.4}The primal-dual active-set method and its three routes}{18}{section.7.4}%
+\contentsline {paragraph}{The algorithm.}{18}{section*.27}%
+\contentsline {paragraph}{Finite termination, and where it is not guaranteed.}{19}{section*.29}%
+\contentsline {paragraph}{Three routes.}{19}{section*.30}%
+\contentsline {section}{\numberline {7.5}Implementation}{20}{section.7.5}%
+\contentsline {paragraph}{Design decisions.}{20}{section*.32}%
+\contentsline {paragraph}{A complete example.}{20}{section*.33}%
+\contentsline {section}{\numberline {7.6}Verification of the static solvers}{21}{section.7.6}%
+\contentsline {paragraph}{The contact conditions.}{22}{section*.35}%
+\contentsline {paragraph}{Agreement with the dense solvers.}{22}{section*.36}%
+\contentsline {paragraph}{Behaviour with problem size.}{22}{section*.38}%
+\contentsline {paragraph}{A larger case, measured on the author's machine.}{22}{section*.41}%
+\contentsline {section}{\numberline {7.7}Contact dynamics}{23}{section.7.7}%
+\contentsline {paragraph}{The semi-discrete problem.}{23}{section*.42}%
+\contentsline {paragraph}{The default scheme (first order).}{23}{section*.43}%
+\contentsline {paragraph}{BDF2.}{23}{section*.44}%
+\contentsline {paragraph}{Order of accuracy.}{24}{section*.45}%
+\contentsline {paragraph}{Impact: where BDF2 is not enough.}{24}{section*.48}%
+\contentsline {paragraph}{How the energy gain depends on the time step.}{25}{section*.51}%
+\contentsline {section}{\numberline {7.8}Failure modes and limits}{26}{section.7.8}%
+\contentsline {section}{\numberline {7.9}Summary}{26}{section.7.9}%
+\contentsline {section}{References}{27}{section*.55}%
+\gdef \the@ipfilectr {}
+\contentsline {part}{III\hspace {1em}Reduced-order modelling (\texttt {rom\_engine})}{29}{part.3}%
+\gdef \the@ipfilectr {@-8}
+\contentsline {chapter}{\numberline {8}Projection-based reduction: POD, Galerkin and affine sweeps}{30}{chapter.8}%
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-9}
+\contentsline {chapter}{\numberline {9}Systems-and-control reduction}{31}{chapter.9}%
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-10}
+\contentsline {chapter}{\numberline {10}Frequency-domain ROMs and certified error bounds}{32}{chapter.10}%
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-11}
+\contentsline {chapter}{\numberline {11}Substructuring and component reduction}{33}{chapter.11}%
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-12}
+\contentsline {chapter}{\numberline {12}Non-intrusive identification and nonlinear ROMs}{34}{chapter.12}%
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-13}
+\contentsline {chapter}{\numberline {13}Hyper-reduction and contact reduced-order models}{35}{chapter.13}%
+\gdef \the@ipfilectr {}
+\contentsline {part}{IV\hspace {1em}Verification}{36}{part.4}%
+\gdef \the@ipfilectr {@-14}
+\contentsline {chapter}{\numberline {14}Verification, reproduction studies and a parametric pipeline}{37}{chapter.14}%
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-15}
+\contentsline {chapter}{\numberline {A}Differentiable assembly and autograd tangents}{38}{appendix.A}%
+\gdef \the@ipfilectr {}

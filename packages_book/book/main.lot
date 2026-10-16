@@ -1,0 +1,56 @@
+\gdef \the@ipfilectr {@-1}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-2}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-3}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-4}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-5}
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {5.1}{\ignorespaces Analytic tangent against central finite differences of the internal force, one random displacement state per element.\relax }}{10}{table.caption.12}%
+\contentsline {table}{\numberline {5.2}{\ignorespaces Static drivers of \texttt {fea\_engine}{}. Transient drivers are the subject of Chapter\nobreakspace {}\ref {ch:dyn}.\relax }}{12}{table.caption.17}%
+\contentsline {table}{\numberline {5.3}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{13}{table.caption.18}%
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-6}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-7}
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {7.1}{\ignorespaces The three routes of the sparse contact solver and the failure reasons each can report.\relax }}{20}{table.caption.31}%
+\contentsline {table}{\numberline {7.2}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{21}{table.caption.34}%
+\contentsline {table}{\numberline {7.3}{\ignorespaces Six obstacles on the membrane model ($484\xspace $ unknowns). ``active'' is the number of active constraints; ``it.'' the iterations of each sparse route; the last four columns are the largest difference in $\bm {u}$ and $\bm {\lambda }$ to the dense active-set solution.\relax }}{22}{table.caption.37}%
+\contentsline {table}{\numberline {7.4}{\ignorespaces The model problem on refined meshes. The dense route was not run above 3,500 unknowns. Single runs on the sandbox used for the figures of this chapter (2 CPUs).\relax }}{22}{table.caption.39}%
+\contentsline {table}{\numberline {7.5}{\ignorespaces Error at $t=2$ of a free membrane against the exact modal solution; contact inactive. ``ratio'' is the error of the two-step scheme divided by that of BDF2.\relax }}{24}{table.caption.46}%
+\contentsline {table}{\numberline {7.6}{\ignorespaces Bar impact on a rigid wall: energy relative to the initial energy, and the largest penetration, for the two schemes.\relax }}{25}{table.caption.49}%
+\contentsline {table}{\numberline {7.7}{\ignorespaces Largest wall force of the bar impact, and energy kept by a bar without obstacle (broadband initial velocity, $t=1.5$), for both schemes.\relax }}{26}{table.caption.52}%
+\contentsline {table}{\numberline {7.8}{\ignorespaces Failure reasons of \code {solve_contact_static_sparse}.\relax }}{27}{table.caption.53}%
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-8}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-9}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-10}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-11}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-12}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-13}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-14}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-15}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}

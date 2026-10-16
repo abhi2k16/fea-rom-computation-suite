@@ -339,8 +339,29 @@ def bar_impact(h, T=1.5):
                 p2=float(max(0, c[0] - U2[:, 0].min())))
 
 
+def free_bar_energy(h, T=1.5):
+    """Energy kept at t = T / initial, for the same bar without any obstacle and with a broadband initial velocity
+    (seeded noise): the numerical dissipation of each scheme alone. Returns (bdf2, two_step)."""
+    n, dx = 40, 1.0 / 39
+    K = np.zeros((n, n))
+    for i in range(n - 1):
+        K[i:i + 2, i:i + 2] += (1 / dx) * np.array([[1, -1], [-1, 1]])
+    K += np.eye(n) * 1e-3 / n
+    M = np.diag(np.full(n, dx)); M[0, 0] = M[-1, -1] = dx / 2
+    B = np.zeros((1, n)); B[0, 0] = 1.0
+    c = np.array([-100.0])
+    v0 = 0.1 * np.random.default_rng(0).standard_normal(n)
+    N = int(round(T / h))
+    Ub, _, ib = solve_contact_dynamics(M, K, lambda t: np.zeros(n), B, c, h, N, v0=v0, scheme="bdf2", return_info=True)
+    U2, _ = solve_contact_dynamics(M, K, lambda t: np.zeros(n), B, c, h, N, v0=v0)
+    V2 = np.zeros_like(U2); V2[0] = v0
+    V2[1:-1] = (U2[2:] - U2[:-2]) / (2 * h); V2[-1] = (U2[-1] - U2[-2]) / h
+    en = lambda U, V, k: 0.5 * V[k] @ M @ V[k] + 0.5 * U[k] @ K @ U[k]
+    return en(Ub, ib.V, -1) / en(Ub, ib.V, 0), en(U2, V2, -1) / en(U2, V2, 0)
+
+
 def exp_impact():
-    res = {h: bar_impact(h) for h in (0.004, 0.002)}
+    res = {h: bar_impact(h) for h in (0.008, 0.004, 0.002, 0.001)}
     with open(os.path.join(TAB, "ch07_impact.tex"), "w") as fh:
         fh.write("\\begin{tabular}{rrrrr}\n\\toprule\n$\\Delta t$ & scheme & largest energy / initial & final energy / initial & largest penetration \\\\\n\\midrule\n")
         for h, r in res.items():
@@ -355,10 +376,19 @@ def exp_impact():
     ax[1].plot(r["t"], r["E2"] / E0, label="two-step"); ax[1].plot(r["t"], r["Eb"] / E0, label="BDF2"); ax[1].axhline(1, color="k", lw=0.8)
     ax[1].set_xlabel("t"); ax[1].set_ylabel("energy / initial energy"); ax[1].legend(); ax[1].set_title("energy")
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch07_impact.pdf")); plt.close(fig)
-    for h, tag in ((0.004, "Coarse"), (0.002, "Fine")):
+    for h, tag in ((0.008, "Vcoarse"), (0.004, "Coarse"), (0.002, "Fine"), (0.001, "Vfine")):
         q = res[h]; E0 = q["Eb"][0]
         num("ctcImpBdfMax" + tag, f"{q['Eb'].max() / E0:.4f}"); num("ctcImpBdfEnd" + tag, f"{q['Eb'][-1] / E0:.4f}")
         num("ctcImpTwoMax" + tag, f"{q['E2'].max() / E0:.4f}"); num("ctcImpTwoEnd" + tag, f"{q['E2'][-1] / E0:.4f}")
+        num("ctcImpBdfForce" + tag, f"{q['Lb'].max():.1f}"); num("ctcImpTwoForce" + tag, f"{q['L2'].max():.1f}")
+        fd = free_bar_energy(h)
+        num("ctcFreeBdf" + tag, f"{fd[0]:.4f}"); num("ctcFreeTwo" + tag, f"{fd[1]:.4f}")
+    with open(os.path.join(TAB, "ch07_impact_force.tex"), "w") as fh:
+        fh.write("\\begin{tabular}{rrrrr}\n\\toprule\n & \\multicolumn{2}{c}{largest wall force} & \\multicolumn{2}{c}{free bar: energy kept} \\\\\n\\cmidrule(lr){2-3}\\cmidrule(lr){4-5}\n$\\Delta t$ & two-step & BDF2 & two-step & BDF2 \\\\\n\\midrule\n")
+        for h in res:
+            q = res[h]; fd = free_bar_energy(h)
+            fh.write(f"{h:g} & {q['L2'].max():.2f} & {q['Lb'].max():.2f} & {fd[1]:.4f} & {fd[0]:.4f} \\\\\n")
+        fh.write("\\bottomrule\n\\end{tabular}\n")
     print({h: (r_['Eb'].max() / r_['Eb'][0], r_['E2'].max() / r_['Eb'][0]) for h, r_ in res.items()})
 
 

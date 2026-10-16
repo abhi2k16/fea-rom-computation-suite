@@ -260,7 +260,7 @@ With the obstacle far away the contact is inactive, and the problem reduces to l
 \end{figure}
 
 \paragraph{Impact: where BDF2 is not enough.}
-Order of accuracy is a statement about smooth solutions. An impact is not smooth, so the second test is a bar of 40 nodes that hits a rigid wall at unit speed ($u_0\ge-0.02$), with the energy $\tfrac12\bm v^T\bm M\bm v+\tfrac12\bm u^T\bm K\bm u$ recorded at every step. \Cref{tab:ct-impact} and \Cref{fig:ct-impact} give the result for two time steps. The default scheme never gains energy: its largest energy is $\ctcImpTwoMaxFine$ of the initial one at $\Delta t=0.002$, and it ends at $\ctcImpTwoEndFine$, so it loses more energy than BDF2, which ends at $\ctcImpBdfEndFine$. BDF2 keeps more energy, but its energy rises to $\ctcImpBdfMaxFine$ of the initial value during the impact ($\ctcImpBdfMaxCoarse$ at $\Delta t=0.004$), and its wall force alternates between large spikes and zero over the first few contacts, where the default scheme gives a smooth force. Neither scheme lets the bar penetrate the wall: the largest penetration in \Cref{tab:ct-impact} is zero for both.
+Order of accuracy is a statement about smooth solutions. An impact is not smooth, so the second test is a bar of 40 nodes that hits a rigid wall at unit speed ($u_0\ge-0.02$), with the energy $\tfrac12\bm v^T\bm M\bm v+\tfrac12\bm u^T\bm K\bm u$ recorded at every step. \Cref{tab:ct-impact} and \Cref{fig:ct-impact} give the result for four time steps. The default scheme never gains energy: its largest energy is $\ctcImpTwoMaxFine$ of the initial one at $\Delta t=0.002$, and it ends at $\ctcImpTwoEndFine$, so it loses more energy than BDF2, which ends at $\ctcImpBdfEndFine$. BDF2 keeps more energy, but its energy rises to $\ctcImpBdfMaxFine$ of the initial value during the impact at $\Delta t=0.002$, and its wall force alternates between large spikes and zero over the first few contacts, where the default scheme gives a smooth force. Neither scheme lets the bar penetrate the wall: the largest penetration in \Cref{tab:ct-impact} is zero for both.
 
 \begin{table}[ht]
 \centering\small
@@ -274,6 +274,15 @@ Order of accuracy is a statement about smooth solutions. An impact is not smooth
 \caption{Bar impact, $\Delta t=0.002$. Left: wall force over the first $0.4$ time units. Right: energy relative to the initial energy over the whole run.}\label{fig:ct-impact}
 \end{figure}
 
+\paragraph{How the energy gain depends on the time step.}
+The largest BDF2 energy relative to the initial value is \ctcImpBdfMaxVcoarse, \ctcImpBdfMaxCoarse, \ctcImpBdfMaxFine and \ctcImpBdfMaxVfine for $\Delta t=0.008$, $0.004$, $0.002$ and $0.001$ (\Cref{tab:ct-impact}). The trend is monotone, and it runs against the usual expectation: the energy gain \emph{grows} as the step shrinks. The increments fall (the last halving adds only $0.0011$), so the gain tends to a limit near $0.7\%$ and does not keep growing. \Cref{tab:ct-impact-force} gives two further measurements. The same bar without an obstacle, started with a broadband random velocity, keeps \ctcFreeBdfVcoarse, \ctcFreeBdfCoarse, \ctcFreeBdfFine and \ctcFreeBdfVfine of its energy under BDF2 at the four steps, against \ctcFreeTwoVcoarse, \ctcFreeTwoCoarse, \ctcFreeTwoFine and \ctcFreeTwoVfine under the default scheme. The numerical dissipation of BDF2 on high modes therefore falls quickly as $\Delta t$ falls. A likely reading of both results is that, at a large step, this dissipation removes the energy that the contact enforcement adds, and that as the step shrinks the dissipation vanishes and the gain becomes visible. The two measurements agree with that reading, but the gain of the enforcement itself was not isolated (for example by the energy change across each contact step), so it is a likely mechanism and not a demonstrated one. The largest wall force also grows as the step shrinks for both schemes, by about a factor $2$ per halving of $\Delta t$ at the finer steps: the impact is resolved in one or two steps, so the force scales like the impulse divided by $\Delta t$; the BDF2 force is larger than the default scheme's at every step size.
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch07_impact_force}
+\caption{Largest wall force of the bar impact, and energy kept by a bar without obstacle (broadband initial velocity, $t=1.5$), for both schemes.}\label{tab:ct-impact-force}
+\end{table}
+
 BDF2 is therefore more accurate on smooth motion and keeps more energy through an impact, and it is \emph{not} contact-stabilised: the energy gain and the force spikes are real properties of the scheme. Algorithms designed to conserve energy through impact exist~\cite{laursen1997energy}; they are not implemented here. A user who needs a smooth wall force or a guaranteed energy bound should use the default scheme, or inspect the energy history of a BDF2 run, which is what \code{return_info=True} makes possible.
 
 \section{Failure modes and limits}\label{sec:ct-limits}
@@ -283,7 +292,7 @@ BDF2 is therefore more accurate on smooth motion and keeps more energy through a
 \item \textbf{No convergence guarantee in general.} Finite termination of the active-set iteration is proved for M-matrices; for the stiffness matrix of an elastic solid the method may cycle or stall, and the solver reports it (\texttt{cycled}, \texttt{max\_iter}) instead of returning the last iterate.
 \item \textbf{Singular systems.} A \texttt{saddle} system with dependent active rows of $\bm B$, or a $\bm K_{FF}$ that is singular (a body with a rigid-body mode that is not constrained), is reported as \texttt{singular}.
 \item \textbf{Dense route memory.} The \texttt{condensed} route needs about $8(nm+m^2)$ bytes; it is skipped under \code{fallback=True} when that exceeds \code{max_dense_bytes}, and it was not run at $\ctcAuthN$ unknowns.
-\item \textbf{BDF2 is not contact-stabilised.} Energy rise and force spikes during impact (\Cref{tab:ct-impact}); no energy result for BDF2 with contact is known to the author.
+\item \textbf{BDF2 is not contact-stabilised.} Energy rise and force spikes during impact (\Cref{tab:ct-impact}); the rise grows as the step shrinks, up to about $0.7\%$ in the steps tested; no energy result for BDF2 with contact is known to the author.
 \item \textbf{Not covered.} Friction in these solvers, Newmark contact dynamics, impact between two flexible bodies, and meshes with $10^5$ or more constraints.
 \item \textbf{Timings} are single runs; the figures were produced on \machine{} and the large case on the author's machine.
 \end{itemize}
@@ -318,7 +327,7 @@ Frictionless contact is the problem \eqref{eq:ct-kkt}, a convex quadratic progra
 \item Repeat the experiment of \Cref{fig:ct-penalty} on a mesh twice as fine. Does the penetration at a fixed $k_p/\overline{K_{ii}}$ change? Explain with the scaling of $\overline{K_{ii}}$ with the mesh.
 \item Replace $\bm B=\bm I$ by $\bm B=\begin{bmatrix}\bm I&\bm 0\end{bmatrix}+\epsilon\bm S$ with a random sparse $\bm S$, so that \texttt{reduced} is no longer applicable. Which reason does \texttt{reduced} report, and does \texttt{saddle} still match the dense solution? (Test: \texttt{fea\_engine/tests/test\_contact\_solvers\_sparse.py}.)
 \item Derive \eqref{eq:ct-bdf2} from the two BDF2 formulas given above, and check the first-step matrix $\bm M/h^2+\bm K$ the same way.
-\item Run the bar-impact test of \texttt{fea\_engine/tests/test\_contact\_dynamics\_bdf2.py} with $\Delta t=0.008$, $0.004$, $0.002$. How does the largest energy of BDF2 depend on $\Delta t$ (\Cref{tab:ct-impact} has two points)? Is the trend monotone?
+\item \Cref{tab:ct-impact} lists four time steps. Add $\Delta t=0.0005$ and decide whether the largest BDF2 energy keeps approaching the limit near $0.7\%$. Then test the explanation of the text by recording the energy change across each contact step (script: \texttt{scripts/ch07\_assets.py}, function \texttt{bar\_impact}; test: \texttt{fea\_engine/tests/test\_contact\_dynamics\_bdf2.py}).
 \end{enumerate}
 
 \chapterrefs

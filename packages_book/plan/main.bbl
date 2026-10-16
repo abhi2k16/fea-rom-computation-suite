@@ -1,0 +1,249 @@
+\begin{thebibliography}{33}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Hughes(1980)]{hughes1980bbar}
+Thomas J.~R. Hughes.
+\newblock Generalization of selective integration procedures to anisotropic and
+  nonlinear media.
+\newblock \emph{International Journal for Numerical Methods in Engineering},
+  15\penalty0 (9):\penalty0 1413--1418, 1980.
+\newblock \doi{10.1002/nme.1620150914}.
+
+\bibitem[Dvorkin and Bathe(1984)]{dvorkin1984}
+Eduardo~N. Dvorkin and Klaus-J{\"u}rgen Bathe.
+\newblock A continuum mechanics based four-node shell element for general
+  non-linear analysis.
+\newblock \emph{Engineering Computations}, 1\penalty0 (1):\penalty0 77--88,
+  1984.
+\newblock \doi{10.1108/eb023562}.
+
+\bibitem[Crisfield(1990)]{crisfield1990corot}
+M.~A. Crisfield.
+\newblock A consistent co-rotational formulation for non-linear,
+  three-dimensional, beam-elements.
+\newblock \emph{Computer Methods in Applied Mechanics and Engineering},
+  81\penalty0 (2):\penalty0 131--150, 1990.
+\newblock \doi{10.1016/0045-7825(90)90106-V}.
+
+\bibitem[Simo(1985)]{simo1985beam}
+J.~C. Simo.
+\newblock A finite strain beam formulation. the three-dimensional dynamic
+  problem. part {I}.
+\newblock \emph{Computer Methods in Applied Mechanics and Engineering},
+  49:\penalty0 55--70, 1985.
+\newblock \doi{10.1016/0045-7825(85)90050-7}.
+
+\bibitem[Newmark(1959)]{newmark1959}
+Nathan~M. Newmark.
+\newblock A method of computation for structural dynamics.
+\newblock \emph{Journal of the Engineering Mechanics Division, ASCE},
+  85\penalty0 (3):\penalty0 67--94, 1959.
+\newblock \doi{10.1061/JMCEA3.0000098}.
+
+\bibitem[Simo and Hughes(1998)]{simo1998inelasticity}
+J.~C. Simo and T.~J.~R. Hughes.
+\newblock \emph{Computational Inelasticity}, volume~7 of
+  \emph{Interdisciplinary Applied Mathematics}.
+\newblock Springer, New York, 1998.
+\newblock \doi{10.1007/b98904}.
+
+\bibitem[Simo and Taylor(1985)]{simo1985tangent}
+J.~C. Simo and R.~L. Taylor.
+\newblock Consistent tangent operators for rate-independent elastoplasticity.
+\newblock \emph{Computer Methods in Applied Mechanics and Engineering},
+  48\penalty0 (1):\penalty0 101--118, 1985.
+\newblock \doi{10.1016/0045-7825(85)90070-2}.
+
+\bibitem[Riks(1979)]{riks1979}
+E.~Riks.
+\newblock An incremental approach to the solution of snapping and buckling
+  problems.
+\newblock \emph{International Journal of Solids and Structures}, 15\penalty0
+  (7):\penalty0 529--551, 1979.
+\newblock \doi{10.1016/0020-7683(79)90081-7}.
+
+\bibitem[Crisfield(1981)]{crisfield1981}
+M.~A. Crisfield.
+\newblock A fast incremental/iterative solution procedure that handles
+  ``snap-through''.
+\newblock \emph{Computers \& Structures}, 13\penalty0 (1--3):\penalty0 55--62,
+  1981.
+\newblock \doi{10.1016/0045-7949(81)90108-5}.
+
+\bibitem[Liang et~al.(2014)Liang, Ruess, and Abdalla]{liang2014koiternewton}
+Ke~Liang, Martin Ruess, and Mostafa Abdalla.
+\newblock The {Koiter--Newton} approach using von {K{\'a}rm{\'a}n} kinematics
+  for buckling analyses of imperfection sensitive structures.
+\newblock \emph{Computer Methods in Applied Mechanics and Engineering},
+  279:\penalty0 440--468, 2014.
+\newblock \doi{10.1016/j.cma.2014.07.008}.
+
+\bibitem[Hinterm{\"u}ller et~al.(2002)Hinterm{\"u}ller, Ito, and
+  Kunisch]{hintermuller2002pdas}
+Michael Hinterm{\"u}ller, Kazufumi Ito, and Karl Kunisch.
+\newblock The primal-dual active set strategy as a semismooth {N}ewton method.
+\newblock \emph{SIAM Journal on Optimization}, 13\penalty0 (3):\penalty0
+  865--888, 2002.
+
+\bibitem[Wriggers(2006)]{wriggers2006contact}
+Peter Wriggers.
+\newblock \emph{Computational Contact Mechanics}.
+\newblock Springer, Berlin, Heidelberg, 2 edition, 2006.
+\newblock \doi{10.1007/978-3-540-32609-0}.
+
+\bibitem[Wohlmuth(2011)]{wohlmuth2011contact}
+Barbara Wohlmuth.
+\newblock Variationally consistent discretization schemes and numerical
+  algorithms for contact problems.
+\newblock \emph{Acta Numerica}, 20:\penalty0 569--734, 2011.
+
+\bibitem[Berkooz et~al.(1993)Berkooz, Holmes, and Lumley]{berkooz1993pod}
+Gal Berkooz, Philip Holmes, and John~L. Lumley.
+\newblock The proper orthogonal decomposition in the analysis of turbulent
+  flows.
+\newblock \emph{Annual Review of Fluid Mechanics}, 25:\penalty0 539--575, 1993.
+
+\bibitem[Hesthaven et~al.(2016)Hesthaven, Rozza, and Stamm]{hesthaven2016rb}
+Jan~S. Hesthaven, Gianluigi Rozza, and Benjamin Stamm.
+\newblock \emph{Certified Reduced Basis Methods for Parametrized Partial
+  Differential Equations}.
+\newblock SpringerBriefs in Mathematics. Springer, Cham, 2016.
+\newblock \doi{10.1007/978-3-319-22470-1}.
+
+\bibitem[Moore(1981)]{moore1981}
+B.~C. Moore.
+\newblock Principal component analysis in linear systems: Controllability,
+  observability, and model reduction.
+\newblock \emph{IEEE Transactions on Automatic Control}, 26\penalty0
+  (1):\penalty0 17--32, 1981.
+\newblock \doi{10.1109/TAC.1981.1102568}.
+
+\bibitem[Glover(1984)]{glover1984}
+Keith Glover.
+\newblock All optimal {Hankel}-norm approximations of linear multivariable
+  systems and their {$L^\infty$}-error bounds.
+\newblock \emph{International Journal of Control}, 39\penalty0 (6):\penalty0
+  1115--1193, 1984.
+
+\bibitem[Liu and Anderson(1989)]{liu1989spa}
+Yi~Liu and Brian D.~O. Anderson.
+\newblock Singular perturbation approximation of balanced systems.
+\newblock \emph{International Journal of Control}, 50\penalty0 (4):\penalty0
+  1379--1405, 1989.
+
+\bibitem[Enns(1984)]{enns1984}
+Dale~F. Enns.
+\newblock Model reduction with balanced realizations: An error bound and a
+  frequency weighted generalization.
+\newblock In \emph{Proceedings of the 23rd IEEE Conference on Decision and
+  Control}, pages 127--132, Las Vegas, NV, 1984.
+\newblock \doi{10.1109/CDC.1984.272286}.
+
+\bibitem[Antoulas(2005)]{antoulas2005}
+Athanasios~C. Antoulas.
+\newblock \emph{Approximation of Large-Scale Dynamical Systems}.
+\newblock Advances in Design and Control. SIAM, Philadelphia, 2005.
+\newblock \doi{10.1137/1.9780898718713}.
+
+\bibitem[Bai and Su(2005)]{bai2005soar}
+Zhaojun Bai and Yangfeng Su.
+\newblock {SOAR}: A second-order {Arnoldi} method for the solution of the
+  quadratic eigenvalue problem.
+\newblock \emph{SIAM Journal on Matrix Analysis and Applications}, 26\penalty0
+  (3):\penalty0 640--659, 2005.
+\newblock \doi{10.1137/S0895479803438523}.
+
+\bibitem[Besselink et~al.(2013)Besselink, Tabak, Lutowska, van~de Wouw,
+  Nijmeijer, Rixen, Hochstenbach, and Schilders]{besselink2013comparison}
+B.~Besselink, U.~Tabak, A.~Lutowska, N.~van~de Wouw, H.~Nijmeijer, D.~J. Rixen,
+  M.~E. Hochstenbach, and W.~H.~A. Schilders.
+\newblock A comparison of model reduction techniques from structural dynamics,
+  numerical mathematics and systems and control.
+\newblock \emph{Journal of Sound and Vibration}, 332\penalty0 (19):\penalty0
+  4403--4422, 2013.
+\newblock \doi{10.1016/j.jsv.2013.03.025}.
+
+\bibitem[Huynh et~al.(2007)Huynh, Rozza, Sen, and Patera]{huynh2007scm}
+D.~B.~P. Huynh, G.~Rozza, S.~Sen, and A.~T. Patera.
+\newblock A successive constraint linear optimization method for lower bounds
+  of parametric coercivity and inf-sup stability constants.
+\newblock \emph{Comptes Rendus Math{\'e}matique}, 345\penalty0 (8):\penalty0
+  473--478, 2007.
+\newblock \doi{10.1016/j.crma.2007.09.019}.
+
+\bibitem[Guyan(1965)]{guyan1965}
+Robert~J. Guyan.
+\newblock Reduction of stiffness and mass matrices.
+\newblock \emph{AIAA Journal}, 3\penalty0 (2):\penalty0 380, 1965.
+\newblock \doi{10.2514/3.2874}.
+
+\bibitem[Craig and Bampton(1968)]{craig1968}
+Roy~R. Craig and Mervyn C.~C. Bampton.
+\newblock Coupling of substructures for dynamic analyses.
+\newblock \emph{AIAA Journal}, 6\penalty0 (7):\penalty0 1313--1319, 1968.
+\newblock \doi{10.2514/3.4741}.
+
+\bibitem[Mayo and Antoulas(2007)]{mayo2007loewner}
+A.~J. Mayo and A.~C. Antoulas.
+\newblock A framework for the solution of the generalized realization problem.
+\newblock \emph{Linear Algebra and its Applications}, 425:\penalty0 634--662,
+  2007.
+
+\bibitem[Hollkamp and Gordon(2008)]{hollkamp2008ice}
+J.~J. Hollkamp and R.~W. Gordon.
+\newblock Reduced-order models for nonlinear response prediction: Implicit
+  condensation and expansion.
+\newblock \emph{Journal of Sound and Vibration}, 318\penalty0 (4--5):\penalty0
+  1139--1153, 2008.
+\newblock \doi{10.1016/j.jsv.2008.04.035}.
+
+\bibitem[He et~al.(2023)He, Yang, Li, Pang, Kan, and Song]{he2023mfsnlrom}
+Xiwang He, Liangliang Yang, Kunpeng Li, Yong Pang, Ziyun Kan, and Xueguan Song.
+\newblock A novel geometric nonlinear reduced order modeling method using
+  multi-fidelity surrogate for real-time structural analysis.
+\newblock \emph{Structural and Multidisciplinary Optimization}, 66\penalty0
+  (11):\penalty0 233, 2023.
+\newblock \doi{10.1007/s00158-023-03689-4}.
+
+\bibitem[Kerschen et~al.(2009)Kerschen, Peeters, Golinval, and
+  Vakakis]{kerschen2009nnm}
+G.~Kerschen, M.~Peeters, J.~C. Golinval, and A.~F. Vakakis.
+\newblock Nonlinear normal modes, part {I}: A useful framework for the
+  structural dynamicist.
+\newblock \emph{Mechanical Systems and Signal Processing}, 23\penalty0
+  (1):\penalty0 170--194, 2009.
+\newblock \doi{10.1016/j.ymssp.2008.04.002}.
+
+\bibitem[Keller(1977)]{keller1977}
+Herbert~B. Keller.
+\newblock Numerical solution of bifurcation and nonlinear eigenvalue problems.
+\newblock In Paul~H. Rabinowitz, editor, \emph{Applications of Bifurcation
+  Theory}, pages 359--384. Academic Press, New York, 1977.
+
+\bibitem[Farhat et~al.(2015)Farhat, Chapman, and Avery]{farhat2015ecsw}
+Charbel Farhat, Todd Chapman, and Philip Avery.
+\newblock Structure-preserving, stability, and accuracy properties of the
+  energy-conserving sampling and weighting method for the hyper reduction of
+  nonlinear finite element dynamic models.
+\newblock \emph{International Journal for Numerical Methods in Engineering},
+  102\penalty0 (5):\penalty0 1077--1110, 2015.
+
+\bibitem[Balajewicz et~al.(2016)Balajewicz, Amsallem, and
+  Farhat]{balajewicz2016contact}
+Maciej Balajewicz, David Amsallem, and Charbel Farhat.
+\newblock Projection-based model reduction for contact problems.
+\newblock \emph{International Journal for Numerical Methods in Engineering},
+  106\penalty0 (8):\penalty0 644--663, 2016.
+
+\bibitem[Fauqu{\'e} et~al.(2018)Fauqu{\'e}, Rami{\`e}re, and
+  Ryckelynck]{fauque2018hybrid}
+Jules Fauqu{\'e}, Isabelle Rami{\`e}re, and David Ryckelynck.
+\newblock Hybrid hyper-reduced modeling for contact mechanics problems.
+\newblock \emph{International Journal for Numerical Methods in Engineering},
+  115\penalty0 (1):\penalty0 117--139, 2018.
+
+\end{thebibliography}

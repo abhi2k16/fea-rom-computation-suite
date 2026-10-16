@@ -1,0 +1,185 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\citation{balajewicz2016contact}
+\citation{wriggers2006contact}
+\citation{wohlmuth2011contact}
+\@writefile{toc}{\contentsline {chapter}{\numberline {7}Exact unilateral contact: sparse active sets and BDF2}{16}{chapter.7}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:contact}{{7}{16}{Exact unilateral contact: sparse active sets and BDF2}{chapter.7}{}}
+\newlabel{ch:contact@cref}{{[chapter][7][]7}{[1][16][]16}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.1}The problem}{16}{section.7.1}\protected@file@percent }
+\newlabel{sec:ct-problem}{{7.1}{16}{The problem}{section.7.1}{}}
+\newlabel{sec:ct-problem@cref}{{[section][1][7]7.1}{[1][16][]16}}
+\newlabel{eq:ct-kkt}{{7.1}{16}{The problem}{equation.7.1}{}}
+\newlabel{eq:ct-kkt@cref}{{[equation][1][7]7.1}{[1][16][]16}}
+\@writefile{toc}{\contentsline {paragraph}{The model problem.}{16}{section*.21}\protected@file@percent }
+\citation{wriggers2006contact}
+\@writefile{lof}{\contentsline {figure}{\numberline {7.1}{\ignorespaces The model problem on a $40\times 40$ mesh ($1521\xspace  $ unknowns). Left: displacement with the contact set outlined; right: contact force $\bm  {\lambda }$, which is zero outside the contact set. The solver finds $295\xspace  $ active constraints in $12\xspace  $ iterations. Produced by \texttt  {scripts/ch07\_assets.py}.\relax }}{17}{figure.caption.22}\protected@file@percent }
+\newlabel{fig:ct-obstacle}{{7.1}{17}{The model problem on a $40\times 40$ mesh ($\ctcObsN $ unknowns). Left: displacement with the contact set outlined; right: contact force $\bm \lambda $, which is zero outside the contact set. The solver finds $\ctcObsActive $ active constraints in $\ctcObsIt $ iterations. Produced by \texttt {scripts/ch07\_assets.py}.\relax }{figure.caption.22}{}}
+\newlabel{fig:ct-obstacle@cref}{{[figure][1][7]7.1}{[1][16][]17}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.2}Why not a penalty?}{17}{section.7.2}\protected@file@percent }
+\newlabel{sec:ct-penalty}{{7.2}{17}{Why not a penalty?}{section.7.2}{}}
+\newlabel{sec:ct-penalty@cref}{{[section][2][7]7.2}{[1][17][]17}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.3}Mathematical structure}{17}{section.7.3}\protected@file@percent }
+\newlabel{sec:ct-math}{{7.3}{17}{Mathematical structure}{section.7.3}{}}
+\newlabel{sec:ct-math@cref}{{[section][3][7]7.3}{[1][17][]17}}
+\@writefile{toc}{\contentsline {paragraph}{A minimisation problem.}{17}{section*.24}\protected@file@percent }
+\newlabel{eq:ct-qp}{{7.2}{17}{A minimisation problem}{equation.7.2}{}}
+\newlabel{eq:ct-qp@cref}{{[equation][2][7]7.2}{[1][17][]17}}
+\citation{cottle1992lcp}
+\citation{lemke1965bimatrix}
+\citation{hintermuller2002pdas}
+\@writefile{lof}{\contentsline {figure}{\numberline {7.2}{\ignorespaces Penalty against exact contact on the model problem ($841\xspace  $ unknowns). Left: the largest penetration falls like $1/k_p$ but never reaches zero; the exact solution has no penetration (drawn at the plotting floor). Right: the condition number of the penalty matrix grows in proportion to $k_p$; the exact route solves a system whose condition number does not depend on any parameter.\relax }}{18}{figure.caption.23}\protected@file@percent }
+\newlabel{fig:ct-penalty}{{7.2}{18}{Penalty against exact contact on the model problem ($\ctcPenN $ unknowns). Left: the largest penetration falls like $1/k_p$ but never reaches zero; the exact solution has no penetration (drawn at the plotting floor). Right: the condition number of the penalty matrix grows in proportion to $k_p$; the exact route solves a system whose condition number does not depend on any parameter.\relax }{figure.caption.23}{}}
+\newlabel{fig:ct-penalty@cref}{{[figure][2][7]7.2}{[1][17][]18}}
+\@writefile{toc}{\contentsline {paragraph}{The condensed problem.}{18}{section*.25}\protected@file@percent }
+\newlabel{eq:ct-lcp}{{7.3}{18}{The condensed problem}{equation.7.3}{}}
+\newlabel{eq:ct-lcp@cref}{{[equation][3][7]7.3}{[1][17][]18}}
+\@writefile{toc}{\contentsline {paragraph}{Complementarity as an equation.}{18}{section*.26}\protected@file@percent }
+\newlabel{eq:ct-nonsmooth}{{7.4}{18}{Complementarity as an equation}{equation.7.4}{}}
+\newlabel{eq:ct-nonsmooth@cref}{{[equation][4][7]7.4}{[1][18][]18}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.4}The primal-dual active-set method and its three routes}{18}{section.7.4}\protected@file@percent }
+\newlabel{sec:ct-pdas}{{7.4}{18}{The primal-dual active-set method and its three routes}{section.7.4}{}}
+\newlabel{sec:ct-pdas@cref}{{[section][4][7]7.4}{[1][18][]18}}
+\@writefile{toc}{\contentsline {paragraph}{The algorithm.}{18}{section*.27}\protected@file@percent }
+\citation{hintermuller2002pdas}
+\@writefile{lof}{\contentsline {figure}{\numberline {7.3}{\ignorespaces The active-set iteration on the model problem with $N=1521\xspace  $ unknowns. Left: the number of active constraints per iteration for the \texttt  {reduced} and \texttt  {saddle} routes (the curves coincide). Right: the number of constraints that changed status; the last point (plotted at 0.5) is zero changes, which is the stopping test.\relax }}{19}{figure.caption.28}\protected@file@percent }
+\newlabel{fig:ct-trace}{{7.3}{19}{The active-set iteration on the model problem with $N=\ctcObsN $ unknowns. Left: the number of active constraints per iteration for the \texttt {reduced} and \texttt {saddle} routes (the curves coincide). Right: the number of constraints that changed status; the last point (plotted at 0.5) is zero changes, which is the stopping test.\relax }{figure.caption.28}{}}
+\newlabel{fig:ct-trace@cref}{{[figure][3][7]7.3}{[1][19][]19}}
+\@writefile{toc}{\contentsline {paragraph}{Finite termination, and where it is not guaranteed.}{19}{section*.29}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Three routes.}{19}{section*.30}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.1}{\ignorespaces The three routes of the sparse contact solver and the failure reasons each can report.\relax }}{20}{table.caption.31}\protected@file@percent }
+\newlabel{tab:ct-routes}{{7.1}{20}{The three routes of the sparse contact solver and the failure reasons each can report.\relax }{table.caption.31}{}}
+\newlabel{tab:ct-routes@cref}{{[table][1][7]7.1}{[1][20][]20}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.5}Implementation}{20}{section.7.5}\protected@file@percent }
+\newlabel{sec:ct-impl}{{7.5}{20}{Implementation}{section.7.5}{}}
+\newlabel{sec:ct-impl@cref}{{[section][5][7]7.5}{[1][20][]20}}
+\@writefile{toc}{\contentsline {paragraph}{Design decisions.}{20}{section*.32}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{A complete example.}{20}{section*.33}\protected@file@percent }
+\newlabel{lst:ct-static}{{7.1}{20}{The membrane obstacle problem with \texttt {Quad4Laplace} and the sparse contact solver}{lstlisting.7.1}{}}
+\newlabel{lst:ct-static@cref}{{[listing][1][7]7.1}{[1][20][]20}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.1}The membrane obstacle problem with \texttt  {Quad4Laplace} and the sparse contact solver.}{20}{lstlisting.7.1}\protected@file@percent }
+\newlabel{lst:ct-fail}{{7.2}{21}{A route that cannot finish reports why and what to try; fallback is opt-in}{lstlisting.7.2}{}}
+\newlabel{lst:ct-fail@cref}{{[listing][2][7]7.2}{[1][21][]21}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.2}A route that cannot finish reports why and what to try; fallback is opt-in.}{21}{lstlisting.7.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.2}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{21}{table.caption.34}\protected@file@percent }
+\newlabel{tab:ct-map}{{7.2}{21}{Where the concepts of this chapter live in the repository (release \booktag ).\relax }{table.caption.34}{}}
+\newlabel{tab:ct-map@cref}{{[table][2][7]7.2}{[1][21][]21}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.6}Verification of the static solvers}{21}{section.7.6}\protected@file@percent }
+\newlabel{sec:ct-verif-static}{{7.6}{21}{Verification of the static solvers}{section.7.6}{}}
+\newlabel{sec:ct-verif-static@cref}{{[section][6][7]7.6}{[1][21][]21}}
+\@writefile{toc}{\contentsline {paragraph}{The contact conditions.}{22}{section*.35}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Agreement with the dense solvers.}{22}{section*.36}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.3}{\ignorespaces Six obstacles on the membrane model ($484\xspace  $ unknowns). ``active'' is the number of active constraints; ``it.'' the iterations of each sparse route; the last four columns are the largest difference in $\bm  {u}$ and $\bm  {\lambda }$ to the dense active-set solution.\relax }}{22}{table.caption.37}\protected@file@percent }
+\newlabel{tab:ct-agree}{{7.3}{22}{Six obstacles on the membrane model ($\ctcAgreeN $ unknowns). ``active'' is the number of active constraints; ``it.'' the iterations of each sparse route; the last four columns are the largest difference in $\bm u$ and $\bm \lambda $ to the dense active-set solution.\relax }{table.caption.37}{}}
+\newlabel{tab:ct-agree@cref}{{[table][3][7]7.3}{[1][22][]22}}
+\@writefile{toc}{\contentsline {paragraph}{Behaviour with problem size.}{22}{section*.38}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.4}{\ignorespaces The model problem on refined meshes. The dense route was not run above 3,500 unknowns. Single runs on the sandbox used for the figures of this chapter (2 CPUs).\relax }}{22}{table.caption.39}\protected@file@percent }
+\newlabel{tab:ct-scaling}{{7.4}{22}{The model problem on refined meshes. The dense route was not run above 3,500 unknowns. Single runs on \machine .\relax }{table.caption.39}{}}
+\newlabel{tab:ct-scaling@cref}{{[table][4][7]7.4}{[1][22][]22}}
+\@writefile{toc}{\contentsline {paragraph}{A larger case, measured on the author's machine.}{22}{section*.41}\protected@file@percent }
+\citation{hairer1996ode2}
+\@writefile{lof}{\contentsline {figure}{\numberline {7.4}{\ignorespaces Wall time of the three routes against the number of unknowns (data of \Cref  {tab:ct-scaling}).\relax }}{23}{figure.caption.40}\protected@file@percent }
+\newlabel{fig:ct-time}{{7.4}{23}{Wall time of the three routes against the number of unknowns (data of \Cref {tab:ct-scaling}).\relax }{figure.caption.40}{}}
+\newlabel{fig:ct-time@cref}{{[figure][4][7]7.4}{[1][22][]23}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.7}Contact dynamics}{23}{section.7.7}\protected@file@percent }
+\newlabel{sec:ct-dyn}{{7.7}{23}{Contact dynamics}{section.7.7}{}}
+\newlabel{sec:ct-dyn@cref}{{[section][7][7]7.7}{[1][23][]23}}
+\@writefile{toc}{\contentsline {paragraph}{The semi-discrete problem.}{23}{section*.42}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The default scheme (first order).}{23}{section*.43}\protected@file@percent }
+\newlabel{eq:ct-twostep}{{7.5}{23}{The default scheme (first order)}{equation.7.5}{}}
+\newlabel{eq:ct-twostep@cref}{{[equation][5][7]7.5}{[1][23][]23}}
+\@writefile{toc}{\contentsline {paragraph}{BDF2.}{23}{section*.44}\protected@file@percent }
+\newlabel{eq:ct-bdf2}{{7.6}{23}{BDF2}{equation.7.6}{}}
+\newlabel{eq:ct-bdf2@cref}{{[equation][6][7]7.6}{[1][23][]23}}
+\newlabel{lst:ct-dyn}{{7.3}{23}{Contact time stepping: default scheme and BDF2}{lstlisting.7.3}{}}
+\newlabel{lst:ct-dyn@cref}{{[listing][3][7]7.3}{[1][23][]23}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.3}Contact time stepping: default scheme and BDF2.}{23}{lstlisting.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Order of accuracy.}{24}{section*.45}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.5}{\ignorespaces Error at $t=2$ of a free membrane against the exact modal solution; contact inactive. ``ratio'' is the error of the two-step scheme divided by that of BDF2.\relax }}{24}{table.caption.46}\protected@file@percent }
+\newlabel{tab:ct-order}{{7.5}{24}{Error at $t=2$ of a free membrane against the exact modal solution; contact inactive. ``ratio'' is the error of the two-step scheme divided by that of BDF2.\relax }{table.caption.46}{}}
+\newlabel{tab:ct-order@cref}{{[table][5][7]7.5}{[1][24][]24}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7.5}{\ignorespaces Error against time step for the two schemes (data of \Cref  {tab:ct-order}).\relax }}{24}{figure.caption.47}\protected@file@percent }
+\newlabel{fig:ct-order}{{7.5}{24}{Error against time step for the two schemes (data of \Cref {tab:ct-order}).\relax }{figure.caption.47}{}}
+\newlabel{fig:ct-order@cref}{{[figure][5][7]7.5}{[1][24][]24}}
+\@writefile{toc}{\contentsline {paragraph}{Impact: where BDF2 is not enough.}{24}{section*.48}\protected@file@percent }
+\citation{laursen1997energy}
+\@writefile{lot}{\contentsline {table}{\numberline {7.6}{\ignorespaces Bar impact on a rigid wall: energy relative to the initial energy, and the largest penetration, for the two schemes.\relax }}{25}{table.caption.49}\protected@file@percent }
+\newlabel{tab:ct-impact}{{7.6}{25}{Bar impact on a rigid wall: energy relative to the initial energy, and the largest penetration, for the two schemes.\relax }{table.caption.49}{}}
+\newlabel{tab:ct-impact@cref}{{[table][6][7]7.6}{[1][24][]25}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7.6}{\ignorespaces Bar impact, $\Delta t=0.002$. Left: wall force over the first $0.4$ time units. Right: energy relative to the initial energy over the whole run.\relax }}{25}{figure.caption.50}\protected@file@percent }
+\newlabel{fig:ct-impact}{{7.6}{25}{Bar impact, $\Delta t=0.002$. Left: wall force over the first $0.4$ time units. Right: energy relative to the initial energy over the whole run.\relax }{figure.caption.50}{}}
+\newlabel{fig:ct-impact@cref}{{[figure][6][7]7.6}{[1][25][]25}}
+\@writefile{toc}{\contentsline {paragraph}{How the energy gain depends on the time step.}{25}{section*.51}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.7}{\ignorespaces Largest wall force of the bar impact, and energy kept by a bar without obstacle (broadband initial velocity, $t=1.5$), for both schemes.\relax }}{26}{table.caption.52}\protected@file@percent }
+\newlabel{tab:ct-impact-force}{{7.7}{26}{Largest wall force of the bar impact, and energy kept by a bar without obstacle (broadband initial velocity, $t=1.5$), for both schemes.\relax }{table.caption.52}{}}
+\newlabel{tab:ct-impact-force@cref}{{[table][7][7]7.7}{[1][25][]26}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.8}Failure modes and limits}{26}{section.7.8}\protected@file@percent }
+\newlabel{sec:ct-limits}{{7.8}{26}{Failure modes and limits}{section.7.8}{}}
+\newlabel{sec:ct-limits@cref}{{[section][8][7]7.8}{[1][26][]26}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.9}Summary}{26}{section.7.9}\protected@file@percent }
+\newlabel{sec:ct-summary}{{7.9}{26}{Summary}{section.7.9}{}}
+\newlabel{sec:ct-summary@cref}{{[section][9][7]7.9}{[1][26][]26}}
+\bibstyle{unsrtnat}
+\bibdata{refs}
+\bibcite{balajewicz2016contact}{{1}{2016}{{Balajewicz et~al.}}{{Balajewicz, Amsallem, and Farhat}}}
+\bibcite{wriggers2006contact}{{2}{2006}{{Wriggers}}{{}}}
+\bibcite{wohlmuth2011contact}{{3}{2011}{{Wohlmuth}}{{}}}
+\bibcite{cottle1992lcp}{{4}{1992}{{Cottle et~al.}}{{Cottle, Pang, and Stone}}}
+\bibcite{lemke1965bimatrix}{{5}{1965}{{Lemke}}{{}}}
+\bibcite{hintermuller2002pdas}{{6}{2002}{{Hinterm{\"u}ller et~al.}}{{Hinterm{\"u}ller, Ito, and Kunisch}}}
+\bibcite{hairer1996ode2}{{7}{1996}{{Hairer and Wanner}}{{}}}
+\@writefile{lot}{\contentsline {table}{\numberline {7.8}{\ignorespaces Failure reasons of \code  {solve_contact_static_sparse}.\relax }}{27}{table.caption.53}\protected@file@percent }
+\newlabel{tab:ct-reasons}{{7.8}{27}{Failure reasons of \code {solve_contact_static_sparse}.\relax }{table.caption.53}{}}
+\newlabel{tab:ct-reasons@cref}{{[table][8][7]7.8}{[1][26][]27}}
+\newlabel{sec:ct-exercises}{{7.9}{27}{Exercises}{section*.54}{}}
+\newlabel{sec:ct-exercises@cref}{{[section][9][7]7.9}{[1][26][]27}}
+\@writefile{toc}{\contentsline {section}{References}{27}{section*.55}\protected@file@percent }
+\bibcite{laursen1997energy}{{8}{1997}{{Laursen and Chawla}}{{}}}
+\@setckpt{chapters/ch07}{
+\setcounter{page}{29}
+\setcounter{equation}{6}
+\setcounter{enumi}{5}
+\setcounter{enumii}{0}
+\setcounter{enumiii}{0}
+\setcounter{enumiv}{0}
+\setcounter{footnote}{0}
+\setcounter{mpfootnote}{0}
+\setcounter{part}{2}
+\setcounter{chapter}{7}
+\setcounter{section}{9}
+\setcounter{subsection}{0}
+\setcounter{subsubsection}{0}
+\setcounter{paragraph}{0}
+\setcounter{subparagraph}{0}
+\setcounter{figure}{6}
+\setcounter{table}{8}
+\setcounter{parentequation}{0}
+\setcounter{LT@tables}{0}
+\setcounter{LT@chunks}{0}
+\setcounter{caption@flags}{0}
+\setcounter{continuedfloat}{0}
+\setcounter{subfigure}{0}
+\setcounter{subtable}{0}
+\setcounter{tcbbreakpart}{1}
+\setcounter{tcblayer}{0}
+\setcounter{tcolorbox@number}{12}
+\setcounter{tcbrastercolumn}{1}
+\setcounter{tcbrasterrow}{1}
+\setcounter{tcbrasternum}{1}
+\setcounter{tcbraster}{0}
+\setcounter{lstnumber}{9}
+\setcounter{tcblisting}{0}
+\setcounter{NAT@ctr}{8}
+\setcounter{Item}{20}
+\setcounter{Hfootnote}{0}
+\setcounter{bookmark@seq@number}{27}
+\setcounter{proposition}{0}
+\setcounter{definition}{0}
+\setcounter{example}{0}
+\setcounter{remark}{0}
+\setcounter{tcb@cnt@algbox}{1}
+\setcounter{lstlisting}{3}
+\setcounter{section@level}{1}
+}

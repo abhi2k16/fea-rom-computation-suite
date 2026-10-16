@@ -1,0 +1,54 @@
+\gdef \the@ipfilectr {@-1}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-2}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-3}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-4}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-5}
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Force norm of a rigidly rotated unit-square element (a stress-free motion): linear kinematics against the total-Lagrangian element. Produced by \texttt {scripts/ch05\_assets.py}.\relax }}{8}{figure.caption.7}%
+\contentsline {figure}{\numberline {5.2}{\ignorespaces Stress--strain loop of \code {TrussPlastic2D} ($E=200$ GPa, $\sigma _y=250$ MPa, $H=5$ GPa): the element against the closed-form return map. Produced by \texttt {scripts/ch05\_assets.py}.\relax }}{10}{figure.caption.10}%
+\contentsline {figure}{\numberline {5.3}{\ignorespaces The von Mises truss: closed form \textup {\hbox {\mathsurround \z@ \normalfont (\ignorespaces \ref {eq:nl-vm}\unskip \@@italiccorr )}}, displacement control and arc length. Load control cannot pass the limit load. Produced by \texttt {scripts/ch05\_assets.py}; the problem is the one of \texttt {fea\_engine/examples/arc\_length\_snap\_through\_demo.py}.\relax }}{12}{figure.caption.15}%
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-6}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-7}
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {7.1}{\ignorespaces The model problem on a $40\times 40$ mesh ($1521\xspace $ unknowns). Left: displacement with the contact set outlined; right: contact force $\bm {\lambda }$, which is zero outside the contact set. The solver finds $295\xspace $ active constraints in $12\xspace $ iterations. Produced by \texttt {scripts/ch07\_assets.py}.\relax }}{17}{figure.caption.22}%
+\contentsline {figure}{\numberline {7.2}{\ignorespaces Penalty against exact contact on the model problem ($841\xspace $ unknowns). Left: the largest penetration falls like $1/k_p$ but never reaches zero; the exact solution has no penetration (drawn at the plotting floor). Right: the condition number of the penalty matrix grows in proportion to $k_p$; the exact route solves a system whose condition number does not depend on any parameter.\relax }}{18}{figure.caption.23}%
+\contentsline {figure}{\numberline {7.3}{\ignorespaces The active-set iteration on the model problem with $N=1521\xspace $ unknowns. Left: the number of active constraints per iteration for the \texttt {reduced} and \texttt {saddle} routes (the curves coincide). Right: the number of constraints that changed status; the last point (plotted at 0.5) is zero changes, which is the stopping test.\relax }}{19}{figure.caption.28}%
+\contentsline {figure}{\numberline {7.4}{\ignorespaces Wall time of the three routes against the number of unknowns (data of \Cref {tab:ct-scaling}).\relax }}{23}{figure.caption.40}%
+\contentsline {figure}{\numberline {7.5}{\ignorespaces Error against time step for the two schemes (data of \Cref {tab:ct-order}).\relax }}{24}{figure.caption.47}%
+\contentsline {figure}{\numberline {7.6}{\ignorespaces Bar impact, $\Delta t=0.002$. Left: wall force over the first $0.4$ time units. Right: energy relative to the initial energy over the whole run.\relax }}{25}{figure.caption.50}%
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-8}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-9}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-10}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-11}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-12}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-13}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-14}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-15}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
