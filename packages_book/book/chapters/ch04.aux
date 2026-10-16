@@ -1,13 +1,83 @@
 \relax 
 \providecommand\hyper@newdestlabel[2]{}
+\citation{bathe2014fep}
+\citation{zienkiewicz2013fem}
 \@writefile{toc}{\contentsline {chapter}{\numberline {4}Dynamics: modal, transient, harmonic and random response}{12}{chapter.4}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \newlabel{ch:dyn}{{4}{12}{Dynamics: modal, transient, harmonic and random response}{chapter.4}{}}
 \newlabel{ch:dyn@cref}{{[chapter][4][]4}{[1][12][]12}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.1}The semi-discrete problem}{12}{section.4.1}\protected@file@percent }
+\newlabel{sec:dy-problem}{{4.1}{12}{The semi-discrete problem}{section.4.1}{}}
+\newlabel{sec:dy-problem@cref}{{[section][1][4]4.1}{[1][12][]12}}
+\newlabel{eq:dy-eom}{{4.1}{12}{The semi-discrete problem}{equation.4.1}{}}
+\newlabel{eq:dy-eom@cref}{{[equation][1][4]4.1}{[1][12][]12}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.2}Natural frequencies and modes}{12}{section.4.2}\protected@file@percent }
+\newlabel{sec:dy-modal}{{4.2}{12}{Natural frequencies and modes}{section.4.2}{}}
+\newlabel{sec:dy-modal@cref}{{[section][2][4]4.2}{[1][12][]12}}
+\newlabel{eq:dy-eig}{{4.2}{12}{Natural frequencies and modes}{equation.4.2}{}}
+\newlabel{eq:dy-eig@cref}{{[equation][2][4]4.2}{[1][12][]12}}
+\citation{newmark1959}
+\@writefile{toc}{\contentsline {paragraph}{Damping.}{13}{section*.22}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.3}Implicit integration: Newmark}{13}{section.4.3}\protected@file@percent }
+\newlabel{sec:dy-newmark}{{4.3}{13}{Implicit integration: Newmark}{section.4.3}{}}
+\newlabel{sec:dy-newmark@cref}{{[section][3][4]4.3}{[1][13][]13}}
+\@writefile{toc}{\contentsline {paragraph}{Accuracy test with an exact reference.}{13}{section*.23}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.4}Explicit integration and the critical step}{13}{section.4.4}\protected@file@percent }
+\newlabel{sec:dy-explicit}{{4.4}{13}{Explicit integration and the critical step}{section.4.4}{}}
+\newlabel{sec:dy-explicit@cref}{{[section][4][4]4.4}{[1][13][]13}}
+\newlabel{eq:dy-crit}{{4.3}{13}{Explicit integration and the critical step}{equation.4.3}{}}
+\newlabel{eq:dy-crit@cref}{{[equation][3][4]4.3}{[1][13][]13}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.1}{\ignorespaces Newmark average acceleration: error against the exact solution of the discrete model (first mode of the 20-element cantilever, three periods) against the time step, with the observed order. Produced by \texttt  {scripts/ch04\_assets.py}.\relax }}{14}{figure.caption.24}\protected@file@percent }
+\newlabel{fig:dy-newmark}{{4.1}{14}{Newmark average acceleration: error against the exact solution of the discrete model (first mode of the 20-element cantilever, three periods) against the time step, with the observed order. Produced by \texttt {scripts/ch04\_assets.py}.\relax }{figure.caption.24}{}}
+\newlabel{fig:dy-newmark@cref}{{[figure][1][4]4.1}{[1][13][]14}}
+\@writefile{toc}{\contentsline {paragraph}{The limit is sharp.}{14}{section*.25}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4.1}{\ignorespaces Explicit central differences on a lumped mass, around the critical step. ``Late/early'' is the largest displacement of the last 50 steps divided by that of steps 100--200.\relax }}{14}{table.caption.26}\protected@file@percent }
+\newlabel{tab:dy-stab}{{4.1}{14}{Explicit central differences on a lumped mass, around the critical step. ``Late/early'' is the largest displacement of the last 50 steps divided by that of steps 100--200.\relax }{table.caption.26}{}}
+\newlabel{tab:dy-stab@cref}{{[table][1][4]4.1}{[1][14][]14}}
+\@writefile{toc}{\contentsline {paragraph}{Which critical step.}{14}{section*.28}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4.2}{\ignorespaces Largest displacement against time at $0.9$ and $1.1$ times the critical step.\relax }}{15}{figure.caption.27}\protected@file@percent }
+\newlabel{fig:dy-explicit}{{4.2}{15}{Largest displacement against time at $0.9$ and $1.1$ times the critical step.\relax }{figure.caption.27}{}}
+\newlabel{fig:dy-explicit@cref}{{[figure][2][4]4.2}{[1][14][]15}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.5}Modal superposition}{15}{section.4.5}\protected@file@percent }
+\newlabel{sec:dy-modsup}{{4.5}{15}{Modal superposition}{section.4.5}{}}
+\newlabel{sec:dy-modsup@cref}{{[section][5][4]4.5}{[1][14][]15}}
+\newlabel{eq:dy-modal}{{4.4}{15}{Modal superposition}{equation.4.4}{}}
+\newlabel{eq:dy-modal@cref}{{[equation][4][4]4.4}{[1][14][]15}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.3}{\ignorespaces Tip deflection of the cantilever under a step load, divided by the static value ($\zeta =1\%$): modal superposition with 1, 2 and 8 modes against all modes (left), and the largest error against all modes as a function of the number of modes retained (right).\relax }}{15}{figure.caption.29}\protected@file@percent }
+\newlabel{fig:dy-modal}{{4.3}{15}{Tip deflection of the cantilever under a step load, divided by the static value ($\zeta =1\%$): modal superposition with 1, 2 and 8 modes against all modes (left), and the largest error against all modes as a function of the number of modes retained (right).\relax }{figure.caption.29}{}}
+\newlabel{fig:dy-modal@cref}{{[figure][3][4]4.3}{[1][15][]15}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.6}Frequency-domain response}{16}{section.4.6}\protected@file@percent }
+\newlabel{sec:dy-freq}{{4.6}{16}{Frequency-domain response}{section.4.6}{}}
+\newlabel{sec:dy-freq@cref}{{[section][6][4]4.6}{[1][16][]16}}
+\@writefile{toc}{\contentsline {paragraph}{Check against an independent modal sum.}{16}{section*.30}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4.4}{\ignorespaces Tip receptance of the cantilever ($\zeta =1\%$ at modes 1 and 3): the direct complex solve and an independent modal sum coincide on the plotted scale.\relax }}{16}{figure.caption.31}\protected@file@percent }
+\newlabel{fig:dy-harm}{{4.4}{16}{Tip receptance of the cantilever ($\zeta =1\%$ at modes 1 and 3): the direct complex solve and an independent modal sum coincide on the plotted scale.\relax }{figure.caption.31}{}}
+\newlabel{fig:dy-harm@cref}{{[figure][4][4]4.4}{[1][16][]16}}
+\@writefile{toc}{\contentsline {paragraph}{Random vibration.}{16}{section*.32}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.7}Choosing a method}{16}{section.4.7}\protected@file@percent }
+\newlabel{sec:dy-choose}{{4.7}{16}{Choosing a method}{section.4.7}{}}
+\newlabel{sec:dy-choose@cref}{{[section][7][4]4.7}{[1][16][]16}}
+\@writefile{lot}{\contentsline {table}{\numberline {4.2}{\ignorespaces The dynamic solvers of \texttt  {fea\_engine}{}.\relax }}{17}{table.caption.33}\protected@file@percent }
+\newlabel{tab:dy-choose}{{4.2}{17}{The dynamic solvers of \fea {}.\relax }{table.caption.33}{}}
+\newlabel{tab:dy-choose@cref}{{[table][2][4]4.2}{[1][16][]17}}
+\@writefile{lot}{\contentsline {table}{\numberline {4.3}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{17}{table.caption.34}\protected@file@percent }
+\newlabel{tab:dy-map}{{4.3}{17}{Where the concepts of this chapter live in the repository (release \booktag ).\relax }{table.caption.34}{}}
+\newlabel{tab:dy-map@cref}{{[table][3][4]4.3}{[1][16][]17}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.8}Summary}{17}{section.4.8}\protected@file@percent }
+\newlabel{sec:dy-summary}{{4.8}{17}{Summary}{section.4.8}{}}
+\newlabel{sec:dy-summary@cref}{{[section][8][4]4.8}{[1][17][]17}}
+\bibstyle{unsrtnat}
+\bibdata{refs}
+\bibcite{bathe2014fep}{{1}{2014}{{Bathe}}{{}}}
+\bibcite{zienkiewicz2013fem}{{2}{2013}{{Zienkiewicz et~al.}}{{Zienkiewicz, Taylor, and Zhu}}}
+\bibcite{newmark1959}{{3}{1959}{{Newmark}}{{}}}
+\newlabel{sec:dy-exercises}{{4.8}{18}{Exercises}{section*.35}{}}
+\newlabel{sec:dy-exercises@cref}{{[section][8][4]4.8}{[1][18][]18}}
+\@writefile{toc}{\contentsline {section}{References}{18}{section*.36}\protected@file@percent }
 \@setckpt{chapters/ch04}{
-\setcounter{page}{13}
-\setcounter{equation}{0}
+\setcounter{page}{19}
+\setcounter{equation}{4}
 \setcounter{enumi}{5}
 \setcounter{enumii}{0}
 \setcounter{enumiii}{0}
@@ -16,13 +86,13 @@
 \setcounter{mpfootnote}{0}
 \setcounter{part}{2}
 \setcounter{chapter}{4}
-\setcounter{section}{0}
+\setcounter{section}{8}
 \setcounter{subsection}{0}
 \setcounter{subsubsection}{0}
 \setcounter{paragraph}{0}
 \setcounter{subparagraph}{0}
-\setcounter{figure}{0}
-\setcounter{table}{0}
+\setcounter{figure}{4}
+\setcounter{table}{3}
 \setcounter{parentequation}{0}
 \setcounter{LT@tables}{0}
 \setcounter{LT@chunks}{0}
@@ -32,22 +102,22 @@
 \setcounter{subtable}{0}
 \setcounter{tcbbreakpart}{1}
 \setcounter{tcblayer}{0}
-\setcounter{tcolorbox@number}{5}
+\setcounter{tcolorbox@number}{7}
 \setcounter{tcbrastercolumn}{1}
 \setcounter{tcbrasterrow}{1}
 \setcounter{tcbrasternum}{1}
 \setcounter{tcbraster}{0}
 \setcounter{lstnumber}{1}
 \setcounter{tcblisting}{0}
-\setcounter{NAT@ctr}{4}
-\setcounter{Item}{5}
+\setcounter{NAT@ctr}{3}
+\setcounter{Item}{13}
 \setcounter{Hfootnote}{0}
-\setcounter{bookmark@seq@number}{12}
+\setcounter{bookmark@seq@number}{21}
 \setcounter{proposition}{0}
 \setcounter{definition}{0}
 \setcounter{example}{0}
 \setcounter{remark}{0}
-\setcounter{tcb@cnt@algbox}{0}
+\setcounter{tcb@cnt@algbox}{1}
 \setcounter{lstlisting}{0}
 \setcounter{section@level}{1}
 }

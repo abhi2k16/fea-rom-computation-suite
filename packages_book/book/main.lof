@@ -12,26 +12,30 @@
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-4}
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Newmark average acceleration: error against the exact solution of the discrete model (first mode of the 20-element cantilever, three periods) against the time step, with the observed order. Produced by \texttt {scripts/ch04\_assets.py}.\relax }}{14}{figure.caption.24}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Largest displacement against time at $0.9$ and $1.1$ times the critical step.\relax }}{15}{figure.caption.27}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Tip deflection of the cantilever under a step load, divided by the static value ($\zeta =1\%$): modal superposition with 1, 2 and 8 modes against all modes (left), and the largest error against all modes as a function of the number of modes retained (right).\relax }}{15}{figure.caption.29}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Tip receptance of the cantilever ($\zeta =1\%$ at modes 1 and 3): the direct complex solve and an independent modal sum coincide on the plotted scale.\relax }}{16}{figure.caption.31}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-5}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {5.1}{\ignorespaces Force norm of a rigidly rotated unit-square element (a stress-free motion): linear kinematics against the total-Lagrangian element. Produced by \texttt {scripts/ch05\_assets.py}.\relax }}{14}{figure.caption.24}%
-\contentsline {figure}{\numberline {5.2}{\ignorespaces Stress--strain loop of \code {TrussPlastic2D} ($E=200$ GPa, $\sigma _y=250$ MPa, $H=5$ GPa): the element against the closed-form return map. Produced by \texttt {scripts/ch05\_assets.py}.\relax }}{16}{figure.caption.27}%
-\contentsline {figure}{\numberline {5.3}{\ignorespaces The von Mises truss: closed form \textup {\hbox {\mathsurround \z@ \normalfont (\ignorespaces \ref {eq:nl-vm}\unskip \@@italiccorr )}}, displacement control and arc length. Load control cannot pass the limit load. Produced by \texttt {scripts/ch05\_assets.py}; the problem is the one of \texttt {fea\_engine/examples/arc\_length\_snap\_through\_demo.py}.\relax }}{18}{figure.caption.32}%
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Force norm of a rigidly rotated unit-square element (a stress-free motion): linear kinematics against the total-Lagrangian element. Produced by \texttt {scripts/ch05\_assets.py}.\relax }}{20}{figure.caption.39}%
+\contentsline {figure}{\numberline {5.2}{\ignorespaces Stress--strain loop of \code {TrussPlastic2D} ($E=200$ GPa, $\sigma _y=250$ MPa, $H=5$ GPa): the element against the closed-form return map. Produced by \texttt {scripts/ch05\_assets.py}.\relax }}{22}{figure.caption.42}%
+\contentsline {figure}{\numberline {5.3}{\ignorespaces The von Mises truss: closed form \textup {\hbox {\mathsurround \z@ \normalfont (\ignorespaces \ref {eq:nl-vm}\unskip \@@italiccorr )}}, displacement control and arc length. Load control cannot pass the limit load. Produced by \texttt {scripts/ch05\_assets.py}; the problem is the one of \texttt {fea\_engine/examples/arc\_length\_snap\_through\_demo.py}.\relax }}{24}{figure.caption.47}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-6}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {6.1}{\ignorespaces Internal-force assembly of a \code {Quad4PlaneStressTL} plate: time of the loop and the batched route (left) and their ratio (right). Produced by \texttt {scripts/ch06\_assets.py}.\relax }}{24}{figure.caption.46}%
-\contentsline {figure}{\numberline {6.2}{\ignorespaces Wall time of the same load-controlled Newton solve with the default path and with batched assembly and a sparse tangent.\relax }}{24}{figure.caption.48}%
+\contentsline {figure}{\numberline {6.1}{\ignorespaces Internal-force assembly of a \code {Quad4PlaneStressTL} plate: time of the loop and the batched route (left) and their ratio (right). Produced by \texttt {scripts/ch06\_assets.py}.\relax }}{30}{figure.caption.61}%
+\contentsline {figure}{\numberline {6.2}{\ignorespaces Wall time of the same load-controlled Newton solve with the default path and with batched assembly and a sparse tangent.\relax }}{30}{figure.caption.63}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-7}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {7.1}{\ignorespaces The model problem on a $40\times 40$ mesh ($1521\xspace $ unknowns). Left: displacement with the contact set outlined; right: contact force $\bm {\lambda }$, which is zero outside the contact set. The solver finds $295\xspace $ active constraints in $12\xspace $ iterations. Produced by \texttt {scripts/ch07\_assets.py}.\relax }}{28}{figure.caption.53}%
-\contentsline {figure}{\numberline {7.2}{\ignorespaces Penalty against exact contact on the model problem ($841\xspace $ unknowns). Left: the largest penetration falls like $1/k_p$ but never reaches zero; the exact solution has no penetration (drawn at the plotting floor). Right: the condition number of the penalty matrix grows in proportion to $k_p$; the exact route solves a system whose condition number does not depend on any parameter.\relax }}{29}{figure.caption.54}%
-\contentsline {figure}{\numberline {7.3}{\ignorespaces The active-set iteration on the model problem with $N=1521\xspace $ unknowns. Left: the number of active constraints per iteration for the \texttt {reduced} and \texttt {saddle} routes (the curves coincide). Right: the number of constraints that changed status; the last point (plotted at 0.5) is zero changes, which is the stopping test.\relax }}{30}{figure.caption.59}%
-\contentsline {figure}{\numberline {7.4}{\ignorespaces Wall time of the three routes against the number of unknowns (data of \Cref {tab:ct-scaling}).\relax }}{34}{figure.caption.71}%
-\contentsline {figure}{\numberline {7.5}{\ignorespaces Error against time step for the two schemes (data of \Cref {tab:ct-order}).\relax }}{35}{figure.caption.78}%
-\contentsline {figure}{\numberline {7.6}{\ignorespaces Bar impact, $\Delta t=0.002$. Left: wall force over the first $0.4$ time units. Right: energy relative to the initial energy over the whole run.\relax }}{36}{figure.caption.81}%
+\contentsline {figure}{\numberline {7.1}{\ignorespaces The model problem on a $40\times 40$ mesh ($1521\xspace $ unknowns). Left: displacement with the contact set outlined; right: contact force $\bm {\lambda }$, which is zero outside the contact set. The solver finds $295\xspace $ active constraints in $12\xspace $ iterations. Produced by \texttt {scripts/ch07\_assets.py}.\relax }}{34}{figure.caption.68}%
+\contentsline {figure}{\numberline {7.2}{\ignorespaces Penalty against exact contact on the model problem ($841\xspace $ unknowns). Left: the largest penetration falls like $1/k_p$ but never reaches zero; the exact solution has no penetration (drawn at the plotting floor). Right: the condition number of the penalty matrix grows in proportion to $k_p$; the exact route solves a system whose condition number does not depend on any parameter.\relax }}{35}{figure.caption.69}%
+\contentsline {figure}{\numberline {7.3}{\ignorespaces The active-set iteration on the model problem with $N=1521\xspace $ unknowns. Left: the number of active constraints per iteration for the \texttt {reduced} and \texttt {saddle} routes (the curves coincide). Right: the number of constraints that changed status; the last point (plotted at 0.5) is zero changes, which is the stopping test.\relax }}{36}{figure.caption.74}%
+\contentsline {figure}{\numberline {7.4}{\ignorespaces Wall time of the three routes against the number of unknowns (data of \Cref {tab:ct-scaling}).\relax }}{40}{figure.caption.86}%
+\contentsline {figure}{\numberline {7.5}{\ignorespaces Error against time step for the two schemes (data of \Cref {tab:ct-order}).\relax }}{41}{figure.caption.93}%
+\contentsline {figure}{\numberline {7.6}{\ignorespaces Bar impact, $\Delta t=0.002$. Left: wall force over the first $0.4$ time units. Right: energy relative to the initial energy over the whole run.\relax }}{42}{figure.caption.96}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-8}
 \addvspace {10\p@ }

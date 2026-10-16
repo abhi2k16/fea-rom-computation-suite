@@ -1,0 +1,28 @@
+\begin{thebibliography}{3}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Bathe(2014)]{bathe2014fep}
+Klaus-J{\"u}rgen Bathe.
+\newblock \emph{Finite Element Procedures}.
+\newblock K. J. Bathe, Watertown, MA, 2 edition, 2014.
+\newblock ISBN 9780979004957.
+
+\bibitem[Zienkiewicz et~al.(2013)Zienkiewicz, Taylor, and
+  Zhu]{zienkiewicz2013fem}
+O.~C. Zienkiewicz, R.~L. Taylor, and J.~Z. Zhu.
+\newblock \emph{The Finite Element Method: Its Basis and Fundamentals}.
+\newblock Butterworth-Heinemann, Oxford, 7 edition, 2013.
+\newblock ISBN 9781856176330.
+
+\bibitem[Newmark(1959)]{newmark1959}
+Nathan~M. Newmark.
+\newblock A method of computation for structural dynamics.
+\newblock \emph{Journal of the Engineering Mechanics Division, ASCE},
+  85\penalty0 (3):\penalty0 67--94, 1959.
+\newblock \doi{10.1061/JMCEA3.0000098}.
+
+\end{thebibliography}

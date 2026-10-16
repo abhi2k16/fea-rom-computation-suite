@@ -1,2 +1,166 @@
 \chapter{Dynamics: modal, transient, harmonic and random response}\label{ch:dyn}
-\stubchapter{Chapter 4}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+The reduced-order models of Part~III reduce the dynamic problem, and the contact chapter extends it, so this chapter states the problem and the five ways \fea{} solves it: the eigenproblem for natural frequencies, implicit Newmark integration, explicit central differences, modal superposition, and frequency-domain response (harmonic and random). For each method it gives the equation, the algorithm, what the code does, and a test whose reference is exact for the discrete model or independent of the solver. The tests show the second-order accuracy of Newmark and its period error, the sharp stability limit of the explicit method, the effect of keeping few modes, and the agreement of the direct frequency-response solve with a modal sum.
+\end{tcolorbox}
+
+\section{The semi-discrete problem}\label{sec:dy-problem}
+
+After the spatial discretisation of Chapter~\ref{ch:elem}, the linear dynamic response of a structure is governed by
+\begin{equation}\label{eq:dy-eom}
+\bm M\ddot{\bm u}+\bm C\dot{\bm u}+\bm K\bm u=\bm f(t),\qquad \bm u(0)=\bm u_0,\ \dot{\bm u}(0)=\bm v_0,
+\end{equation}
+on the free degrees of freedom, with the mass matrix $\bm M$ (consistent or lumped, \Cref{sec:el-weak}), the damping matrix $\bm C$ and the stiffness $\bm K$. The standard treatments are \citet{bathe2014fep} and \citet{zienkiewicz2013fem}. One test model serves the whole chapter: a steel cantilever of length $L=2$ m modelled with Euler--Bernoulli beam elements (\code{Beam2DEulerBernoulli}, $E=210$ GPa, $\rho=7800$ kg/m$^3$, $A=0.01$ m$^2$, $I=8.33\times10^{-6}$ m$^4$) with 20 elements; its lowest frequency is \cdyFirstFreq{} Hz. For the explicit method a thin plane-stress bar is used instead, because it has a lumped mass matrix without rotations and a wave speed that is known in closed form.
+
+\section{Natural frequencies and modes}\label{sec:dy-modal}
+
+The undamped free vibrations $\bm u=\bm\phi\sin\omega t$ satisfy the generalised eigenproblem
+\begin{equation}\label{eq:dy-eig}
+\bm K\bm\phi_i=\omega_i^{2}\bm M\bm\phi_i,\qquad \bm\phi_i^{T}\bm M\bm\phi_j=\delta_{ij}.
+\end{equation}
+\anchor{fea_engine.solver.FESystem} solves it with \code{solve_modal(n_modes)} on the free dofs and returns frequencies in Hz and mass-normalised shapes; for a sparse system it uses a shift-invert Lanczos iteration for the lowest modes, and a dense solve otherwise. The accuracy of the frequencies of the beam and bar elements was verified in \Cref{sec:el-verif}. The modes decouple the problem: with $\bm u=\bm\Phi\bm q$, \eqref{eq:dy-eom} becomes one scalar equation per mode when $\bm C$ is a Rayleigh combination of $\bm M$ and $\bm K$ or is given by modal damping ratios, and this is the basis of \Cref{sec:dy-modsup} and of the frequency-domain checks.
+
+\paragraph{Damping.} \anchor{fea_engine.damping.RayleighDamping} is $\bm C=\alpha\bm M+\beta\bm K$ with \code{calibrate} choosing $\alpha,\beta$ for a target ratio $\zeta$ at two frequencies; the resulting ratio at any other frequency is $(\alpha+\beta\omega^2)/(2\omega)$ (\code{modal_ratio}). With $\zeta=1\%$ calibrated at modes 1 and 3 of the test beam, the ratio at mode 2 is \cdyRayleighMid{}\%, below the target: Rayleigh damping is exact at the two calibration frequencies and smaller between them. \anchor{fea_engine.damping.ModalDamping} applies a ratio directly to each retained mode and never forms $\bm C$.
+
+\section{Implicit integration: Newmark}\label{sec:dy-newmark}
+
+The Newmark family \citep{newmark1959} advances $(\bm u,\dot{\bm u},\ddot{\bm u})$ by one step $\Delta t$ using the parameters $\beta$ and $\gamma$. The default of \code{solve_transient_implicit} is the average-acceleration rule, $\beta=\tfrac14$, $\gamma=\tfrac12$, which is unconditionally stable for a linear time-invariant system; the stability is what lets the step be chosen for accuracy and not for stability.
+
+\begin{algbox}{Implicit Newmark ($\beta=\tfrac14$, $\gamma=\tfrac12$) for the linear problem}
+\begin{enumerate}[leftmargin=1.5em]
+\item Compute the initial acceleration $\ddot{\bm u}_0=\bm M^{-1}(\bm f_0-\bm C\bm v_0-\bm K\bm u_0)$.
+\item Form and factor \emph{once} the effective matrix $\bm K_{eff}=\bm K+\tfrac{1}{\beta\Delta t^2}\bm M+\tfrac{\gamma}{\beta\Delta t}\bm C$.
+\item For each step: build the right-hand side from $\bm f_{n+1}$ and the known state $(\bm u_n,\dot{\bm u}_n,\ddot{\bm u}_n)$, solve $\bm K_{eff}\bm u_{n+1}=\text{rhs}$ by back-substitution, then update $\ddot{\bm u}_{n+1}$ and $\dot{\bm u}_{n+1}$.
+\end{enumerate}
+\end{algbox}
+
+For a linear system $\bm K_{eff}$ does not change, so the code factors it once (dense LU, or SuperLU if the system is sparse) and each step costs one back-substitution. Loads are given as \anchor{fea_engine.loads.TimeHistoryLoad}: a fixed spatial pattern (\anchor{fea_engine.loads.LoadPattern}) times a function of time.
+
+\paragraph{Accuracy test with an exact reference.}
+The test uses an initial velocity equal to the first mode shape, $\bm v_0=\bm\phi_1$, with no load and no damping. The exact solution of the discrete system is then $\bm u(t)=\bm\phi_1\sin(\omega_1t)/\omega_1$, with $\omega_1$ the discrete eigenfrequency, so the reference contains no spatial error and the measured error is purely the time integration. \Cref{fig:dy-newmark} shows the largest error over three periods (relative to the largest displacement) for $\Delta t=T_1/10,\dots,T_1/160$. The observed order is \cdyNewmarkOrder, the expected second order. The error is large at coarse steps (\cdyNewmarkErrCoarse{} at 10 steps per period) and \cdyNewmarkErrFine{} at 160. The error of the average-acceleration rule is a period elongation, not a loss of amplitude: the largest tip displacement differs from the exact one by up to \cdyNewmarkAmpWorst{} at 10 steps per period (a sampling effect of the shifted phase) and by less than $10^{-3}$ for 20 steps per period or more. The error grows with the number of periods, so a record that covers many periods of the mode of interest needs a finer step: at $T_1/40$ the largest error over three periods is still about 4\%.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.55\linewidth]{figures/ch04_newmark.pdf}
+\caption{Newmark average acceleration: error against the exact solution of the discrete model (first mode of the 20-element cantilever, three periods) against the time step, with the observed order. Produced by \texttt{scripts/ch04\_assets.py}.}\label{fig:dy-newmark}
+\end{figure}
+
+\section{Explicit integration and the critical step}\label{sec:dy-explicit}
+
+The central-difference method (\code{solve_transient_explicit}) computes $\bm u_{n+1}$ from $\bm u_n$ and $\bm u_{n-1}$ without solving a system, if the mass matrix is diagonal: with a lumped $\bm M$ and a diagonal (or no) damping the update is an element-wise division, and the cost per step is one product with $\bm K$. The price is conditional stability: the step must satisfy
+\begin{equation}\label{eq:dy-crit}
+\Delta t\le\Delta t_c=\frac{2}{\omega_{max}},
+\end{equation}
+where $\omega_{max}$ is the largest frequency of the discrete system \emph{with the mass matrix that the method uses}. The code does not check the step: the docstring tells the user to compute the critical step and take a fraction of it.
+
+\paragraph{The limit is sharp.}
+\Cref{tab:dy-stab} integrates a plane-stress bar (20 elements, lumped mass, $E=1$ GPa, $\rho=1000$ kg/m$^3$, a short tip pulse) at fractions of the critical step computed from $\omega_{max}$ of $(\bm K,\bm M_{lumped})$, $\Delta t_c=$\,\cdyDtcLumped s. Up to $0.99\,\Delta t_c$ the response stays bounded (the late amplitude is within a few per cent of the early one). At $1.01\,\Delta t_c$ it grows by a factor \cdyGrowJustOver{} over the run and at $1.1\,\Delta t_c$ by \cdyGrowUnstable{}: a threshold, not a gradual degradation. \Cref{fig:dy-explicit} shows the two histories.
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch04_stability}
+\caption{Explicit central differences on a lumped mass, around the critical step. ``Late/early'' is the largest displacement of the last 50 steps divided by that of steps 100--200.}\label{tab:dy-stab}
+\end{table}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.55\linewidth]{figures/ch04_explicit.pdf}
+\caption{Largest displacement against time at $0.9$ and $1.1$ times the critical step.}\label{fig:dy-explicit}
+\end{figure}
+
+\paragraph{Which critical step.} \code{critical_timestep()} computes $2/\omega_{max}$ from the \emph{consistent} mass matrix, which for this bar gives \cdyDtcConsistent s, a factor \cdyDtcRatio{} smaller than the lumped value that governs the explicit method. It is therefore a safe (conservative) bound for the lumped scheme, but it wastes steps; and it needs a dense eigensolution of the whole system. The local estimate \code{critical_timestep_local(wave_speed)} needs no matrices and takes the shortest distance between the nodes of an element divided by the wave speed. For this bar, with $c=\sqrt{E/\rho}$ and the safety factor set to 1, it gives \cdyDtcLocal{} times the lumped value; for other meshes it is only a lower bound as the docstring explains, so this agreement is a property of the straight uniform bar and not a general result.
+
+\section{Modal superposition}\label{sec:dy-modsup}
+
+With a few retained modes, the response is $\bm u\approx\sum_{i\le m}\phi_iq_i(t)$ with the scalar equations
+\begin{equation}\label{eq:dy-modal}
+\ddot q_i+2\zeta_i\omega_i\dot q_i+\omega_i^2q_i=\bm\phi_i^{T}\bm f(t),
+\end{equation}
+integrated with the same average-acceleration rule. No matrix of full size is ever solved, which is the reason for the method, and the loss is the truncation of the modes with higher frequency.
+
+\Cref{fig:dy-modal} applies a tip step load to the test beam with $\zeta=1\%$ in every mode and compares $m=1,2,4,8$ modes with all $\cdyModalAll$. The largest error in the tip history is \cdyModalErrOne{} for one mode, \cdyModalErrFour{} for four and \cdyModalErrEight{} for eight. The peak tip displacement relative to the static one is \cdyPeakAll{} with all modes. A single-degree-of-freedom system with the same damping would reach $1+\exp(-\pi\zeta/\sqrt{1-\zeta^2})=\cdyPeakSDOF$; with one mode the beam reaches \cdyPeakOne{}, which is \cdyPeakRatioOne{} of that value, and the same number, \cdyShareOne, is the share of the static tip flexibility that the first mode carries ($\phi_1(\text{tip})^2/\omega_1^2$ divided by the static deflection). Truncation therefore also truncates the static response: modal superposition without a static-correction term underestimates the displacement under a load with a static component, however accurate the retained modes are. This chapter does not implement or test a static correction.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/ch04_modal.pdf}
+\caption{Tip deflection of the cantilever under a step load, divided by the static value ($\zeta=1\%$): modal superposition with 1, 2 and 8 modes against all modes (left), and the largest error against all modes as a function of the number of modes retained (right).}\label{fig:dy-modal}
+\end{figure}
+
+With Rayleigh damping calibrated at modes 1 and 3, a Newmark solution of the full system gives the same peak, \cdyPeakNewmark{}, as the modal solution with all modes and uniform damping: the peak is governed by the first mode, where both damping models give 1\%, and it does not test the damping at the other modes.
+
+\section{Frequency-domain response}\label{sec:dy-freq}
+
+For a harmonic load $\bm f=\bm F_0e^{i\Omega t}$ the steady response solves the complex system $(-\Omega^2\bm M+i\Omega\bm C+\bm K)\bm U_0=\bm F_0$. \code{solve_harmonic(Omega, F0)} does this directly at one frequency, and \code{solve_frequency_sweep} repeats it for an array. At $\Omega=0$ the system is the static one: for the test beam the tip deflection from \code{solve_harmonic(0, F0)} differs from $PL^3/(3EI)$ by \cdyHarmZeroErr.
+
+\paragraph{Check against an independent modal sum.}
+For proportional damping the receptance is $H(\Omega)=\sum_i\phi_i(x)\phi_i(x_f)/(\omega_i^2-\Omega^2+2i\zeta_i\omega_i\Omega)$, built here from the eigenpairs of all $\cdyModalAll$ modes with the Rayleigh ratios $\zeta_i$. \Cref{fig:dy-harm} compares it with the direct solve over $0.5$--$160$ Hz. The largest difference is \cdyHarmDiff{} relative to the largest value, which is a check of the direct solve and of the damping bookkeeping (the two share only the matrices). The peak is at \cdyHarmPeakHz{} Hz with an amplification of \cdyHarmAmp{} over the static value, close to the $\cdyShareOne/(2\zeta)=\cdyHarmPred$ expected from the first mode alone.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.6\linewidth]{figures/ch04_harmonic.pdf}
+\caption{Tip receptance of the cantilever ($\zeta=1\%$ at modes 1 and 3): the direct complex solve and an independent modal sum coincide on the plotted scale.}\label{fig:dy-harm}
+\end{figure}
+
+\paragraph{Random vibration.}
+\code{solve_random_vibration(freqs, psd, F0, dof)} is a thin layer on the sweep: the output power spectral density is $S_{out}(f)=|H(f)|^2S_{in}(f)$ for a load with spatial pattern $\bm F_0$ and a one-sided input PSD sampled at the frequencies given, and the RMS response is the square root of its trapezoidal integral. With a flat input PSD on $1$--$160$ Hz the RMS tip response agrees with the integral of the modal-sum receptance to \cdyRandomDiff. This checks that the layer composes the sweep and the integral correctly; it does not test a statistical model of the load, and it assumes a stationary random load with a known PSD and a single output.
+
+\section{Choosing a method}\label{sec:dy-choose}
+
+\Cref{tab:dy-choose} lists when to use each method. Only the first three are time-domain solvers of \eqref{eq:dy-eom}. \fea{} also has nonlinear transient drivers (\code{solve_nonlinear_transient}, \code{solve_transient_explicit_nonlinear}); this book does not test them, and the contact time stepping of Chapter~\ref{ch:contact} is a separate scheme.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.27\linewidth} X X@{}}
+\toprule
+method & cost per step & use when \\
+\midrule
+\code{solve_transient_implicit} & one back-substitution after one factorisation & structural dynamics, time scales of the first modes; step chosen for accuracy \\
+\code{solve_transient_explicit} & one product with $\bm K$ (diagonal $\bm M$) & wave propagation and impact; step bounded by \eqref{eq:dy-crit} \\
+\code{solve_modal_superposition} & $m$ scalar updates after the eigenproblem & response dominated by few modes, many load cases \\
+\code{solve_harmonic}, sweep & one complex solve per frequency & steady-state response to periodic loads \\
+\code{solve_random_vibration} & one sweep & stationary random loads \\
+\bottomrule
+\end{tabularx}
+\caption{The dynamic solvers of \fea{}.}\label{tab:dy-choose}
+\end{table}
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.42\linewidth} X@{}}
+\toprule
+Concept & Code \\
+\midrule
+eigenproblem, implicit and explicit integration, modal superposition, harmonic and random response & \anchor{fea_engine.solver.FESystem} (\code{solve_modal}, \code{solve_transient_implicit}, \code{solve_transient_explicit}, \code{critical_timestep}, \code{solve_modal_superposition}, \code{solve_harmonic}, \code{solve_random_vibration}) \\
+loads & \anchor{fea_engine.loads.TimeHistoryLoad}, \anchor{fea_engine.loads.LoadPattern} \\
+damping & \anchor{fea_engine.damping.RayleighDamping}, \anchor{fea_engine.damping.ModalDamping} \\
+\bottomrule
+\end{tabularx}
+\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:dy-map}
+\end{table}
+
+\begin{limitsbox}
+\begin{itemize}
+\item \textbf{Linear dynamics only here.} The methods of this chapter assume a constant $\bm K$; constrained systems (\code{add_constraint}) are refused by the dynamic solvers other than the modal solve, as the code states.
+\item \textbf{Explicit stability is not checked by the code.} The step is the user's responsibility (\Cref{tab:dy-stab}); the safe bound from \code{critical_timestep()} uses the consistent mass and is conservative for the lumped scheme.
+\item \textbf{Newmark} is shown here only with $\beta=\tfrac14,\gamma=\tfrac12$ (the default); other parameter choices, numerical damping and the stability of non-default parameters were not tested.
+\item \textbf{Modal superposition} has no static correction and no check on the adequacy of the number of modes; the user must test convergence in $m$, as in \Cref{fig:dy-modal}.
+\item \textbf{Rayleigh damping} is exact only at the two calibration frequencies (\cdyRayleighMid{}\% at mode 2 in the test).
+\item \textbf{Random vibration:} stationary, single output; the check of this chapter is of the numerical composition, not of the statistics.
+\item \textbf{Test models} are a beam and a straight bar; a 3-D model and a model with high-aspect-ratio elements were not run here. The numbers come from \machine{}.
+\end{itemize}
+\end{limitsbox}
+
+\section{Summary}\label{sec:dy-summary}
+
+Linear dynamics reduces to \eqref{eq:dy-eom}. Newmark's average-acceleration rule is second order (observed \cdyNewmarkOrder) and its error is mainly a period elongation; the explicit method is cheap per step and unstable exactly above $2/\omega_{max}$ of the lumped system; modal superposition is accurate to $10^{-4}$ with eight modes of the test beam but loses the static part of the response carried by the discarded modes; and the direct frequency-response solve agrees with an independent modal sum to \cdyHarmDiff. Each method has a single place where it fails, and the limits box lists them.
+
+\section*{Exercises}\label{sec:dy-exercises}
+\begin{enumerate}
+\item Repeat \Cref{fig:dy-newmark} for $\beta=\tfrac14,\gamma=0.6$ (if supported) or for the explicit method at $\Delta t=0.5\Delta t_c$. Which has the larger period error?
+\item In \Cref{tab:dy-stab}, replace the lumped mass by the consistent mass in the explicit integrator (diagonal fast path off) and find the threshold again. Does it agree with \code{critical_timestep()}?
+\item Add the static correction (the response of the residual flexibility $\bm K^{-1}-\sum_{i\le m}\bm\phi_i\bm\phi_i^T/\omega_i^2$ to the load) to the one-mode result of \Cref{sec:dy-modsup}. How close does the peak come to \cdyPeakAll{}?
+\item Move the receptance output of \Cref{fig:dy-harm} from the tip to the mid-span of the beam. Which peaks appear and which disappear, and why?
+\item Use the sweep of \Cref{sec:dy-freq} to estimate $\zeta$ from the half-power bandwidth of the first peak and compare with the 1\% used.
+\end{enumerate}
+
+\chapterrefs
