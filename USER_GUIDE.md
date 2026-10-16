@@ -763,6 +763,8 @@ lf, hist = solve_nonlinear_static(sys, mat, n_steps=10, options=opts)
 lf, hist = solve_nonlinear_arc_length(sys, mat, delta_L=0.05, n_steps=40, options=opts)
 ```
 
+*(The chapter "Batched nonlinear element kernels and vectorised assembly" is the main account of this; the paragraphs below keep the details.)*
+
 **Large nonlinear models: batched assembly and a sparse Newton path (opt-in).** `Quad4PlaneStressTL`, `Hex8SolidTL`,
 `Hex20SolidTL` and `Tet10SolidTL` can assemble their force and tangent for all elements at once, and the drivers can keep the tangent sparse. Nothing changes
 unless you ask; results agree with the default path to rounding (about 1e-14 relative in the tests):
@@ -1001,6 +1003,227 @@ load_factors, U_hist = solve_nonlinear_static(sys, mat, load_factors=lambda_seq)
 See `fea_engine/README.md` sections I–L for contact (penalty and exact
 Lagrange-multiplier formulations) and the full nonlinear driver
 selection guidance.
+
+For exact multi-node contact (static, dynamic, reduced) see the next chapter, "Unilateral contact"; for large nonlinear models, "Batched nonlinear element kernels and vectorised assembly".
+
+<a id="s-17a"></a>
+
+## 🧲 Unilateral contact: exact solvers, dynamics and contact ROMs
+
+Both packages solve frictionless unilateral (Signorini) contact exactly, with Lagrange multipliers, on plain arrays. The convention everywhere is
+
+```
+K u = f + Bᵀλ,    B u − c ≥ 0,    λ ≥ 0,    λ·(B u − c) = 0
+```
+
+`B` (m × n, sparse or dense) maps the displacements to the gaps, `c` is the obstacle offset, `λ` are the contact forces. `B = I` means every node may touch the obstacle. `fea_engine` solves the full-order problem; `rom_engine` reduces it and never imports `fea_engine`.
+
+| You have... | Reach for... |
+|---|---|
+| A large sparse `K` and many possible contacts, static | `solve_contact_static_sparse` |
+| A small problem, or you want the reference | `solve_contact_static` (`active_set`, `lemke`, `pgs`) |
+| Impact or any transient with contact | `solve_contact_dynamics` (`scheme="bdf2"` for second order) |
+| A nonlinear internal force with contact | `solve_contact_newton` |
+| A scalar field (membrane, heat, Poisson) to test or demonstrate contact | the element `Quad4Laplace` |
+| Contact as a penalty on an element mesh | `GapContactPenalty`, `NodeToSegmentContact2D`, `ContactSet2D` / `ContactSet3D` (see "Nonlinear analysis" and the batched-kernels chapter) |
+| Many contact solves for varying obstacles or loads | `ContactROM` (static) and `ContactROM.solve_dynamic` (transient) in `rom_engine` |
+
+### Static contact on a large sparse model
+
+A membrane pushed onto a rigid obstacle, with the scalar element `Quad4Laplace` (one DOF `"u"` per node):
+
+```python
+import numpy as np, scipy.sparse as sp
+from fea_engine import FESystem, Quad4Laplace, solve_contact_static_sparse
+from fea_engine import mesh as meshlib
+
+m = meshlib.rectangle_mesh(1.0, 1.0, 30, 30)
+fes = FESystem(m, Quad4Laplace(), sparse=True)
+fes.assemble_stiffness(1.0); fes.assemble_lumped_mass(1.0)
+X = m.nodes
+edge = np.flatnonzero((X[:, 0] < 1e-9) | (X[:, 0] > 1 - 1e-9) | (X[:, 1] < 1e-9) | (X[:, 1] > 1 - 1e-9))
+fes.fix_dofs(edge, ["u"])
+free = np.asarray(fes.free_dofs)
+K = sp.csr_matrix(fes.K)[free][:, free]
+M = sp.diags(sp.csr_matrix(fes.M_lumped).diagonal()[free]).tocsr()
+f = -10.0 * (M @ np.ones(len(free)))                         # uniform pressure
+c = np.where(np.hypot(X[free, 0] - 0.5, X[free, 1] - 0.5) < 0.2, -0.05, -10.0)   # a bump in the middle, far floor elsewhere
+B = sp.identity(len(free), format="csr")
+
+r = solve_contact_static_sparse(K, f, B, c)                  # route="auto"
+print(r.ok, r.route, r.iterations, len(r.active))            # True reduced 2 111
+print(r.gap.min(), r.lam.min())                              # both >= 0: the contact conditions hold
+```
+
+`solve_contact_static_sparse` is a primal-dual active-set (semismooth Newton) method; it never forms `B K⁻¹ Bᵀ`. It has three routes, each usable on its own:
+
+| Route | When | Cost |
+|---|---|---|
+| `"reduced"` | `B` selects nodes (every row has one positive entry, distinct columns, e.g. `B = I`) | one sparse solve of the free block per iteration; the fast path |
+| `"saddle"` | a general sparse `B` | one sparse saddle-point solve `[[K, −B_Aᵀ], [B_A, 0]]` per iteration |
+| `"condensed"` | small problems; the dense reference | forms `B K⁻¹ Bᵀ` densely (about 8(n·m + m²) bytes) |
+
+`route="auto"` picks `"reduced"` when `B` is a node selection and `"saddle"` otherwise; it never picks `"condensed"` by itself.
+
+**When a route does not work for your problem, it says so.** A failing route never returns its last iterate as a solution. It returns `ok=False` with a `reason` (`"cycled"`, `"max_iter"`, `"singular"`, `"kkt"`, `"not_applicable"`, `"memory"`), a one-sentence `message` and a `suggestion` naming the next route to try:
+
+```python
+bad = solve_contact_static_sparse(K, f, B, c, route="reduced", max_iter=1)
+print(bad.ok, bad.reason, bad.suggestion)     # False max_iter saddle
+print(bad.message)                            # route 'reduced' failed (max_iter): no convergence in 1 iterations. Try route='saddle'.
+
+r = solve_contact_static_sparse(K, f, B, c, route="reduced", max_iter=1, fallback=True)   # opt-in: try the next routes by itself
+print(r.ok, r.route, r.fallbacks)             # True condensed ['reduced', 'saddle']
+```
+
+The dense route is only tried automatically when its memory estimate is at most `max_dense_bytes` (default 1e9). `active0=` takes a boolean mask or an index array of constraints assumed active at the start; pass `r.active_mask` from a previous solve to warm-start a nearby problem (a sweep over obstacles or loads).
+
+> [!WARNING]
+> There is no convergence guarantee when `K` is not an M-matrix (elasticity, for example). That is why failures are reported and `"condensed"` exists as the reference. Check `gap ≥ 0`, `λ ≥ 0` and `λ·gap ≈ 0` on anything you rely on.
+
+`solve_contact_static(K, f, B, c, method="pdas")` calls the sparse solver; the other methods (`active_set`, `lemke`, `pgs`) are the dense solvers and are unchanged.
+
+### Contact dynamics: first order or second order in time
+
+```python
+from fea_engine import solve_contact_dynamics
+U, Lam = solve_contact_dynamics(M, K, lambda t: f, B, c, h=0.005, n_steps=200)                     # default: two_step, first order
+U, Lam, info = solve_contact_dynamics(M, K, lambda t: f, B, c, 0.005, 200, scheme="bdf2", return_info=True)
+print(info)            # ContactDynamicsInfo(scheme='bdf2', ok=True, failed_step=None, reason=None)
+info.V                 # velocities, (n_steps + 1, n); None for two_step
+U, Lam = solve_contact_dynamics(M, K, lambda t: f, B, c, 0.005, 200, scheme="bdf2", method="pdas")   # sparse solver per step, warm-started
+```
+
+`scheme="two_step"` (the default, unchanged) is the first-order scheme; `scheme="bdf2"` is a BDF1 first step followed by BDF2, with both effective matrices factored once and contact enforced at every step. If a contact solve fails in a BDF2 run, `info` carries `failed_step`, `reason` and `suggestion`, and the rows from that step on are NaN. `method="pdas"` is available for BDF2 only.
+
+On a free `Quad4Laplace` membrane (15 × 15 elements, error at t = 2 against the exact modal solution) the error for dt = 0.01 / 0.005 / 0.0025 was 1.15e-2 / 2.96e-3 / 7.2e-4 for BDF2 (observed order about 2) against 0.162 / 0.0859 / 0.0454 for `two_step` (order about 1): 14x, 29x and 63x smaller (gallery example `fea_10`).
+
+> [!CAUTION]
+> BDF2 is **not contact-stabilised**. In a bar-impact test (h = 0.002) the BDF2 energy rose to 1.006 of the initial value and the wall force showed spikes during the impact; the default `two_step` never exceeded the initial energy but lost more (0.938 against 0.976 at the end). On impact problems, look at the energy history before trusting BDF2, and compare against `two_step`. Newmark contact dynamics is not available.
+
+### Reduced contact models (`rom_engine`)
+
+A contact ROM needs two bases: a POD basis `U` for the displacements and a **non-negative** basis `U_lam` for the contact forces (an SVD basis does not keep reduced multipliers non-negative, so a reduced solution could pull on the surface):
+
+```python
+from rom_engine import ContactROM, nonneg_dual_basis, active_snapshot_columns
+
+Uf, Lf = solve_contact_dynamics(M, K, lambda t: f, B, c, 0.005, 120, scheme="bdf2")   # full-order trajectory
+Ux = np.linalg.svd(Uf[1:].T, full_matrices=False)[0][:, :30]                          # POD displacement basis
+act = active_snapshot_columns(Lf[1:].T)
+Ul = nonneg_dual_basis(Lf[1:].T[:, act], 30).U                                        # NMF contact-force basis
+
+rom = ContactROM(K, B, Ux, Ul, M=M)             # M only for dynamics
+res = rom.solve(f, c)                           # static: one small LCP; res.u, res.lam
+r = rom.solve_dynamic(lambda t: f, c, 0.005, 120)   # reduced BDF2 loop
+print(r.ok, r.u.shape, r.kkt_residual.max())    # True (121, n) ~1e-18
+```
+
+`solve_dynamic` factors the reduced matrices once, warm-starts each LCP with the previous step's active set, and checks the reduced contact conditions at every step. A step whose KKT residual exceeds 1e-4 is reported as a failure (`r.ok`, `r.failed_step`, `r.message`; the rows from there on are NaN) instead of returning a wrong trajectory; the usual cause is a rank-deficient reduced constraint matrix, so check `rom.inf_sup_report()` and the basis sizes.
+
+On a 324-DOF membrane obstacle problem (120 steps, up to 54 active constraints) the reduced trajectory had a relative error of 0.81% / 0.20% / 0.023% for `p = p_λ` = 10 / 30 / 40 against the full-order BDF2 run (gallery example `rom_07`). With complete bases it reproduces the full-order trajectory to 3.3e-11.
+
+**Choosing snapshots for a parametric problem.** `greedy_contact_sampling(candidates, fom_solve, make_rom, indicator, max_snapshots)` picks full-order snapshots by the violation of the contact conditions, which needs no full-order solve per candidate:
+
+```python
+from rom_engine import greedy_contact_sampling, ContactConditionIndicator
+ind = ContactConditionIndicator(K, B, f, weights=(1, 0, 0))     # cheap, cached form of the indicator
+indicator = lambda p, u: ind(u, obstacle(p))
+rom, hist = greedy_contact_sampling(candidates, fom_solve, make_rom, indicator, max_snapshots=8)
+print(hist.selected, hist.stop_reason)
+```
+
+`fom_solve` may return whole trajectories `(n, T)` and `(m, T)` (columns are concatenated in selection order; wrap a single-state indicator with `trajectory_indicator`); `pass_round=True` hands the round number to `make_rom` so basis sizes can follow `linear_basis_schedule`; `rel_tol` stops when the largest indicator is at most `rel_tol` times the largest after the first round. The `rel_tol` rule is the author's reading of line 15 of Algorithm 2 of Balajewicz, Amsallem and Farhat, which is printed with `>` and is probably a typo. `ContactConditionIndicator` prepares its force estimate once, and not at all for `B = I`; `contact_condition_indicator` stays as the reference function. In the static example of `rom_07`, greedy selection gave a mean error of 0.82% with 8 snapshots against 1.63% (median) for random selection; the indicator took 0.04 to 0.45 ms per call up to 40,000 constraints (`rom_engine/tests/contact_indicator_timing.py`).
+
+For contact problems with a nonlinear internal force, `rom_engine` also has contact-aware ECSW (`fit_contact_aware_ecsw`), hybrid hyper-reduction on a reduced integration domain (`contact_rid.py`) and a linear/nonlinear partition with static condensation (`PartitionedModel`); see "ROM: hyper-reduction, substructuring, linear transients and validation".
+
+### Measured, and what is not covered
+
+| Claim | Measured |
+|---|---|
+| Sparse routes agree with the dense solvers | 5.4e-16 to 1.3e-15 on 361 to 3,481 unknowns (`fea_09`); 7.4e-15 between the two sparse routes at 39,601 unknowns |
+| Scale | 39,601 unknowns, 9,425 active constraints, 30 iterations: `reduced` 4.5 s, `saddle` 7.6 s (12-CPU machine); the dense route needs about 25 GB and was not run |
+| Against dense where both fit | 3,481 unknowns: `reduced` 0.17 s, `saddle` 0.22 s, dense 3.97 s (sandbox, 2 CPUs) |
+
+Not covered: friction in the new solvers, Newmark contact dynamics, parametric prediction of the dynamic ROM, a dense-route run at 39,601 unknowns. Times come from single runs and are not asserted by any test.
+
+Runnable examples: `fea_engine/examples/gallery/fea_09_sparse_obstacle_contact.py`, `fea_10_bdf2_contact_dynamics.py`, `rom_engine/examples/gallery/rom_07_contact_rom_dynamics.py`. Tests: `fea_engine/tests/test_contact_solvers_sparse.py` (28), `test_quad4_laplace.py` (17), `test_contact_dynamics_bdf2.py` (14); `rom_engine/tests/test_contact_dynamic_rom.py` (13), `test_contact_greedy.py` (13), `test_contact_indicator.py` (37). The full section with figures is in the repository `README.md`.
+
+---
+
+<a id="s-17b"></a>
+
+## ⚡ Batched nonlinear element kernels and vectorised assembly
+
+**Opt-in; off by default.** A nonlinear (total-Lagrangian) element has no precomputed matrix: its force and tangent depend on the current displacement and are recomputed in every Newton iteration. The default assembly does this one element at a time in Python, which for small elements costs mostly interpreter time. The batched path computes the force and tangent of all elements of a block at once with array operations, keeps the global tangent sparse, and lets the Newton drivers use a sparse LU factorisation. The loop versions stay the default and the reference; every batched result is tested against them.
+
+### The idea
+
+Per element and Gauss point the work is `F = I + (∂N/∂X)ᵀ u_e`, `E = ½(FᵀF − I)`, `S = D:E`, then the force `f_e = Σ_g w_g J0_g B(u_e)ᵀ S` and the tangent `K_e = Σ_g w_g J0_g [B(u_e)ᵀ D B(u_e) + geometric term]`. All elements of a block share the reference-configuration shape-function gradients per Gauss point, so the batched kernel stacks coordinates `(E, n_nodes, dim)` and displacements `(E, ndof)` and replaces the element loop by contractions over the element and Gauss-point axes. Three things carry the speed-up:
+
+- no Python loop over elements (the main gain for 2-D elements, whose arithmetic per element is tiny);
+- the Gauss-point sum is folded into one product of contraction length `G × 6`, about 1.9x to 2.0x faster than `G` small products for the 3-D hexahedron (plan measurement);
+- the reference gradients and the CSR sparsity pattern, with the position of every element-matrix entry in the CSR data array, are computed once per block, so each assembly is one `bincount` and no `n × n` array is ever built.
+
+### Using it
+
+```python
+fes.batch_support_report()          # per block: element, number of elements, and why a block cannot be batched (None = it can)
+f = fes.assemble_internal_force(u, mat, vectorized=True)                       # batched force
+K = fes.assemble_tangent_stiffness(u, mat, vectorized=True, sparse=True)      # scipy CSR tangent
+print(fes.last_assembly_modes)      # {'q': 'batched'}   or   {'q': 'loop (reason)'}
+```
+
+`fes.batched = True` switches a whole analysis; an explicit `vectorized=` argument overrides it. The nonlinear drivers take the sparse path with `sparse_tangent=True` (a keyword of `solve_nonlinear_static`, `solve_nonlinear_displacement_control`, `solve_nonlinear_arc_length` and `solve_nonlinear_transient`, or a field of `NewtonOptions`):
+
+```python
+from fea_engine.nonlinear_solver import solve_nonlinear_static
+from fea_engine.newton_options import NewtonOptions
+fes.batched = True
+load_factors, U_hist = solve_nonlinear_static(fes, mat, n_steps=10, sparse_tangent=True)
+opts = NewtonOptions(sparse_tangent=True, lu_ordering="COLAMD", reuse_factorization=False)
+```
+
+On a small `Quad4PlaneStressTL` plate (24 × 8 elements) the batched force agreed with the loop to 6.5e-15 relative and the CSR tangent with the dense one to 1.5e-15.
+
+| Element | Batched kernels |
+|---|---|
+| `Quad4PlaneStressTL`, `Tet10SolidTL` | yes (the loop code is untouched and is the reference) |
+| `Hex8SolidTL`, `Hex20SolidTL` | yes; new 3-D total-Lagrangian solids, each written twice (a plain per-Gauss-point reference and the batched kernel) so the two check each other |
+| other elements | not batched; the block stays on the loop |
+
+Blocks with path-dependent state (plasticity), contact elements added one by one with `add_contact_element`, and springs stay on the per-element loop, and the report says so per block. Large blocks are chunked automatically so that the working memory stays under a budget (256 MB default; set `chunk_size=` to override): a Hex20 3x3x3 strain-displacement array alone is 78 kB per element, so an unchunked 10⁵-element block would need gigabytes. Chunked and unchunked results agree to summation order, not bit for bit.
+
+### Related pieces
+
+- **Many contact pairs in one call.** `ContactSet2D` / `ContactSet3D` with `fes.add_contact_set(...)` (KD-tree candidate search, penalty law of the per-pair elements); see "Parameter sweeps and shared solver options", where the penalty-tangent caveat is described.
+- **Element responses for hyper-reduction.** `fes.element_forces(u, mat, elements=None)`, `fes.element_tangents(...)` and `element_forces_local(elements, U_local, mat)`; on the `rom_engine` side `ecsw_training_matrix_batched`, `ECSW.fit_batched` and `nonlinearity_indicator_batched` run without a Python loop over elements and snapshots. `rom_engine` still does not import `fea_engine`: the hooks take plain callables.
+- **Constraints.** `fes.eliminate_constraints()` for homogeneous linear constraints in nonlinear analysis.
+- **Torch.** `fea_engine.batched_kernels_torch` has torch versions of the same kernels (`device="cpu"` or `"cuda"`).
+
+### Measured
+
+From `paper/results/batched_kernels.json` (12 CPUs; the reference route timed once, the batched route the minimum of five runs; agreement is the maximum relative difference to the loop):
+
+| Case | Elements / DOFs | Force | Tangent | Sparse LU against dense solve | Agreement |
+|---|---|---|---|---|---|
+| `Quad4PlaneStressTL` | 1,600 / 3,362 | 102x | 64x | 12.7x | 8.4e-15 |
+| `Hex8SolidTL` | 1,536 / 6,075 | 47x | 35x | 3.3x | 4.1e-15 |
+| `Hex20SolidTL` | 432 / 6,951 | 23x | 17x | dense not run | 7.1e-15 |
+| `Tet10SolidTL` | 768 / 4,131 | 41x | 53x | 1.8x | 4.2e-15 |
+
+Contact search 89x (2-D) and 151x (3-D), contact force 51x and 106x; hyper-reduction on 400 elements: training matrix 92x, reduced force 11x, indicator 76x, same 13 elements selected. In the torch test with 1,536 Hex8 elements, CPU torch was 3.3x (force) and 2.5x (tangent) faster than NumPy; CUDA 2.9x and 1.1x. The GTX 1050 was no faster than torch on the CPU for the one case timed.
+
+### Limits and when not to bother
+
+- **The gain depends on the element.** A 3-D hexahedron is compute-bound: a batch-of-one call of the same kernel was only about 1.1x slower (tangent) than the batched one in the plan's measurement, so most of the 3-D gain comes from the folded kernel, the sparse tangent and the cheaper solve, not from removing the loop. At around 11,000 DOFs the sparse solve, not the assembly, dominates. For a small model the default is fine.
+- **Single runs on one machine**: direction and order of magnitude, not precise ratios.
+- `reuse_factorization=True` (modified Newton) needs fewer assemblies and more iterations and can diverge; `lu_ordering` is problem dependent and no ordering is faster by default. Both stay off unless you ask.
+- Not tested: meshes of 10⁵ elements, batched friction, updating contact pairs during a solve.
+
+Plan, research and every number above: `fea_engine/docs/batched_nonlinear_kernels_plan.md`; benchmark: `paper/experiments/e10_batched_kernels.py`. Tests: `fea_engine/tests/test_sparse_newton.py`, `test_quad4_tl_batched.py`, `test_hex_tl_batched.py`, `test_tet10_tl_batched.py`, `test_batched_kernels_foundation.py`. The note with the full table is in the repository `README.md`.
+
+---
 
 <a id="s-18"></a>
 
@@ -1704,6 +1927,8 @@ The free-vibration backbone in the derivative-augmented subspace agreed with a f
 | A geometrically nonlinear model, want a fast reduced solve or time integration | `MultiFidelitySurrogate`/`PolynomialModalROM` (or `NeuralSurrogate` for a larger training set) + `integrate_newmark_surrogate` |
 | A nonlinear model's backbone curve (amplitude-dependent frequency) | `HarmonicBalanceSystem` + `solve_nnm_backbone` |
 | A geometrically nonlinear thin structure whose mode basis misses the in-plane (membrane) response | `static_modal_derivatives` + `augment_with_derivatives`, or `dual_modes` when you only have a nonlinear static solver, or `QuadraticManifoldROM` to keep the coordinate count (see the system-driven bases section above) |
+| A unilateral contact problem, repeated for varying loads or obstacles | `ContactROM` with a POD displacement basis and `nonneg_dual_basis`; `greedy_contact_sampling` + `ContactConditionIndicator` to choose snapshots |
+| A transient with contact | `ContactROM.solve_dynamic` (reduced BDF2), full-order reference `solve_contact_dynamics(..., scheme="bdf2")` |
 
 ---
 
@@ -1715,12 +1940,14 @@ Runnable, end-to-end scripts, grouped by workflow.
 
 For a guided, numbered tour instead of this topic-by-topic list, see the
 dedicated galleries: `fea_engine/examples/gallery/` (`fea_01_...` through
-`fea_08_...`, plus the related `fea_scipy_vs_torch_gpu_benchmark.py`
+`fea_10_...`, plus the related `fea_scipy_vs_torch_gpu_benchmark.py`
 solver-backend benchmark one level up) and `rom_engine/examples/gallery/`
-(`rom_01_...` through `rom_06_...`) — each script is self-contained,
+(`rom_01_...` through `rom_07_...`) — each script is self-contained,
 prints its own validation numbers, and saves a plot; see each folder's
 own `fea_README.md`/`rom_README.md` for the full script-by-script
 breakdown.
+
+Contact examples: `fea_03_hertzian_contact.py` (penalty contact), `fea_09_sparse_obstacle_contact.py` (`Quad4Laplace` membrane, `solve_contact_static_sparse`, route timing), `fea_10_bdf2_contact_dynamics.py` (BDF2 against the default scheme, bar impact) and `rom_07_contact_rom_dynamics.py` (dynamic contact ROM, greedy against random snapshots).
 
 <a id="s-27"></a>
 
@@ -2155,6 +2382,9 @@ streamlit run streamlit_app.py
 | Get exact tangents for a nonlinear solve | `method="autograd"` (needs torch; improves accuracy, not speed) |
 | Train a differentiable correction | torch required; GPU optional |
 | Diagnose slowness | `solve_static(verbose=True)`, `threadpool_info()`, `torch.cuda.is_available()` |
+| Solve contact on a large sparse model | `solve_contact_static_sparse` (route `reduced` for `B = I`, `saddle` otherwise; `fallback=True` if a route fails) |
+| Time-step an impact with contact | `solve_contact_dynamics(..., scheme="bdf2")`; compare the energy with the default scheme |
+| Speed up assembly of a large nonlinear (total-Lagrangian) model | `fes.batched = True` and `sparse_tangent=True` (see "Batched nonlinear element kernels") |
 
 ---
 
@@ -2176,6 +2406,10 @@ nothing here is estimated.
 | ROM: Krylov moment matching | One-sided: `1.53e-01` mean relative error far from the expansion point; two-sided: `1.15e-02` ("ROM: classical MOR") |
 | ROM: balanced truncation | `<2.35e-03` max relative error across a 1–1500 rad/s sweep; computed H-infinity bound `2.34e-09`; provably stable ("ROM: classical MOR") |
 | ROM: mode acceleration / augmented basis | Plain mode displacement: `6.18e-03` relative error (3 modes); mode acceleration and augmented-basis correction: machine precision ("ROM: classical MOR") |
+| Sparse unilateral contact, 39,601 unknowns, 9,425 active constraints (author's machine, 12 CPUs) | route `reduced` 4.5 s, `saddle` 7.6 s, routes agree to 7.4e-15; the dense route (about 25 GB) was not run ("Unilateral contact") |
+| BDF2 against the default contact scheme (free `Quad4Laplace` membrane) | error 1.15e-2 / 2.96e-3 / 7.2e-4 against 0.162 / 0.0859 / 0.0454 at dt = 0.01 / 0.005 / 0.0025; BDF2 energy gain 0.6% in the impact example ("Unilateral contact") |
+| Dynamic contact ROM, 324 DOFs, 120 steps | relative error 0.81% / 0.20% / 0.023% for p = p_λ = 10 / 30 / 40; reduced KKT residual at most 2.7e-18 ("Unilateral contact") |
+| Batched nonlinear kernels, force over the loop (author's machine) | 102x `Quad4PlaneStressTL`, 47x `Hex8SolidTL`, 23x `Hex20SolidTL`, 41x `Tet10SolidTL`; agreement 8.4e-15 or better ("Batched nonlinear element kernels") |
 | GPU/autograd tangents (developer-machine record) | `method="autograd"` vs. finite-difference/complex-step: `1.25e-16` relative (shell case); `backend="torch"` vs. `backend="scipy"` transient: `~1e-9` relative (linear limit), `~1e-6` relative (nonlinear) ("Differentiability and GPU backends") |
 | GPU torch side-by-side, Wave 9 addendum (developer-machine record) | `MeshTransformation`/`assemble_stiffness_vectorized` `backend="torch"`: 11/11 tests each, agreeing to `atol=1e-3` (summation-order noise at 1e11 scale); `preconditioned_cg`/`solve_static(method="cg"/"pcg")` `backend="torch"`: 9/9 then 17/17, `~1e-6` relative; `rom_engine` `balanced_truncation`/`hankel_norm` `backend="torch"`: 21/21 then 13/13, `~1e-6` relative ("Batched workflows", "Architecture upgrades", "ROM: classical MOR") |
 
@@ -2223,6 +2457,8 @@ every number above.
   covered in day-to-day detail here.
 
 ### Unilateral contact: solvers, mortar coupling and contact-aware reduction
+
+*(The chapter "Unilateral contact: exact solvers, dynamics and contact ROMs" in the User Guide is the how-to; this subsection is the compact reference.)*
 
 `fea_engine.solve_contact_static(K, f, B, c)` solves `K u = f + B^T lam`, `B u >= c`, `lam >= 0`, `lam . (B u - c) = 0` for any
 number of constraints (`solve_contact_dynamics` and `solve_contact_newton` cover implicit dynamics and a nonlinear internal

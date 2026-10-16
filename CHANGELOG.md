@@ -26,6 +26,7 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 
 ### Added (documentation and examples, contact module)
 - A "Contact module" section in `README.md`, `fea_engine/README.md` and `rom_engine/README.md` (modules, elements and methods added or changed, measured claims, gallery figures, tests), replacing the earlier callouts.
+- `USER_GUIDE.md`: two new chapters after "Nonlinear analysis", "Unilateral contact: exact solvers, dynamics and contact ROMs" and "Batched nonlinear element kernels and vectorised assembly" (code in both was run in the sandbox), plus rows in the ROM chooser, the quick decision guide and the performance table, and the gallery description.
 - Gallery examples `fea_engine/examples/gallery/fea_09_sparse_obstacle_contact.py`, `fea_10_bdf2_contact_dynamics.py` and `rom_engine/examples/gallery/rom_07_contact_rom_dynamics.py`, each with its figure; the gallery READMEs list them. Figures were produced in the sandbox (2 CPUs); not yet run on the author's machine.
 
 ### Wave 23 closed (2026-10-16)
