@@ -2225,7 +2225,7 @@ every number above.
 
 `fea_engine.solve_contact_static(K, f, B, c)` solves `K u = f + B^T lam`, `B u >= c`, `lam >= 0`, `lam . (B u - c) = 0` for any
 number of constraints (`solve_contact_dynamics` and `solve_contact_newton` cover implicit dynamics and a nonlinear internal
-force). `MortarTie2D` couples non-matching 2-D meshes along a straight interface and gives the weighted normal-gap map
+force). For large sparse `K`, `solve_contact_static_sparse(K, f, B, c)` solves the same problem without forming `B K^-1 B^T`: route `"reduced"` when `B` selects nodes (e.g. `B = I`), `"saddle"` for a general sparse `B`, `"condensed"` for the dense routes; a route that fails (cycling, a singular saddle system) returns `converged=False` with a `reason` and a `suggestion` for the next route, and `fallback=True` follows it. Pass the previous `active_mask` as `active0` to warm-start. It carries no convergence guarantee for stiffness matrices that are not M-matrices, so check `converged`. `MortarTie2D` couples non-matching 2-D meshes along a straight interface and gives the weighted normal-gap map
 `(B, c)` for the same solver. `NodeToSurfaceContact3D` is a penalty node-to-triangle element.
 
 On the reduced side, `nonneg_dual_basis` builds a non-negative basis for the contact forces, so reconstructed multipliers cannot

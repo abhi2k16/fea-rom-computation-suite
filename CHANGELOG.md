@@ -6,6 +6,9 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 
 ## Unreleased
 
+### Added (fea_engine, sparse unilateral contact solver)
+- `solve_contact_static_sparse(K, f, B, c, route="auto", active0=None, fallback=False, max_iter=100, tol=1e-10, max_dense_bytes=1e9)` in `contact_solvers.py`: primal-dual active set (semismooth Newton) for sparse `K` without forming `B K^-1 B^T`. Optional routes: `"reduced"` (B selects nodes, e.g. `B = I`), `"saddle"` (general sparse B, saddle system with the active rows), `"condensed"` (the existing dense routes); `"auto"` picks `reduced` or `saddle` and never `condensed`. A failing route (cycling, iteration limit, singular saddle system, route not applicable) returns `converged=False` with `reason`, `message` and `suggestion` (the next route, with the dense route's memory estimate); `fallback=True` follows the suggestions (the dense route only if it fits `max_dense_bytes`). Warm start by `active0` (the previous result's `active_mask`). `ContactResult` gained optional fields `route`, `reason`, `message`, `suggestion`, `active_mask`, `fallbacks` and the alias `ok`; `solve_contact_static(..., method="pdas")` calls the new solver. Existing functions and defaults unchanged. No convergence guarantee for stiffness matrices that are not M-matrices (the failure flag exists for that). Tests: `tests/test_contact_solvers_sparse.py` (28); timing: `tests/sparse_contact_timing.py`.
+
 ### Wave 22 closed (2026-10-15)
 Batched nonlinear element kernels (opt-in) are complete: items 198-210 as listed below and in `fea_engine/docs/batched_nonlinear_kernels_plan.md`. Loop versions remain the default. Open at closing: the full pytest run on the author's machine had not been reported; not tested: 10^5-element meshes, batched friction, pair updating during a solve.
 
@@ -125,7 +128,8 @@ Batched nonlinear element kernels (opt-in) are complete: items 198-210 as listed
 ### Added (fea_engine, contact)
 - `contact_solvers.py`: exact multi-node Signorini contact on plain arrays. LCP solvers (`lcp_active_set`, `lcp_lemke`,
   `lcp_projected_gauss_seidel`, `solve_lcp`), `solve_contact_static`, `solve_contact_dynamics` (implicit two-step scheme)
-  and `solve_contact_newton` (sequential linearisation). Frictionless, constant gap map.
+  and `solve_contact_newton` (sequential linearisation). Frictionless, constant gap map. (`solve_contact_static_sparse`, the sparse
+  route, is listed under Unreleased.)
 - `mortar.py`: `dual_mortar_operator` and `MortarTie2D` (tied and unilateral dual-mortar coupling of non-matching meshes,
   straight 2-D interfaces, linear segments, small displacements).
 - `NodeToSurfaceContact3D` (element `"node_to_surface_contact_3d"`), `closest_point_on_triangle_3d`, `find_contact_pairs_3d`.
