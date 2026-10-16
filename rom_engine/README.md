@@ -14,27 +14,31 @@
 
 </div>
 
-## 🧭 Contents
-
-| | |
-|---|---|
-| 🎯 [Design principle: fea_engine-agnostic core](#s-1) | 🧪 [Running the tests](#s-6) |
-| ✅ [What's implemented (linear core)](#s-2) | 🧪 [Running the examples](#s-7) |
-| ⚙️ [Installation](#s-3) | ⚠️ [A certified-bound caveat (read before using `scm.py`)](#s-8) |
-| 🚀 [Quick start](#s-4) | 🔢 [A dtype note (why this matters more than it sounds)](#s-9) |
-| 🗂️ [Package layout](#s-5) | 🗺️ [Roadmap](#s-10) |
-| 🧲 [Contact module](#contact) | |
-| 🖼️ [Example gallery](#gallery) | |
-| ⚡ [Important note: batched kernels](#batched) | |
-
----
-
-
 A small, from-scratch reduced-order-modeling (ROM) package for
 structural engineering analysis. It is the companion package to
 [`fea_engine`](../fea_engine): fea_engine assembles and solves
 full-order finite element models, rom_engine compresses and
 accelerates them.
+
+## 🧭 Contents
+
+| # | Section |
+|---|---|
+| 1 | 🎯 [Design principle: fea_engine-agnostic core](#s-1) |
+| 2 | ✅ [What's implemented (linear core)](#s-2) |
+| 3 | ⚙️ [Installation](#s-3) |
+| 4 | 🚀 [Quick start](#s-4) |
+| 5 | 🗂️ [Package layout](#s-5) |
+| 6 | 🧲 [Contact module](#contact) |
+| 7 | 🖼️ [Example gallery](#gallery) |
+| 8 | 🧪 [Running the examples](#s-7) |
+| 9 | ⚡ [Important note: batched kernels and vectorised assembly](#batched) |
+| 10 | 🧪 [Running the tests](#s-6) |
+| 11 | ⚠️ [A certified-bound caveat (read before using `scm.py`)](#s-8) |
+| 12 | 🔢 [A dtype note (why this matters more than it sounds)](#s-9) |
+| 13 | 🗺️ [Roadmap](#s-10) |
+
+---
 
 <a id="s-1"></a>
 
@@ -144,161 +148,6 @@ microseconds. `examples/two_region_beam_rom.py` demonstrates and
 measures this directly (see below) -- roughly a 200x speedup on a
 120-element two-region cantilever, at a maximum tip-deflection error
 under 0.2% across held-out parameter points.
-
-<a id="contact"></a>
-
-## 🧲 Contact module
-
-Unilateral (frictionless) contact is solved exactly with Lagrange multipliers, in both packages, on plain arrays and without an element class:
-
-```
-K u = f + Bᵀλ,    B u − c ≥ 0,    λ ≥ 0,    λ·(B u − c) = 0
-```
-
-`fea_engine` solves the full-order problem; `rom_engine` reduces it (a POD basis for the displacements, a non-negative basis for the contact forces) and never imports `fea_engine`. Penalty contact elements, which came earlier, are listed for completeness. **Bold** marks what was added by the contact work of 2026-10-16 (Wave 23).
-
-### `rom_engine`: contact modules and methods
-
-| Module | What it provides | Status |
-|---|---|---|
-| `contact_dual_basis.py` | `ContactROM`, `nonneg_dual_basis`, `active_snapshot_columns`; **`ContactROM(..., M=)`** and **`ContactROM.solve_dynamic(force, c, dt, n_steps, scheme="bdf2")`** returning **`ContactROMDynamicResult`** (reduced matrices factored once, warm-started LCP, a KKT guard that reports wrong LCP solutions) | static: earlier; **dynamic: new** |
-| `contact_greedy.py` | `greedy_contact_sampling`, `contact_condition_indicator` (the reference); **trajectory snapshots**, **`rel_tol`**, **`pass_round`**, **`trajectory_indicator`**, **`linear_basis_schedule`**, **`ContactConditionIndicator`** (cached pseudo-inverse; skips the least-squares step for `B = I`) | extended / **new** |
-| `complementarity.py` | `lcp_lemke`, `lcp_active_set`, `solve_lcp`, `solve_reduced_contact`; **`active0=`** warm start on `lcp_active_set` and `solve_lcp` | extended |
-| `contact_hyper_reduction.py`, `contact_rid.py`, `domain_partition.py` | contact-aware ECSW, hybrid hyper-reduction on a reduced integration domain, linear/nonlinear partition with static condensation | earlier waves |
-| `contact_comparison.py`, `contact_validation.py` | compare reduced contact models; error metrics | earlier waves |
-| `friction_contact_models.py`, `torch_contact_bases.py` | dry-friction elements for harmonic balance; PyTorch counterparts of the dense contact bases | earlier waves |
-
-**Changes to existing code (all opt-in):** `ContactROM` takes an optional mass matrix `M` and keeps `M_r`; `lcp_active_set` and `solve_lcp` take `active0`; `greedy_contact_sampling` accepts trajectory-valued snapshots and the keywords `rel_tol` and `pass_round`, and a call without them behaves as before. The `rel_tol` rule is the author's reading of line 15 of Algorithm 2 of Balajewicz, Amsallem and Farhat, which is printed with `>` and is probably a typo.
-
-### What was measured
-
-| Claim | Measured | Where |
-|---|---|---|
-| The sparse routes agree with the dense solvers | differences 5.4e-16 to 1.3e-15 on the 361 to 3,481-unknown membrane obstacle problems of the gallery; 7.4e-15 between the two sparse routes at 39,601 unknowns | `fea_09`; `fea_engine/tests/sparse_contact_timing.py` |
-| The sparse routes scale | 39,601 unknowns, 9,425 active constraints, 30 iterations: `reduced` 4.5 s, `saddle` 7.6 s (12-CPU Windows machine); the dense route was not run (it needs about 25 GB) | `sparse_contact_timing.py` |
-| Sparse beats dense where both fit | 3,481 unknowns: `reduced` 0.17 s, `saddle` 0.22 s, dense 3.97 s (sandbox, 2 CPUs) | `fea_09` figure |
-| BDF2 is second order | free-membrane error at t = 2: 1.15e-2 / 2.96e-3 / 7.2e-4 for dt = 0.01 / 0.005 / 0.0025, observed order 1.96 and 2.03; `two_step` 0.162 / 0.0859 / 0.0454, order 0.92 | `fea_10` |
-| BDF2 is not contact-stabilised | bar impact, h = 0.002: energy rises to 1.0060 of the initial value (up to 0.72% in the test suite), ends at 0.976; `two_step` never exceeds 1.000 and ends at 0.938. The BDF2 wall force shows spikes during the impact | `fea_10` |
-| Complete bases reproduce the full order | reduced BDF2 trajectory equals the full-order one to 3.3e-11 | `rom_engine/tests/test_contact_dynamic_rom.py` |
-| The reduced dynamic model is accurate | 324 DOFs, 120 steps, up to 54 active constraints: relative error 0.81% / 0.20% / 0.023% for p = p_λ = 10 / 30 / 40; reduced contact conditions hold (KKT residual at most 2.7e-18) | `rom_07` |
-| Greedy sampling beats random sampling (static) | mean error on six held-out obstacles with 2 / 4 / 6 / 8 snapshots: greedy 4.75 / 1.55 / 1.23 / 0.82%, random median 7.37 / 2.94 / 2.11 / 1.63% | `rom_07` |
-| The cached indicator is cheap | 0.04 to 0.45 ms per call up to 40,000 constraints; the reference function took 3.3 s at 2,500 | `rom_engine/tests/contact_indicator_timing.py` |
-
-Times come from one run on one machine and are not asserted by any test; the gallery figures are the sandbox run named in each figure. Not covered: friction in the new solvers, Newmark contact dynamics, parametric prediction of the dynamic ROM, a dense-route run at 39,601 unknowns. Convergence of the active-set iteration is not guaranteed when `K` is not an M-matrix. Record: `fea_engine/docs/consolidated_future_roadmap.md`, Wave 23.
-
-### Tests
-
-| File | Tests | Covers |
-|---|---|---|
-| `tests/test_contact_dynamic_rom.py` | 13 | complete bases against full order, KKT guard, warm start, POD + NMF accuracy |
-| `tests/test_contact_greedy.py` | 13 | greedy selection (three of the 13 predate this work), trajectories, `rel_tol`, `pass_round` |
-| `tests/test_contact_indicator.py` | 37 | `ContactConditionIndicator` routes against the reference |
-
-All of these passed on the author's machine. In the full-suite runs there, `fea_engine` had 0 failures; `rom_engine` had the known operator-inference failure and one `test_domain_partition.py` failure that was a rounding-sensitive assertion and has since been rewritten (that file passes).
-
-
-<a id="gallery"></a>
-
-## 🖼️ Example gallery
-
-The `rom_engine` gallery, including the contact example (`rom_07`). Each script prints its own validation numbers and saves its figure; see `examples/gallery/rom_README.md` for the cross-check of every example.
-
-<table>
-<tr>
-<td align="center"><a href="examples/gallery/rom_01_pod_basis.py"><img src="examples/gallery/rom_01_pod_basis.png" width="330"></a><br><sub><b>POD basis</b>: singular-value decay and reconstruction error</sub></td>
-<td align="center"><a href="examples/gallery/rom_02_galerkin_parametric_rom.py"><img src="examples/gallery/rom_02_galerkin_parametric_rom.png" width="330"></a><br><sub><b>Parametric Galerkin ROM</b>: affine parametric reduction</sub></td>
-<td align="center"><a href="examples/gallery/rom_03_greedy_frequency_training.py"><img src="examples/gallery/rom_03_greedy_frequency_training.png" width="330"></a><br><sub><b>Greedy training</b>: adaptive against uniform frequency sampling</sub></td>
-</tr>
-<tr>
-<td align="center"><a href="examples/gallery/rom_04_balanced_truncation.py"><img src="examples/gallery/rom_04_balanced_truncation.png" width="330"></a><br><sub><b>Balanced truncation</b>: actual error stays below the certified bound</sub></td>
-<td align="center"><a href="examples/gallery/rom_05_nonlinear_modal_rom.py"><img src="examples/gallery/rom_05_nonlinear_modal_rom.png" width="330"></a><br><sub><b>Nonlinear modal ROM</b>: 2 modes vs 51-DOF full-order beam, max error 3.3 %</sub></td>
-<td align="center"><a href="examples/gallery/rom_06_dataset_diagnostics_uq.py"><img src="examples/gallery/rom_06_dataset_diagnostics_uq.png" width="330"></a><br><sub><b>Dataset diagnostics and UQ</b>: coverage and ensemble uncertainty</sub></td>
-</tr>
-<tr>
-<td align="center"><a href="examples/gallery/rom_07_contact_rom_dynamics.py"><img src="examples/gallery/rom_07_contact_rom_dynamics.png" width="330"></a><br><sub><b>Contact ROM</b>: reduced dynamics against full order, error against basis size, greedy against random snapshots (<code>rom_07</code>)</sub></td>
-</tr>
-</table>
-
-Click an image to open the script that produced it. Gallery figures are in `examples/gallery/` of each package.
-
-<a id="batched"></a>
-
-## ⚡ Important note: batched nonlinear element kernels and vectorised assembly
-
-> [!IMPORTANT]
-> ** Opt-in, off by default.** The nonlinear elements `Quad4PlaneStressTL`, `Hex8SolidTL`, `Hex20SolidTL` and `Tet10SolidTL` can evaluate force and tangent for all elements of a block at once, and `FESystem` can assemble them without a Python loop over elements, into a sparse tangent that a sparse Newton solve uses. The loop versions remain the default and the reference; every batched result is tested against them. Measured on the author's machine (12 CPUs): kernel force 102x (Quad4), 47x (Hex8), 23x (Hex20) and 41x (Tet10) faster than the loop, agreeing to 8.4e-15 relative or better.
-
-### Why it is needed
-
-A nonlinear (total-Lagrangian) element has no precomputed matrix: its force and tangent depend on the current displacement, so they are recomputed in every Newton iteration. Per element and Gauss point the work is
-
-```
-F = I + (dN/dX)ᵀ u_e          deformation gradient
-E = ½ (FᵀF − I)               Green-Lagrange strain
-S = D : E                     second Piola-Kirchhoff stress (Saint Venant-Kirchhoff)
-f_e = Σ_g w_g J0_g  B(u_e)ᵀ S           internal force
-K_e = Σ_g w_g J0_g [ B(u_e)ᵀ D B(u_e) + geometric term(S) ]     tangent
-```
-
-The package's loop does this one element at a time in Python, and for small elements the interpreter, not the arithmetic, is the cost: the element is a few hundred flops wrapped in thousands of Python operations. The same is true of the scatter `K[np.ix_(g, g)] += K_e` into a dense `n × n` array, and of the dense `np.linalg.solve` that follows.
-
-### Theory: batch over elements, fold over Gauss points
-
-All elements of a block share the same shape-function derivatives per Gauss point in the reference configuration. The batched kernel therefore stacks the data as arrays with a leading element axis, coordinates `(E, n_nodes, dim)` and displacements `(E, ndof)`, and replaces the element loop by array contractions (einsum or batched matrix products) over axes `(E, G)`. It returns `(E, ndof)` forces and `(E, ndof, ndof)` tangents in the same local DOF order as the loop. Three ideas carry the speed-up and the scalability:
-
-- **No interpreter per element.** The element loop becomes one NumPy call per kernel stage. This is the dominant gain for 2-D elements, where the arithmetic per element is tiny.
-- **Folding the Gauss-point sum.** `K_e = Σ_g w_g Bᵍᵀ D Bᵍ` is evaluated as a single product with contraction length `G × 6` (the weights are folded into `D B`), instead of `G` small products. This was about 1.9x to 2.0x faster than the plain per-Gauss-point form on the 3-D hexahedron kernel, in the plan's measurement.
-- **A cached geometry and a cached sparsity pattern.** The reference gradients `dN/dX` and `det(J0) w` come from `MeshTransformation` once per block. The CSR pattern of the assembled tangent and, for every entry of every element matrix, its position in the CSR data array are computed once (one `np.unique` over the flattened row/column keys). Each later tangent assembly is `bincount(positions, weights=K_e)`: no sorting, no COO-to-CSR conversion and no `n × n` array.
-
-### Implementation
-
-| Piece | Where | What it does |
-|---|---|---|
-| Batch protocol | `batched_kernels.py`; `Element.supports_batch` | An element opts in with `supports_batch = True` and `internal_force_batch` / `tangent_stiffness_batch`; a formulation without them is assembled by the loop, block by block, with the reason recorded in `FESystem.last_assembly_modes` |
-| Chunking | `batched_kernels.chunk_slices` | A block is split so the estimated working memory stays under a budget (256 MB default) or under `chunk_size`; a Hex20 3x3x3 strain-displacement array alone is 78 kB per element, so an unchunked 10⁵-element block would need gigabytes. Chunked and unchunked results agree to summation order, not bit for bit |
-| Elements | `elements/nonlinear_solids.py`, `elements/hex_tl.py` | Batched `Quad4PlaneStressTL` and `Tet10SolidTL`; new total-Lagrangian `Hex8SolidTL` and `Hex20SolidTL`, each written twice (a plain per-Gauss-point reference and the batched kernel) so the two can check each other |
-| Assembly | `FESystem.assemble_internal_force` / `assemble_tangent_stiffness` | New keywords `vectorized`, `chunk_size`, `sparse`; `FESystem.batch_support_report()` says which blocks can be batched. Defaults reproduce the previous behaviour |
-| Sparse Newton | `nonlinear_solver.py`, `NewtonOptions` | `sparse_tangent`, `lu_ordering` and `reuse_factorization` fields; sparse LU factorisation instead of a dense solve in the static, displacement-control, arc-length and transient drivers |
-| Contact | `contact_batch.py`; `FESystem.add_contact_set` | `ContactSet2D` / `ContactSet3D`: penalty contact of many slave-master pairs in one call, with a KD-tree candidate search |
-| Hyper-reduction | `FESystem.element_forces` / `element_tangents`; `rom_engine` `ECSW.fit_batched`, `ecsw_training_matrix_batched`, `nonlinearity_indicator_batched` | Element-level hooks, so ECSW training and the domain-partition indicator run without a Python loop over elements and snapshots |
-| Constraints and torch | `FESystem.eliminate_constraints`; `batched_kernels_torch.py` | Elimination of homogeneous constraints; a torch version of the same kernels (CPU or CUDA) |
-
-```python
-fes.batch_support_report()                                   # which blocks can be batched, and why not
-f = fes.assemble_internal_force(u, mat, vectorized=True)
-K = fes.assemble_tangent_stiffness(u, mat, vectorized=True, sparse=True)   # scipy CSR
-opts = NewtonOptions(sparse_tangent=True)                    # sparse Newton in the nonlinear drivers
-```
-
-### Measured advantages
-
-Times from `paper/results/batched_kernels.json` (12 CPUs, NumPy 1.26.4, SciPy 1.15.3, Windows); the reference route is timed once, the batched route is the minimum of five runs; agreement is the maximum relative difference to the loop.
-
-| Case | Elements / DOFs | Force | Tangent | Whole-system force | Sparse LU against dense solve | Agreement |
-|---|---|---|---|---|---|---|
-| `Quad4PlaneStressTL` | 1,600 / 3,362 | 102x | 64x | 112x | 12.7x | 8.4e-15 |
-| `Hex8SolidTL` | 1,536 / 6,075 | 47x | 35x | 51x | 3.3x | 4.1e-15 |
-| `Hex20SolidTL` | 432 / 6,951 | 23x | 17x | 22x | dense not run | 7.1e-15 |
-| `Tet10SolidTL` | 768 / 4,131 | 41x | 53x | 28x | 1.8x | 4.2e-15 |
-
-| Other batched paths | Measured |
-|---|---|
-| Contact search, KD-tree against loop | 89x (2-D, 200 pairs), 151x (3-D, 1,152 pairs); same pairs found |
-| Contact force / tangent, set against per pair | 51x / 49x (2-D), 106x / 80x (3-D) |
-| Hyper-reduction on 400 elements, 8 snapshots | training matrix 92x, reduced force 11x, nonlinearity indicator 76x; the same 13 elements selected by ECSW |
-| Constraint elimination | 3% overhead on tangent and force assembly |
-| Torch kernels, 1,536 Hex8 | CPU 3.3x (force) and 2.5x (tangent) over NumPy; CUDA 2.9x and 1.1x. The GTX 1050 was no faster than torch on the CPU for the one case timed |
-
-### Limits and cautions
-
-- **The gain depends on the element.** For a 2-D element the saving is mostly interpreter overhead, so the factor is large. A 3-D hexahedron is compute-bound: in the plan's measurement a batch-of-one call of the same kernel was only about 1.1x slower (tangent) than the batched one, so most of the 3-D gain over the loop comes from the folded kernel, the sparse tangent and the cheaper solve, not from removing the loop. At around 11,000 DOFs the sparse solve, not the assembly, dominates.
-- **Single runs on one machine.** The figures show direction and order of magnitude, not precise ratios; the reference route was timed once.
-- **Opt-in.** Nothing changes unless you ask. Path-dependent elements (those that need `state` or `iter_state`) are not batched.
-- **Sparse ordering and factorisation reuse are not free wins.** The SuperLU symmetric-mode ordering did not help on a generic Hex20 mesh, and reusing the factorisation (modified Newton) can need more iterations; both are opt-in settings with full Newton as the default.
-- **Not tested:** meshes of 10⁵ elements, batched friction, updating contact pairs during a solve. The batched `ContactSet` evaluates penalty contact only, with a smoothed penalty law available through `smoothing_length` (default 0 is the package law).
-- `rom_engine` does not import `fea_engine`: its batched hooks take plain callables, `fn(elements, U_local)`.
-
-Plan, research, per-item notes and every number above: [`../fea_engine/docs/batched_nonlinear_kernels_plan.md`](../fea_engine/docs/batched_nonlinear_kernels_plan.md); benchmark script: `../paper/experiments/e10_batched_kernels.py`.
 
 <a id="s-3"></a>
 
@@ -543,6 +392,216 @@ rom_engine/
     └── system_driven_bases_timing.py      # accuracy, online/offline time and break-even of the system-driven models
 ```
 
+<a id="contact"></a>
+
+## 🧲 Contact module
+
+Unilateral (frictionless) contact is solved exactly with Lagrange multipliers, in both packages, on plain arrays and without an element class:
+
+```
+K u = f + Bᵀλ,    B u − c ≥ 0,    λ ≥ 0,    λ·(B u − c) = 0
+```
+
+`fea_engine` solves the full-order problem; `rom_engine` reduces it (a POD basis for the displacements, a non-negative basis for the contact forces) and never imports `fea_engine`. Penalty contact elements, which came earlier, are listed for completeness. **Bold** marks what was added by the contact work of 2026-10-16 (Wave 23).
+
+### `rom_engine`: contact modules and methods
+
+| Module | What it provides | Status |
+|---|---|---|
+| `contact_dual_basis.py` | `ContactROM`, `nonneg_dual_basis`, `active_snapshot_columns`; **`ContactROM(..., M=)`** and **`ContactROM.solve_dynamic(force, c, dt, n_steps, scheme="bdf2")`** returning **`ContactROMDynamicResult`** (reduced matrices factored once, warm-started LCP, a KKT guard that reports wrong LCP solutions) | static: earlier; **dynamic: new** |
+| `contact_greedy.py` | `greedy_contact_sampling`, `contact_condition_indicator` (the reference); **trajectory snapshots**, **`rel_tol`**, **`pass_round`**, **`trajectory_indicator`**, **`linear_basis_schedule`**, **`ContactConditionIndicator`** (cached pseudo-inverse; skips the least-squares step for `B = I`) | extended / **new** |
+| `complementarity.py` | `lcp_lemke`, `lcp_active_set`, `solve_lcp`, `solve_reduced_contact`; **`active0=`** warm start on `lcp_active_set` and `solve_lcp` | extended |
+| `contact_hyper_reduction.py`, `contact_rid.py`, `domain_partition.py` | contact-aware ECSW, hybrid hyper-reduction on a reduced integration domain, linear/nonlinear partition with static condensation | earlier waves |
+| `contact_comparison.py`, `contact_validation.py` | compare reduced contact models; error metrics | earlier waves |
+| `friction_contact_models.py`, `torch_contact_bases.py` | dry-friction elements for harmonic balance; PyTorch counterparts of the dense contact bases | earlier waves |
+
+**Changes to existing code (all opt-in):** `ContactROM` takes an optional mass matrix `M` and keeps `M_r`; `lcp_active_set` and `solve_lcp` take `active0`; `greedy_contact_sampling` accepts trajectory-valued snapshots and the keywords `rel_tol` and `pass_round`, and a call without them behaves as before. The `rel_tol` rule is the author's reading of line 15 of Algorithm 2 of Balajewicz, Amsallem and Farhat, which is printed with `>` and is probably a typo.
+
+### What was measured
+
+| Claim | Measured | Where |
+|---|---|---|
+| The sparse routes agree with the dense solvers | differences 5.4e-16 to 1.3e-15 on the 361 to 3,481-unknown membrane obstacle problems of the gallery; 7.4e-15 between the two sparse routes at 39,601 unknowns | `fea_09`; `fea_engine/tests/sparse_contact_timing.py` |
+| The sparse routes scale | 39,601 unknowns, 9,425 active constraints, 30 iterations: `reduced` 4.5 s, `saddle` 7.6 s (12-CPU Windows machine); the dense route was not run (it needs about 25 GB) | `sparse_contact_timing.py` |
+| Sparse beats dense where both fit | 3,481 unknowns: `reduced` 0.17 s, `saddle` 0.22 s, dense 3.97 s (sandbox, 2 CPUs) | `fea_09` figure |
+| BDF2 is second order | free-membrane error at t = 2: 1.15e-2 / 2.96e-3 / 7.2e-4 for dt = 0.01 / 0.005 / 0.0025, observed order 1.96 and 2.03; `two_step` 0.162 / 0.0859 / 0.0454, order 0.92 | `fea_10` |
+| BDF2 is not contact-stabilised | bar impact, h = 0.002: energy rises to 1.0060 of the initial value (up to 0.72% in the test suite), ends at 0.976; `two_step` never exceeds 1.000 and ends at 0.938. The BDF2 wall force shows spikes during the impact | `fea_10` |
+| Complete bases reproduce the full order | reduced BDF2 trajectory equals the full-order one to 3.3e-11 | `rom_engine/tests/test_contact_dynamic_rom.py` |
+| The reduced dynamic model is accurate | 324 DOFs, 120 steps, up to 54 active constraints: relative error 0.81% / 0.20% / 0.023% for p = p_λ = 10 / 30 / 40; reduced contact conditions hold (KKT residual at most 2.7e-18) | `rom_07` |
+| Greedy sampling beats random sampling (static) | mean error on six held-out obstacles with 2 / 4 / 6 / 8 snapshots: greedy 4.75 / 1.55 / 1.23 / 0.82%, random median 7.37 / 2.94 / 2.11 / 1.63% | `rom_07` |
+| The cached indicator is cheap | 0.04 to 0.45 ms per call up to 40,000 constraints; the reference function took 3.3 s at 2,500 | `rom_engine/tests/contact_indicator_timing.py` |
+
+Times come from one run on one machine and are not asserted by any test; the gallery figures are the sandbox run named in each figure. Not covered: friction in the new solvers, Newmark contact dynamics, parametric prediction of the dynamic ROM, a dense-route run at 39,601 unknowns. Convergence of the active-set iteration is not guaranteed when `K` is not an M-matrix. Record: `fea_engine/docs/consolidated_future_roadmap.md`, Wave 23.
+
+### Tests
+
+| File | Tests | Covers |
+|---|---|---|
+| `tests/test_contact_dynamic_rom.py` | 13 | complete bases against full order, KKT guard, warm start, POD + NMF accuracy |
+| `tests/test_contact_greedy.py` | 13 | greedy selection (three of the 13 predate this work), trajectories, `rel_tol`, `pass_round` |
+| `tests/test_contact_indicator.py` | 37 | `ContactConditionIndicator` routes against the reference |
+
+All of these passed on the author's machine. In the full-suite runs there, `fea_engine` had 0 failures; `rom_engine` had the known operator-inference failure and one `test_domain_partition.py` failure that was a rounding-sensitive assertion and has since been rewritten (that file passes).
+
+<a id="gallery"></a>
+
+## 🖼️ Example gallery
+
+The `rom_engine` gallery, including the contact example (`rom_07`). Each script prints its own validation numbers and saves its figure; see `examples/gallery/rom_README.md` for the cross-check of every example.
+
+<table>
+<tr>
+<td align="center"><a href="examples/gallery/rom_01_pod_basis.py"><img src="examples/gallery/rom_01_pod_basis.png" width="330"></a><br><sub><b>POD basis</b>: singular-value decay and reconstruction error</sub></td>
+<td align="center"><a href="examples/gallery/rom_02_galerkin_parametric_rom.py"><img src="examples/gallery/rom_02_galerkin_parametric_rom.png" width="330"></a><br><sub><b>Parametric Galerkin ROM</b>: affine parametric reduction</sub></td>
+<td align="center"><a href="examples/gallery/rom_03_greedy_frequency_training.py"><img src="examples/gallery/rom_03_greedy_frequency_training.png" width="330"></a><br><sub><b>Greedy training</b>: adaptive against uniform frequency sampling</sub></td>
+</tr>
+<tr>
+<td align="center"><a href="examples/gallery/rom_04_balanced_truncation.py"><img src="examples/gallery/rom_04_balanced_truncation.png" width="330"></a><br><sub><b>Balanced truncation</b>: actual error stays below the certified bound</sub></td>
+<td align="center"><a href="examples/gallery/rom_05_nonlinear_modal_rom.py"><img src="examples/gallery/rom_05_nonlinear_modal_rom.png" width="330"></a><br><sub><b>Nonlinear modal ROM</b>: 2 modes vs 51-DOF full-order beam, max error 3.3 %</sub></td>
+<td align="center"><a href="examples/gallery/rom_06_dataset_diagnostics_uq.py"><img src="examples/gallery/rom_06_dataset_diagnostics_uq.png" width="330"></a><br><sub><b>Dataset diagnostics and UQ</b>: coverage and ensemble uncertainty</sub></td>
+</tr>
+<tr>
+<td align="center"><a href="examples/gallery/rom_07_contact_rom_dynamics.py"><img src="examples/gallery/rom_07_contact_rom_dynamics.png" width="330"></a><br><sub><b>Contact ROM</b>: reduced dynamics against full order, error against basis size, greedy against random snapshots (<code>rom_07</code>)</sub></td>
+</tr>
+</table>
+
+Click an image to open the script that produced it. Gallery figures are in `examples/gallery/` of each package.
+
+<a id="s-7"></a>
+
+## 🧪 Running the examples
+
+```bash
+pip install -e ".[fea]"
+python examples/two_region_beam_rom.py
+python examples/frequency_sweep_cantilever.py
+python examples/greedy_frequency_training.py
+python examples/certified_bound_cantilever.py
+python examples/plate_modal_identification.py
+python examples/mode_shape_vibration_recovery.py
+```
+
+`two_region_beam_rom.py` builds a two-region cantilever beam in
+fea_engine, trains a POD basis from 10 full-order static solves,
+projects the affine stiffness components onto it, then validates the
+ROM against 8 held-out full-order solves and times a 500-point
+parameter sweep against full reassembly.
+
+`frequency_sweep_cantilever.py` builds a damped cantilever in
+fea_engine, builds a `FrequencyROM` from 20 undamped mode shapes,
+sweeps 400 frequencies and compares against fea_engine's own
+`solve_frequency_sweep()` (both overall and right at the resonance
+peak), then repeats the comparison with a same-rank POD-on-FRF-
+snapshots basis instead.
+
+`greedy_frequency_training.py` compares a greedy-trained basis against
+a uniform-grid basis at the SAME rank (same full-order-solve budget)
+on a damped cantilever, printing which frequencies each strategy
+actually trained on and how each performs on a held-out test set
+concentrated near the model's real resonances.
+
+`certified_bound_cantilever.py` builds `SingularValueLowerBound` on
+the same damped cantilever, proves the certification guarantee holds
+across a 400-point sweep including exact resonance (and confirms the
+end-to-end `certified_error_bound()` never undershoots the true error
+against fea_engine's own solve), then measures and reports the bound's
+practical "useful radius" honestly -- it is narrow for this model, and
+the script says so directly rather than only showing favorable cases.
+
+`plate_modal_identification.py` builds the paper's "Example 1"
+simply-supported plate FE model (867 DOF, air- and water-loaded),
+generates synthetic response data at the paper's own Table-1 sensor
+locations, and runs the full non-intrusive `LoewnerROM.fit()` +
+`screen_physical_modes()` pipeline on ONLY that data -- reporting and
+plotting identified vs. true frequency/damping for both loading cases.
+
+`mode_shape_vibration_recovery.py` goes one step further on a synthetic
+mass-spring-damper system: recovers FULL-FIELD mode shapes (Eq. 28
+applied at every DOF, not just a few sensors) purely from response data
++ the identified ROM eigenvectors, then propagates the identified modal
+model forward in time from an observed initial condition and compares
+against a direct full-order time integration -- demonstrating the
+identified model is actually usable, not just numerically close.
+
+<a id="batched"></a>
+
+## ⚡ Important note: batched nonlinear element kernels and vectorised assembly
+
+> [!IMPORTANT]
+> ** Opt-in, off by default.** The nonlinear elements `Quad4PlaneStressTL`, `Hex8SolidTL`, `Hex20SolidTL` and `Tet10SolidTL` can evaluate force and tangent for all elements of a block at once, and `FESystem` can assemble them without a Python loop over elements, into a sparse tangent that a sparse Newton solve uses. The loop versions remain the default and the reference; every batched result is tested against them. Measured on the author's machine (12 CPUs): kernel force 102x (Quad4), 47x (Hex8), 23x (Hex20) and 41x (Tet10) faster than the loop, agreeing to 8.4e-15 relative or better.
+
+### Why it is needed
+
+A nonlinear (total-Lagrangian) element has no precomputed matrix: its force and tangent depend on the current displacement, so they are recomputed in every Newton iteration. Per element and Gauss point the work is
+
+```
+F = I + (dN/dX)ᵀ u_e          deformation gradient
+E = ½ (FᵀF − I)               Green-Lagrange strain
+S = D : E                     second Piola-Kirchhoff stress (Saint Venant-Kirchhoff)
+f_e = Σ_g w_g J0_g  B(u_e)ᵀ S           internal force
+K_e = Σ_g w_g J0_g [ B(u_e)ᵀ D B(u_e) + geometric term(S) ]     tangent
+```
+
+The package's loop does this one element at a time in Python, and for small elements the interpreter, not the arithmetic, is the cost: the element is a few hundred flops wrapped in thousands of Python operations. The same is true of the scatter `K[np.ix_(g, g)] += K_e` into a dense `n × n` array, and of the dense `np.linalg.solve` that follows.
+
+### Theory: batch over elements, fold over Gauss points
+
+All elements of a block share the same shape-function derivatives per Gauss point in the reference configuration. The batched kernel therefore stacks the data as arrays with a leading element axis, coordinates `(E, n_nodes, dim)` and displacements `(E, ndof)`, and replaces the element loop by array contractions (einsum or batched matrix products) over axes `(E, G)`. It returns `(E, ndof)` forces and `(E, ndof, ndof)` tangents in the same local DOF order as the loop. Three ideas carry the speed-up and the scalability:
+
+- **No interpreter per element.** The element loop becomes one NumPy call per kernel stage. This is the dominant gain for 2-D elements, where the arithmetic per element is tiny.
+- **Folding the Gauss-point sum.** `K_e = Σ_g w_g Bᵍᵀ D Bᵍ` is evaluated as a single product with contraction length `G × 6` (the weights are folded into `D B`), instead of `G` small products. This was about 1.9x to 2.0x faster than the plain per-Gauss-point form on the 3-D hexahedron kernel, in the plan's measurement.
+- **A cached geometry and a cached sparsity pattern.** The reference gradients `dN/dX` and `det(J0) w` come from `MeshTransformation` once per block. The CSR pattern of the assembled tangent and, for every entry of every element matrix, its position in the CSR data array are computed once (one `np.unique` over the flattened row/column keys). Each later tangent assembly is `bincount(positions, weights=K_e)`: no sorting, no COO-to-CSR conversion and no `n × n` array.
+
+### Implementation
+
+| Piece | Where | What it does |
+|---|---|---|
+| Batch protocol | `batched_kernels.py`; `Element.supports_batch` | An element opts in with `supports_batch = True` and `internal_force_batch` / `tangent_stiffness_batch`; a formulation without them is assembled by the loop, block by block, with the reason recorded in `FESystem.last_assembly_modes` |
+| Chunking | `batched_kernels.chunk_slices` | A block is split so the estimated working memory stays under a budget (256 MB default) or under `chunk_size`; a Hex20 3x3x3 strain-displacement array alone is 78 kB per element, so an unchunked 10⁵-element block would need gigabytes. Chunked and unchunked results agree to summation order, not bit for bit |
+| Elements | `elements/nonlinear_solids.py`, `elements/hex_tl.py` | Batched `Quad4PlaneStressTL` and `Tet10SolidTL`; new total-Lagrangian `Hex8SolidTL` and `Hex20SolidTL`, each written twice (a plain per-Gauss-point reference and the batched kernel) so the two can check each other |
+| Assembly | `FESystem.assemble_internal_force` / `assemble_tangent_stiffness` | New keywords `vectorized`, `chunk_size`, `sparse`; `FESystem.batch_support_report()` says which blocks can be batched. Defaults reproduce the previous behaviour |
+| Sparse Newton | `nonlinear_solver.py`, `NewtonOptions` | `sparse_tangent`, `lu_ordering` and `reuse_factorization` fields; sparse LU factorisation instead of a dense solve in the static, displacement-control, arc-length and transient drivers |
+| Contact | `contact_batch.py`; `FESystem.add_contact_set` | `ContactSet2D` / `ContactSet3D`: penalty contact of many slave-master pairs in one call, with a KD-tree candidate search |
+| Hyper-reduction | `FESystem.element_forces` / `element_tangents`; `rom_engine` `ECSW.fit_batched`, `ecsw_training_matrix_batched`, `nonlinearity_indicator_batched` | Element-level hooks, so ECSW training and the domain-partition indicator run without a Python loop over elements and snapshots |
+| Constraints and torch | `FESystem.eliminate_constraints`; `batched_kernels_torch.py` | Elimination of homogeneous constraints; a torch version of the same kernels (CPU or CUDA) |
+
+```python
+fes.batch_support_report()                                   # which blocks can be batched, and why not
+f = fes.assemble_internal_force(u, mat, vectorized=True)
+K = fes.assemble_tangent_stiffness(u, mat, vectorized=True, sparse=True)   # scipy CSR
+opts = NewtonOptions(sparse_tangent=True)                    # sparse Newton in the nonlinear drivers
+```
+
+### Measured advantages
+
+Times from `paper/results/batched_kernels.json` (12 CPUs, NumPy 1.26.4, SciPy 1.15.3, Windows); the reference route is timed once, the batched route is the minimum of five runs; agreement is the maximum relative difference to the loop.
+
+| Case | Elements / DOFs | Force | Tangent | Whole-system force | Sparse LU against dense solve | Agreement |
+|---|---|---|---|---|---|---|
+| `Quad4PlaneStressTL` | 1,600 / 3,362 | 102x | 64x | 112x | 12.7x | 8.4e-15 |
+| `Hex8SolidTL` | 1,536 / 6,075 | 47x | 35x | 51x | 3.3x | 4.1e-15 |
+| `Hex20SolidTL` | 432 / 6,951 | 23x | 17x | 22x | dense not run | 7.1e-15 |
+| `Tet10SolidTL` | 768 / 4,131 | 41x | 53x | 28x | 1.8x | 4.2e-15 |
+
+| Other batched paths | Measured |
+|---|---|
+| Contact search, KD-tree against loop | 89x (2-D, 200 pairs), 151x (3-D, 1,152 pairs); same pairs found |
+| Contact force / tangent, set against per pair | 51x / 49x (2-D), 106x / 80x (3-D) |
+| Hyper-reduction on 400 elements, 8 snapshots | training matrix 92x, reduced force 11x, nonlinearity indicator 76x; the same 13 elements selected by ECSW |
+| Constraint elimination | 3% overhead on tangent and force assembly |
+| Torch kernels, 1,536 Hex8 | CPU 3.3x (force) and 2.5x (tangent) over NumPy; CUDA 2.9x and 1.1x. The GTX 1050 was no faster than torch on the CPU for the one case timed |
+
+### Limits and cautions
+
+- **The gain depends on the element.** For a 2-D element the saving is mostly interpreter overhead, so the factor is large. A 3-D hexahedron is compute-bound: in the plan's measurement a batch-of-one call of the same kernel was only about 1.1x slower (tangent) than the batched one, so most of the 3-D gain over the loop comes from the folded kernel, the sparse tangent and the cheaper solve, not from removing the loop. At around 11,000 DOFs the sparse solve, not the assembly, dominates.
+- **Single runs on one machine.** The figures show direction and order of magnitude, not precise ratios; the reference route was timed once.
+- **Opt-in.** Nothing changes unless you ask. Path-dependent elements (those that need `state` or `iter_state`) are not batched.
+- **Sparse ordering and factorisation reuse are not free wins.** The SuperLU symmetric-mode ordering did not help on a generic Hex20 mesh, and reusing the factorisation (modified Newton) can need more iterations; both are opt-in settings with full Newton as the default.
+- **Not tested:** meshes of 10⁵ elements, batched friction, updating contact pairs during a solve. The batched `ContactSet` evaluates penalty contact only, with a smoothed penalty law available through `smoothing_length` (default 0 is the package law).
+- `rom_engine` does not import `fea_engine`: its batched hooks take plain callables, `fn(elements, U_local)`.
+
+Plan, research, per-item notes and every number above: [`../fea_engine/docs/batched_nonlinear_kernels_plan.md`](../fea_engine/docs/batched_nonlinear_kernels_plan.md); benchmark script: `../paper/experiments/e10_batched_kernels.py`.
+
 <a id="s-6"></a>
 
 ## 🧪 Running the tests
@@ -712,62 +771,6 @@ see the `loewner`/`screening` bullet below for details:
   established within scope -- reported honestly as a natural next
   validation step, not a blocker, in
   `docs/nonlinear_surrogate_rom_roadmap.md` Section 11.
-
-<a id="s-7"></a>
-
-## 🧪 Running the examples
-
-```bash
-pip install -e ".[fea]"
-python examples/two_region_beam_rom.py
-python examples/frequency_sweep_cantilever.py
-python examples/greedy_frequency_training.py
-python examples/certified_bound_cantilever.py
-python examples/plate_modal_identification.py
-python examples/mode_shape_vibration_recovery.py
-```
-
-`two_region_beam_rom.py` builds a two-region cantilever beam in
-fea_engine, trains a POD basis from 10 full-order static solves,
-projects the affine stiffness components onto it, then validates the
-ROM against 8 held-out full-order solves and times a 500-point
-parameter sweep against full reassembly.
-
-`frequency_sweep_cantilever.py` builds a damped cantilever in
-fea_engine, builds a `FrequencyROM` from 20 undamped mode shapes,
-sweeps 400 frequencies and compares against fea_engine's own
-`solve_frequency_sweep()` (both overall and right at the resonance
-peak), then repeats the comparison with a same-rank POD-on-FRF-
-snapshots basis instead.
-
-`greedy_frequency_training.py` compares a greedy-trained basis against
-a uniform-grid basis at the SAME rank (same full-order-solve budget)
-on a damped cantilever, printing which frequencies each strategy
-actually trained on and how each performs on a held-out test set
-concentrated near the model's real resonances.
-
-`certified_bound_cantilever.py` builds `SingularValueLowerBound` on
-the same damped cantilever, proves the certification guarantee holds
-across a 400-point sweep including exact resonance (and confirms the
-end-to-end `certified_error_bound()` never undershoots the true error
-against fea_engine's own solve), then measures and reports the bound's
-practical "useful radius" honestly -- it is narrow for this model, and
-the script says so directly rather than only showing favorable cases.
-
-`plate_modal_identification.py` builds the paper's "Example 1"
-simply-supported plate FE model (867 DOF, air- and water-loaded),
-generates synthetic response data at the paper's own Table-1 sensor
-locations, and runs the full non-intrusive `LoewnerROM.fit()` +
-`screen_physical_modes()` pipeline on ONLY that data -- reporting and
-plotting identified vs. true frequency/damping for both loading cases.
-
-`mode_shape_vibration_recovery.py` goes one step further on a synthetic
-mass-spring-damper system: recovers FULL-FIELD mode shapes (Eq. 28
-applied at every DOF, not just a few sensors) purely from response data
-+ the identified ROM eigenvectors, then propagates the identified modal
-model forward in time from an observed initial condition and compares
-against a direct full-order time integration -- demonstrating the
-identified model is actually usable, not just numerically close.
 
 <a id="s-8"></a>
 
