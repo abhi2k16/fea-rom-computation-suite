@@ -17,7 +17,7 @@
 </div>
 
 > [!IMPORTANT]
-> **Contact modelling added (2026-10-16): scalable static and dynamic contact, and contact ROMs.** `fea_engine.solve_contact_static_sparse` is a
+> **Contact modelling added, Wave 23 closed (2026-10-16): scalable static and dynamic contact, and contact ROMs.** `fea_engine.solve_contact_static_sparse` is a
 > primal-dual active-set solver with sparse routes (`reduced`, `saddle`, `condensed`); a failing route returns a `reason`, `message` and `suggestion`,
 > and `fallback=True` is opt-in. `solve_contact_dynamics(..., scheme="bdf2")` adds a second-order contact time scheme (`two_step` stays the default).
 > `Quad4Laplace` is a new scalar (one DOF per node) element. On the `rom_engine` side, `ContactROM.solve_dynamic` runs reduced contact dynamics,

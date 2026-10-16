@@ -15,7 +15,7 @@
 </div>
 
 > [!IMPORTANT]
-> **Contact ROMs added (2026-10-16).** `ContactROM.solve_dynamic(force, c, dt, n_steps, scheme="bdf2")` runs reduced contact dynamics with the reduced
+> **Contact ROMs added, Wave 23 closed (2026-10-16).** `ContactROM.solve_dynamic(force, c, dt, n_steps, scheme="bdf2")` runs reduced contact dynamics with the reduced
 > matrices factored once, a warm-started LCP and a KKT guard that flags wrong LCP solutions. `greedy_contact_sampling(..., rel_tol=, pass_round=)`
 > builds the bases from trajectory snapshots (`trajectory_indicator`, `linear_basis_schedule`). `ContactConditionIndicator(K, B, f, weights)` caches
 > the pseudo-inverse and skips the least-squares step for `B = I`; `contact_condition_indicator` stays as the reference. `lcp_active_set` and

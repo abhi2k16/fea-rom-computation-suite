@@ -15,7 +15,7 @@
 </div>
 
 > [!IMPORTANT]
-> **Contact modelling added (2026-10-16).** `solve_contact_static_sparse(K, f, B, c, route="auto")` is a primal-dual active-set solver with the
+> **Contact modelling added, Wave 23 closed (2026-10-16).** `solve_contact_static_sparse(K, f, B, c, route="auto")` is a primal-dual active-set solver with the
 > routes `reduced` (B selects nodes), `saddle` (general sparse B) and `condensed` (dense); a failing route returns `reason`, `message` and
 > `suggestion`, `fallback=True` is opt-in, and the dense route is guarded by `max_dense_bytes`. `solve_contact_static(..., method="pdas")` calls it.
 > `solve_contact_dynamics(..., scheme="bdf2", return_info=True)` adds a second-order scheme with a `ContactDynamicsInfo` record (`two_step` stays the
