@@ -15,6 +15,16 @@
 </div>
 
 > [!IMPORTANT]
+> **Contact modelling added (2026-10-16).** `solve_contact_static_sparse(K, f, B, c, route="auto")` is a primal-dual active-set solver with the
+> routes `reduced` (B selects nodes), `saddle` (general sparse B) and `condensed` (dense); a failing route returns `reason`, `message` and
+> `suggestion`, `fallback=True` is opt-in, and the dense route is guarded by `max_dense_bytes`. `solve_contact_static(..., method="pdas")` calls it.
+> `solve_contact_dynamics(..., scheme="bdf2", return_info=True)` adds a second-order scheme with a `ContactDynamicsInfo` record (`two_step` stays the
+> default). `Quad4Laplace` (`quad4_laplace`) is a scalar element with one DOF per node. Measured (12 CPUs): 39,601 DOFs, 9,425 active constraints,
+> 30 iterations: reduced 4.5 s, saddle 7.6 s, differences up to 7.4e-15 (dense not run, about 25 GB). BDF2 error 28x to 60x below `two_step` at the two
+> finer steps. Limits: no convergence guarantee for a K that is not an M-matrix; BDF2 gained up to 0.72% energy in the impact test; friction and
+> Newmark not built. See `docs/consolidated_future_roadmap.md`, Wave 23.
+
+> [!IMPORTANT]
 > **Wave 22 closed (2026-10-15): batched nonlinear element kernels (opt-in).** Total-Lagrangian `Quad4PlaneStressTL`, `Hex8SolidTL`, `Hex20SolidTL` and
 > `Tet10SolidTL` have batched `internal_force_batch` / `tangent_stiffness_batch`; `FESystem` assembles them with a cached sparse CSR position map
 > (`assemble_tangent_stiffness(sparse=True)`, `NewtonOptions.sparse_tangent`), chunks by a byte budget, and adds `ContactSet2D` / `ContactSet3D`

@@ -17,6 +17,17 @@
 </div>
 
 > [!IMPORTANT]
+> **Contact modelling added (2026-10-16): scalable static and dynamic contact, and contact ROMs.** `fea_engine.solve_contact_static_sparse` is a
+> primal-dual active-set solver with sparse routes (`reduced`, `saddle`, `condensed`); a failing route returns a `reason`, `message` and `suggestion`,
+> and `fallback=True` is opt-in. `solve_contact_dynamics(..., scheme="bdf2")` adds a second-order contact time scheme (`two_step` stays the default).
+> `Quad4Laplace` is a new scalar (one DOF per node) element. On the `rom_engine` side, `ContactROM.solve_dynamic` runs reduced contact dynamics,
+> `greedy_contact_sampling` takes trajectory snapshots, and `ContactConditionIndicator` is a cached, cheaper contact-condition indicator.
+> Measured on the author's machine (12 CPUs): 39,601 DOFs with 9,425 active constraints in 4.5 s (reduced) and 7.6 s (saddle), routes agree to 7.4e-15;
+> BDF2 errors 28x to 60x below `two_step` at the two finer steps; the indicator takes 0.04 to 0.45 ms per call. Limits: BDF2 is not contact-stabilised
+> (energy gain up to 0.72% in the impact test); friction, Newmark and parametric dynamic prediction were not tested.
+> Record: `fea_engine/docs/consolidated_future_roadmap.md`, Wave 23.
+
+> [!IMPORTANT]
 > **Wave 22 is closed (2026-10-15): batched nonlinear element kernels, opt-in.** `Quad4PlaneStressTL`, `Hex8SolidTL`, `Hex20SolidTL` and `Tet10SolidTL`
 > now have batched (no Python loop over elements) force and tangent kernels, a sparse Newton path, batched 2-D / 3-D contact sets
 > (`ContactSet2D`, `ContactSet3D`), batched hyper-reduction hooks (`ECSW.fit_batched`), constraint elimination (`FESystem.eliminate_constraints`)

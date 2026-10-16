@@ -15,6 +15,16 @@
 </div>
 
 > [!IMPORTANT]
+> **Contact ROMs added (2026-10-16).** `ContactROM.solve_dynamic(force, c, dt, n_steps, scheme="bdf2")` runs reduced contact dynamics with the reduced
+> matrices factored once, a warm-started LCP and a KKT guard that flags wrong LCP solutions. `greedy_contact_sampling(..., rel_tol=, pass_round=)`
+> builds the bases from trajectory snapshots (`trajectory_indicator`, `linear_basis_schedule`). `ContactConditionIndicator(K, B, f, weights)` caches
+> the pseudo-inverse and skips the least-squares step for `B = I`; `contact_condition_indicator` stays as the reference. `lcp_active_set` and
+> `solve_lcp` accept `active0`. Measured: complete bases reproduce the full-order trajectory to 3.3e-11; POD + NMF error 0.81%, 0.20%, 0.023% for
+> p = p_lambda = 10, 30, 40; greedy worst error over 12 candidates 6.7% after one round, 4.0% after five; indicator 0.04 to 0.45 ms per call for up to
+> 40,000 constraints. Not tested: parametric prediction in the dynamic case, friction. The `rel_tol` rule is the author's reading of line 15 of
+> Algorithm 2. Details: `fea_engine/docs/consolidated_future_roadmap.md`, Wave 23.
+
+> [!IMPORTANT]
 > **Wave 22 closed (2026-10-15), `rom_engine` part: batched hyper-reduction.** `ECSW` takes keyword-only `elem_forces_fn` / `elem_tangents_fn`
 > (callbacks `fn(elements, U_local)`, e.g. `FESystem.element_forces_local`), `ecsw_training_matrix_batched` and `ECSW.fit_batched` build the training
 > matrix without a Python loop over elements, and `nonlinearity_indicator_batched` does the same for the domain-partition indicator. Measured on 400 elements

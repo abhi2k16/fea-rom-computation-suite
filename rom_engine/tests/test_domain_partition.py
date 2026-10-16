@@ -34,14 +34,19 @@ def test_indicator_separates_linear_and_hardening_elements(chain):
     m, states = chain
     kappa = nonlinearity_indicator(m.elem_dofs, m.elem_force, m.elem_tangent, states)
     assert np.all(kappa[:E0] < 1e-12)                       # linear springs: no nonlinear force at all
-    # hardening springs carry a cubic force; the few spanning two nodes held on the obstacle have zero elongation
-    # in every state, hence zero force and kappa = 0 (the indicator alone cannot see them)
+    # Hardening springs carry a cubic force and are seen by the indicator, except those spanning two nodes held on the obstacle: their
+    # elongation is zero in exact arithmetic (rounding noise of order 1e-15 in practice), the indicator is a ratio of such noise-level
+    # quantities, and HOW MANY of them come out as exactly zero depends on the platform's rounding (4 in one environment, 7 on another;
+    # a relative perturbation of 1e-14 of the obstacle height changes the count between 4 and 10). So the property tested is where the
+    # invisible elements can be, not how many there are.
+    held = set(range(int(m.obs_nodes[0]) + 1, int(m.obs_nodes[-1]) + 1))          # elements e joins nodes e-1 and e, both on the obstacle
     weak = np.flatnonzero(kappa[E0:] < 1e-6) + E0
-    assert len(weak) <= 6 and np.median(kappa[E0:]) > 1e-4
+    assert set(weak.tolist()) <= held
+    outside = [e for e in range(E0, m.n) if e not in held]
+    assert np.all(kappa[outside] > 1e-5)                    # every hardening spring that stretches is seen (measured above 1.9e-4)
     sel = select_nonlinear_elements(kappa, 1e-6, always=[3])
     assert 3 in sel and set(sel.tolist()).isdisjoint(set(range(E0)) - {3})
     assert set(sel.tolist()) == {3} | (set(range(E0, m.n)) - set(weak.tolist()))
-    assert np.all(kappa[weak] == 0.0)
 
 
 def test_condensed_stiffness_is_the_series_formula(chain):
