@@ -44,7 +44,7 @@ import scipy.sparse.linalg as spla
 
 __all__ = ["lcp_lemke", "lcp_active_set", "lcp_projected_gauss_seidel", "solve_lcp",
            "contact_complementarity_residual", "solve_contact_static", "solve_contact_dynamics",
-           "solve_contact_newton", "ContactResult", "solve_contact_static_sparse"]
+           "solve_contact_newton", "ContactResult", "solve_contact_static_sparse", "ContactDynamicsInfo"]
 
 
 class ContactResult:
@@ -444,33 +444,136 @@ def solve_contact_static_sparse(K, f, B, c, route="auto", active0=None, fallback
         route = r.suggestion
 
 
-def solve_contact_dynamics(M, K, force, B, c, h, n_steps, u0=None, v0=None, method="active_set"):
-    """Implicit unilateral-contact dynamics with the two-step scheme of Manvelyan-Stroot et al. 2025:
-    M (u_{n+1} - 2 u_n + u_{n-1}) + h^2 K u_{n+1} = h^2 (f_{n+1} + B^T lam_{n+1}),  B u_{n+1} >= c.
-    The LCP matrix A = h^2 B (M + h^2 K)^-1 B^T is constant, so it is formed once.
-    `force(t)` returns the load vector. Returns (U, Lam) with shapes (n_steps + 1, n) and (n_steps + 1, m)."""
-    B = B.toarray() if sp.issparse(B) else np.asarray(B, float)
+class ContactDynamicsInfo:
+    """Extra output of `solve_contact_dynamics(..., return_info=True)`: scheme, ok (False when a contact solve failed),
+    failed_step (1-based, None when ok), reason, message and suggestion of the failing solve, V (velocities,
+    (n_steps + 1, n); None for the "two_step" scheme, which does not carry velocities) and iterations (the sparse
+    solver's iteration count per step, empty for the dense LCP routes). After a failure the unreached rows of U, Lam
+    and V are NaN."""
+
+    def __init__(self, scheme):
+        self.scheme, self.ok, self.failed_step = scheme, True, None
+        self.reason = self.message = self.suggestion = None
+        self.V = None
+        self.iterations = []
+
+    def __repr__(self):
+        return f"ContactDynamicsInfo(scheme={self.scheme!r}, ok={self.ok}, failed_step={self.failed_step}, reason={self.reason!r})"
+
+
+def _combine(M, K, a, b=1.0):
+    """a * M + b * K, sparse when either is sparse (CSR), dense otherwise."""
+    if sp.issparse(M) or sp.issparse(K):
+        return (a * sp.csr_matrix(M) + b * sp.csr_matrix(K)).tocsr()
+    return a * np.asarray(M, float) + b * np.asarray(K, float)
+
+
+def solve_contact_dynamics(M, K, force, B, c, h, n_steps, u0=None, v0=None, method="active_set", scheme="two_step",
+                           return_info=False, route="auto", fallback=False):
+    """Implicit unilateral-contact dynamics  M u'' + K u = f(t) + B^T lam,  B u >= c,  lam >= 0,  lam . (B u - c) = 0.
+
+    scheme="two_step" (default; unchanged): the first-order two-step scheme of Manvelyan-Stroot et al. 2025,
+        M (u_{n+1} - 2 u_n + u_{n-1}) + h^2 K u_{n+1} = h^2 (f_{n+1} + B^T lam_{n+1}),  B u_{n+1} >= c.
+        The LCP matrix A = h^2 B (M + h^2 K)^-1 B^T is constant, so it is formed once. U[1] = u0 + h v0 is not contact-checked.
+    scheme="bdf2": second order in time. A BDF1 first step, then BDF2 applied to the velocity and to the acceleration:
+        (9 M / (4 h^2) + K) u_{n+1} = f_{n+1} + B^T lam_{n+1}
+                                      + M [ 3 (4 u_n - u_{n-1}) / (4 h^2) + (4 v_n - v_{n-1}) / (2 h) ],
+        v_{n+1} = (3 u_{n+1} - 4 u_n + u_{n-1}) / (2 h); the first step uses M/h^2 + K and v_1 = (u_1 - u_0)/h. Both
+        effective matrices are factored once. Contact is enforced at every step including the first.
+        Caveats: no energy result for BDF2 with contact is known to the author; an impact test is in the test-suite
+        (tests/test_contact_dynamics_bdf2.py) and its measured energy history is in the plan note. A BDF2 step is
+        dissipative for the free vibration of high modes and not contact-stabilised.
+
+    force(t) returns the load vector. M and K may be dense or sparse; B may be dense or sparse.
+    method: how each step's contact problem is solved: "active_set" (default), "lemke" or "pgs" (dense LCP on
+        A = B A_eff^-1 B^T, formed once), or "pdas" (scheme="bdf2" only): `solve_contact_static_sparse` on every step with the
+        previous step's active set as warm start, `route` and `fallback` as there; for large sparse K.
+    Returns (U, Lam) with shapes (n_steps + 1, n) and (n_steps + 1, m); with return_info=True also a `ContactDynamicsInfo`
+    (velocities V, the iteration counts, and, if a contact solve failed in scheme="bdf2", the step, reason and suggestion; the
+    rows from the failed step on are NaN). The "two_step" scheme keeps its old behaviour of ignoring a solver flag."""
+    if scheme not in ("two_step", "bdf2"):
+        raise ValueError("scheme must be 'two_step' or 'bdf2'")
+    if method == "pdas" and scheme != "bdf2":
+        raise ValueError("method='pdas' is available for scheme='bdf2' only")
+    B = B.toarray() if (sp.issparse(B) and method != "pdas") else (B if sp.issparse(B) else np.asarray(B, float))
     c = np.asarray(c, float)
     n = M.shape[0]
     u0 = np.zeros(n) if u0 is None else np.asarray(u0, float)
     v0 = np.zeros(n) if v0 is None else np.asarray(v0, float)
-    S = (M + h * h * K)
-    solve = _factor(S)
-    SBt = solve(B.T)
-    A = h * h * (B @ SBt)
-    A = 0.5 * (A + A.T)
+    info = ContactDynamicsInfo(scheme)
+    m = B.shape[0]
     U = np.zeros((n_steps + 1, n))
-    Lam = np.zeros((n_steps + 1, B.shape[0]))
+    Lam = np.zeros((n_steps + 1, m))
     U[0] = u0
-    U[1] = u0 + h * v0
-    for k in range(1, n_steps):
-        rhs = h * h * force((k + 1) * h) + M @ (2.0 * U[k] - U[k - 1])
-        base = solve(rhs)
-        q = B @ base - c
-        lam, _ = solve_lcp(A, q, method=method)
-        Lam[k + 1] = lam
-        U[k + 1] = base + h * h * (SBt @ lam)
-    return U, Lam
+
+    if scheme == "two_step":
+        S = _combine(M, K, 1.0, h * h)
+        solve = _factor(S)
+        Bd = B.toarray() if sp.issparse(B) else B
+        SBt = solve(Bd.T)
+        A = h * h * (Bd @ SBt)
+        A = 0.5 * (A + A.T)
+        U[1] = u0 + h * v0
+        for k in range(1, n_steps):
+            rhs = h * h * force((k + 1) * h) + M @ (2.0 * U[k] - U[k - 1])
+            base = solve(rhs)
+            q = Bd @ base - c
+            lam, _ = solve_lcp(A, q, method=method)
+            Lam[k + 1] = lam
+            U[k + 1] = base + h * h * (SBt @ lam)
+        return (U, Lam, info) if return_info else (U, Lam)
+
+    # ------------------------------------------------------------------ scheme == "bdf2"
+    V = np.zeros((n_steps + 1, n))
+    V[0] = v0
+    A1 = _combine(M, K, 1.0 / (h * h))
+    A2 = _combine(M, K, 9.0 / (4.0 * h * h))
+    prep = {}
+    if method != "pdas":
+        Bd = B.toarray() if sp.issparse(B) else B
+        for key, Aeff in (("first", A1), ("later", A2)):
+            solve = _factor(Aeff)
+            ABt = solve(Bd.T)
+            Alcp = Bd @ ABt
+            prep[key] = (solve, ABt, 0.5 * (Alcp + Alcp.T))
+    mask = None
+    for k in range(1, n_steps + 1):
+        f = np.asarray(force(k * h), float)
+        if k == 1:
+            Aeff, rhs, key = A1, f + M @ (U[0] / (h * h) + V[0] / h), "first"
+        else:
+            Aeff, key = A2, "later"
+            rhs = f + M @ (3.0 * (4.0 * U[k - 1] - U[k - 2]) / (4.0 * h * h) + (4.0 * V[k - 1] - V[k - 2]) / (2.0 * h))
+        if method == "pdas":
+            r = solve_contact_static_sparse(Aeff, rhs, B, c, route=route, active0=mask, fallback=fallback)
+            if not r.converged:
+                _fail_rows(info, U, Lam, V, k, r.reason, r.message, r.suggestion)
+                break
+            mask = r.active_mask
+            u, lam = r.u, r.lam
+            info.iterations.append(r.iterations)
+        else:
+            solve, ABt, Alcp = prep[key]
+            base = solve(rhs)
+            q = (B @ base) - c
+            lam, ok = solve_lcp(Alcp, q, method=method)
+            if not ok:
+                alt = "lemke" if method != "lemke" else None
+                _fail_rows(info, U, Lam, V, k, "lcp_failed",
+                           f"the {method!r} LCP solve failed in step {k}." + (f" Try method={alt!r}." if alt else ""), alt)
+                break
+            u = base + ABt @ lam
+        U[k], Lam[k] = u, lam
+        V[k] = (u - U[k - 1]) / h if k == 1 else (3.0 * u - 4.0 * U[k - 1] + U[k - 2]) / (2.0 * h)
+    info.V = V
+    return (U, Lam, info) if return_info else (U, Lam)
+
+
+def _fail_rows(info, U, Lam, V, k, reason, message, suggestion):
+    info.ok, info.failed_step, info.reason, info.message, info.suggestion = False, k, reason, message, suggestion
+    U[k:] = np.nan
+    Lam[k:] = np.nan
+    V[k:] = np.nan
 
 
 def solve_contact_newton(residual, tangent, B, c, u0, tol=1e-10, max_iter=50, method="active_set"):

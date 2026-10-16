@@ -139,7 +139,8 @@ from .adaptivity import (
 from .contact_batch import ContactSet2D, candidate_pairs_2d, ContactSet3D, candidate_pairs_3d
 from .contact_solvers import (lcp_lemke, lcp_active_set, lcp_projected_gauss_seidel, solve_lcp,
                               contact_complementarity_residual, solve_contact_static, solve_contact_dynamics,
-                              solve_contact_newton, ContactResult, solve_contact_static_sparse)
+                              solve_contact_newton, ContactResult, solve_contact_static_sparse,
+                              ContactDynamicsInfo)
 from .mortar import dual_mortar_operator, MortarTie2D
 
 __all__ = [
@@ -174,7 +175,7 @@ __all__ = [
     "Hex8PlasticJ2Kinematic",
     "NodeToSegmentContact2D", "NodeToSegmentContact2DFriction", "ContactSet2D", "candidate_pairs_2d", "ContactSet3D", "candidate_pairs_3d",
     "lcp_lemke", "lcp_active_set", "lcp_projected_gauss_seidel", "solve_lcp", "contact_complementarity_residual",
-    "solve_contact_static", "solve_contact_dynamics", "solve_contact_newton", "ContactResult", "solve_contact_static_sparse",
+    "solve_contact_static", "solve_contact_dynamics", "solve_contact_newton", "ContactResult", "solve_contact_static_sparse", "ContactDynamicsInfo",
     "dual_mortar_operator", "MortarTie2D",
     "NodeToSurfaceContact3D", "closest_point_on_triangle_3d", "find_contact_pairs_3d",
     "closest_point_on_segment_2d", "find_contact_pairs_2d",

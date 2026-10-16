@@ -6,6 +6,9 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 
 ## Unreleased
 
+### Added (fea_engine, BDF2 contact dynamics)
+- `solve_contact_dynamics(..., scheme="bdf2")`: second-order BDF2 time stepping (BDF1 first step; general sparse or dense `M`, `K`, `B`; both effective matrices factored once; contact enforced at every step). `scheme="two_step"` (the default) is unchanged. New keywords `scheme`, `return_info` (adds a `ContactDynamicsInfo` with the velocities, the per-step iteration counts and, if a contact solve failed, the step, reason and suggestion; rows from the failed step on are NaN), `route`, `fallback`; `method="pdas"` (BDF2 only) solves each step with `solve_contact_static_sparse` and warm-starts from the previous active set. Not contact-stabilised: an impact test shows BDF2 gaining up to 0.7% above the initial energy during the impact. Newmark is not provided. Tests: `tests/test_contact_dynamics_bdf2.py` (14).
+
 ### Added (fea_engine, scalar Laplace / Poisson element)
 - `Quad4Laplace` in new `elements/scalar.py` (registry key `quad4_laplace`, exported from `fea_engine` and `fea_engine.elements`): 4-node bilinear scalar-field element, one DOF per node (named `"u"`), for `-div(k grad u) = q` (membrane, steady heat conduction) and, with the mass matrix, the wave and heat equations. Generic Gauss loop; `stiffness` takes a scalar `k` or a 2 x 2 matrix, `mass` / `lumped_mass` (HRZ) a scalar or 1 x 1 density, `source_vector` the consistent load of a source (scalar or nodal values). Not a plane-stress subclass. Tests: `tests/test_quad4_laplace.py` (17). Triangles, hexahedra, variable coefficients and flux recovery are not provided.
 
