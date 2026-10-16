@@ -6,6 +6,9 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 
 ## Unreleased
 
+### Added (rom_engine, cached contact-condition indicator)
+- `ContactConditionIndicator(K, B, f, weights=(1, 0, 0), max_dense_bytes=1e9)`: the indicator of `contact_condition_indicator` (kept unchanged as the reference) with the force estimate `(B^T)^+ (K u - f)` prepared once and only when `a2` or `a3` is nonzero, by the cheapest exact route: `identity` and `selection` need no solve, `normal_equations` is one sparse LU of `B B^T` for a sparse full-row-rank `B` (checked on random vectors), `dense_pinv` caches the dense pseudo-inverse otherwise (refused above `max_dense_bytes`). Accepts trajectories `(n, T)` (sum over the columns, per-step `f` and `c` allowed); `for_parameter(c_of_p)` gives the `indicator(p, u)` for `greedy_contact_sampling`. Tests: `rom_engine/tests/test_contact_indicator.py` (37); timing: `rom_engine/tests/contact_indicator_timing.py`.
+
 ### Added (rom_engine, greedy contact sampling for trajectories)
 - `greedy_contact_sampling`: `fom_solve` may return trajectories `(n, T)` and `(m, T)` (columns concatenated in selection order); new keywords `rel_tol` (stop when the largest indicator is at most `rel_tol` times the largest after the first round: Algorithm 2 line 15 of Balajewicz et al., read as `<=` because the printed `>` is most likely a typo) and `pass_round` (calls `make_rom(U, L, n_iter)`); `GreedyContactHistory` gained `n_columns` and `stop_reason`. New helpers `trajectory_indicator` (sums a single-state indicator over the time steps) and `linear_basis_schedule(p_first, p_last, n_last)` (the report's `p = floor(2 + (n - 1) 98/9)` is `linear_basis_schedule(2, 100, 10)`). Vector snapshots, `tol` and the two-argument `make_rom` behave as before. Tests added to `rom_engine/tests/test_contact_greedy.py` (10 new, 13 in all).
 

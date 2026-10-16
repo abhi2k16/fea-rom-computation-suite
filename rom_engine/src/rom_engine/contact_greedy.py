@@ -18,6 +18,10 @@ matrix-vector products only, no solve; a1 = 1, a2 = a3 = 0 is the cheapest and, 
 builds a ROM from the snapshots collected so far, and the indicator. The loop adds the candidate with the largest
 indicator and stops at `tol` (absolute), `rel_tol` (relative, see below) or `max_snapshots`.
 
+`contact_condition_indicator` is the reference implementation: with a2 or a3 nonzero it densifies B and runs a dense
+least-squares solve on EVERY call. `ContactConditionIndicator` computes the same numbers with the pseudo-inverse work done once (or not
+at all for B = I and node selections) and accepts trajectories; use it inside greedy loops.
+
 Dynamic problems (Algorithm 2 of the source): `fom_solve` may return whole trajectories, matrices (n, T) and (m, T) with one column
 per time step, instead of single vectors; the columns of all rounds are concatenated into the snapshot matrices passed to
 `make_rom`. The ROM then returns a trajectory too, and `trajectory_indicator` turns a single-step indicator into the sum over the
@@ -31,14 +35,18 @@ of the second sampled parameter, gamma_2). The reading is the author's; the prin
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
 import numpy as np
+import scipy.sparse as sp
+import scipy.sparse.linalg as spla
 
-__all__ = ["contact_condition_indicator", "GreedyContactHistory", "greedy_contact_sampling", "trajectory_indicator",
+__all__ = ["contact_condition_indicator", "ContactConditionIndicator", "GreedyContactHistory", "greedy_contact_sampling", "trajectory_indicator",
            "linear_basis_schedule"]
 
 
 def contact_condition_indicator(K, B, f, c, u, weights=(1.0, 0.0, 0.0)):
     """Violation of the contact conditions by a (reduced) displacement u, per the formula above. `weights` =
-    (a1, a2, a3). B may be dense or sparse. Returns a non-negative float (0 = the conditions all hold)."""
+    (a1, a2, a3). B may be dense or sparse. Returns a non-negative float (0 = the conditions all hold).
+    Reference implementation: with a2 or a3 nonzero it builds a dense B and a least-squares solve on every call; use
+    `ContactConditionIndicator` in loops."""
     u = np.asarray(u, float)
     gap = B @ u - np.asarray(c, float)
     a1, a2, a3 = weights
@@ -53,6 +61,99 @@ def contact_condition_indicator(K, B, f, c, u, weights=(1.0, 0.0, 0.0)):
         if a3:
             val += a3 * np.sum(np.minimum(lam_hat, 0.0) ** 2)
     return float(val)
+
+
+class ContactConditionIndicator:
+    """The contact-condition indicator of `contact_condition_indicator` with the force estimate lam_hat = (B^T)^+ (K u - f) prepared once.
+
+    ind = ContactConditionIndicator(K, B, f, weights=(1, 0, 0));  ind(u, c)  ->  float, for u of shape (n,) or a trajectory (n, T)
+    (the sum over the T columns; f may then be (n,) or (n, T), c (m,) or (m, T)). `ind.for_parameter(c_of_p)` gives the
+    `indicator(p, u)` callable that `greedy_contact_sampling` expects. The result equals `contact_condition_indicator` (the reference)
+    to rounding.
+
+    The least-squares force estimate is built lazily, only when a2 or a3 is nonzero (a = (1, 0, 0) needs K, B and f not at all), by
+    the cheapest exact route (`method`):
+      "identity"         B = I: lam_hat = K u - f, no solve;
+      "selection"        every row of B has one nonzero in a distinct column: lam_hat_i = (K u - f)[col_i] / B_i,col_i, no solve;
+      "normal_equations" a sparse B with full row rank (m <= n): one sparse LU of B B^T, checked on random vectors;
+      "dense_pinv"       otherwise (rank-deficient B, or m > n): the dense pseudo-inverse of B^T, cached (m x n; refused above
+                         `max_dense_bytes`, default 1e9, with a message), the same minimum-norm answer as the reference's lstsq.
+    """
+
+    def __init__(self, K, B, f, weights=(1.0, 0.0, 0.0), max_dense_bytes=1.0e9):
+        self.K, self.f = K, np.asarray(f, float)
+        self.B = B if sp.issparse(B) else np.asarray(B, float)
+        self.weights = tuple(float(w) for w in weights)
+        self.max_dense_bytes = float(max_dense_bytes)
+        n = K.shape[0]
+        if self.B.ndim != 2 or self.B.shape[1] != n or self.f.shape[0] != n:
+            raise ValueError("shapes: K (n, n), B (m, n), f (n,) or (n, T)")
+        self._m = self.B.shape[0]
+        self._lam = None
+        self.method = None            # set when the force estimate is first needed
+
+    # ---- preparation of lam_hat = (B^T)^+ r ---------------------------------------------------------------------
+    def _prepare(self):
+        B = sp.csr_matrix(self.B)
+        B.eliminate_zeros()
+        m, n = B.shape
+        if m == n and B.nnz == n and np.all(np.diff(B.indptr) == 1) and np.array_equal(B.indices, np.arange(n)) and np.all(B.data == 1.0):
+            self.method, self._lam = "identity", lambda r: r
+            return
+        if m > 0 and np.all(np.diff(B.indptr) == 1) and len(np.unique(B.indices)) == m:
+            cols, vals = B.indices.copy(), B.data.copy()
+            self.method = "selection"
+            self._lam = lambda r: r[cols] / (vals if r.ndim == 1 else vals[:, None])
+            return
+        if m <= n and m > 0:
+            G = (B @ B.T).tocsc()
+            try:
+                lu = spla.splu(G)
+                rng = np.random.default_rng(0)
+                ok = True
+                for _ in range(3):
+                    g = rng.standard_normal(m)
+                    x = lu.solve(g)
+                    ok = ok and np.all(np.isfinite(x)) and np.linalg.norm(G @ x - g) <= 1e-10 * np.linalg.norm(g) \
+                        and np.linalg.norm(x) <= 1e8 * np.linalg.norm(g)
+                if ok:
+                    self.method = "normal_equations"
+                    self._lam = lambda r: lu.solve(np.asarray(B @ r))
+                    return
+            except RuntimeError:
+                pass
+        need = 8.0 * m * n
+        if need > self.max_dense_bytes:
+            raise ValueError(f"the dense pseudo-inverse of B^T needs about {need / 1e9:.2g} GB (m = {m}, n = {n}) which exceeds "
+                             f"max_dense_bytes; use weights (1, 0, 0), or a B that is a node selection or has full row rank")
+        Pt = np.linalg.pinv(B.toarray().T)          # (m, n): lam_hat = Pt @ r, the minimum-norm least-squares solution of B^T lam = r
+        self.method, self._lam = "dense_pinv", lambda r: Pt @ r
+
+    # ---- evaluation ----------------------------------------------------------------------------------------------
+    def __call__(self, u, c, f=None):
+        u = np.asarray(u, float)
+        c = np.asarray(c, float)
+        traj = u.ndim == 2
+        gap = self.B @ u - (c[:, None] if (traj and c.ndim == 1) else c)
+        a1, a2, a3 = self.weights
+        val = 0.0
+        if a1:
+            val += a1 * np.sum(np.minimum(gap, 0.0) ** 2)
+        if a2 or a3:
+            if self._lam is None:
+                self._prepare()
+            ff = self.f if f is None else np.asarray(f, float)
+            r = self.K @ u - (ff[:, None] if (traj and ff.ndim == 1) else ff)
+            lam = self._lam(np.asarray(r))
+            if a2:
+                val += a2 * np.sum((lam * gap) ** 2)
+            if a3:
+                val += a3 * np.sum(np.minimum(lam, 0.0) ** 2)
+        return float(val)
+
+    def for_parameter(self, c_of_p):
+        """`indicator(p, u)` for `greedy_contact_sampling`: the offset of parameter p is `c_of_p(p)`."""
+        return lambda p, u: self(u, c_of_p(p))
 
 
 class GreedyContactHistory:
