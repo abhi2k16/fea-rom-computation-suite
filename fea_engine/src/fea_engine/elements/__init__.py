@@ -34,6 +34,7 @@ from .solids import (
     Hex8SolidBbar,
 )
 from .plates import Quad4MindlinPlate
+from .scalar import Quad4Laplace
 from .beams import Beam2DEulerBernoulli, Beam2DCorotational, Beam2DReissner
 from .beams3d import Beam3DEulerBernoulli, Beam3DCorotational
 from .trusses import TrussTL2D, TrussPlastic2D
@@ -51,6 +52,7 @@ ELEMENT_REGISTRY = {
     "quad4_plane_stress": Quad4PlaneStress,
     "hex8_solid3d": Hex8Solid3D,
     "quad4_mindlin_plate": Quad4MindlinPlate,
+    "quad4_laplace": Quad4Laplace,
     "beam2d_euler_bernoulli": Beam2DEulerBernoulli,
     "truss2d_tl": TrussTL2D,
     "truss2d_plastic": TrussPlastic2D,
@@ -87,7 +89,7 @@ __all__ = [
     "Element", "gauss_legendre", "gauss_product", "jacobian",
     "spurious_zero_energy_modes", "tet_quadrature_4pt", "tri_quadrature_3pt",
     "Quad4PlaneStress", "Hex8Solid3D", "Tri3PlaneStress", "Tet4Solid3D",
-    "Quad4MindlinPlate",
+    "Quad4MindlinPlate", "Quad4Laplace",
     "Beam2DEulerBernoulli", "Beam2DCorotational", "Beam2DReissner", "Beam3DEulerBernoulli",
     "Beam3DCorotational",
     "TrussTL2D", "TrussPlastic2D",

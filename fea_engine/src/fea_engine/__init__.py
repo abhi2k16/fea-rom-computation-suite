@@ -104,7 +104,7 @@ from .grading import (Hole, Fillet, EdgeBias, Notch, GradingPlan, MeshGradingErr
 # build_mesh(...)` or `from fea_engine.build_mesh import build_mesh`.
 from .build_mesh import RectangleWithHole, ROTATIONAL_DOF_ELEMENTS
 from .elements import (Element, gauss_product, Quad4PlaneStress, Hex8Solid3D,
-                        Quad4MindlinPlate, Beam2DEulerBernoulli, TrussTL2D,
+                        Quad4MindlinPlate, Quad4Laplace, Beam2DEulerBernoulli, TrussTL2D,
                         TrussPlastic2D, Beam2DCorotational, Beam2DReissner, GapContactPenalty,
                         Tri3PlaneStress, Tet4Solid3D, GapContactCurvedFriction,
                         Quad8PlaneStress, Hex20Solid3D, Tet10Solid3D,
@@ -165,7 +165,7 @@ __all__ = [
     "DEFAULT_GROWTH_RATIO",
     "RectangleWithHole", "ROTATIONAL_DOF_ELEMENTS",
     "Element", "gauss_product", "Quad4PlaneStress", "Hex8Solid3D",
-    "Quad4MindlinPlate", "Beam2DEulerBernoulli", "TrussTL2D", "TrussPlastic2D",
+    "Quad4MindlinPlate", "Quad4Laplace", "Beam2DEulerBernoulli", "TrussTL2D", "TrussPlastic2D",
     "Beam2DCorotational", "Beam2DReissner", "GapContactPenalty", "Tri3PlaneStress", "Tet4Solid3D",
     "GapContactCurvedFriction", "Quad8PlaneStress", "Hex20Solid3D", "Tet10Solid3D",
     "Beam3DEulerBernoulli", "Beam3DCorotational", "Hex8PlasticJ2", "Tet4NeoHookean", "Tet10SolidTL",

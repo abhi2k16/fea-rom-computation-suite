@@ -399,6 +399,7 @@ m4 = rectangle_with_hole_mesh_quarter(a=2.0, b=1.0, R=0.3, nr=8, ntheta=12)  # m
 | `Beam3DEulerBernoulli` | `elements.beams3d` | 1-D→3-D | 6 | 3-D space frames |
 | `Quad4PlaneStress`, `Quad8PlaneStress` | `elements.solids` | 2-D | 2 | Thin in-plane loaded plates/brackets |
 | `Quad4MindlinPlate` | `elements.plates` | 2-D | 3 | Out-of-plane bending plates |
+| `Quad4Laplace` | `elements.scalar` | 2-D | 1 | Scalar fields: membrane, steady heat conduction, Poisson; with the mass matrix the wave and heat equations (DOF name `"u"`; `assemble_stiffness(k)`, `assemble_mass(rho)`, a source by `M @ q` or `source_vector`) |
 | `Shell4MITC` | `elements.shells` | 2-D→3-D | 6 | Combined membrane + bending (curved shells) |
 | `Tet4Solid3D`, `Tet10Solid3D`, `Hex8Solid3D`, `Hex20Solid3D` | `elements.solids` | 3-D | 3 | General 3-D solids |
 | `Hex8PlasticJ2`, `Tet4NeoHookean` | `elements.nonlinear_solids` | 3-D | 3 | Elastoplastic / hyperelastic solids |

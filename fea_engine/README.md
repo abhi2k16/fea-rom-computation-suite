@@ -183,6 +183,7 @@ fea_engine/                     (project root)
 │   │   ├── solids.py       Quad4PlaneStress, Hex8Solid3D, Tri3PlaneStress,
 │   │   │                    Tet4Solid3D
 │   │   ├── plates.py       Quad4MindlinPlate
+│   │   ├── scalar.py       Quad4Laplace (one scalar DOF per node: Laplace, Poisson, membrane, heat)
 │   │   ├── beams.py        Beam2DEulerBernoulli, Beam2DCorotational
 │   │   ├── trusses.py      TrussTL2D, TrussPlastic2D
 │   │   └── contact.py      GapContactPenalty, GapContactCurvedFriction
@@ -480,6 +481,7 @@ need something the generic loop can't express **override** the method:
 |---|---|---|
 | `Quad4PlaneStress` | 2 (u, v) | Uses the generic loop as-is |
 | `Hex8Solid3D` | 3 (u, v, w) | Uses the generic loop as-is |
+| `Quad4Laplace` | 1 (u) | **Scalar-field element** (`elements/scalar.py`): `-div(k grad u) = q`, membrane, heat; generic loop as-is, scalar or matrix `k` and `rho`, `source_vector()` for the consistent load of a source |
 | `Quad4MindlinPlate` | 3 (w, βx, βy) | Overrides `stiffness()` for selective reduced integration (full 2×2 bending, 1-pt shear — avoids shear locking) |
 | `Beam2DEulerBernoulli` | 2 (v, θ) | Overrides `stiffness()`/`mass()` with the closed-form Hermite matrices (EI is constant per element, so there's nothing to numerically integrate) |
 | `TrussTL2D` | 2 (u, v) | **Geometrically nonlinear** — see below; overrides `internal_force()`/`tangent_stiffness()` instead of `stiffness()` |
