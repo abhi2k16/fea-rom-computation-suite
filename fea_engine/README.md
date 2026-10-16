@@ -42,6 +42,7 @@ doubles as a regression test.
 | 9 | 📚 [Module reference](#s-3) |
 | 10 | 🧰 [General-purpose extensions (Phases 1-7)](#s-5) |
 | 11 | ⚠️ [Known limitations (by design, not oversights)](#s-6) |
+| 12 | 📄 [License](#license) |
 
 ---
 
@@ -2578,3 +2579,12 @@ Phases 8-10's own later additions.
   the mixed formulation's internal unknown for real within each load
   step (not just one lagged correction), or giving it true joint-DOF
   status.
+
+---
+
+<a id="license"></a>
+
+## 📄 License
+
+MIT License, Copyright (c) 2026 Abhijeet. The full text is in [`LICENSE`](LICENSE); `pyproject.toml` declares `MIT` and ships the file (`license-files = ["LICENSE"]`).
+

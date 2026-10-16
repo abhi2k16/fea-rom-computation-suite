@@ -37,6 +37,7 @@ accelerates them.
 | 11 | ⚠️ [A certified-bound caveat (read before using `scm.py`)](#s-8) |
 | 12 | 🔢 [A dtype note (why this matters more than it sounds)](#s-9) |
 | 13 | 🗺️ [Roadmap](#s-10) |
+| 14 | 📄 [License](#license) |
 
 ---
 
@@ -1058,3 +1059,12 @@ Not currently planned, but possible future work:
   see `soar.py`'s own module docstring for the full reasoning.
 - ~~Hyper-reduction, component mode synthesis, linear transient solvers and a standard validation report~~ -- now implemented: `hyper_reduction.py`, `cms.py`, `linear_dynamics.py` and `validation.py` (see the module table above; each validated against real fea_engine models in its own test file). Still open nearby: hyper-reduction of the TANGENT for very large models is done element-by-element here but not yet compared against DEIM on the same problem; component mode synthesis covers Craig-Bampton and Guyan only (no Hurty/Rubin free-interface or Craig-Chang variants); `validate_rom()` has no built-in extrapolation test, so include test inputs outside the training range yourself.
 - Sphinx documentation (alongside fea_engine's).
+
+---
+
+<a id="license"></a>
+
+## 📄 License
+
+MIT License, Copyright (c) 2026 Abhijeet. The full text is in [`LICENSE`](LICENSE); `pyproject.toml` declares `MIT` and ships the file (`license-files = ["LICENSE"]`).
+

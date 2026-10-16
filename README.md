@@ -615,5 +615,6 @@ describes the approach.
 
 ## 📄 License
 
-Both packages declare the MIT license in their `pyproject.toml`. There is no
-`LICENSE` file in this folder yet; add one before publishing.
+MIT License, Copyright (c) 2026 Abhijeet. The full text is in [`LICENSE`](LICENSE) here and in
+[`fea_engine/LICENSE`](fea_engine/LICENSE) and [`rom_engine/LICENSE`](rom_engine/LICENSE); both packages declare `MIT` in their
+`pyproject.toml` and ship the file (`license-files = ["LICENSE"]`).
