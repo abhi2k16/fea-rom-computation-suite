@@ -36,6 +36,7 @@
 | 🖥️ [CPU, multi-core and GPU](#s-5) | 📄 [License](#s-11) |
 | 🧪 [Examples](#s-6) | 🎨 [At a glance](#glance) |
 | 🧲 [Contact module](#contact) | |
+| 🖼️ [Example gallery](#gallery) | |
 
 ---
 
@@ -167,27 +168,38 @@ Full-order   1653.23 ms  ██████████████████�
 Reduced-order   7.45 ms  ▏                                                         221.8x faster
 ```
 
-### Results from the example gallery
+The example gallery, including the contact examples, follows the contact module section below.
 
-<table>
-<tr>
-<td align="center"><a href="fea_engine/examples/gallery/fea_01_cantilever_beam.py"><img src="fea_engine/examples/gallery/fea_01_cantilever_beam.png" width="330"></a><br><sub><b>Cantilever</b>: von Mises stress and mesh convergence to the beam-theory value</sub></td>
-<td align="center"><a href="fea_engine/examples/gallery/fea_03_hertzian_contact.py"><img src="fea_engine/examples/gallery/fea_03_hertzian_contact.png" width="330"></a><br><sub><b>Contact</b>: block pressed onto a rigid obstacle</sub></td>
-<td align="center"><a href="fea_engine/examples/gallery/fea_06_topology_optimization.py"><img src="fea_engine/examples/gallery/fea_06_topology_optimization.png" width="330"></a><br><sub><b>Topology optimisation</b>: 86.8 % less compliance at fixed volume</sub></td>
-</tr>
-<tr>
-<td align="center"><a href="rom_engine/examples/gallery/rom_01_pod_basis.py"><img src="rom_engine/examples/gallery/rom_01_pod_basis.png" width="330"></a><br><sub><b>POD basis</b>: singular-value decay and reconstruction error</sub></td>
-<td align="center"><a href="rom_engine/examples/gallery/rom_04_balanced_truncation.py"><img src="rom_engine/examples/gallery/rom_04_balanced_truncation.png" width="330"></a><br><sub><b>Balanced truncation</b>: actual error stays below the certified bound</sub></td>
-<td align="center"><a href="rom_engine/examples/gallery/rom_05_nonlinear_modal_rom.py"><img src="rom_engine/examples/gallery/rom_05_nonlinear_modal_rom.png" width="330"></a><br><sub><b>Nonlinear modal ROM</b>: 2 modes vs 51-DOF full-order beam, max error 3.3 %</sub></td>
-</tr>
-<tr>
-<td align="center"><a href="fea_engine/examples/gallery/fea_07_pyvista_visualization.py"><img src="fea_engine/examples/gallery/fea_07_pyvista_2d_von_mises.png" width="330"></a><br><sub><b>PyVista contour</b>: von Mises stress on the deformed cantilever (optional <code>viz</code> extra)</sub></td>
-<td align="center"><a href="fea_engine/examples/gallery/fea_08_pyvista_animation_sections_rom.py"><img src="fea_engine/examples/gallery/fea_08_threshold.png" width="330"></a><br><sub><b>Sections</b>: only the cells above half the peak von Mises stress</sub></td>
-<td align="center"><a href="fea_engine/examples/gallery/fea_08_pyvista_animation_sections_rom.py"><img src="fea_engine/examples/gallery/fea_08_rom_rank4.png" width="330"></a><br><sub><b>Full vs reduced</b>: POD rank 4, relative error 5.0e-4, with the error field</sub></td>
-</tr>
-</table>
+<a id="s-1"></a>
 
-Click an image to open the script that produced it. The gallery figures are in `fea_engine/examples/gallery/` and `rom_engine/examples/gallery/`; `fea_08` also writes two animated GIFs (a transient von Mises response and the first mode shape).
+## 📦 Packages
+
+| Package | Purpose |
+|---|---|
+| [`fea_engine`](fea_engine/README.md) | Full-order finite element package: static, dynamic and geometrically nonlinear analysis, with extensible materials, elements, loads and solvers. |
+| [`rom_engine`](rom_engine/README.md) | Reduced-order modeling built on top of `fea_engine`. |
+
+The two work together: build K, M and F with `fea_engine`, then hand those
+plain arrays to `rom_engine`. `rom_engine` needs nothing from `fea_engine` at
+run time (the `fea` extra only installs it for the examples and tests).
+
+### What `fea_engine` covers
+
+- **Elements:** trusses (linear, large-displacement, plastic); 2-D and 3-D beams (Euler-Bernoulli, corotational, geometrically exact Reissner); plane stress/strain triangles and quadrilaterals (linear and quadratic); 3-D solids (hexahedra and tetrahedra, linear and quadratic, B-bar); Mindlin plates; MITC shells (linear, corotational, director-based); contact elements (gap, node-to-segment, with friction).
+- **Analyses:** static, linear buckling, modal, harmonic / frequency sweep, random vibration (PSD), implicit and explicit transient, nonlinear static with load stepping, displacement control, arc-length and Koiter-Newton, nonlinear transient (Newmark-Newton).
+- **Nonlinearity:** large displacement and rotation, J2 plasticity (isotropic and kinematic hardening), Neo-Hookean hyperelasticity, penalty and Lagrange-multiplier contact.
+- **Mesh and loads:** structured mesh generators (lines, rectangles, boxes, with holes and notches), graded meshes, multi-block meshes, mesh file I/O (`meshio`), 3-D contour, deformed-shape, animation, slice and full-vs-reduced comparison plots (`pyvista`, optional), edge and face pressure loads by quadrature, adaptive refinement with error estimators.
+- **Performance and GPU:** opt-in batched nonlinear element kernels (Quad4/Hex8/Hex20/Tet10 total-Lagrangian), sparse Newton path, batched contact sets and hyper-reduction hooks (`fea_engine/docs/batched_nonlinear_kernels_plan.md`), vectorised assembly, sparse and iterative solvers (CG with Jacobi/SSOR preconditioning), batched multi-load solves, torch CPU/GPU solve backends, autograd tangents, topology optimisation.
+
+### What `rom_engine` covers
+
+- **Projection ROMs:** POD basis (optionally mass-weighted) and Galerkin reduction for static, modal and transient problems; affine parametric decomposition for fast parameter sweeps.
+- **Frequency-domain ROMs:** modal/POD/greedy bases, frequency response, random-vibration response, and certified error bounds (SCM).
+- **Systems-and-control reduction:** balanced truncation (plain and frequency-weighted), singular perturbation, optimal Hankel-norm approximation, Krylov and second-order (SOAR) moment matching, passivity checks.
+- **Non-intrusive identification:** Loewner-pencil modal identification with cross-ROM stability screening.
+- **Nonlinear structural ROMs:** RBF-surrogate and polynomial (ICE-style) models, intrusive projection of nonlinear internal forces, membrane expansion, nonlinear normal mode backbone curves.
+- **Training tools:** optimal Latin hypercube sampling, dataset coverage diagnostics, comparison metrics.
+- **Research-grade (PyTorch):** neural operators, parameterised latent ODEs, reduced-basis operators, differentiable correction, ensemble uncertainty. Treat these as prototypes.
 
 <a id="contact"></a>
 
@@ -252,21 +264,6 @@ K u = f + Bᵀλ,    B u − c ≥ 0,    λ ≥ 0,    λ·(B u − c) = 0
 
 Times come from one run on one machine and are not asserted by any test; the gallery figures are the sandbox run named in each figure. Not covered: friction in the new solvers, Newmark contact dynamics, parametric prediction of the dynamic ROM, a dense-route run at 39,601 unknowns. Convergence of the active-set iteration is not guaranteed when `K` is not an M-matrix. Record: `fea_engine/docs/consolidated_future_roadmap.md`, Wave 23.
 
-### Contact results from the example gallery
-
-<table>
-<tr>
-<td align="center"><a href="fea_engine/examples/gallery/fea_03_hertzian_contact.py"><img src="fea_engine/examples/gallery/fea_03_hertzian_contact.png" width="330"></a><br><sub><b>Penalty contact</b>: block pressed onto a rigid circular obstacle (<code>fea_03</code>, earlier)</sub></td>
-<td align="center"><a href="fea_engine/examples/gallery/fea_09_sparse_obstacle_contact.py"><img src="fea_engine/examples/gallery/fea_09_sparse_obstacle_contact.png" width="330"></a><br><sub><b>Sparse exact contact</b>: <code>Quad4Laplace</code> membrane on an obstacle, contact set, route timing (<code>fea_09</code>)</sub></td>
-<td align="center"><a href="fea_engine/examples/gallery/fea_10_bdf2_contact_dynamics.py"><img src="fea_engine/examples/gallery/fea_10_bdf2_contact_dynamics.png" width="330"></a><br><sub><b>BDF2 contact dynamics</b>: order 2 against order 1, bar impact (<code>fea_10</code>)</sub></td>
-</tr>
-<tr>
-<td align="center"><a href="rom_engine/examples/gallery/rom_07_contact_rom_dynamics.py"><img src="rom_engine/examples/gallery/rom_07_contact_rom_dynamics.png" width="330"></a><br><sub><b>Contact ROM</b>: reduced dynamics against full order, error against basis size, greedy against random snapshots (<code>rom_07</code>)</sub></td>
-</tr>
-</table>
-
-Click an image to open the script that produced it; each script prints the numbers quoted above.
-
 ### Tests
 
 | File | Tests | Covers |
@@ -281,36 +278,45 @@ Click an image to open the script that produced it; each script prints the numbe
 All of these passed on the author's machine. In the full-suite runs there, `fea_engine` had 0 failures; `rom_engine` had the known operator-inference failure and one `test_domain_partition.py` failure that was a rounding-sensitive assertion and has since been rewritten (that file passes).
 
 
-<a id="s-1"></a>
+<a id="gallery"></a>
 
-## 📦 Packages
+## 🖼️ Example gallery
 
-| Package | Purpose |
-|---|---|
-| [`fea_engine`](fea_engine/README.md) | Full-order finite element package: static, dynamic and geometrically nonlinear analysis, with extensible materials, elements, loads and solvers. |
-| [`rom_engine`](rom_engine/README.md) | Reduced-order modeling built on top of `fea_engine`. |
+All gallery examples of both packages, including the contact examples (`fea_03`, `fea_09`, `fea_10`, `rom_07`). Each script prints its own validation numbers and saves its figure.
 
-The two work together: build K, M and F with `fea_engine`, then hand those
-plain arrays to `rom_engine`. `rom_engine` needs nothing from `fea_engine` at
-run time (the `fea` extra only installs it for the examples and tests).
+<table>
+<tr>
+<td align="center"><a href="fea_engine/examples/gallery/fea_01_cantilever_beam.py"><img src="fea_engine/examples/gallery/fea_01_cantilever_beam.png" width="330"></a><br><sub><b>Cantilever</b>: von Mises stress and mesh convergence to the beam-theory value</sub></td>
+<td align="center"><a href="fea_engine/examples/gallery/fea_02_hyperelastic_neo_hookean.py"><img src="fea_engine/examples/gallery/fea_02_hyperelastic_neo_hookean.png" width="330"></a><br><sub><b>Neo-Hookean</b>: large-strain hyperelasticity, load-deflection against a linear reference</sub></td>
+<td align="center"><a href="fea_engine/examples/gallery/fea_03_hertzian_contact.py"><img src="fea_engine/examples/gallery/fea_03_hertzian_contact.png" width="330"></a><br><sub><b>Penalty contact</b>: block pressed onto a rigid circular obstacle</sub></td>
+</tr>
+<tr>
+<td align="center"><a href="fea_engine/examples/gallery/fea_04_plasticity_strip.py"><img src="fea_engine/examples/gallery/fea_04_plasticity_strip.png" width="330"></a><br><sub><b>J2 plasticity</b>: plastic strain localises at the hole of a plate</sub></td>
+<td align="center"><a href="fea_engine/examples/gallery/fea_05_modal_analysis.py"><img src="fea_engine/examples/gallery/fea_05_modal_analysis.png" width="330"></a><br><sub><b>Modal analysis</b>: first four mode shapes of a cantilever</sub></td>
+<td align="center"><a href="fea_engine/examples/gallery/fea_06_topology_optimization.py"><img src="fea_engine/examples/gallery/fea_06_topology_optimization.png" width="330"></a><br><sub><b>Topology optimisation</b>: 86.8 % less compliance at fixed volume</sub></td>
+</tr>
+<tr>
+<td align="center"><a href="fea_engine/examples/gallery/fea_07_pyvista_visualization.py"><img src="fea_engine/examples/gallery/fea_07_pyvista_2d_von_mises.png" width="330"></a><br><sub><b>PyVista contour</b>: von Mises stress on the deformed cantilever (optional <code>viz</code> extra)</sub></td>
+<td align="center"><a href="fea_engine/examples/gallery/fea_08_pyvista_animation_sections_rom.py"><img src="fea_engine/examples/gallery/fea_08_rom_rank4.png" width="330"></a><br><sub><b>Full vs reduced</b>: POD rank 4, with the error field (optional <code>viz</code> extra)</sub></td>
+<td align="center"><a href="fea_engine/examples/gallery/fea_09_sparse_obstacle_contact.py"><img src="fea_engine/examples/gallery/fea_09_sparse_obstacle_contact.png" width="330"></a><br><sub><b>Sparse exact contact</b>: <code>Quad4Laplace</code> membrane on an obstacle, contact set, route timing (<code>fea_09</code>)</sub></td>
+</tr>
+<tr>
+<td align="center"><a href="fea_engine/examples/gallery/fea_10_bdf2_contact_dynamics.py"><img src="fea_engine/examples/gallery/fea_10_bdf2_contact_dynamics.png" width="330"></a><br><sub><b>BDF2 contact dynamics</b>: order 2 against order 1, bar impact (<code>fea_10</code>)</sub></td>
+<td align="center"><a href="rom_engine/examples/gallery/rom_01_pod_basis.py"><img src="rom_engine/examples/gallery/rom_01_pod_basis.png" width="330"></a><br><sub><b>POD basis</b>: singular-value decay and reconstruction error</sub></td>
+<td align="center"><a href="rom_engine/examples/gallery/rom_02_galerkin_parametric_rom.py"><img src="rom_engine/examples/gallery/rom_02_galerkin_parametric_rom.png" width="330"></a><br><sub><b>Parametric Galerkin ROM</b>: affine parametric reduction</sub></td>
+</tr>
+<tr>
+<td align="center"><a href="rom_engine/examples/gallery/rom_03_greedy_frequency_training.py"><img src="rom_engine/examples/gallery/rom_03_greedy_frequency_training.png" width="330"></a><br><sub><b>Greedy training</b>: adaptive against uniform frequency sampling</sub></td>
+<td align="center"><a href="rom_engine/examples/gallery/rom_04_balanced_truncation.py"><img src="rom_engine/examples/gallery/rom_04_balanced_truncation.png" width="330"></a><br><sub><b>Balanced truncation</b>: actual error stays below the certified bound</sub></td>
+<td align="center"><a href="rom_engine/examples/gallery/rom_05_nonlinear_modal_rom.py"><img src="rom_engine/examples/gallery/rom_05_nonlinear_modal_rom.png" width="330"></a><br><sub><b>Nonlinear modal ROM</b>: 2 modes vs 51-DOF full-order beam, max error 3.3 %</sub></td>
+</tr>
+<tr>
+<td align="center"><a href="rom_engine/examples/gallery/rom_06_dataset_diagnostics_uq.py"><img src="rom_engine/examples/gallery/rom_06_dataset_diagnostics_uq.png" width="330"></a><br><sub><b>Dataset diagnostics and UQ</b>: coverage and ensemble uncertainty</sub></td>
+<td align="center"><a href="rom_engine/examples/gallery/rom_07_contact_rom_dynamics.py"><img src="rom_engine/examples/gallery/rom_07_contact_rom_dynamics.png" width="330"></a><br><sub><b>Contact ROM</b>: reduced dynamics against full order, error against basis size, greedy against random snapshots (<code>rom_07</code>)</sub></td>
+</tr>
+</table>
 
-### What `fea_engine` covers
-
-- **Elements:** trusses (linear, large-displacement, plastic); 2-D and 3-D beams (Euler-Bernoulli, corotational, geometrically exact Reissner); plane stress/strain triangles and quadrilaterals (linear and quadratic); 3-D solids (hexahedra and tetrahedra, linear and quadratic, B-bar); Mindlin plates; MITC shells (linear, corotational, director-based); contact elements (gap, node-to-segment, with friction).
-- **Analyses:** static, linear buckling, modal, harmonic / frequency sweep, random vibration (PSD), implicit and explicit transient, nonlinear static with load stepping, displacement control, arc-length and Koiter-Newton, nonlinear transient (Newmark-Newton).
-- **Nonlinearity:** large displacement and rotation, J2 plasticity (isotropic and kinematic hardening), Neo-Hookean hyperelasticity, penalty and Lagrange-multiplier contact.
-- **Mesh and loads:** structured mesh generators (lines, rectangles, boxes, with holes and notches), graded meshes, multi-block meshes, mesh file I/O (`meshio`), 3-D contour, deformed-shape, animation, slice and full-vs-reduced comparison plots (`pyvista`, optional), edge and face pressure loads by quadrature, adaptive refinement with error estimators.
-- **Performance and GPU:** opt-in batched nonlinear element kernels (Quad4/Hex8/Hex20/Tet10 total-Lagrangian), sparse Newton path, batched contact sets and hyper-reduction hooks (`fea_engine/docs/batched_nonlinear_kernels_plan.md`), vectorised assembly, sparse and iterative solvers (CG with Jacobi/SSOR preconditioning), batched multi-load solves, torch CPU/GPU solve backends, autograd tangents, topology optimisation.
-
-### What `rom_engine` covers
-
-- **Projection ROMs:** POD basis (optionally mass-weighted) and Galerkin reduction for static, modal and transient problems; affine parametric decomposition for fast parameter sweeps.
-- **Frequency-domain ROMs:** modal/POD/greedy bases, frequency response, random-vibration response, and certified error bounds (SCM).
-- **Systems-and-control reduction:** balanced truncation (plain and frequency-weighted), singular perturbation, optimal Hankel-norm approximation, Krylov and second-order (SOAR) moment matching, passivity checks.
-- **Non-intrusive identification:** Loewner-pencil modal identification with cross-ROM stability screening.
-- **Nonlinear structural ROMs:** RBF-surrogate and polynomial (ICE-style) models, intrusive projection of nonlinear internal forces, membrane expansion, nonlinear normal mode backbone curves.
-- **Training tools:** optimal Latin hypercube sampling, dataset coverage diagnostics, comparison metrics.
-- **Research-grade (PyTorch):** neural operators, parameterised latent ODEs, reduced-basis operators, differentiable correction, ensemble uncertainty. Treat these as prototypes.
+Click an image to open the script that produced it. `fea_08` also writes two animated GIFs; `fea_07` and `fea_08` need the optional `pyvista` package. Gallery figures are in `examples/gallery/` of each package.
 
 <a id="s-2"></a>
 

@@ -110,6 +110,7 @@
 | 🔀 [How a problem flows through the modules](#s-2) | 🧰 [General-purpose extensions (Phases 1-7)](#s-5) |
 | 📚 [Module reference](#s-3) | ⚠️ [Known limitations (by design, not oversights)](#s-6) |
 | 🧲 [Contact module](#contact) | |
+| 🖼️ [Example gallery](#gallery) | |
 
 ---
 
@@ -176,18 +177,6 @@ K u = f + Bᵀλ,    B u − c ≥ 0,    λ ≥ 0,    λ·(B u − c) = 0
 
 Times come from one run on one machine and are not asserted by any test; the gallery figures are the sandbox run named in each figure. Not covered: friction in the new solvers, Newmark contact dynamics, parametric prediction of the dynamic ROM, a dense-route run at 39,601 unknowns. Convergence of the active-set iteration is not guaranteed when `K` is not an M-matrix. Record: `fea_engine/docs/consolidated_future_roadmap.md`, Wave 23.
 
-### Contact results from the example gallery
-
-<table>
-<tr>
-<td align="center"><a href="examples/gallery/fea_03_hertzian_contact.py"><img src="examples/gallery/fea_03_hertzian_contact.png" width="330"></a><br><sub><b>Penalty contact</b>: block pressed onto a rigid circular obstacle (<code>fea_03</code>, earlier)</sub></td>
-<td align="center"><a href="examples/gallery/fea_09_sparse_obstacle_contact.py"><img src="examples/gallery/fea_09_sparse_obstacle_contact.png" width="330"></a><br><sub><b>Sparse exact contact</b>: <code>Quad4Laplace</code> membrane on an obstacle, contact set, route timing (<code>fea_09</code>)</sub></td>
-<td align="center"><a href="examples/gallery/fea_10_bdf2_contact_dynamics.py"><img src="examples/gallery/fea_10_bdf2_contact_dynamics.png" width="330"></a><br><sub><b>BDF2 contact dynamics</b>: order 2 against order 1, bar impact (<code>fea_10</code>)</sub></td>
-</tr>
-</table>
-
-Click an image to open the script that produced it; each script prints the numbers quoted above.
-
 ### Tests
 
 | File | Tests | Covers |
@@ -198,6 +187,35 @@ Click an image to open the script that produced it; each script prints the numbe
 
 All of these passed on the author's machine. In the full-suite runs there, `fea_engine` had 0 failures; `rom_engine` had the known operator-inference failure and one `test_domain_partition.py` failure that was a rounding-sensitive assertion and has since been rewritten (that file passes).
 
+
+<a id="gallery"></a>
+
+## 🖼️ Example gallery
+
+The `fea_engine` gallery, including the contact examples (`fea_03`, `fea_09`, `fea_10`). Each script prints its own validation numbers and saves its figure; see `examples/gallery/fea_README.md` for the cross-check of every example.
+
+<table>
+<tr>
+<td align="center"><a href="examples/gallery/fea_01_cantilever_beam.py"><img src="examples/gallery/fea_01_cantilever_beam.png" width="330"></a><br><sub><b>Cantilever</b>: von Mises stress and mesh convergence to the beam-theory value</sub></td>
+<td align="center"><a href="examples/gallery/fea_02_hyperelastic_neo_hookean.py"><img src="examples/gallery/fea_02_hyperelastic_neo_hookean.png" width="330"></a><br><sub><b>Neo-Hookean</b>: large-strain hyperelasticity, load-deflection against a linear reference</sub></td>
+<td align="center"><a href="examples/gallery/fea_03_hertzian_contact.py"><img src="examples/gallery/fea_03_hertzian_contact.png" width="330"></a><br><sub><b>Penalty contact</b>: block pressed onto a rigid circular obstacle</sub></td>
+</tr>
+<tr>
+<td align="center"><a href="examples/gallery/fea_04_plasticity_strip.py"><img src="examples/gallery/fea_04_plasticity_strip.png" width="330"></a><br><sub><b>J2 plasticity</b>: plastic strain localises at the hole of a plate</sub></td>
+<td align="center"><a href="examples/gallery/fea_05_modal_analysis.py"><img src="examples/gallery/fea_05_modal_analysis.png" width="330"></a><br><sub><b>Modal analysis</b>: first four mode shapes of a cantilever</sub></td>
+<td align="center"><a href="examples/gallery/fea_06_topology_optimization.py"><img src="examples/gallery/fea_06_topology_optimization.png" width="330"></a><br><sub><b>Topology optimisation</b>: 86.8 % less compliance at fixed volume</sub></td>
+</tr>
+<tr>
+<td align="center"><a href="examples/gallery/fea_07_pyvista_visualization.py"><img src="examples/gallery/fea_07_pyvista_2d_von_mises.png" width="330"></a><br><sub><b>PyVista contour</b>: von Mises stress on the deformed cantilever (optional <code>viz</code> extra)</sub></td>
+<td align="center"><a href="examples/gallery/fea_08_pyvista_animation_sections_rom.py"><img src="examples/gallery/fea_08_rom_rank4.png" width="330"></a><br><sub><b>Full vs reduced</b>: POD rank 4, with the error field (optional <code>viz</code> extra)</sub></td>
+<td align="center"><a href="examples/gallery/fea_09_sparse_obstacle_contact.py"><img src="examples/gallery/fea_09_sparse_obstacle_contact.png" width="330"></a><br><sub><b>Sparse exact contact</b>: <code>Quad4Laplace</code> membrane on an obstacle, contact set, route timing (<code>fea_09</code>)</sub></td>
+</tr>
+<tr>
+<td align="center"><a href="examples/gallery/fea_10_bdf2_contact_dynamics.py"><img src="examples/gallery/fea_10_bdf2_contact_dynamics.png" width="330"></a><br><sub><b>BDF2 contact dynamics</b>: order 2 against order 1, bar impact (<code>fea_10</code>)</sub></td>
+</tr>
+</table>
+
+Click an image to open the script that produced it. `fea_08` also writes two animated GIFs; `fea_07` and `fea_08` need the optional `pyvista` package. Gallery figures are in `examples/gallery/` of each package.
 
 <a id="s-1"></a>
 
