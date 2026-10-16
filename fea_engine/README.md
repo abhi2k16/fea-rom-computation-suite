@@ -14,98 +14,6 @@
 
 </div>
 
-> [!IMPORTANT]
-> **Behaviour changes in the interface (v1.0.1).** Silent mistakes now fail loudly; valid calls are unchanged.
-> `assemble_stiffness` / `assemble_mass` / `assemble_lumped_mass` called a second time now **replace** the matrix
-> instead of silently doubling it (one-time `UserWarning`; pass `accumulate=True` to add on purpose).
-> `fix_dofs`, `add_nodal_force`, `add_consistent_edge_load` and `add_consistent_facet_load` raise `ValueError` for an empty
-> node selection, a node id outside the mesh, or a local DOF index outside `0..dofs_per_node-1`.
-> `solve_static` raises if `K` was never assembled and warns when the load vector is all zeros; a scalar density on a
-> plane or solid element raises an error that says to pass `rho * np.eye(n)`. See `tests/test_api_safety.py`.
-
-> [!NOTE]
-> **Named access (v1.0.1, additive).** Integer DOFs and node-id arrays still work; you can now also write
-> ```python
-> mesh.select_nodes(x=0.0, name="root"); mesh.select_nodes(x=0.4, name="tip")
-> s.fix_dofs("root", ["ux", "uy"]); s.add_nodal_force("tip", "uy", -20000.0)
-> U = s.solve_static()                      # FEField: an ndarray with names
-> U.component("uy", nodes="tip")            # == U[2*tip_nodes + 1]
-> U.nodal.shape, U.magnitude()              # (n_nodes, dofs_per_node), per-node |u|
-> ```
-> `FESystem.dof_names` lists the names for the current element; see `tests/test_named_api.py`.
-
-> [!NOTE]
-> **Shared options and batch runs (v1.0.1, additive).**
-> ```python
-> from fea_engine import NewtonOptions, batch
-> opts = NewtonOptions(tol=1e-9, max_iter=40)          # None fields keep each driver's own default
-> lf, U = solve_nonlinear_static(system, mat, n_steps=20, options=opts)   # explicit keywords still win
-> results = batch.map(build_and_solve, params, n_jobs=4)                  # ordered; backend="thread" for lambdas
-> ```
-
-> [!NOTE]
-> **Unit labels and plots (v1.0.1, additive).** Labels only, nothing is converted.
-> ```python
-> system.units = "SI"                       # or fea_engine.units.MM_N_TONNE
-> U = system.solve_static()                 # U.units == "m"
-> U.plot("uy", deform=True, scale=100)      # contour on the mesh, colour bar "uy [m]"
-> ```
-
-> [!NOTE]
-> **Multi-step results (v1.0.1, additive).** One access style for load paths, time histories and modes:
-> ```python
-> lf, hist = solve_nonlinear_static(system, mat, n_steps=20)      # return values unchanged
-> path = system.series(hist, steps=lf, step_name="load factor")
-> path.history("uy", "tip", reduce="mean")                        # load-displacement curve
-> path.at(0.5).plot("uy")                                         # step nearest to 0.5
-> system.modal_series(5).at(120.0)                                # mode closest to 120 Hz
-> ```
-
-> [!NOTE]
-> **Derived results and graded materials (unreleased, additive).**
-> ```python
-> from fea_engine import coefficients as cf
-> D = cf.from_material(lambda x: Material(E=70e9 * (1 + 2 * x[1]), nu=0.3), D_plane_stress, at="gauss")
-> system.assemble_stiffness(D, thickness=0.02)         # E grows with height; also rho and thickness
-> U = system.solve_static()
-> S, vm, R = system.stress(U), system.von_mises(U), system.reactions(U)    # FEFields
-> S.plot("sxx"); R.component("uy", nodes="root").sum()
-> ```
-
-> [!NOTE]
-> **Springs, foundations, constraints and convergence studies (unreleased, additive).**
-> ```python
-> system.add_spring("tip", "uy", 5.0e6)                              # grounded spring
-> system.add_elastic_foundation("bottom", "uy", 2.0e8, thickness=0.02)   # Winkler / Robin: k (u - u_ref)
-> system.tie("right", "left", ["ux", "uy"], offset=(-1.0, 0.0))     # periodic ties
-> system.add_constraint([(7, "ux", 1.0), (12, "ux", -1.0)], 1e-4)   # u_7 - u_12 = 1e-4
-> U = system.solve_static()                                          # constraints eliminated exactly
-> study = fea_engine.convergence.run_study(tip_deflection, [8, 16, 32], exact=exact)
-> study.order                                                        # observed convergence order
-> ```
-
-> [!NOTE]
-> **Reduced system and ParaView export (unreleased, additive).**
-> ```python
-> rs = system.form_linear_system()          # constrained K, F; prescribed values already on the right-hand side
-> U = rs.recover(my_solver(rs.K, rs.F))     # full FEField; rs.reduce_matrix(system.M) for other matrices
-> fea_engine.export.write_vtu("beam.vtu", U)                  # open in ParaView
-> fea_engine.export.write_series("run/disp", path)            # run/disp.pvd + run/disp_0000.vtu ...
-> ```
-
-## 🧭 Contents
-
-| | |
-|---|---|
-| 🗂️ [Package layout](#s-1) | 🪜 [Implementation steps](#s-4) |
-| 🔀 [How a problem flows through the modules](#s-2) | 🧰 [General-purpose extensions (Phases 1-7)](#s-5) |
-| 📚 [Module reference](#s-3) | ⚠️ [Known limitations (by design, not oversights)](#s-6) |
-| 🧲 [Contact module](#contact) | |
-| 🖼️ [Example gallery](#gallery) | |
-| ⚡ [Important note: batched kernels](#batched) | |
-
----
-
 
 A small, from-scratch finite element package for structural mechanics —
 static, dynamic, and (as of Module 8) geometrically nonlinear static —
@@ -119,174 +27,57 @@ independent reference (closed-form beam/plate theory, a previously
 validated script, or a second numerical method) — see `main.py`, which
 doubles as a regression test.
 
-<a id="contact"></a>
+## 🧭 Contents
 
-## 🧲 Contact module
-
-Unilateral (frictionless) contact is solved exactly with Lagrange multipliers, in both packages, on plain arrays and without an element class:
-
-```
-K u = f + Bᵀλ,    B u − c ≥ 0,    λ ≥ 0,    λ·(B u − c) = 0
-```
-
-`fea_engine` solves the full-order problem; `rom_engine` reduces it (a POD basis for the displacements, a non-negative basis for the contact forces) and never imports `fea_engine`. Penalty contact elements, which came earlier, are listed for completeness. **Bold** marks what was added by the contact work of 2026-10-16 (Wave 23).
-
-### `fea_engine`: contact modules, elements and methods
-
-| Module | What it provides | Status |
-|---|---|---|
-| `contact_solvers.py` | `solve_contact_static` (dense: `active_set`, `lemke`, `pgs`, and now `pdas`), `solve_contact_newton`, `solve_contact_dynamics` | earlier waves; extended below |
-| `contact_solvers.py` | **`solve_contact_static_sparse(K, f, B, c, route="auto")`**: primal-dual active set with the routes `reduced`, `saddle`, `condensed`, warm start `active0`, opt-in `fallback=True`, `max_dense_bytes` guard | **new** |
-| `contact_solvers.py` | **`solve_contact_dynamics(..., scheme="bdf2", return_info=True)`** and the record **`ContactDynamicsInfo`** (scheme, ok, failed_step, reason, message, suggestion, V, iterations) | **new** (default `two_step` unchanged) |
-| `elements/scalar.py` | **`Quad4Laplace`** (registry key `quad4_laplace`): 4-node scalar-field element, one DOF `"u"` per node; stiffness, consistent and lumped mass, source vector | **new** element |
-| `elements/contact.py` | `GapContactPenalty`, `GapContactCurvedFriction`, `NodeToSegmentContact2D`, `NodeToSegmentContact2DFriction`, `find_contact_pairs_2d` | earlier waves |
-| `contact_batch.py` | `ContactSet2D`, `ContactSet3D`, `candidate_pairs_2d/3d`: penalty contact for many pairs at once | Wave 22 |
-| `nonlinear_solver.py` | `solve_contact_lagrange_static` (one node, exact) | earlier waves |
-
-**Changes to existing code (all opt-in; a call that worked before gives the same result):**
-
-| Where | Change |
+| # | Section |
 |---|---|
-| `solve_contact_static(..., method="pdas")` | new method value; it calls `solve_contact_static_sparse` |
-| `ContactResult` | new fields `route`, `reason`, `message`, `suggestion`, `active_mask`, `fallbacks` and the alias `ok`; a failing route says why and which route to try next |
-| `solve_contact_dynamics` | new keywords `scheme` (`"two_step"` default, `"bdf2"`), `return_info`, `route`, `fallback`; `method="pdas"` for BDF2 only |
-| `FESystem` assembly | no change in this work. The assembly-side contact changes are from Wave 22: `add_contact_set`, the cached sparse CSR tangent, `eliminate_constraints`. `Quad4Laplace` works with the unchanged `assemble_stiffness`, `assemble_mass`, `assemble_lumped_mass`, `fix_dofs`, `solve_modal` |
-| package exports | `solve_contact_static_sparse`, `ContactDynamicsInfo`, `Quad4Laplace` exported from `fea_engine` |
+| 1 | 🚀 [Install and first run](#quickstart) |
+| 2 | 🗂️ [Package layout](#s-1) |
+| 3 | 🔀 [How a problem flows through the modules](#s-2) |
+| 4 | 🧩 [Working with the interface: names, fields, options, units, series, export](#interface) |
+| 5 | 🧲 [Contact module](#contact) |
+| 6 | 🖼️ [Example gallery](#gallery) |
+| 7 | ⚡ [Important note: batched kernels and vectorised assembly](#batched) |
+| 8 | 🪜 [Implementation steps](#s-4) |
+| 9 | 📚 [Module reference](#s-3) |
+| 10 | 🧰 [General-purpose extensions (Phases 1-7)](#s-5) |
+| 11 | ⚠️ [Known limitations (by design, not oversights)](#s-6) |
 
-### What was measured
+---
 
-| Claim | Measured | Where |
-|---|---|---|
-| The sparse routes agree with the dense solvers | differences 5.4e-16 to 1.3e-15 on the 361 to 3,481-unknown membrane obstacle problems of the gallery; 7.4e-15 between the two sparse routes at 39,601 unknowns | `fea_09`; `fea_engine/tests/sparse_contact_timing.py` |
-| The sparse routes scale | 39,601 unknowns, 9,425 active constraints, 30 iterations: `reduced` 4.5 s, `saddle` 7.6 s (12-CPU Windows machine); the dense route was not run (it needs about 25 GB) | `sparse_contact_timing.py` |
-| Sparse beats dense where both fit | 3,481 unknowns: `reduced` 0.17 s, `saddle` 0.22 s, dense 3.97 s (sandbox, 2 CPUs) | `fea_09` figure |
-| BDF2 is second order | free-membrane error at t = 2: 1.15e-2 / 2.96e-3 / 7.2e-4 for dt = 0.01 / 0.005 / 0.0025, observed order 1.96 and 2.03; `two_step` 0.162 / 0.0859 / 0.0454, order 0.92 | `fea_10` |
-| BDF2 is not contact-stabilised | bar impact, h = 0.002: energy rises to 1.0060 of the initial value (up to 0.72% in the test suite), ends at 0.976; `two_step` never exceeds 1.000 and ends at 0.938. The BDF2 wall force shows spikes during the impact | `fea_10` |
-| Complete bases reproduce the full order | reduced BDF2 trajectory equals the full-order one to 3.3e-11 | `rom_engine/tests/test_contact_dynamic_rom.py` |
-| The reduced dynamic model is accurate | 324 DOFs, 120 steps, up to 54 active constraints: relative error 0.81% / 0.20% / 0.023% for p = p_λ = 10 / 30 / 40; reduced contact conditions hold (KKT residual at most 2.7e-18) | `rom_07` |
-| Greedy sampling beats random sampling (static) | mean error on six held-out obstacles with 2 / 4 / 6 / 8 snapshots: greedy 4.75 / 1.55 / 1.23 / 0.82%, random median 7.37 / 2.94 / 2.11 / 1.63% | `rom_07` |
-| The cached indicator is cheap | 0.04 to 0.45 ms per call up to 40,000 constraints; the reference function took 3.3 s at 2,500 | `rom_engine/tests/contact_indicator_timing.py` |
+<a id="quickstart"></a>
 
-Times come from one run on one machine and are not asserted by any test; the gallery figures are the sandbox run named in each figure. Not covered: friction in the new solvers, Newmark contact dynamics, parametric prediction of the dynamic ROM, a dense-route run at 39,601 unknowns. Convergence of the active-set iteration is not guaranteed when `K` is not an M-matrix. Record: `fea_engine/docs/consolidated_future_roadmap.md`, Wave 23.
+## 🚀 Install and first run
 
-### Tests
-
-| File | Tests | Covers |
-|---|---|---|
-| `tests/test_contact_solvers_sparse.py` | 28 | routes against dense solvers on six obstacles, failure reports, fallback, warm start, memory guard |
-| `tests/test_quad4_laplace.py` | 17 | element matrices, patch test on distorted meshes, Poisson convergence, membrane eigenvalues |
-| `tests/test_contact_dynamics_bdf2.py` | 14 | order of accuracy, contact conditions at every step, impact, input checks |
-
-All of these passed on the author's machine. In the full-suite runs there, `fea_engine` had 0 failures; `rom_engine` had the known operator-inference failure and one `test_domain_partition.py` failure that was a rounding-sensitive assertion and has since been rewritten (that file passes).
-
-
-<a id="gallery"></a>
-
-## 🖼️ Example gallery
-
-The `fea_engine` gallery, including the contact examples (`fea_03`, `fea_09`, `fea_10`). Each script prints its own validation numbers and saves its figure; see `examples/gallery/fea_README.md` for the cross-check of every example.
-
-<table>
-<tr>
-<td align="center"><a href="examples/gallery/fea_01_cantilever_beam.py"><img src="examples/gallery/fea_01_cantilever_beam.png" width="330"></a><br><sub><b>Cantilever</b>: von Mises stress and mesh convergence to the beam-theory value</sub></td>
-<td align="center"><a href="examples/gallery/fea_02_hyperelastic_neo_hookean.py"><img src="examples/gallery/fea_02_hyperelastic_neo_hookean.png" width="330"></a><br><sub><b>Neo-Hookean</b>: large-strain hyperelasticity, load-deflection against a linear reference</sub></td>
-<td align="center"><a href="examples/gallery/fea_03_hertzian_contact.py"><img src="examples/gallery/fea_03_hertzian_contact.png" width="330"></a><br><sub><b>Penalty contact</b>: block pressed onto a rigid circular obstacle</sub></td>
-</tr>
-<tr>
-<td align="center"><a href="examples/gallery/fea_04_plasticity_strip.py"><img src="examples/gallery/fea_04_plasticity_strip.png" width="330"></a><br><sub><b>J2 plasticity</b>: plastic strain localises at the hole of a plate</sub></td>
-<td align="center"><a href="examples/gallery/fea_05_modal_analysis.py"><img src="examples/gallery/fea_05_modal_analysis.png" width="330"></a><br><sub><b>Modal analysis</b>: first four mode shapes of a cantilever</sub></td>
-<td align="center"><a href="examples/gallery/fea_06_topology_optimization.py"><img src="examples/gallery/fea_06_topology_optimization.png" width="330"></a><br><sub><b>Topology optimisation</b>: 86.8 % less compliance at fixed volume</sub></td>
-</tr>
-<tr>
-<td align="center"><a href="examples/gallery/fea_07_pyvista_visualization.py"><img src="examples/gallery/fea_07_pyvista_2d_von_mises.png" width="330"></a><br><sub><b>PyVista contour</b>: von Mises stress on the deformed cantilever (optional <code>viz</code> extra)</sub></td>
-<td align="center"><a href="examples/gallery/fea_08_pyvista_animation_sections_rom.py"><img src="examples/gallery/fea_08_rom_rank4.png" width="330"></a><br><sub><b>Full vs reduced</b>: POD rank 4, with the error field (optional <code>viz</code> extra)</sub></td>
-<td align="center"><a href="examples/gallery/fea_09_sparse_obstacle_contact.py"><img src="examples/gallery/fea_09_sparse_obstacle_contact.png" width="330"></a><br><sub><b>Sparse exact contact</b>: <code>Quad4Laplace</code> membrane on an obstacle, contact set, route timing (<code>fea_09</code>)</sub></td>
-</tr>
-<tr>
-<td align="center"><a href="examples/gallery/fea_10_bdf2_contact_dynamics.py"><img src="examples/gallery/fea_10_bdf2_contact_dynamics.png" width="330"></a><br><sub><b>BDF2 contact dynamics</b>: order 2 against order 1, bar impact (<code>fea_10</code>)</sub></td>
-</tr>
-</table>
-
-Click an image to open the script that produced it. `fea_08` also writes two animated GIFs; `fea_07` and `fea_08` need the optional `pyvista` package. Gallery figures are in `examples/gallery/` of each package.
-
-<a id="batched"></a>
-
-## ⚡ Important note: batched nonlinear element kernels and vectorised assembly
-
-> [!IMPORTANT]
-> **Wave 22, closed 2026-10-15. Opt-in, off by default.** The nonlinear elements `Quad4PlaneStressTL`, `Hex8SolidTL`, `Hex20SolidTL` and `Tet10SolidTL` can evaluate force and tangent for all elements of a block at once, and `FESystem` can assemble them without a Python loop over elements, into a sparse tangent that a sparse Newton solve uses. The loop versions remain the default and the reference; every batched result is tested against them. Measured on the author's machine (12 CPUs): kernel force 102x (Quad4), 47x (Hex8), 23x (Hex20) and 41x (Tet10) faster than the loop, agreeing to 8.4e-15 relative or better.
-
-### Why it is needed
-
-A nonlinear (total-Lagrangian) element has no precomputed matrix: its force and tangent depend on the current displacement, so they are recomputed in every Newton iteration. Per element and Gauss point the work is
-
-```
-F = I + (dN/dX)ᵀ u_e          deformation gradient
-E = ½ (FᵀF − I)               Green-Lagrange strain
-S = D : E                     second Piola-Kirchhoff stress (Saint Venant-Kirchhoff)
-f_e = Σ_g w_g J0_g  B(u_e)ᵀ S           internal force
-K_e = Σ_g w_g J0_g [ B(u_e)ᵀ D B(u_e) + geometric term(S) ]     tangent
+```bash
+cd fea_engine
+pip install -e .                 # NumPy and SciPy are the only required dependencies (Python 3.9+)
+pip install -e ".[plot]"         # optional: matplotlib plots
+pip install -e ".[viz]"          # optional: PyVista plots and animations (pyvista, imageio)
+python -m pytest tests -q        # optional: the test suite
 ```
 
-The package's loop does this one element at a time in Python, and for small elements the interpreter, not the arithmetic, is the cost: the element is a few hundred flops wrapped in thousands of Python operations. The same is true of the scatter `K[np.ix_(g, g)] += K_e` into a dense `n × n` array, and of the dense `np.linalg.solve` that follows.
-
-### Theory: batch over elements, fold over Gauss points
-
-All elements of a block share the same shape-function derivatives per Gauss point in the reference configuration. The batched kernel therefore stacks the data as arrays with a leading element axis, coordinates `(E, n_nodes, dim)` and displacements `(E, ndof)`, and replaces the element loop by array contractions (einsum or batched matrix products) over axes `(E, G)`. It returns `(E, ndof)` forces and `(E, ndof, ndof)` tangents in the same local DOF order as the loop. Three ideas carry the speed-up and the scalability:
-
-- **No interpreter per element.** The element loop becomes one NumPy call per kernel stage. This is the dominant gain for 2-D elements, where the arithmetic per element is tiny.
-- **Folding the Gauss-point sum.** `K_e = Σ_g w_g Bᵍᵀ D Bᵍ` is evaluated as a single product with contraction length `G × 6` (the weights are folded into `D B`), instead of `G` small products. This was about 1.9x to 2.0x faster than the plain per-Gauss-point form on the 3-D hexahedron kernel, in the plan's measurement.
-- **A cached geometry and a cached sparsity pattern.** The reference gradients `dN/dX` and `det(J0) w` come from `MeshTransformation` once per block. The CSR pattern of the assembled tangent and, for every entry of every element matrix, its position in the CSR data array are computed once (one `np.unique` over the flattened row/column keys). Each later tangent assembly is `bincount(positions, weights=K_e)`: no sorting, no COO-to-CSR conversion and no `n × n` array.
-
-### Implementation
-
-| Piece | Where | What it does |
-|---|---|---|
-| Batch protocol | `batched_kernels.py`; `Element.supports_batch` | An element opts in with `supports_batch = True` and `internal_force_batch` / `tangent_stiffness_batch`; a formulation without them is assembled by the loop, block by block, with the reason recorded in `FESystem.last_assembly_modes` |
-| Chunking | `batched_kernels.chunk_slices` | A block is split so the estimated working memory stays under a budget (256 MB default) or under `chunk_size`; a Hex20 3x3x3 strain-displacement array alone is 78 kB per element, so an unchunked 10⁵-element block would need gigabytes. Chunked and unchunked results agree to summation order, not bit for bit |
-| Elements | `elements/nonlinear_solids.py`, `elements/hex_tl.py` | Batched `Quad4PlaneStressTL` and `Tet10SolidTL`; new total-Lagrangian `Hex8SolidTL` and `Hex20SolidTL`, each written twice (a plain per-Gauss-point reference and the batched kernel) so the two can check each other |
-| Assembly | `FESystem.assemble_internal_force` / `assemble_tangent_stiffness` | New keywords `vectorized`, `chunk_size`, `sparse`; `FESystem.batch_support_report()` says which blocks can be batched. Defaults reproduce the previous behaviour |
-| Sparse Newton | `nonlinear_solver.py`, `NewtonOptions` | `sparse_tangent`, `lu_ordering` and `reuse_factorization` fields; sparse LU factorisation instead of a dense solve in the static, displacement-control, arc-length and transient drivers |
-| Contact | `contact_batch.py`; `FESystem.add_contact_set` | `ContactSet2D` / `ContactSet3D`: penalty contact of many slave-master pairs in one call, with a KD-tree candidate search |
-| Hyper-reduction | `FESystem.element_forces` / `element_tangents`; `rom_engine` `ECSW.fit_batched`, `ecsw_training_matrix_batched`, `nonlinearity_indicator_batched` | Element-level hooks, so ECSW training and the domain-partition indicator run without a Python loop over elements and snapshots |
-| Constraints and torch | `FESystem.eliminate_constraints`; `batched_kernels_torch.py` | Elimination of homogeneous constraints; a torch version of the same kernels (CPU or CUDA) |
+PyTorch is optional (GPU, automatic differentiation, the torch kernels); the NumPy path is the default everywhere. A first run, a plane-stress cantilever loaded at its tip:
 
 ```python
-fes.batch_support_report()                                   # which blocks can be batched, and why not
-f = fes.assemble_internal_force(u, mat, vectorized=True)
-K = fes.assemble_tangent_stiffness(u, mat, vectorized=True, sparse=True)   # scipy CSR
-opts = NewtonOptions(sparse_tangent=True)                    # sparse Newton in the nonlinear drivers
+from fea_engine import FESystem, Material, Quad4PlaneStress
+from fea_engine.mesh import rectangle_mesh
+from fea_engine.material import D_plane_stress
+
+mat = Material(E=2.1e11, nu=0.3, rho=7850.0)
+mesh = rectangle_mesh(Lx=0.4, Ly=0.2, nx=24, ny=12)
+fes = FESystem(mesh, Quad4PlaneStress(), thickness=0.02)
+fes.assemble_stiffness(D_plane_stress(mat), thickness=0.02)
+tip = mesh.nodes_on_line(axis=0, value=0.4)
+fes.add_nodal_force(tip, dof_index=1, total_force=-20000.0)
+fes.fix_dofs(mesh.nodes_on_line(axis=0, value=0.0), [0, 1])
+U = fes.solve_static()                                   # displacements, 2 per node
+print(U[2 * tip + 1].mean())                              # mean tip deflection, about -1.8e-4 m
 ```
 
-### Measured advantages
+The next sections say what is in the package and how a problem flows through it; "Implementation steps" has the recipe for each kind of analysis.
 
-Times from `paper/results/batched_kernels.json` (12 CPUs, NumPy 1.26.4, SciPy 1.15.3, Windows); the reference route is timed once, the batched route is the minimum of five runs; agreement is the maximum relative difference to the loop.
-
-| Case | Elements / DOFs | Force | Tangent | Whole-system force | Sparse LU against dense solve | Agreement |
-|---|---|---|---|---|---|---|
-| `Quad4PlaneStressTL` | 1,600 / 3,362 | 102x | 64x | 112x | 12.7x | 8.4e-15 |
-| `Hex8SolidTL` | 1,536 / 6,075 | 47x | 35x | 51x | 3.3x | 4.1e-15 |
-| `Hex20SolidTL` | 432 / 6,951 | 23x | 17x | 22x | dense not run | 7.1e-15 |
-| `Tet10SolidTL` | 768 / 4,131 | 41x | 53x | 28x | 1.8x | 4.2e-15 |
-
-| Other batched paths | Measured |
-|---|---|
-| Contact search, KD-tree against loop | 89x (2-D, 200 pairs), 151x (3-D, 1,152 pairs); same pairs found |
-| Contact force / tangent, set against per pair | 51x / 49x (2-D), 106x / 80x (3-D) |
-| Hyper-reduction on 400 elements, 8 snapshots | training matrix 92x, reduced force 11x, nonlinearity indicator 76x; the same 13 elements selected by ECSW |
-| Constraint elimination | 3% overhead on tangent and force assembly |
-| Torch kernels, 1,536 Hex8 | CPU 3.3x (force) and 2.5x (tangent) over NumPy; CUDA 2.9x and 1.1x. The GTX 1050 was no faster than torch on the CPU for the one case timed |
-
-### Limits and cautions
-
-- **The gain depends on the element.** For a 2-D element the saving is mostly interpreter overhead, so the factor is large. A 3-D hexahedron is compute-bound: in the plan's measurement a batch-of-one call of the same kernel was only about 1.1x slower (tangent) than the batched one, so most of the 3-D gain over the loop comes from the folded kernel, the sparse tangent and the cheaper solve, not from removing the loop. At around 11,000 DOFs the sparse solve, not the assembly, dominates.
-- **Single runs on one machine.** The figures show direction and order of magnitude, not precise ratios; the reference route was timed once.
-- **Opt-in.** Nothing changes unless you ask. Path-dependent elements (those that need `state` or `iter_state`) are not batched.
-- **Sparse ordering and factorisation reuse are not free wins.** The SuperLU symmetric-mode ordering did not help on a generic Hex20 mesh, and reusing the factorisation (modified Newton) can need more iterations; both are opt-in settings with full Newton as the default.
-- **Not tested:** meshes of 10⁵ elements, batched friction, updating contact pairs during a solve. The batched `ContactSet` evaluates penalty contact only, with a smoothed penalty law available through `smoothing_length` (default 0 is the package law).
-- `rom_engine` does not import `fea_engine`: its batched hooks take plain callables, `fn(elements, U_local)`.
-
-Plan, research, per-item notes and every number above: [`docs/batched_nonlinear_kernels_plan.md`](docs/batched_nonlinear_kernels_plan.md); benchmark script: `../paper/experiments/e10_batched_kernels.py`.
+---
 
 <a id="s-1"></a>
 
@@ -407,6 +198,607 @@ physically different problems (1-D beam, 2-D plane stress, 2-D plate,
 3-D solid) through the *same* `solver.py`, unmodified, and to add four
 dynamics solution strategies to `solver.py` without touching
 `config.py`, `mesh.py`, or `element.py` at all.
+
+---
+
+<a id="interface"></a>
+
+## 🧩 Working with the interface: names, fields, options, units, series, export
+
+The calls below are the conveniences of the current interface (v1.0.1 and later, all additive: the integer-DOF style of "Implementation steps" still works). They are collected here so that you can read them once, before the analysis recipes and the module reference.
+
+> [!IMPORTANT]
+> **Behaviour changes in the interface (v1.0.1).** Silent mistakes now fail loudly; valid calls are unchanged.
+> `assemble_stiffness` / `assemble_mass` / `assemble_lumped_mass` called a second time now **replace** the matrix
+> instead of silently doubling it (one-time `UserWarning`; pass `accumulate=True` to add on purpose).
+> `fix_dofs`, `add_nodal_force`, `add_consistent_edge_load` and `add_consistent_facet_load` raise `ValueError` for an empty
+> node selection, a node id outside the mesh, or a local DOF index outside `0..dofs_per_node-1`.
+> `solve_static` raises if `K` was never assembled and warns when the load vector is all zeros; a scalar density on a
+> plane or solid element raises an error that says to pass `rho * np.eye(n)`. See `tests/test_api_safety.py`.
+
+> [!NOTE]
+> **Named access (v1.0.1, additive).** Integer DOFs and node-id arrays still work; you can now also write
+> ```python
+> mesh.select_nodes(x=0.0, name="root"); mesh.select_nodes(x=0.4, name="tip")
+> s.fix_dofs("root", ["ux", "uy"]); s.add_nodal_force("tip", "uy", -20000.0)
+> U = s.solve_static()                      # FEField: an ndarray with names
+> U.component("uy", nodes="tip")            # == U[2*tip_nodes + 1]
+> U.nodal.shape, U.magnitude()              # (n_nodes, dofs_per_node), per-node |u|
+> ```
+> `FESystem.dof_names` lists the names for the current element; see `tests/test_named_api.py`.
+
+> [!NOTE]
+> **Shared options and batch runs (v1.0.1, additive).**
+> ```python
+> from fea_engine import NewtonOptions, batch
+> opts = NewtonOptions(tol=1e-9, max_iter=40)          # None fields keep each driver's own default
+> lf, U = solve_nonlinear_static(system, mat, n_steps=20, options=opts)   # explicit keywords still win
+> results = batch.map(build_and_solve, params, n_jobs=4)                  # ordered; backend="thread" for lambdas
+> ```
+
+> [!NOTE]
+> **Unit labels and plots (v1.0.1, additive).** Labels only, nothing is converted.
+> ```python
+> system.units = "SI"                       # or fea_engine.units.MM_N_TONNE
+> U = system.solve_static()                 # U.units == "m"
+> U.plot("uy", deform=True, scale=100)      # contour on the mesh, colour bar "uy [m]"
+> ```
+
+> [!NOTE]
+> **Multi-step results (v1.0.1, additive).** One access style for load paths, time histories and modes:
+> ```python
+> lf, hist = solve_nonlinear_static(system, mat, n_steps=20)      # return values unchanged
+> path = system.series(hist, steps=lf, step_name="load factor")
+> path.history("uy", "tip", reduce="mean")                        # load-displacement curve
+> path.at(0.5).plot("uy")                                         # step nearest to 0.5
+> system.modal_series(5).at(120.0)                                # mode closest to 120 Hz
+> ```
+
+> [!NOTE]
+> **Derived results and graded materials (unreleased, additive).**
+> ```python
+> from fea_engine import coefficients as cf
+> D = cf.from_material(lambda x: Material(E=70e9 * (1 + 2 * x[1]), nu=0.3), D_plane_stress, at="gauss")
+> system.assemble_stiffness(D, thickness=0.02)         # E grows with height; also rho and thickness
+> U = system.solve_static()
+> S, vm, R = system.stress(U), system.von_mises(U), system.reactions(U)    # FEFields
+> S.plot("sxx"); R.component("uy", nodes="root").sum()
+> ```
+
+> [!NOTE]
+> **Springs, foundations, constraints and convergence studies (unreleased, additive).**
+> ```python
+> system.add_spring("tip", "uy", 5.0e6)                              # grounded spring
+> system.add_elastic_foundation("bottom", "uy", 2.0e8, thickness=0.02)   # Winkler / Robin: k (u - u_ref)
+> system.tie("right", "left", ["ux", "uy"], offset=(-1.0, 0.0))     # periodic ties
+> system.add_constraint([(7, "ux", 1.0), (12, "ux", -1.0)], 1e-4)   # u_7 - u_12 = 1e-4
+> U = system.solve_static()                                          # constraints eliminated exactly
+> study = fea_engine.convergence.run_study(tip_deflection, [8, 16, 32], exact=exact)
+> study.order                                                        # observed convergence order
+> ```
+
+> [!NOTE]
+> **Reduced system and ParaView export (unreleased, additive).**
+> ```python
+> rs = system.form_linear_system()          # constrained K, F; prescribed values already on the right-hand side
+> U = rs.recover(my_solver(rs.K, rs.F))     # full FEField; rs.reduce_matrix(system.M) for other matrices
+> fea_engine.export.write_vtu("beam.vtu", U)                  # open in ParaView
+> fea_engine.export.write_series("run/disp", path)            # run/disp.pvd + run/disp_0000.vtu ...
+> ```
+
+---
+
+<a id="contact"></a>
+
+## 🧲 Contact module
+
+Unilateral (frictionless) contact is solved exactly with Lagrange multipliers, in both packages, on plain arrays and without an element class:
+
+```
+K u = f + Bᵀλ,    B u − c ≥ 0,    λ ≥ 0,    λ·(B u − c) = 0
+```
+
+`fea_engine` solves the full-order problem; `rom_engine` reduces it (a POD basis for the displacements, a non-negative basis for the contact forces) and never imports `fea_engine`. Penalty contact elements, which came earlier, are listed for completeness. **Bold** marks what was added by the contact work of 2026-10-16 (Wave 23).
+
+### `fea_engine`: contact modules, elements and methods
+
+| Module | What it provides | Status |
+|---|---|---|
+| `contact_solvers.py` | `solve_contact_static` (dense: `active_set`, `lemke`, `pgs`, and now `pdas`), `solve_contact_newton`, `solve_contact_dynamics` | earlier waves; extended below |
+| `contact_solvers.py` | **`solve_contact_static_sparse(K, f, B, c, route="auto")`**: primal-dual active set with the routes `reduced`, `saddle`, `condensed`, warm start `active0`, opt-in `fallback=True`, `max_dense_bytes` guard | **new** |
+| `contact_solvers.py` | **`solve_contact_dynamics(..., scheme="bdf2", return_info=True)`** and the record **`ContactDynamicsInfo`** (scheme, ok, failed_step, reason, message, suggestion, V, iterations) | **new** (default `two_step` unchanged) |
+| `elements/scalar.py` | **`Quad4Laplace`** (registry key `quad4_laplace`): 4-node scalar-field element, one DOF `"u"` per node; stiffness, consistent and lumped mass, source vector | **new** element |
+| `elements/contact.py` | `GapContactPenalty`, `GapContactCurvedFriction`, `NodeToSegmentContact2D`, `NodeToSegmentContact2DFriction`, `find_contact_pairs_2d` | earlier waves |
+| `contact_batch.py` | `ContactSet2D`, `ContactSet3D`, `candidate_pairs_2d/3d`: penalty contact for many pairs at once | Wave 22 |
+| `nonlinear_solver.py` | `solve_contact_lagrange_static` (one node, exact) | earlier waves |
+
+**Changes to existing code (all opt-in; a call that worked before gives the same result):**
+
+| Where | Change |
+|---|---|
+| `solve_contact_static(..., method="pdas")` | new method value; it calls `solve_contact_static_sparse` |
+| `ContactResult` | new fields `route`, `reason`, `message`, `suggestion`, `active_mask`, `fallbacks` and the alias `ok`; a failing route says why and which route to try next |
+| `solve_contact_dynamics` | new keywords `scheme` (`"two_step"` default, `"bdf2"`), `return_info`, `route`, `fallback`; `method="pdas"` for BDF2 only |
+| `FESystem` assembly | no change in this work. The assembly-side contact changes are from Wave 22: `add_contact_set`, the cached sparse CSR tangent, `eliminate_constraints`. `Quad4Laplace` works with the unchanged `assemble_stiffness`, `assemble_mass`, `assemble_lumped_mass`, `fix_dofs`, `solve_modal` |
+| package exports | `solve_contact_static_sparse`, `ContactDynamicsInfo`, `Quad4Laplace` exported from `fea_engine` |
+
+### What was measured
+
+| Claim | Measured | Where |
+|---|---|---|
+| The sparse routes agree with the dense solvers | differences 5.4e-16 to 1.3e-15 on the 361 to 3,481-unknown membrane obstacle problems of the gallery; 7.4e-15 between the two sparse routes at 39,601 unknowns | `fea_09`; `fea_engine/tests/sparse_contact_timing.py` |
+| The sparse routes scale | 39,601 unknowns, 9,425 active constraints, 30 iterations: `reduced` 4.5 s, `saddle` 7.6 s (12-CPU Windows machine); the dense route was not run (it needs about 25 GB) | `sparse_contact_timing.py` |
+| Sparse beats dense where both fit | 3,481 unknowns: `reduced` 0.17 s, `saddle` 0.22 s, dense 3.97 s (sandbox, 2 CPUs) | `fea_09` figure |
+| BDF2 is second order | free-membrane error at t = 2: 1.15e-2 / 2.96e-3 / 7.2e-4 for dt = 0.01 / 0.005 / 0.0025, observed order 1.96 and 2.03; `two_step` 0.162 / 0.0859 / 0.0454, order 0.92 | `fea_10` |
+| BDF2 is not contact-stabilised | bar impact, h = 0.002: energy rises to 1.0060 of the initial value (up to 0.72% in the test suite), ends at 0.976; `two_step` never exceeds 1.000 and ends at 0.938. The BDF2 wall force shows spikes during the impact | `fea_10` |
+| Complete bases reproduce the full order | reduced BDF2 trajectory equals the full-order one to 3.3e-11 | `rom_engine/tests/test_contact_dynamic_rom.py` |
+| The reduced dynamic model is accurate | 324 DOFs, 120 steps, up to 54 active constraints: relative error 0.81% / 0.20% / 0.023% for p = p_λ = 10 / 30 / 40; reduced contact conditions hold (KKT residual at most 2.7e-18) | `rom_07` |
+| Greedy sampling beats random sampling (static) | mean error on six held-out obstacles with 2 / 4 / 6 / 8 snapshots: greedy 4.75 / 1.55 / 1.23 / 0.82%, random median 7.37 / 2.94 / 2.11 / 1.63% | `rom_07` |
+| The cached indicator is cheap | 0.04 to 0.45 ms per call up to 40,000 constraints; the reference function took 3.3 s at 2,500 | `rom_engine/tests/contact_indicator_timing.py` |
+
+Times come from one run on one machine and are not asserted by any test; the gallery figures are the sandbox run named in each figure. Not covered: friction in the new solvers, Newmark contact dynamics, parametric prediction of the dynamic ROM, a dense-route run at 39,601 unknowns. Convergence of the active-set iteration is not guaranteed when `K` is not an M-matrix. Record: `fea_engine/docs/consolidated_future_roadmap.md`, Wave 23.
+
+### Tests
+
+| File | Tests | Covers |
+|---|---|---|
+| `tests/test_contact_solvers_sparse.py` | 28 | routes against dense solvers on six obstacles, failure reports, fallback, warm start, memory guard |
+| `tests/test_quad4_laplace.py` | 17 | element matrices, patch test on distorted meshes, Poisson convergence, membrane eigenvalues |
+| `tests/test_contact_dynamics_bdf2.py` | 14 | order of accuracy, contact conditions at every step, impact, input checks |
+
+All of these passed on the author's machine. In the full-suite runs there, `fea_engine` had 0 failures; `rom_engine` had the known operator-inference failure and one `test_domain_partition.py` failure that was a rounding-sensitive assertion and has since been rewritten (that file passes).
+
+<a id="gallery"></a>
+
+## 🖼️ Example gallery
+
+The `fea_engine` gallery, including the contact examples (`fea_03`, `fea_09`, `fea_10`). Each script prints its own validation numbers and saves its figure; see `examples/gallery/fea_README.md` for the cross-check of every example.
+
+<table>
+<tr>
+<td align="center"><a href="examples/gallery/fea_01_cantilever_beam.py"><img src="examples/gallery/fea_01_cantilever_beam.png" width="330"></a><br><sub><b>Cantilever</b>: von Mises stress and mesh convergence to the beam-theory value</sub></td>
+<td align="center"><a href="examples/gallery/fea_02_hyperelastic_neo_hookean.py"><img src="examples/gallery/fea_02_hyperelastic_neo_hookean.png" width="330"></a><br><sub><b>Neo-Hookean</b>: large-strain hyperelasticity, load-deflection against a linear reference</sub></td>
+<td align="center"><a href="examples/gallery/fea_03_hertzian_contact.py"><img src="examples/gallery/fea_03_hertzian_contact.png" width="330"></a><br><sub><b>Penalty contact</b>: block pressed onto a rigid circular obstacle</sub></td>
+</tr>
+<tr>
+<td align="center"><a href="examples/gallery/fea_04_plasticity_strip.py"><img src="examples/gallery/fea_04_plasticity_strip.png" width="330"></a><br><sub><b>J2 plasticity</b>: plastic strain localises at the hole of a plate</sub></td>
+<td align="center"><a href="examples/gallery/fea_05_modal_analysis.py"><img src="examples/gallery/fea_05_modal_analysis.png" width="330"></a><br><sub><b>Modal analysis</b>: first four mode shapes of a cantilever</sub></td>
+<td align="center"><a href="examples/gallery/fea_06_topology_optimization.py"><img src="examples/gallery/fea_06_topology_optimization.png" width="330"></a><br><sub><b>Topology optimisation</b>: 86.8 % less compliance at fixed volume</sub></td>
+</tr>
+<tr>
+<td align="center"><a href="examples/gallery/fea_07_pyvista_visualization.py"><img src="examples/gallery/fea_07_pyvista_2d_von_mises.png" width="330"></a><br><sub><b>PyVista contour</b>: von Mises stress on the deformed cantilever (optional <code>viz</code> extra)</sub></td>
+<td align="center"><a href="examples/gallery/fea_08_pyvista_animation_sections_rom.py"><img src="examples/gallery/fea_08_rom_rank4.png" width="330"></a><br><sub><b>Full vs reduced</b>: POD rank 4, with the error field (optional <code>viz</code> extra)</sub></td>
+<td align="center"><a href="examples/gallery/fea_09_sparse_obstacle_contact.py"><img src="examples/gallery/fea_09_sparse_obstacle_contact.png" width="330"></a><br><sub><b>Sparse exact contact</b>: <code>Quad4Laplace</code> membrane on an obstacle, contact set, route timing (<code>fea_09</code>)</sub></td>
+</tr>
+<tr>
+<td align="center"><a href="examples/gallery/fea_10_bdf2_contact_dynamics.py"><img src="examples/gallery/fea_10_bdf2_contact_dynamics.png" width="330"></a><br><sub><b>BDF2 contact dynamics</b>: order 2 against order 1, bar impact (<code>fea_10</code>)</sub></td>
+</tr>
+</table>
+
+Click an image to open the script that produced it. `fea_08` also writes two animated GIFs; `fea_07` and `fea_08` need the optional `pyvista` package. Gallery figures are in `examples/gallery/` of each package.
+
+<a id="batched"></a>
+
+## ⚡ Important note: batched nonlinear element kernels and vectorised assembly
+
+> [!IMPORTANT]
+> **Wave 22, closed 2026-10-15. Opt-in, off by default.** The nonlinear elements `Quad4PlaneStressTL`, `Hex8SolidTL`, `Hex20SolidTL` and `Tet10SolidTL` can evaluate force and tangent for all elements of a block at once, and `FESystem` can assemble them without a Python loop over elements, into a sparse tangent that a sparse Newton solve uses. The loop versions remain the default and the reference; every batched result is tested against them. Measured on the author's machine (12 CPUs): kernel force 102x (Quad4), 47x (Hex8), 23x (Hex20) and 41x (Tet10) faster than the loop, agreeing to 8.4e-15 relative or better.
+
+### Why it is needed
+
+A nonlinear (total-Lagrangian) element has no precomputed matrix: its force and tangent depend on the current displacement, so they are recomputed in every Newton iteration. Per element and Gauss point the work is
+
+```
+F = I + (dN/dX)ᵀ u_e          deformation gradient
+E = ½ (FᵀF − I)               Green-Lagrange strain
+S = D : E                     second Piola-Kirchhoff stress (Saint Venant-Kirchhoff)
+f_e = Σ_g w_g J0_g  B(u_e)ᵀ S           internal force
+K_e = Σ_g w_g J0_g [ B(u_e)ᵀ D B(u_e) + geometric term(S) ]     tangent
+```
+
+The package's loop does this one element at a time in Python, and for small elements the interpreter, not the arithmetic, is the cost: the element is a few hundred flops wrapped in thousands of Python operations. The same is true of the scatter `K[np.ix_(g, g)] += K_e` into a dense `n × n` array, and of the dense `np.linalg.solve` that follows.
+
+### Theory: batch over elements, fold over Gauss points
+
+All elements of a block share the same shape-function derivatives per Gauss point in the reference configuration. The batched kernel therefore stacks the data as arrays with a leading element axis, coordinates `(E, n_nodes, dim)` and displacements `(E, ndof)`, and replaces the element loop by array contractions (einsum or batched matrix products) over axes `(E, G)`. It returns `(E, ndof)` forces and `(E, ndof, ndof)` tangents in the same local DOF order as the loop. Three ideas carry the speed-up and the scalability:
+
+- **No interpreter per element.** The element loop becomes one NumPy call per kernel stage. This is the dominant gain for 2-D elements, where the arithmetic per element is tiny.
+- **Folding the Gauss-point sum.** `K_e = Σ_g w_g Bᵍᵀ D Bᵍ` is evaluated as a single product with contraction length `G × 6` (the weights are folded into `D B`), instead of `G` small products. This was about 1.9x to 2.0x faster than the plain per-Gauss-point form on the 3-D hexahedron kernel, in the plan's measurement.
+- **A cached geometry and a cached sparsity pattern.** The reference gradients `dN/dX` and `det(J0) w` come from `MeshTransformation` once per block. The CSR pattern of the assembled tangent and, for every entry of every element matrix, its position in the CSR data array are computed once (one `np.unique` over the flattened row/column keys). Each later tangent assembly is `bincount(positions, weights=K_e)`: no sorting, no COO-to-CSR conversion and no `n × n` array.
+
+### Implementation
+
+| Piece | Where | What it does |
+|---|---|---|
+| Batch protocol | `batched_kernels.py`; `Element.supports_batch` | An element opts in with `supports_batch = True` and `internal_force_batch` / `tangent_stiffness_batch`; a formulation without them is assembled by the loop, block by block, with the reason recorded in `FESystem.last_assembly_modes` |
+| Chunking | `batched_kernels.chunk_slices` | A block is split so the estimated working memory stays under a budget (256 MB default) or under `chunk_size`; a Hex20 3x3x3 strain-displacement array alone is 78 kB per element, so an unchunked 10⁵-element block would need gigabytes. Chunked and unchunked results agree to summation order, not bit for bit |
+| Elements | `elements/nonlinear_solids.py`, `elements/hex_tl.py` | Batched `Quad4PlaneStressTL` and `Tet10SolidTL`; new total-Lagrangian `Hex8SolidTL` and `Hex20SolidTL`, each written twice (a plain per-Gauss-point reference and the batched kernel) so the two can check each other |
+| Assembly | `FESystem.assemble_internal_force` / `assemble_tangent_stiffness` | New keywords `vectorized`, `chunk_size`, `sparse`; `FESystem.batch_support_report()` says which blocks can be batched. Defaults reproduce the previous behaviour |
+| Sparse Newton | `nonlinear_solver.py`, `NewtonOptions` | `sparse_tangent`, `lu_ordering` and `reuse_factorization` fields; sparse LU factorisation instead of a dense solve in the static, displacement-control, arc-length and transient drivers |
+| Contact | `contact_batch.py`; `FESystem.add_contact_set` | `ContactSet2D` / `ContactSet3D`: penalty contact of many slave-master pairs in one call, with a KD-tree candidate search |
+| Hyper-reduction | `FESystem.element_forces` / `element_tangents`; `rom_engine` `ECSW.fit_batched`, `ecsw_training_matrix_batched`, `nonlinearity_indicator_batched` | Element-level hooks, so ECSW training and the domain-partition indicator run without a Python loop over elements and snapshots |
+| Constraints and torch | `FESystem.eliminate_constraints`; `batched_kernels_torch.py` | Elimination of homogeneous constraints; a torch version of the same kernels (CPU or CUDA) |
+
+```python
+fes.batch_support_report()                                   # which blocks can be batched, and why not
+f = fes.assemble_internal_force(u, mat, vectorized=True)
+K = fes.assemble_tangent_stiffness(u, mat, vectorized=True, sparse=True)   # scipy CSR
+opts = NewtonOptions(sparse_tangent=True)                    # sparse Newton in the nonlinear drivers
+```
+
+### Measured advantages
+
+Times from `paper/results/batched_kernels.json` (12 CPUs, NumPy 1.26.4, SciPy 1.15.3, Windows); the reference route is timed once, the batched route is the minimum of five runs; agreement is the maximum relative difference to the loop.
+
+| Case | Elements / DOFs | Force | Tangent | Whole-system force | Sparse LU against dense solve | Agreement |
+|---|---|---|---|---|---|---|
+| `Quad4PlaneStressTL` | 1,600 / 3,362 | 102x | 64x | 112x | 12.7x | 8.4e-15 |
+| `Hex8SolidTL` | 1,536 / 6,075 | 47x | 35x | 51x | 3.3x | 4.1e-15 |
+| `Hex20SolidTL` | 432 / 6,951 | 23x | 17x | 22x | dense not run | 7.1e-15 |
+| `Tet10SolidTL` | 768 / 4,131 | 41x | 53x | 28x | 1.8x | 4.2e-15 |
+
+| Other batched paths | Measured |
+|---|---|
+| Contact search, KD-tree against loop | 89x (2-D, 200 pairs), 151x (3-D, 1,152 pairs); same pairs found |
+| Contact force / tangent, set against per pair | 51x / 49x (2-D), 106x / 80x (3-D) |
+| Hyper-reduction on 400 elements, 8 snapshots | training matrix 92x, reduced force 11x, nonlinearity indicator 76x; the same 13 elements selected by ECSW |
+| Constraint elimination | 3% overhead on tangent and force assembly |
+| Torch kernels, 1,536 Hex8 | CPU 3.3x (force) and 2.5x (tangent) over NumPy; CUDA 2.9x and 1.1x. The GTX 1050 was no faster than torch on the CPU for the one case timed |
+
+### Limits and cautions
+
+- **The gain depends on the element.** For a 2-D element the saving is mostly interpreter overhead, so the factor is large. A 3-D hexahedron is compute-bound: in the plan's measurement a batch-of-one call of the same kernel was only about 1.1x slower (tangent) than the batched one, so most of the 3-D gain over the loop comes from the folded kernel, the sparse tangent and the cheaper solve, not from removing the loop. At around 11,000 DOFs the sparse solve, not the assembly, dominates.
+- **Single runs on one machine.** The figures show direction and order of magnitude, not precise ratios; the reference route was timed once.
+- **Opt-in.** Nothing changes unless you ask. Path-dependent elements (those that need `state` or `iter_state`) are not batched.
+- **Sparse ordering and factorisation reuse are not free wins.** The SuperLU symmetric-mode ordering did not help on a generic Hex20 mesh, and reusing the factorisation (modified Newton) can need more iterations; both are opt-in settings with full Newton as the default.
+- **Not tested:** meshes of 10⁵ elements, batched friction, updating contact pairs during a solve. The batched `ContactSet` evaluates penalty contact only, with a smoothed penalty law available through `smoothing_length` (default 0 is the package law).
+- `rom_engine` does not import `fea_engine`: its batched hooks take plain callables, `fn(elements, U_local)`.
+
+Plan, research, per-item notes and every number above: [`docs/batched_nonlinear_kernels_plan.md`](docs/batched_nonlinear_kernels_plan.md); benchmark script: `../paper/experiments/e10_batched_kernels.py`.
+
+<a id="s-4"></a>
+
+## 🪜 Implementation steps
+
+### A. Any static problem
+
+1. **Material/section** — `Material(E, nu, rho)`, `Section(A, I)` if using the beam.
+2. **Mesh** — call the matching `mesh.py` generator (or write a new one).
+3. **Element** — pick a class from `element.py` (or write a new one).
+4. **System** — `sys = FESystem(mesh, element, thickness=...)`.
+5. **Assemble** — `sys.assemble_stiffness(D, **kwargs)` with the matching `config.py` D-matrix.
+6. **Loads and BCs** — `sys.add_nodal_force(...)` / `add_consistent_edge_load(...)`, then `sys.fix_dofs(...)`.
+7. **Solve** — `U = sys.solve_static()`.
+8. **Validate** — check against a closed-form/reference result (see any `main.py` item 1–4).
+
+Steps 2–4 collapse into one call for the common cases: `sys, mesh, elem
+= geometry.build_system(dim=2, Lx=0.4, Ly=0.2, nx=24, ny=12)` picks the
+rectangle generator and `Quad4PlaneStress` automatically — see
+`geometry.py`'s module reference below for `dim=1`/`3` and the
+`shape=`/`physics=` options that pick something other than the default.
+
+```python
+mat = Material(E=2.1e11, nu=0.3, rho=7850.0)
+mesh = rectangle_mesh(Lx=0.4, Ly=0.2, nx=24, ny=12)
+elem = Quad4PlaneStress()
+sys = FESystem(mesh, elem, thickness=0.02)
+sys.assemble_stiffness(D_plane_stress(mat), thickness=0.02)
+tip = mesh.nodes_on_line(axis=0, value=0.4)
+sys.add_nodal_force(tip, dof_index=1, total_force=-20000.0)
+sys.fix_dofs(mesh.nodes_on_line(axis=0, value=0.0), [0, 1])
+U = sys.solve_static()
+```
+
+### B. Free vibration (natural frequencies / mode shapes)
+
+Steps 1–4 as above, then:
+
+```python
+sys.assemble_mass(mat.rho * sec.A)     # or rho*np.eye(2)/3/etc. for 2-D/3-D/plate
+freq_hz, mode_shapes = sys.solve_modal(n_modes=4)
+```
+
+### C. Direct time integration (impact, earthquake, general transients)
+
+```python
+sys.assemble_mass(rho_data)
+damping = RayleighDamping.calibrate(omega_i, omega_j, zeta=0.02)
+sys.assemble_damping(damping)          # implicit only
+
+load = TimeHistoryLoad(LoadPattern(node_ids, dof_index), time_fn=lambda t: ...)
+
+# implicit -- unconditionally stable, pick dt for ACCURACY
+t, U_hist = sys.solve_transient_implicit(load, T_total, dt)
+
+# explicit -- conditionally stable, pick dt for STABILITY
+sys.assemble_lumped_mass(rho_data)
+dt = 0.4 * sys.critical_timestep()     # safety margin below the limit
+t, U_hist = sys.solve_transient_explicit(load, T_total, dt)
+```
+
+Use implicit for long-duration/low-frequency loads (seismic, wind,
+waves) where large time steps matter; explicit for short-duration
+high-speed events (impact, blast) where per-step cost matters more
+than step count.
+
+### D. Modal superposition (linear systems, many repeated load cases)
+
+```python
+sys.assemble_mass(rho_data)   # NOT assemble_damping -- zeta is applied per-mode
+t, U_hist, freq_hz = sys.solve_modal_superposition(load, T_total, dt, n_modes=8, zeta=0.02)
+```
+
+Check `postprocess.effective_modal_mass()` to confirm `n_modes` is
+enough — it should capture most of the total mass excited by your load
+pattern (typically >90% for the first 5–10 modes of a distributed-mass
+structure).
+
+### E. Harmonic / frequency response (rotating machinery, vibration isolation)
+
+```python
+sys.assemble_mass(rho_data)
+sys.assemble_damping(damping)
+load = HarmonicLoad(LoadPattern(node_ids, dof_index), F0=1000.0)
+F0_vec = load.force_vector(sys.n_dof, sys.npn)
+
+U0 = sys.solve_harmonic(Omega=2*np.pi*50, F0_vector=F0_vec)        # single frequency
+U = sys.solve_frequency_sweep(2*np.pi*freqs_hz, F0_vec)            # a sweep (Bode/FRF)
+```
+
+Sanity check: `solve_harmonic(0.0, F0_vec)` must equal `solve_static()`
+exactly — always verify this after wiring up a new problem.
+
+### F. Random vibration / PSD (turbulence, road/rail roughness, acoustic loading)
+
+```python
+sys.assemble_mass(rho_data)
+sys.assemble_damping(damping)
+psd_load = PSDLoad(LoadPattern(node_ids, dof_index), freqs_hz, psd_input)
+F0_unit = psd_load.force_vector(sys.n_dof, sys.npn)   # always unit magnitude
+
+S_out, sigma = sys.solve_random_vibration(freqs_hz, psd_input, F0_unit, output_dof=target_dof)
+```
+
+`sigma` is the response RMS. There's no deterministic peak to read off
+— for a peak/fatigue estimate, post-process `S_out` statistically
+(e.g. treat the response as narrowband Gaussian near a resonance).
+
+### G. Adding a new element type end to end
+
+1. In `element.py`: subclass `Element`, set `n_nodes`, `dofs_per_node`,
+   `dim`, `gauss_order`, `translational_dof_mask`.
+2. Implement `shape_and_derivs(natural_coords) -> (N, dN_natural)`.
+3. Implement `B_matrix(natural_coords, elem_coords) -> (B, detJ)` to
+   use the generic `stiffness()`/`mass()`, **or** override those
+   methods directly for a closed-form/non-standard formulation.
+4. Register it: `ELEMENT_REGISTRY["my_element"] = MyElement`.
+5. In `config.py`: add a `D_xxx()` builder if it needs a new
+   constitutive law.
+6. In `mesh.py`: reuse an existing generator, or add a new one if the
+   element needs a geometry none of the current ones produce.
+7. Validate: build the smallest case with a known closed-form answer,
+   add it to `main.py`, and run `mesh.check_quality()` before trusting
+   any solved result.
+
+### H. Choosing an integration scheme for an existing element
+
+1. Start with the default (`stiffness()`/`assemble_stiffness()` with no
+   extra arguments) — full integration for everything except the
+   plate, which defaults to `'sri'`.
+2. If the result looks too stiff for a bending-dominated problem,
+   that's the locking signature (see `main.py` items 4 and 9–10 for
+   what it looks like quantitatively). Before switching schemes, ask
+   whether a beam/plate element is simply the better tool for this
+   geometry (see the `Hex8Solid3D` limitation below) — that's usually
+   the real fix.
+3. If you still want reduced integration: call
+   `sys.assemble_stiffness(D, gauss_order=n)` (Quad4/Hex8) or
+   `sys.assemble_stiffness(D, integration='reduced')` (plate) — these
+   pass straight through `solver.py`'s `**kwargs`, no code changes
+   needed there.
+4. **Before trusting the result**, check for spurious modes:
+   ```python
+   n_spurious, _ = spurious_zero_energy_modes(elem, single_elem_coords, D)
+   # and/or, on the assembled+constrained system:
+   eigs = np.linalg.eigvalsh(sys.K[np.ix_(sys.free_dofs, sys.free_dofs)])
+   n_near_zero = np.sum(np.abs(eigs) < 1e-6 * np.max(np.abs(eigs)))
+   ```
+   If `n_near_zero` is large (see `main.py` item 9 — 82 for the Hex8
+   cantilever), the system is unreliable regardless of how plausible
+   the displacement number looks.
+
+### I. Geometric nonlinearity (large displacement, monotonic or snap-through)
+
+1. **Element** — use a nonlinear element (`TrussTL2D` for axial-only
+   members, `Beam2DCorotational` for members that also bend through
+   large rotations, or a new one built per section G above but
+   overriding `internal_force()`/`tangent_stiffness()` instead of
+   `stiffness()`).
+2. **System** — `sys = FESystem(mesh, elem)` as usual; `mat` replaces
+   `D` (e.g. `(E, A)` for `TrussTL2D`, `(E, A, I)` for
+   `Beam2DCorotational`) and is passed straight through.
+3. **BCs** — `sys.fix_dofs(...)` as usual.
+4. **Decide the path parameter:**
+   - Monotonic problem → `sys.add_nodal_force(...)`, then
+     `solve_nonlinear_static(sys, mat, n_steps=...)`.
+   - Possible snap-through → identify the DOF that best parametrizes
+     the motion (e.g. the apex of a shallow arch), prescribe it
+     directly via `solve_nonlinear_displacement_control(sys, mat,
+     control_dof, u_target_array)`, and read the reaction history back
+     for the load-displacement curve.
+5. **Validate** — for a new geometry, derive (or look up) the
+   closed-form load-displacement relation via total-potential-energy
+   stationarity (`P = dU/dδ`) the way `validate_nonlinear.py` does for
+   the von Mises truss, and check the solver against it at several
+   points along the path, not just one.
+
+### J. Material nonlinearity (elasto-plasticity)
+
+1. **Element** — use a path-dependent element (`TrussPlastic2D`, or a
+   new one built per section G but adding `init_state()`/
+   `commit_state()` and a `state=` kwarg to `internal_force()`/
+   `tangent_stiffness()` per the "path-dependent state" extension
+   point above).
+2. **System** — `sys = FESystem(mesh, elem)`; `mat` is
+   `(constitutive_object, A)` (e.g. `(PlasticMaterial1D(E, sigma_y, H), A)`).
+3. **BCs and loads** — as usual.
+4. **`sys.init_state()`** — required before the first nonlinear solve;
+   skip it and every element behaves as if stateless (elastic forever).
+5. **Decide the load HISTORY, not just a target load** — a plasticity
+   result depends on the whole path, not just the final state. Build a
+   `load_factors` array that actually visits the load reversals you
+   care about (see the example above), and pass it to
+   `solve_nonlinear_static(sys, mat, load_factors=...)`.
+6. **Validate** — check `internal_force()` against a hand return-map at
+   a few strains straddling yield (cheap, catches sign/formula errors
+   immediately), check `tangent_stiffness()` against a finite
+   difference on BOTH the elastic and plastic branches (the tangent is
+   discontinuous at yield, so don't finite-difference across the kink
+   itself), then run a load-unload-reload history and confirm a
+   nonzero permanent set remains after unloading to zero load — the
+   single clearest sign the plasticity is actually doing something
+   (an elastic-only bug looks identical to a correct one until you
+   unload and check for residual strain).
+
+### K. Contact / boundary nonlinearity
+
+1. **Structure and obstacle** — build the structural mesh/system as
+   usual; the obstacle itself is NOT part of the mesh, just a
+   `(g0, n_hat)` pair (gap distance and approach direction) relative to
+   whichever node might touch it.
+2. **Choose a formulation:**
+   - **Penalty** (simpler, approximate) — pick `k_p` large relative to
+     the structure's own stiffness (start around 100–1000×, check that
+     penetration is small relative to the deformation you care about),
+     `sys.add_contact_element(GapContactPenalty(), [node], (k_p, g0, n_hat))`,
+     then solve with the ordinary `solve_nonlinear_static()` — nothing
+     contact-specific about the call.
+   - **Lagrange multiplier** (exact, costs one extra unknown) — do NOT
+     register a contact element; call
+     `solve_contact_lagrange_static(sys, mat, contact_node, n_hat, g0, ...)`
+     instead, which returns the displacement history AND the contact
+     reaction (`lambda_hist`) and active/inactive flag
+     (`active_hist`) at every step.
+3. **Step size matters more here than elsewhere** — the tangent is
+   *discontinuous* at the contact transition (not just its derivative,
+   unlike the plasticity kink), so use enough load steps that no single
+   increment tries to jump clean over the transition.
+4. **Validate** — check equilibrium at a few converged steps by hand
+   (`P_applied == N_structure(u) + contact_force(u)`, the same pattern
+   `validate_contact.py` uses), and if using the penalty method, sweep
+   `k_p` and confirm penetration shrinks as it increases — the standard
+   sanity check that you haven't just picked an arbitrary stiffness
+   that happens to look right at one value.
+
+### L. Friction + updating contact normal (curved obstacle, Module 13)
+
+1. **Obstacle is a circle, not a flat wall** — `mat = (k_p, k_t, mu,
+   center, R)` instead of `GapContactPenalty`'s `(k_p, g0, n_hat)`; the
+   normal direction `n_hat` is now RECOMPUTED from the node's current
+   position every call, not a fixed material parameter.
+2. **Register it exactly like any other contact element** —
+   `sys.add_contact_element(GapContactCurvedFriction(), [node], mat)`,
+   then solve with the ordinary `solve_nonlinear_static()`; nothing
+   about the driver call changes.
+3. **`sys.init_state()` is still required** if this is the only
+   path-dependent element in the system — `add_contact_element()` gives
+   the contact element its OWN state slot automatically (a `commit_state()`-
+   updated stick-anchor arc-length), independent of whether the main
+   mesh has stateful elements too.
+4. **Pick a structural test geometry with genuine transverse stiffness
+   at `u=0`** — a single straight 2-node truss has ZERO tangent
+   stiffness transverse to its own axis before it deflects (a
+   mechanism), which makes Newton's very first iteration hit a singular
+   `K_T` if the applied load and the obstacle are both off-axis. Use an
+   inclined/multi-member structure (e.g. a shallow "V" truss, the same
+   fix used in `validate_curved_contact.py` CHECK 4) so the free node
+   has real stiffness in every direction from the start.
+5. **Validate** — hand-check `pn`/`n_hat`'s sign and direction at a few
+   positions straddling the obstacle boundary; for `mu=0`, cross-check
+   the element's finite-difference `tangent_stiffness()` against the
+   closed form `K_T = k_p*(1-R/d)*I + k_p*(R/d)*(n_hat⊗n_hat)`; sweep a
+   node along the obstacle at fixed penetration depth and confirm
+   `commit_state()` produces the expected stick-then-slip-plateau
+   sequence; and confirm `n_hat` genuinely differs at two different
+   tangential positions on the same obstacle (the property a flat-wall
+   `GapContactPenalty` cannot have) — the exact sequence
+   `validate_curved_contact.py` runs.
+
+### M. Mixed-element-type assembly (Module 14)
+
+1. **Get a `MultiBlockMesh`** — build one by hand (`nodes` array
+   plus `blocks = {name: connectivity_array, ...}`, all blocks indexing
+   the same shared node list). (The former Gmsh-backed producer,
+   `geometry_engine.py`'s `_extract_mesh()`/`generate_2d_rectangle_mixed()`,
+   was removed along with Gmsh support -- see "Removed: Gmsh support"
+   below.)
+2. **Build a matching dict of element formulations** — one entry per
+   block name, e.g. `{"tri3": Tri3PlaneStress(), "quad4":
+   Quad4PlaneStress()}`. Every formulation in the dict must have the
+   SAME `dofs_per_node` — `FESystem` raises a `ValueError` immediately,
+   naming the mismatched values, if not.
+3. **Construct exactly like the single-element case, just with a dict**
+   — `sys = FESystem(mixed_mesh, {"tri3": ..., "quad4": ...})`; every
+   downstream call (`assemble_stiffness`, `fix_dofs`, `add_nodal_force`,
+   `solve_static`, `solve_modal`, the nonlinear drivers, ...) is
+   IDENTICAL to the single-element case — nothing about calling code
+   needs to know a mesh has more than one element topology.
+4. **Pass per-block materials only if you actually need them** — `D`/
+   `mat`/`rho` can be one value shared by every block (the common case:
+   same physics, just more than one element topology) or a dict keyed
+   the same way as the blocks, for genuinely different
+   materials/physics per block.
+5. **Validate** — a patch test (impose a uniform strain field across
+   ALL blocks' shared nodes, confirm every element type recovers it
+   exactly — this also checks inter-block compatibility at shared
+   edges, not just each element type in isolation); the usual exact
+   equilibrium check; and, for a mesh from an external unstructured
+   mesher, confirm
+   `mesh.blocks` actually contains more than one key before trusting
+   the mixed path was exercised (a coarse/fine `mesh_size` can
+   legitimately recombine fully, leaving only one block) — the exact
+   sequence `validate_mixed_elements.py` runs.
+
+### N. Visualization (geometry / mesh / result plots)
+
+**3-D plots with PyVista (optional, `pip install fea_engine[viz]`).** `fea_engine.visualization` converts a `Mesh` /
+`MultiBlockMesh` to a `pyvista.UnstructuredGrid` (line2, tri3, quad4, tet4, hex8, tri6, quad8, tet10, hex20; the node
+order of the quadratic cells is the VTK order, checked in `tests/test_pyvista_plot.py`) and provides:
+
+- `pyvista_plot`: `to_pyvista`, `plot_field` (nodal/element field contours, optionally on the deformed mesh, `field`
+  may be a name, an `FEField`, an array or a callable `field(U)`), `plot_deformed`, `save_vtk` (`.vtu`/`.vtk` for ParaView).
+- `pyvista_animation`: `animate_history` (a `(n_steps, n_dof)` history to GIF/MP4, colour limits and displacement scale
+  fixed over all frames), `animate_mode`, `mode_history`.
+- `pyvista_sections` (3-D meshes): `slice_field`, `clip_field`, `threshold_field`, `plot_slice` (one or several parallel
+  planes), `plot_clipped`, `plot_threshold`.
+- `pyvista_comparison`: `compare_fields(mesh, U_full, U_rom)` draws the full-order field, the reduced field and the
+  pointwise error and returns relative L2 / max error metrics; `field_error` returns the metrics only.
+
+```python
+from fea_engine.visualization import plot_field, animate_mode, plot_slice, compare_fields
+plot_field(mesh, sys.von_mises(U), component="von_mises", U=U, scale="auto")
+animate_mode(mesh, shapes[:, 0], "mode1.gif", freq=freq[0])
+plot_slice(mesh, vm, component="von_mises", normal="x", n_slices=3, U=U, scale="auto")
+plotter, met = compare_fields(mesh, U, U_rom)           # met["rel_l2_displacement"], met["rel_max"], ...
+```
+
+Tests: `tests/test_pyvista_plot.py`, `test_pyvista_animation.py`, `test_pyvista_sections.py`,
+`test_pyvista_comparison.py` (64 tests; 11 that render need a display, e.g. `xvfb-run -a` on headless Linux). Examples:
+`examples/gallery/fea_07_pyvista_visualization.py`, `fea_08_pyvista_animation_sections_rom.py`. Beams, trusses and
+shells are not `Mesh` objects and are not drawn by these functions. See `USER_GUIDE.md`, "3-D visualization with
+PyVista", for the full description.
+
+**Plain matplotlib (no extra dependency beyond matplotlib).** The Gmsh-native visualization
+(`visualization/gmsh_plot.py`, Module 16 — a
+second, non-default OpenGL rendering path) was removed along with Gmsh
+support entirely; see "Removed: Gmsh support" below. `mesh.py`'s
+matplotlib functions remain available and are
+what most example scripts in this package use:
+`mesh.plot_mesh_2d(mesh, filename, ...)`/`mesh.plot_mesh_3d(mesh,
+filename, ...)` for geometry/mesh figures, and
+`mesh.plot_mesh_annotated(...)` for result overlays (deformed shape,
+scalar fields) — see those functions' own docstrings for the full
+parameter set.
 
 ---
 
@@ -1558,352 +1950,6 @@ direct integration, harmonic response recovering the static limit at
 Ω=0, random vibration checked against an independent time-domain
 Monte Carlo simulation). Run it directly (`python main.py`) as a smoke
 test after any change to the package.
-
----
-
-<a id="s-4"></a>
-
-## 🪜 Implementation steps
-
-### A. Any static problem
-
-1. **Material/section** — `Material(E, nu, rho)`, `Section(A, I)` if using the beam.
-2. **Mesh** — call the matching `mesh.py` generator (or write a new one).
-3. **Element** — pick a class from `element.py` (or write a new one).
-4. **System** — `sys = FESystem(mesh, element, thickness=...)`.
-5. **Assemble** — `sys.assemble_stiffness(D, **kwargs)` with the matching `config.py` D-matrix.
-6. **Loads and BCs** — `sys.add_nodal_force(...)` / `add_consistent_edge_load(...)`, then `sys.fix_dofs(...)`.
-7. **Solve** — `U = sys.solve_static()`.
-8. **Validate** — check against a closed-form/reference result (see any `main.py` item 1–4).
-
-Steps 2–4 collapse into one call for the common cases: `sys, mesh, elem
-= geometry.build_system(dim=2, Lx=0.4, Ly=0.2, nx=24, ny=12)` picks the
-rectangle generator and `Quad4PlaneStress` automatically — see
-`geometry.py`'s module reference above for `dim=1`/`3` and the
-`shape=`/`physics=` options that pick something other than the default.
-
-```python
-mat = Material(E=2.1e11, nu=0.3, rho=7850.0)
-mesh = rectangle_mesh(Lx=0.4, Ly=0.2, nx=24, ny=12)
-elem = Quad4PlaneStress()
-sys = FESystem(mesh, elem, thickness=0.02)
-sys.assemble_stiffness(D_plane_stress(mat), thickness=0.02)
-tip = mesh.nodes_on_line(axis=0, value=0.4)
-sys.add_nodal_force(tip, dof_index=1, total_force=-20000.0)
-sys.fix_dofs(mesh.nodes_on_line(axis=0, value=0.0), [0, 1])
-U = sys.solve_static()
-```
-
-### B. Free vibration (natural frequencies / mode shapes)
-
-Steps 1–4 as above, then:
-
-```python
-sys.assemble_mass(mat.rho * sec.A)     # or rho*np.eye(2)/3/etc. for 2-D/3-D/plate
-freq_hz, mode_shapes = sys.solve_modal(n_modes=4)
-```
-
-### C. Direct time integration (impact, earthquake, general transients)
-
-```python
-sys.assemble_mass(rho_data)
-damping = RayleighDamping.calibrate(omega_i, omega_j, zeta=0.02)
-sys.assemble_damping(damping)          # implicit only
-
-load = TimeHistoryLoad(LoadPattern(node_ids, dof_index), time_fn=lambda t: ...)
-
-# implicit -- unconditionally stable, pick dt for ACCURACY
-t, U_hist = sys.solve_transient_implicit(load, T_total, dt)
-
-# explicit -- conditionally stable, pick dt for STABILITY
-sys.assemble_lumped_mass(rho_data)
-dt = 0.4 * sys.critical_timestep()     # safety margin below the limit
-t, U_hist = sys.solve_transient_explicit(load, T_total, dt)
-```
-
-Use implicit for long-duration/low-frequency loads (seismic, wind,
-waves) where large time steps matter; explicit for short-duration
-high-speed events (impact, blast) where per-step cost matters more
-than step count.
-
-### D. Modal superposition (linear systems, many repeated load cases)
-
-```python
-sys.assemble_mass(rho_data)   # NOT assemble_damping -- zeta is applied per-mode
-t, U_hist, freq_hz = sys.solve_modal_superposition(load, T_total, dt, n_modes=8, zeta=0.02)
-```
-
-Check `postprocess.effective_modal_mass()` to confirm `n_modes` is
-enough — it should capture most of the total mass excited by your load
-pattern (typically >90% for the first 5–10 modes of a distributed-mass
-structure).
-
-### E. Harmonic / frequency response (rotating machinery, vibration isolation)
-
-```python
-sys.assemble_mass(rho_data)
-sys.assemble_damping(damping)
-load = HarmonicLoad(LoadPattern(node_ids, dof_index), F0=1000.0)
-F0_vec = load.force_vector(sys.n_dof, sys.npn)
-
-U0 = sys.solve_harmonic(Omega=2*np.pi*50, F0_vector=F0_vec)        # single frequency
-U = sys.solve_frequency_sweep(2*np.pi*freqs_hz, F0_vec)            # a sweep (Bode/FRF)
-```
-
-Sanity check: `solve_harmonic(0.0, F0_vec)` must equal `solve_static()`
-exactly — always verify this after wiring up a new problem.
-
-### F. Random vibration / PSD (turbulence, road/rail roughness, acoustic loading)
-
-```python
-sys.assemble_mass(rho_data)
-sys.assemble_damping(damping)
-psd_load = PSDLoad(LoadPattern(node_ids, dof_index), freqs_hz, psd_input)
-F0_unit = psd_load.force_vector(sys.n_dof, sys.npn)   # always unit magnitude
-
-S_out, sigma = sys.solve_random_vibration(freqs_hz, psd_input, F0_unit, output_dof=target_dof)
-```
-
-`sigma` is the response RMS. There's no deterministic peak to read off
-— for a peak/fatigue estimate, post-process `S_out` statistically
-(e.g. treat the response as narrowband Gaussian near a resonance).
-
-### G. Adding a new element type end to end
-
-1. In `element.py`: subclass `Element`, set `n_nodes`, `dofs_per_node`,
-   `dim`, `gauss_order`, `translational_dof_mask`.
-2. Implement `shape_and_derivs(natural_coords) -> (N, dN_natural)`.
-3. Implement `B_matrix(natural_coords, elem_coords) -> (B, detJ)` to
-   use the generic `stiffness()`/`mass()`, **or** override those
-   methods directly for a closed-form/non-standard formulation.
-4. Register it: `ELEMENT_REGISTRY["my_element"] = MyElement`.
-5. In `config.py`: add a `D_xxx()` builder if it needs a new
-   constitutive law.
-6. In `mesh.py`: reuse an existing generator, or add a new one if the
-   element needs a geometry none of the current ones produce.
-7. Validate: build the smallest case with a known closed-form answer,
-   add it to `main.py`, and run `mesh.check_quality()` before trusting
-   any solved result.
-
-### H. Choosing an integration scheme for an existing element
-
-1. Start with the default (`stiffness()`/`assemble_stiffness()` with no
-   extra arguments) — full integration for everything except the
-   plate, which defaults to `'sri'`.
-2. If the result looks too stiff for a bending-dominated problem,
-   that's the locking signature (see `main.py` items 4 and 9–10 for
-   what it looks like quantitatively). Before switching schemes, ask
-   whether a beam/plate element is simply the better tool for this
-   geometry (see the `Hex8Solid3D` limitation below) — that's usually
-   the real fix.
-3. If you still want reduced integration: call
-   `sys.assemble_stiffness(D, gauss_order=n)` (Quad4/Hex8) or
-   `sys.assemble_stiffness(D, integration='reduced')` (plate) — these
-   pass straight through `solver.py`'s `**kwargs`, no code changes
-   needed there.
-4. **Before trusting the result**, check for spurious modes:
-   ```python
-   n_spurious, _ = spurious_zero_energy_modes(elem, single_elem_coords, D)
-   # and/or, on the assembled+constrained system:
-   eigs = np.linalg.eigvalsh(sys.K[np.ix_(sys.free_dofs, sys.free_dofs)])
-   n_near_zero = np.sum(np.abs(eigs) < 1e-6 * np.max(np.abs(eigs)))
-   ```
-   If `n_near_zero` is large (see `main.py` item 9 — 82 for the Hex8
-   cantilever), the system is unreliable regardless of how plausible
-   the displacement number looks.
-
-### I. Geometric nonlinearity (large displacement, monotonic or snap-through)
-
-1. **Element** — use a nonlinear element (`TrussTL2D` for axial-only
-   members, `Beam2DCorotational` for members that also bend through
-   large rotations, or a new one built per section G above but
-   overriding `internal_force()`/`tangent_stiffness()` instead of
-   `stiffness()`).
-2. **System** — `sys = FESystem(mesh, elem)` as usual; `mat` replaces
-   `D` (e.g. `(E, A)` for `TrussTL2D`, `(E, A, I)` for
-   `Beam2DCorotational`) and is passed straight through.
-3. **BCs** — `sys.fix_dofs(...)` as usual.
-4. **Decide the path parameter:**
-   - Monotonic problem → `sys.add_nodal_force(...)`, then
-     `solve_nonlinear_static(sys, mat, n_steps=...)`.
-   - Possible snap-through → identify the DOF that best parametrizes
-     the motion (e.g. the apex of a shallow arch), prescribe it
-     directly via `solve_nonlinear_displacement_control(sys, mat,
-     control_dof, u_target_array)`, and read the reaction history back
-     for the load-displacement curve.
-5. **Validate** — for a new geometry, derive (or look up) the
-   closed-form load-displacement relation via total-potential-energy
-   stationarity (`P = dU/dδ`) the way `validate_nonlinear.py` does for
-   the von Mises truss, and check the solver against it at several
-   points along the path, not just one.
-
-### J. Material nonlinearity (elasto-plasticity)
-
-1. **Element** — use a path-dependent element (`TrussPlastic2D`, or a
-   new one built per section G but adding `init_state()`/
-   `commit_state()` and a `state=` kwarg to `internal_force()`/
-   `tangent_stiffness()` per the "path-dependent state" extension
-   point above).
-2. **System** — `sys = FESystem(mesh, elem)`; `mat` is
-   `(constitutive_object, A)` (e.g. `(PlasticMaterial1D(E, sigma_y, H), A)`).
-3. **BCs and loads** — as usual.
-4. **`sys.init_state()`** — required before the first nonlinear solve;
-   skip it and every element behaves as if stateless (elastic forever).
-5. **Decide the load HISTORY, not just a target load** — a plasticity
-   result depends on the whole path, not just the final state. Build a
-   `load_factors` array that actually visits the load reversals you
-   care about (see the example above), and pass it to
-   `solve_nonlinear_static(sys, mat, load_factors=...)`.
-6. **Validate** — check `internal_force()` against a hand return-map at
-   a few strains straddling yield (cheap, catches sign/formula errors
-   immediately), check `tangent_stiffness()` against a finite
-   difference on BOTH the elastic and plastic branches (the tangent is
-   discontinuous at yield, so don't finite-difference across the kink
-   itself), then run a load-unload-reload history and confirm a
-   nonzero permanent set remains after unloading to zero load — the
-   single clearest sign the plasticity is actually doing something
-   (an elastic-only bug looks identical to a correct one until you
-   unload and check for residual strain).
-
-### K. Contact / boundary nonlinearity
-
-1. **Structure and obstacle** — build the structural mesh/system as
-   usual; the obstacle itself is NOT part of the mesh, just a
-   `(g0, n_hat)` pair (gap distance and approach direction) relative to
-   whichever node might touch it.
-2. **Choose a formulation:**
-   - **Penalty** (simpler, approximate) — pick `k_p` large relative to
-     the structure's own stiffness (start around 100–1000×, check that
-     penetration is small relative to the deformation you care about),
-     `sys.add_contact_element(GapContactPenalty(), [node], (k_p, g0, n_hat))`,
-     then solve with the ordinary `solve_nonlinear_static()` — nothing
-     contact-specific about the call.
-   - **Lagrange multiplier** (exact, costs one extra unknown) — do NOT
-     register a contact element; call
-     `solve_contact_lagrange_static(sys, mat, contact_node, n_hat, g0, ...)`
-     instead, which returns the displacement history AND the contact
-     reaction (`lambda_hist`) and active/inactive flag
-     (`active_hist`) at every step.
-3. **Step size matters more here than elsewhere** — the tangent is
-   *discontinuous* at the contact transition (not just its derivative,
-   unlike the plasticity kink), so use enough load steps that no single
-   increment tries to jump clean over the transition.
-4. **Validate** — check equilibrium at a few converged steps by hand
-   (`P_applied == N_structure(u) + contact_force(u)`, the same pattern
-   `validate_contact.py` uses), and if using the penalty method, sweep
-   `k_p` and confirm penetration shrinks as it increases — the standard
-   sanity check that you haven't just picked an arbitrary stiffness
-   that happens to look right at one value.
-
-### L. Friction + updating contact normal (curved obstacle, Module 13)
-
-1. **Obstacle is a circle, not a flat wall** — `mat = (k_p, k_t, mu,
-   center, R)` instead of `GapContactPenalty`'s `(k_p, g0, n_hat)`; the
-   normal direction `n_hat` is now RECOMPUTED from the node's current
-   position every call, not a fixed material parameter.
-2. **Register it exactly like any other contact element** —
-   `sys.add_contact_element(GapContactCurvedFriction(), [node], mat)`,
-   then solve with the ordinary `solve_nonlinear_static()`; nothing
-   about the driver call changes.
-3. **`sys.init_state()` is still required** if this is the only
-   path-dependent element in the system — `add_contact_element()` gives
-   the contact element its OWN state slot automatically (a `commit_state()`-
-   updated stick-anchor arc-length), independent of whether the main
-   mesh has stateful elements too.
-4. **Pick a structural test geometry with genuine transverse stiffness
-   at `u=0`** — a single straight 2-node truss has ZERO tangent
-   stiffness transverse to its own axis before it deflects (a
-   mechanism), which makes Newton's very first iteration hit a singular
-   `K_T` if the applied load and the obstacle are both off-axis. Use an
-   inclined/multi-member structure (e.g. a shallow "V" truss, the same
-   fix used in `validate_curved_contact.py` CHECK 4) so the free node
-   has real stiffness in every direction from the start.
-5. **Validate** — hand-check `pn`/`n_hat`'s sign and direction at a few
-   positions straddling the obstacle boundary; for `mu=0`, cross-check
-   the element's finite-difference `tangent_stiffness()` against the
-   closed form `K_T = k_p*(1-R/d)*I + k_p*(R/d)*(n_hat⊗n_hat)`; sweep a
-   node along the obstacle at fixed penetration depth and confirm
-   `commit_state()` produces the expected stick-then-slip-plateau
-   sequence; and confirm `n_hat` genuinely differs at two different
-   tangential positions on the same obstacle (the property a flat-wall
-   `GapContactPenalty` cannot have) — the exact sequence
-   `validate_curved_contact.py` runs.
-
-### M. Mixed-element-type assembly (Module 14)
-
-1. **Get a `MultiBlockMesh`** — build one by hand (`nodes` array
-   plus `blocks = {name: connectivity_array, ...}`, all blocks indexing
-   the same shared node list). (The former Gmsh-backed producer,
-   `geometry_engine.py`'s `_extract_mesh()`/`generate_2d_rectangle_mixed()`,
-   was removed along with Gmsh support -- see "Removed: Gmsh support"
-   above.)
-2. **Build a matching dict of element formulations** — one entry per
-   block name, e.g. `{"tri3": Tri3PlaneStress(), "quad4":
-   Quad4PlaneStress()}`. Every formulation in the dict must have the
-   SAME `dofs_per_node` — `FESystem` raises a `ValueError` immediately,
-   naming the mismatched values, if not.
-3. **Construct exactly like the single-element case, just with a dict**
-   — `sys = FESystem(mixed_mesh, {"tri3": ..., "quad4": ...})`; every
-   downstream call (`assemble_stiffness`, `fix_dofs`, `add_nodal_force`,
-   `solve_static`, `solve_modal`, the nonlinear drivers, ...) is
-   IDENTICAL to the single-element case — nothing about calling code
-   needs to know a mesh has more than one element topology.
-4. **Pass per-block materials only if you actually need them** — `D`/
-   `mat`/`rho` can be one value shared by every block (the common case:
-   same physics, just more than one element topology) or a dict keyed
-   the same way as the blocks, for genuinely different
-   materials/physics per block.
-5. **Validate** — a patch test (impose a uniform strain field across
-   ALL blocks' shared nodes, confirm every element type recovers it
-   exactly — this also checks inter-block compatibility at shared
-   edges, not just each element type in isolation); the usual exact
-   equilibrium check; and, for a mesh from an external unstructured
-   mesher, confirm
-   `mesh.blocks` actually contains more than one key before trusting
-   the mixed path was exercised (a coarse/fine `mesh_size` can
-   legitimately recombine fully, leaving only one block) — the exact
-   sequence `validate_mixed_elements.py` runs.
-
-### N. Visualization (geometry / mesh / result plots)
-
-**3-D plots with PyVista (optional, `pip install fea_engine[viz]`).** `fea_engine.visualization` converts a `Mesh` /
-`MultiBlockMesh` to a `pyvista.UnstructuredGrid` (line2, tri3, quad4, tet4, hex8, tri6, quad8, tet10, hex20; the node
-order of the quadratic cells is the VTK order, checked in `tests/test_pyvista_plot.py`) and provides:
-
-- `pyvista_plot`: `to_pyvista`, `plot_field` (nodal/element field contours, optionally on the deformed mesh, `field`
-  may be a name, an `FEField`, an array or a callable `field(U)`), `plot_deformed`, `save_vtk` (`.vtu`/`.vtk` for ParaView).
-- `pyvista_animation`: `animate_history` (a `(n_steps, n_dof)` history to GIF/MP4, colour limits and displacement scale
-  fixed over all frames), `animate_mode`, `mode_history`.
-- `pyvista_sections` (3-D meshes): `slice_field`, `clip_field`, `threshold_field`, `plot_slice` (one or several parallel
-  planes), `plot_clipped`, `plot_threshold`.
-- `pyvista_comparison`: `compare_fields(mesh, U_full, U_rom)` draws the full-order field, the reduced field and the
-  pointwise error and returns relative L2 / max error metrics; `field_error` returns the metrics only.
-
-```python
-from fea_engine.visualization import plot_field, animate_mode, plot_slice, compare_fields
-plot_field(mesh, sys.von_mises(U), component="von_mises", U=U, scale="auto")
-animate_mode(mesh, shapes[:, 0], "mode1.gif", freq=freq[0])
-plot_slice(mesh, vm, component="von_mises", normal="x", n_slices=3, U=U, scale="auto")
-plotter, met = compare_fields(mesh, U, U_rom)           # met["rel_l2_displacement"], met["rel_max"], ...
-```
-
-Tests: `tests/test_pyvista_plot.py`, `test_pyvista_animation.py`, `test_pyvista_sections.py`,
-`test_pyvista_comparison.py` (64 tests; 11 that render need a display, e.g. `xvfb-run -a` on headless Linux). Examples:
-`examples/gallery/fea_07_pyvista_visualization.py`, `fea_08_pyvista_animation_sections_rom.py`. Beams, trusses and
-shells are not `Mesh` objects and are not drawn by these functions. See `USER_GUIDE.md`, "3-D visualization with
-PyVista", for the full description.
-
-**Plain matplotlib (no extra dependency beyond matplotlib).** The Gmsh-native visualization
-(`visualization/gmsh_plot.py`, Module 16 — a
-second, non-default OpenGL rendering path) was removed along with Gmsh
-support entirely; see "Removed: Gmsh support" above. `mesh.py`'s
-matplotlib functions remain available and are
-what most example scripts in this package use:
-`mesh.plot_mesh_2d(mesh, filename, ...)`/`mesh.plot_mesh_3d(mesh,
-filename, ...)` for geometry/mesh figures, and
-`mesh.plot_mesh_annotated(...)` for result overlays (deformed shape,
-scalar fields) — see those functions' own docstrings for the full
-parameter set.
 
 ---
 
