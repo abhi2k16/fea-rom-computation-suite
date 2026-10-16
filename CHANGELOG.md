@@ -6,6 +6,9 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 
 ## Unreleased
 
+### Added (rom_engine, dynamic contact ROM)
+- `ContactROM.solve_dynamic(force, c, dt, n_steps, u0=None, v0=None, scheme="bdf2", warm_start=True, lift=True)`: reduced BDF2 contact dynamics on `M_r = U^T M U`, `A_r`, `B_r` (new optional `M=` argument of `ContactROM`; the static interface is unchanged). The two effective reduced matrices and their LCP matrices are factored once; the previous step's active set warm-starts the next LCP (`lcp_active_set` and `solve_lcp` gained an optional `active0`). Every step's reduced contact conditions are verified (relative tolerance 1e-4); a violation, or a failing LCP, stops the loop and is reported (`ok`, `failed_step`, `message`, rows from that step NaN). Returns `ContactROMDynamicResult` (reduced and lifted displacements, multipliers, gaps, velocities, iteration counts, `kkt_residual`). Tests: `rom_engine/tests/test_contact_dynamic_rom.py` (13).
+
 ### Added (fea_engine, BDF2 contact dynamics)
 - `solve_contact_dynamics(..., scheme="bdf2")`: second-order BDF2 time stepping (BDF1 first step; general sparse or dense `M`, `K`, `B`; both effective matrices factored once; contact enforced at every step). `scheme="two_step"` (the default) is unchanged. New keywords `scheme`, `return_info` (adds a `ContactDynamicsInfo` with the velocities, the per-step iteration counts and, if a contact solve failed, the step, reason and suggestion; rows from the failed step on are NaN), `route`, `fallback`; `method="pdas"` (BDF2 only) solves each step with `solve_contact_static_sparse` and warm-starts from the previous active set. Not contact-stabilised: an impact test shows BDF2 gaining up to 0.7% above the initial energy during the impact. Newmark is not provided. Tests: `tests/test_contact_dynamics_bdf2.py` (14).
 

@@ -74,16 +74,17 @@ def lcp_lemke(A, q, max_iter=None, tol=1e-12):
     return np.zeros(n), False
 
 
-def lcp_active_set(A, q, max_iter=100, tol=1e-12):
+def lcp_active_set(A, q, max_iter=100, tol=1e-12, active0=None):
     """Primal-dual active-set method for the LCP of a symmetric positive definite A (Hintermueller-Ito-Kunisch).
     The set of positive multipliers is updated by the sign of (z - w); if the set revisits a previous one
-    (cycling) the call falls back to `lcp_lemke`. Returns (z, ok, iterations)."""
+    (cycling) the call falls back to `lcp_lemke`. `active0` (indices of multipliers assumed positive) warm-starts the
+    iteration, e.g. with the previous time step's set. Returns (z, ok, iterations)."""
     A = np.asarray(A, float)
     q = np.asarray(q, float)
     n = len(q)
     if n == 0 or np.all(q >= 0):
         return np.zeros(n), True, 0
-    active = set()
+    active = set() if active0 is None else set(int(i) for i in np.asarray(active0, dtype=int))
     seen = []
     z = np.zeros(n)
     for it in range(1, max_iter + 1):
@@ -108,10 +109,10 @@ def lcp_active_set(A, q, max_iter=100, tol=1e-12):
     return z, ok, max_iter
 
 
-def solve_lcp(A, q, method="active_set"):
-    """Dispatch: 'active_set' (default) or 'lemke'. Returns (z, ok)."""
+def solve_lcp(A, q, method="active_set", active0=None):
+    """Dispatch: 'active_set' (default, optional warm start `active0`) or 'lemke'. Returns (z, ok)."""
     if method == "active_set":
-        z, ok, _ = lcp_active_set(A, q)
+        z, ok, _ = lcp_active_set(A, q, active0=active0)
         return z, ok
     if method == "lemke":
         return lcp_lemke(A, q)
