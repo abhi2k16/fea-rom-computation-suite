@@ -1,14 +1,77 @@
 \relax 
 \providecommand\hyper@newdestlabel[2]{}
+\citation{zienkiewicz2013fem,bathe2014fep}
 \@writefile{toc}{\contentsline {chapter}{\numberline {3}Linear continua and structural elements}{5}{chapter.3}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \newlabel{ch:elem}{{3}{5}{Linear continua and structural elements}{chapter.3}{}}
 \newlabel{ch:elem@cref}{{[chapter][3][]3}{[1][5][]5}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.1}From the weak form to an element matrix}{5}{section.3.1}\protected@file@percent }
+\newlabel{sec:el-weak}{{3.1}{5}{From the weak form to an element matrix}{section.3.1}{}}
+\newlabel{sec:el-weak@cref}{{[section][1][3]3.1}{[1][5][]5}}
+\newlabel{eq:el-weak}{{3.1}{5}{From the weak form to an element matrix}{equation.3.1}{}}
+\newlabel{eq:el-weak@cref}{{[equation][1][3]3.1}{[1][5][]5}}
+\newlabel{eq:el-K}{{3.2}{5}{From the weak form to an element matrix}{equation.3.2}{}}
+\newlabel{eq:el-K@cref}{{[equation][2][3]3.2}{[1][5][]5}}
+\@writefile{toc}{\contentsline {paragraph}{The mass matrix: consistent or lumped.}{5}{section*.5}\protected@file@percent }
+\citation{dvorkin1984}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.1}{\ignorespaces Lowest eigenvalue of the clamped unit-square membrane (\code  {Quad4Laplace}), consistent against lumped mass: the relative error in absolute value. The consistent-mass eigenvalue is above the exact one and the lumped-mass eigenvalue is below it. Produced by \texttt  {scripts/ch03\_assets.py}.\relax }}{6}{figure.caption.6}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:el-mass}{{3.1}{6}{Lowest eigenvalue of the clamped unit-square membrane (\code {Quad4Laplace}), consistent against lumped mass: the relative error in absolute value. The consistent-mass eigenvalue is above the exact one and the lumped-mass eigenvalue is below it. Produced by \texttt {scripts/ch03\_assets.py}.\relax }{figure.caption.6}{}}
+\newlabel{fig:el-mass@cref}{{[figure][1][3]3.1}{[1][6][]6}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.2}The element families}{6}{section.3.2}\protected@file@percent }
+\newlabel{sec:el-families}{{3.2}{6}{The element families}{section.3.2}{}}
+\newlabel{sec:el-families@cref}{{[section][2][3]3.2}{[1][6][]6}}
+\@writefile{toc}{\contentsline {paragraph}{Structural elements.}{6}{section*.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.3}Locking and how the elements avoid it}{6}{section.3.3}\protected@file@percent }
+\newlabel{sec:el-locking}{{3.3}{6}{Locking and how the elements avoid it}{section.3.3}{}}
+\newlabel{sec:el-locking@cref}{{[section][3][3]3.3}{[1][6][]6}}
+\citation{hughes1980bbar}
+\@writefile{lot}{\contentsline {table}{\numberline {3.1}{\ignorespaces Elements of this chapter. \code  {gauss\_order} is the attribute of the class as it stands in release v1.0.1\,/\,v0.2.0; its meaning is the number of points per direction for quadrilaterals and hexahedra, and a simplex rule order for triangles and tetrahedra.\relax }}{7}{table.caption.7}\protected@file@percent }
+\newlabel{tab:el-elements}{{3.1}{7}{Elements of this chapter. \code {gauss\_order} is the attribute of the class as it stands in release \booktag ; its meaning is the number of points per direction for quadrilaterals and hexahedra, and a simplex rule order for triangles and tetrahedra.\relax }{table.caption.7}{}}
+\newlabel{tab:el-elements@cref}{{[table][1][3]3.1}{[1][6][]7}}
+\@writefile{toc}{\contentsline {paragraph}{Bending of continuum elements.}{7}{section*.9}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.2}{\ignorespaces Pure bending of a plane-stress beam, tip deflection divided by the exact value, against the number of elements along the beam. The quadratic elements are exact on these meshes. The helper is the one used by \texttt  {fea\_engine/tests/test\_benchmarks\_convergence.py}.\relax }}{7}{figure.caption.10}\protected@file@percent }
+\newlabel{fig:el-bending}{{3.2}{7}{Pure bending of a plane-stress beam, tip deflection divided by the exact value, against the number of elements along the beam. The quadratic elements are exact on these meshes. The helper is the one used by \texttt {fea\_engine/tests/test\_benchmarks\_convergence.py}.\relax }{figure.caption.10}{}}
+\newlabel{fig:el-bending@cref}{{[figure][2][3]3.2}{[1][7][]7}}
+\@writefile{toc}{\contentsline {paragraph}{Volumetric locking and mean-dilatation B-bar.}{7}{section*.11}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3.2}{\ignorespaces Tip deflection of a slender cantilever divided by the Euler--Bernoulli value, three hexahedra and two Poisson ratios. The 20-node mesh has the node spacing of the 8-node mesh. A 3-D beam does not reach exactly 1 even for a perfect element (root and shear effects), so only the differences between the rows are significant.\relax }}{8}{table.caption.12}\protected@file@percent }
+\newlabel{tab:el-locking}{{3.2}{8}{Tip deflection of a slender cantilever divided by the Euler--Bernoulli value, three hexahedra and two Poisson ratios. The 20-node mesh has the node spacing of the 8-node mesh. A 3-D beam does not reach exactly 1 even for a perfect element (root and shear effects), so only the differences between the rows are significant.\relax }{table.caption.12}{}}
+\newlabel{tab:el-locking@cref}{{[table][2][3]3.2}{[1][8][]8}}
+\@writefile{toc}{\contentsline {paragraph}{Shear locking in the plate and its cure.}{8}{section*.13}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3.3}{\ignorespaces Tip deflection of a flat cantilever strip divided by the beam-theory value with plate rigidity (an approximate reference), against the number of elements along the length (a quarter as many across).\relax }}{8}{table.caption.14}\protected@file@percent }
+\newlabel{tab:el-plate}{{3.3}{8}{Tip deflection of a flat cantilever strip divided by the beam-theory value with plate rigidity (an approximate reference), against the number of elements along the length (a quarter as many across).\relax }{table.caption.14}{}}
+\newlabel{tab:el-plate@cref}{{[table][3][3]3.3}{[1][8][]8}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.4}Verification}{9}{section.3.4}\protected@file@percent }
+\newlabel{sec:el-verif}{{3.4}{9}{Verification}{section.3.4}{}}
+\newlabel{sec:el-verif@cref}{{[section][4][3]3.4}{[1][8][]9}}
+\@writefile{toc}{\contentsline {paragraph}{Patch tests.}{9}{section*.15}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3.4}{\ignorespaces Patch tests on distorted meshes. The test helper is \texttt  {\_patch} of \texttt  {test\_benchmarks\_convergence.py}.\relax }}{9}{table.caption.16}\protected@file@percent }
+\newlabel{tab:el-patch}{{3.4}{9}{Patch tests on distorted meshes. The test helper is \texttt {\_patch} of \texttt {test\_benchmarks\_convergence.py}.\relax }{table.caption.16}{}}
+\newlabel{tab:el-patch@cref}{{[table][4][3]3.4}{[1][9][]9}}
+\@writefile{toc}{\contentsline {paragraph}{Beams.}{9}{section*.17}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.3}{\ignorespaces Convergence of the first cantilever frequency of the Euler--Bernoulli beam (left) and of the tip deflection of the Reissner beam (right) with the element size, with the observed order.\relax }}{9}{figure.caption.18}\protected@file@percent }
+\newlabel{fig:el-beams}{{3.3}{9}{Convergence of the first cantilever frequency of the Euler--Bernoulli beam (left) and of the tip deflection of the Reissner beam (right) with the element size, with the observed order.\relax }{figure.caption.18}{}}
+\newlabel{fig:el-beams@cref}{{[figure][3][3]3.3}{[1][9][]9}}
+\@writefile{lot}{\contentsline {table}{\numberline {3.5}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{10}{table.caption.19}\protected@file@percent }
+\newlabel{tab:el-map}{{3.5}{10}{Where the concepts of this chapter live in the repository (release \booktag ).\relax }{table.caption.19}{}}
+\newlabel{tab:el-map@cref}{{[table][5][3]3.5}{[1][9][]10}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.5}Summary}{10}{section.3.5}\protected@file@percent }
+\newlabel{sec:el-summary}{{3.5}{10}{Summary}{section.3.5}{}}
+\newlabel{sec:el-summary@cref}{{[section][5][3]3.5}{[1][10][]10}}
+\bibstyle{unsrtnat}
+\bibdata{refs}
+\bibcite{zienkiewicz2013fem}{{1}{2013}{{Zienkiewicz et~al.}}{{Zienkiewicz, Taylor, and Zhu}}}
+\bibcite{bathe2014fep}{{2}{2014}{{Bathe}}{{}}}
+\bibcite{dvorkin1984}{{3}{1984}{{Dvorkin and Bathe}}{{}}}
+\bibcite{hughes1980bbar}{{4}{1980}{{Hughes}}{{}}}
+\newlabel{sec:el-exercises}{{3.5}{11}{Exercises}{section*.20}{}}
+\newlabel{sec:el-exercises@cref}{{[section][5][3]3.5}{[1][10][]11}}
+\@writefile{toc}{\contentsline {section}{References}{11}{section*.21}\protected@file@percent }
 \@setckpt{chapters/ch03}{
-\setcounter{page}{6}
-\setcounter{equation}{0}
-\setcounter{enumi}{0}
+\setcounter{page}{12}
+\setcounter{equation}{2}
+\setcounter{enumi}{5}
 \setcounter{enumii}{0}
 \setcounter{enumiii}{0}
 \setcounter{enumiv}{0}
@@ -16,13 +79,13 @@
 \setcounter{mpfootnote}{0}
 \setcounter{part}{2}
 \setcounter{chapter}{3}
-\setcounter{section}{0}
+\setcounter{section}{5}
 \setcounter{subsection}{0}
 \setcounter{subsubsection}{0}
 \setcounter{paragraph}{0}
 \setcounter{subparagraph}{0}
-\setcounter{figure}{0}
-\setcounter{table}{0}
+\setcounter{figure}{3}
+\setcounter{table}{5}
 \setcounter{parentequation}{0}
 \setcounter{LT@tables}{0}
 \setcounter{LT@chunks}{0}
@@ -32,22 +95,22 @@
 \setcounter{subtable}{0}
 \setcounter{tcbbreakpart}{1}
 \setcounter{tcblayer}{0}
-\setcounter{tcolorbox@number}{3}
+\setcounter{tcolorbox@number}{4}
 \setcounter{tcbrastercolumn}{1}
 \setcounter{tcbrasterrow}{1}
 \setcounter{tcbrasternum}{1}
 \setcounter{tcbraster}{0}
 \setcounter{lstnumber}{1}
 \setcounter{tcblisting}{0}
-\setcounter{NAT@ctr}{0}
-\setcounter{Item}{0}
+\setcounter{NAT@ctr}{4}
+\setcounter{Item}{5}
 \setcounter{Hfootnote}{0}
-\setcounter{bookmark@seq@number}{5}
+\setcounter{bookmark@seq@number}{11}
 \setcounter{proposition}{0}
 \setcounter{definition}{0}
 \setcounter{example}{0}
 \setcounter{remark}{0}
 \setcounter{tcb@cnt@algbox}{0}
 \setcounter{lstlisting}{0}
-\setcounter{section@level}{0}
+\setcounter{section@level}{1}
 }

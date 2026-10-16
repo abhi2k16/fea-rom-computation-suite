@@ -1,2 +1,133 @@
 \chapter{Computational acceleration: vectorised assembly and batched kernels}\label{ch:batch}
-\stubchapter{Chapter 6}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+A nonlinear element has no stored matrix: its force and tangent are recomputed from the current displacement in every Newton iteration, so assembly is paid for again and again. The default implementation does this one element at a time in Python, and for small elements most of the time goes into the interpreter. This chapter explains the opt-in batched path of \fea{}, which computes all elements of a block with array operations, keeps the tangent sparse and lets the Newton drivers use a sparse factorisation. It shows what the batched path computes, how its caches and memory limit work, how the code reports a block that cannot be batched, and then measures the gain and the agreement with the loop on four element families. The loop stays the default and the reference: every batched result is compared with it.
+\end{tcolorbox}
+
+\section{Where the time goes}\label{sec:bk-time}
+
+In a Newton iteration (Chapter~\ref{ch:nonlin}) the code assembles the internal force $\bm f_{int}(\bm u)$ and the tangent $\bm K_T(\bm u)$. For a total-Lagrangian element, each Gauss point $g$ of each element $e$ needs (the standard total-Lagrangian algorithm of \citealp{belytschko2014nonlinear})
+\begin{equation}\label{eq:bk-gp}
+\bm F=\bm I+\Big(\tfrac{\partial\bm N}{\partial\bm X}\Big)^{T}\bm u_e,\qquad
+\bm E=\tfrac12(\bm F^{T}\bm F-\bm I),\qquad
+\bm S=\bm D\bm E,
+\end{equation}
+then the element force $\bm f_e=\sum_g w_g J_{0,g}\,\bm B(\bm u_e)^{T}\bm S$ and tangent $\bm K_e=\sum_g w_gJ_{0,g}\,[\bm B^{T}\bm D\bm B+\text{geometric term}]$ (\Cref{eq:nl-tangent} of Chapter~\ref{ch:nonlin}). The arithmetic per element is small: a $3\times3$ or $2\times2$ matrix algebra. When the loop over elements is a Python loop, the cost per element is dominated by function calls and small-array overhead, not by floating-point work. That is the cost the batched path removes, and it is why the gain is large for small two-dimensional elements and smaller for elements that do a lot of arithmetic (\Cref{sec:bk-verif}).
+
+\section{What the batched path does}\label{sec:bk-idea}
+
+All elements of one block (one element type with one material) share the reference shape-function gradients $\partial\bm N/\partial\bm X$ and the weights $w_gJ_{0,g}$ at each Gauss point, because they depend only on the undeformed mesh. The batched kernels therefore stack the coordinates into an array of shape $(E,\,n_{nodes},\,\dim)$ and the element displacements into $(E,\,n_{dof})$, and replace the loop over elements by contractions over the element and Gauss-point axes, the usual way to assemble finite element quantities in vector languages~\cite{cuvelier2014assemble}. An element opts in by setting \code{supports_batch} and providing \code{internal_force_batch} and \code{tangent_stiffness_batch}; the batched kernels use the same local degree-of-freedom order as the per-element methods, so one can be compared with the other entry by entry. Three things carry the gain.
+
+\paragraph{No Python loop over elements.} The element index is an array axis. This is the main gain for the two-dimensional elements.
+
+\paragraph{One contraction over the Gauss points.} For the hexahedra the sum over Gauss points is folded into a single matrix product whose contraction length is the number of Gauss points times the six strain components, instead of one small product per Gauss point. This is a property of the hexahedron kernels; \Cref{sec:bk-limits} states how much of the gain it explains.
+
+\paragraph{Caches built once per block.} The reference gradients are computed once and stored in the block's geometry cache, which is rebuilt if the node coordinates, the connectivity or the Gauss order change (compared exactly against a stored copy, so a moved mesh cannot leave a stale cache). For the global tangent, the CSR sparsity pattern and, for every entry of every element matrix, its position in the CSR data array are computed once with one sort. Each later assembly is then a single \code{bincount} of the element-matrix entries into that position map, and no $n\times n$ array is ever formed. The pattern depends only on the element-to-dof map, so it survives mesh motion.
+
+\paragraph{Memory limit.} A batch call allocates arrays of size elements $\times$ Gauss points $\times$ strain components $\times$ element dofs. \Cref{tab:bk-chunk} gives the estimate the code uses; for a 20-node hexahedron it is 270 kB per element, so a block of $10^5$ elements would need tens of gigabytes. Blocks are therefore split automatically into chunks whose estimated working memory stays under a budget (256 MB by default, or an explicit \code{chunk_size}). A chunked result equals the unchunked one up to summation order, not bit for bit: on a $24\times8$ plate with chunks of 7 elements the largest difference of the tangent is \cbkChunkDiff{} relative to its largest entry.
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch06_chunk}
+\caption{Estimated working memory of a batched tangent call (the dominant arrays, not the peak resident memory), from the package's own estimate.}\label{tab:bk-chunk}
+\end{table}
+
+\section{Using it}\label{sec:bk-use}
+
+The loop remains the default. The batched path is requested with \code{vectorized=True} on an assembly call, or for a whole analysis with \code{fes.batched = True}; an explicit argument overrides the attribute. Before running, \code{batch_support_report} says for every block whether it can be batched, and after an assembly \code{last_assembly_modes} says what was done.
+
+\begin{lstlisting}[caption={Requesting batched assembly and checking what was used (plate of \cbkChunkedPlateElems{} \texttt{Quad4PlaneStressTL} elements).},label={lst:bk-use}]
+fes.batch_support_report()          # [('q', 'Quad4PlaneStressTL', 192, None)]  None = can be batched
+f = fes.assemble_internal_force(u, mat, vectorized=True, thickness=0.5)
+K = fes.assemble_tangent_stiffness(u, mat, vectorized=True, sparse=True, thickness=0.5)
+print(fes.last_assembly_modes)      # {'q': 'batched'}
+\end{lstlisting}
+
+A block that cannot be batched stays on the loop, and the report gives the reason. For example, the plastic bar of Chapter~\ref{ch:nonlin} is reported as not batchable (\emph{\cbkReasonPlastic}), because its history variables are updated per element and per step. Path-dependent blocks, contact elements added one by one, and springs stay on the loop; a model with several blocks is assembled block by block, each by the route it supports.
+
+The Newton drivers take the sparse path with \code{sparse\_tangent=True} (or the same field of \code{NewtonOptions}). The tangent is then a CSR matrix, the free block is sliced out, and it is factored with SuperLU; the dense tangent is never formed.
+
+\begin{lstlisting}[caption={A load-controlled Newton solve with batched assembly and a sparse tangent.},label={lst:bk-newton}]
+fes.batched = True
+lf, U = nls.solve_nonlinear_static(fes, mat, n_steps=6, tol=1e-9, max_iter=40,
+                                   thickness=0.5, sparse_tangent=True)
+\end{lstlisting}
+
+\section{Verification}\label{sec:bk-verif}
+
+A fast kernel is useless unless it is the same kernel. Every comparison below reports the agreement with the loop next to the speed-up, and all numbers come from \texttt{scripts/ch06\_assets.py} (which reuses the family benchmarks of \texttt{paper/experiments/e10\_batched\_kernels.py}) run on \machine{}: the reference route is timed once, the batched route is the minimum of three runs after a warm-up, and the caches are warm, as they are in a Newton loop.
+
+\paragraph{Four element families.}
+\Cref{tab:bk-families} compares the loop and the batched route on one block of each family at a random displacement state. The largest relative difference of force and tangent is \cbkAgreeWorst. The gain is largest for the 4-node plane-stress element (\cbkKFQuad$\times$ for the kernel force) and smaller for the elements that do more arithmetic per element: \cbkKFHexEight$\times$ for the 8-node hexahedron, and \cbkKFHexTwenty$\times$ for the 20-node hexahedron. The quadratic tetrahedron is in between for the force (\cbkKFTet$\times$) and shows a larger gain for the tangent (\cbkKTTet$\times$). The four blocks differ in size, so the ratios compare how well each batches, not the cost of one element type against another.
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch06_families}
+\caption{Loop against batched route: speed-up of the element kernels (force, tangent) and of the assembled force of the whole system, and the largest relative difference of the results. One run per family on \machine.}\label{tab:bk-families}
+\end{table}
+
+\paragraph{Scaling with the number of elements.}
+\Cref{fig:bk-scaling} assembles the force of a plate with $\cbkScaleNeSmall$ to $\cbkScaleNeLarge$ elements. The loop time grows linearly with the number of elements (log--log slope \cbkLoopSlope); the batched time grows more slowly over the larger sizes (slope \cbkBatchSlope), because a fixed cost per call is spread over more elements. The speed-up therefore grows from \cbkScaleSmall$\times$ at $\cbkScaleNeSmall$ elements to \cbkScaleLarge$\times$ at $\cbkScaleNeLarge$ elements. For very small models the gain is small in absolute time and the loop is fine.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/ch06_scaling.pdf}
+\caption{Internal-force assembly of a \code{Quad4PlaneStressTL} plate: time of the loop and the batched route (left) and their ratio (right). Produced by \texttt{scripts/ch06\_assets.py}.}\label{fig:bk-scaling}
+\end{figure}
+
+\paragraph{A whole Newton solve.}
+\Cref{lst:bk-newton} on a plate of \cbkNewtonNE{} elements (\cbkNewtonN{} dofs), six load steps, takes \cbkNewtonBatched{} s, against \cbkNewtonDefault{} s for the default path, a factor of \cbkNewtonRatio. The two solutions agree to \cbkNewtonDiff{} (relative to the largest displacement, \cbkNewtonMax{} at the end). This factor combines three effects that this experiment does not separate: faster assembly, no dense tangent, and a sparse instead of a dense linear solve. \Cref{fig:bk-newton} shows the two times.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.45\linewidth]{figures/ch06_newton.pdf}
+\caption{Wall time of the same load-controlled Newton solve with the default path and with batched assembly and a sparse tangent.}\label{fig:bk-newton}
+\end{figure}
+
+\section{Related pieces}\label{sec:bk-related}
+
+The same idea appears in other places of the packages; this chapter does not benchmark them, and the figures for them are in the repository documentation. Many contact pairs can be handled in one call with \code{ContactSet2D} and \code{ContactSet3D} (a KD-tree finds the candidate pairs). Hyper-reduction needs the response of selected elements for many snapshots: \code{fes.element_forces}, \code{element_tangents} and their \code{_local} variants provide it, and \rom{} runs its training matrix and the energy-conserving sampling and weighting (ECSW) fit without a Python loop over elements and snapshots (Chapter~\ref{ch:hyper}); \rom{} does not import \fea{}, so these hooks take plain callables. Homogeneous linear constraints can be removed with \code{fes.eliminate_constraints()}, and \code{fea_engine.batched_kernels_torch} provides the same kernels in PyTorch for CPU or GPU.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.42\linewidth} X@{}}
+\toprule
+Concept & Code \\
+\midrule
+batch protocol, chunking, geometry and pattern caches & \anchor{fea_engine.batched_kernels.chunk_slices}, \anchor{fea_engine.batched_kernels.SparsePatternCache}, \anchor{fea_engine.batched_kernels.BlockGeometryCache} \\
+batched elements & \anchor{fea_engine.elements.nonlinear_solids.Quad4PlaneStressTL}, \anchor{fea_engine.elements.hex_tl.Hex8SolidTL}, \anchor{fea_engine.elements.hex_tl.Hex20SolidTL}, \anchor{fea_engine.elements.nonlinear_solids.Tet10SolidTL} \\
+assembly entry points & \anchor{fea_engine.solver.FESystem} (\code{assemble_internal_force}, \code{assemble_tangent_stiffness}, \code{batch_support_report}) \\
+sparse Newton settings & \anchor{fea_engine.newton_options.NewtonOptions} \\
+\bottomrule
+\end{tabularx}
+\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:bk-map}
+\end{table}
+
+\section{Limits}\label{sec:bk-limits}
+
+\begin{limitsbox}
+\begin{itemize}
+\item \textbf{The gain depends on the element.} A batched call removes interpreter overhead; for elements with a lot of arithmetic per element (the hexahedra) the work is compute-bound and the gain is smaller (\Cref{tab:bk-families}). The package's plan reports that for the 8-node hexahedron a batch-of-one call of the same kernel was only about 1.1 times slower for the tangent than the batched call, so most of the 3-D gain comes from the folded kernel, the sparse tangent and the cheaper solve, and not from removing the loop. This chapter did not repeat that measurement.
+\item \textbf{The sparse solve can dominate.} Once assembly is fast, the factorisation is the cost: the plan of the package reports that at around 11\,000 dofs the sparse solve, not the assembly, dominates. This chapter did not measure that size.
+\item \textbf{Not batched:} blocks with path-dependent state, contact elements added one by one, and springs. They stay on the loop, and the report says so per block.
+\item \textbf{Single runs on one machine.} Every time is one run (the minimum of three for the batched route) on \machine{}; the ratios give the direction and the order of magnitude, not a precise figure, and they will differ on another machine.
+\item \textbf{Memory estimates} are estimates of the dominant arrays, not peak resident memory (\Cref{tab:bk-chunk}).
+\item \textbf{Optional modes} \code{reuse_factorization=True} (modified Newton) needs fewer assemblies and more iterations and can diverge, and \code{lu_ordering} is problem dependent; both stay off unless requested.
+\item \textbf{Not tested here:} meshes of $10^5$ elements, batched friction, and updating contact pairs during a solve.
+\end{itemize}
+\end{limitsbox}
+
+\section{Summary}\label{sec:bk-summary}
+
+A nonlinear element is reassembled in every Newton iteration, and a Python loop over elements makes that expensive. The batched path computes all elements of a block at once, caches the reference geometry and the sparse pattern, limits its memory by chunking, and reports the blocks it cannot handle. On four element families it agreed with the loop to \cbkAgreeWorst{} and was between \cbkKFHexTwenty{} and \cbkKFQuad{} times faster for the force kernel in this study; a full Newton solve of a plate was \cbkNewtonRatio{} times faster, with the solution unchanged to \cbkNewtonDiff. The loop stays the default and the reference.
+
+\section*{Exercises}\label{sec:bk-exercises}
+\begin{enumerate}
+\item Repeat \Cref{fig:bk-scaling} for \code{Hex8SolidTL} and compare the speed-up at small sizes with that of the plane-stress element. Why is it smaller?
+\item Run \Cref{lst:bk-newton} with \code{NewtonOptions(sparse_tangent=True, lu_ordering="COLAMD")}. Does the ordering change the time? Do the results change?
+\item Choose \code{chunk_size=1}, \code{7} and \code{192} for the tangent of \Cref{lst:bk-use}. How do the time and the difference to the unchunked result change?
+\item Build a model with one \code{Quad4PlaneStressTL} block and one \code{TrussPlastic2D} block. What does \code{batch\_support\_report} return, and what does \code{last\_assembly\_modes} show after an assembly?
+\item Separate the three effects in \cbkNewtonRatio{}-fold gain of the Newton solve: time the loop assembly, the batched assembly and the two linear solves on the same tangent.
+\end{enumerate}
+
+\chapterrefs
