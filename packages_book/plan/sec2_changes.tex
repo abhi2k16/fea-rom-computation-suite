@@ -1,0 +1,23 @@
+\section{Changes from the first outline}\label{sec:changes}
+
+The first outline was checked against the packages. The structure is kept; the changes below make the plan consistent with what the code contains and what is measured.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}p{3.2cm}X X@{}}
+\toprule
+Item & Change & Reason \\
+\midrule
+Dynamics chapter & New Chapter~\ref{ch:dyn} in Part~II & The first outline has no time integration. \fea{} provides \code{solve_modal}, \code{solve_transient_implicit}, \code{solve_transient_explicit}, \code{solve_modal_superposition}, \code{solve_harmonic} and \code{solve_random_vibration}; Chapters~\ref{ch:bt}--\ref{ch:freq} and~\ref{ch:contact} depend on them. \\
+Substructuring & New Chapter~\ref{ch:cms} in Part~III & \code{cms.py}, \code{component_pod.py} and \code{interface_reduction.py} are implemented and measured in the paper (experiment e3). \\
+Final chapter & ``Digital twin deployment'' replaced by verification case studies and a parametric offline/online pipeline (Chapter~\ref{ch:verif}) & The packages contain no deployment layer; a dashboard would be user-interface code, which the scope excludes. Five reproduction reports already exist in \code{paper/reproductions/}. \\
+Element names & Plane-stress triangles are \code{Tri3PlaneStress} and \code{Tri6PlaneStress}; quadrilaterals are \code{Quad4PlaneStress} and \code{Quad8PlaneStress}; the geometrically exact Reissner beam \code{Beam2DReissner} is 2-D only; 3-D beams are Euler--Bernoulli and corotational & Stated as in the source. \\
+Agreement claim & ``Bitwise or $10^{-15}$'' replaced by ``tolerance $10^{-12}$ in tests, $10^{-14}$ to $10^{-15}$ measured'' & Chunked and unchunked evaluations agree to summation order, not bit for bit. \\
+Contact dynamics & ``Managing high-frequency shock dissipation'' replaced by an account of BDF2 behaviour as measured & BDF2 is not contact-stabilised: the impact test showed an energy rise of up to 0.72\% and wall-force spikes. The chapter presents this as a limitation. \\
+Performance claims & GPU statements limited to what was timed & On the one case timed (1,536 \code{Hex8SolidTL} elements) the GPU was not faster than torch on the CPU. The 3-D hexahedron gain comes mainly from the folded kernel, the sparse tangent and the cheaper solve. \\
+Neural models & One paragraph on \code{neural_operator.py}, no chapter & Deep networks are excluded by the scope. \\
+Code anchors & Real paths and release tags (\Cref{sec:citations}) & The first outline used \code{fea_engine/src/contact_solvers.py}; the file is \code{fea_engine/src/fea_engine/contact_solvers.py}. \\
+\bottomrule
+\end{tabularx}
+\caption{Changes from the first outline, with reasons.}\label{tab:changes}
+\end{table}

@@ -1,0 +1,44 @@
+\section{Production plan}\label{sec:production}
+
+\subsection{Folder layout}
+\begin{verbatim}
+packages_book/
+  README.md              what this folder is, how to build
+  plan/                  this document (main, macros, sec*.tex, refs.bib)
+  book/                  created when writing starts
+    main.tex  macros.tex  refs.bib
+    chapters/ch01.tex ... ch14.tex  appA.tex
+    figures/  tables/  listings/    generated, never edited by hand
+    scripts/                        one script per figure or table
+\end{verbatim}
+The book reuses the conventions of \code{paper/}: a shared macro file, numbers generated into macros, figures built by scripts, and \texttt{latexmk} for the build.
+
+\subsection{Order of work}
+\begin{enumerate}
+\item \textbf{Set-up.} Book skeleton, macro file, numbers pipeline, bibliography, the nine items of \Cref{tab:todo}.
+\item \textbf{Part II core first} (Chapters~\ref{ch:elem}, \ref{ch:nonlin}, \ref{ch:batch}, \ref{ch:contact}), because it holds the most measured material and the contact chapter is the book's distinctive contribution.
+\item \textbf{Part I and Chapter~\ref{ch:dyn}}, written after the code it describes is fixed.
+\item \textbf{Part III} in the order of \Cref{fig:deps}.
+\item \textbf{Part IV and the appendix}, then index, notation list and the anchor-to-path table.
+\end{enumerate}
+Each chapter is reviewed against the repository at its release tag, and every listing is executed in the build.
+
+\subsection{Risks}
+\begin{itemize}
+\item \textbf{Code drift.} The packages still change. Mitigation: pin a tag per edition and cite by importable name.
+\item \textbf{Unmeasured claims.} The new gallery scripts (\code{fea_09}, \code{fea_10}, \code{rom_07}) were run only in the development sandbox; they need a run on the author's machine before their numbers enter the book.
+\item \textbf{Scope creep.} The package has many modules that the plan leaves out (topology optimisation, adaptivity, iterative solvers, harmonic-balance hyper-reduction, friction models). They appear only as pointers.
+\item \textbf{Length.} 440 pages is a ceiling; Chapters~\ref{ch:elem} and~\ref{ch:nonlin} are the first to shorten.
+\end{itemize}
+
+\subsection{Decisions taken}
+The five open questions of draft~1 were answered by the author.
+\begin{enumerate}
+\item \textbf{Companion to a pinned release.} The book is a companion to a tagged release of the repository; it is not a stand-alone text. Every listing, number and code anchor refers to that release. The current versions are \fea{} 1.0.1 and \rom{} 0.2.0; the tag itself is to be created by the author when the text is frozen, and all results quoted in the book are re-run at that tag.
+\item \textbf{FD-PINN reproduction stays in Chapter~\ref{ch:verif}} as a verification case study, presented as a check of the reproduction procedure and not as a neural-network method.
+\item \textbf{One paragraph on the neural-operator code} in Chapter~\ref{ch:nonint}; no neural-network chapter.
+\item \textbf{Format.} A4, class \texttt{book}, in the layout of \code{paper/macros.tex}.
+\item \textbf{Appendix~A (differentiable assembly) stays.}
+\end{enumerate}
+\subsection{Next step}
+Create the \code{book/} skeleton (main file, macro file, bibliography, empty chapter files, the numbers pipeline) and write Chapter~\ref{ch:contact} first as the reference for the template; this waits for the author's go-ahead.

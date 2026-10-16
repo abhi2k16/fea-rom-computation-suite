@@ -1,0 +1,19 @@
+\section{Purpose, audience and scope}\label{sec:scope}
+
+\paragraph{Purpose.}
+The book is a production blueprint for an engineering computation engine written from scratch. It connects structural mechanics, array-oriented performance patterns in Python and projection-based model order reduction (MOR), and it explains each design decision through the code that implements it.
+
+\paragraph{Audience and prerequisites.}
+Graduate students in computational mechanics, research-software developers, and advanced aerospace and mechanical engineers. The reader is assumed to know intermediate continuum mechanics, the basics of the finite element method and array programming with NumPy.
+
+\paragraph{Technology.}
+Native Python, NumPy and SciPy, with optional PyTorch for GPU execution and automatic differentiation. The NumPy path is the default everywhere.
+
+\paragraph{Included.}
+Mathematical formulation, vectorised algorithm design, software architecture, verification protocols, and the optimisation theory behind active-set contact solvers and reduced models.
+
+\paragraph{Excluded.}
+Commercial solvers and their file formats; production-grade file-system handling; basic mathematical proofs; user-interface and web code; unstructured mesh generation (Gmsh support was removed from \fea{}, and that decision is discussed in Chapter~\ref{ch:mesh} as a design lesson).
+
+\paragraph{How the book relates to the repository.}
+The book is a companion to a pinned release of the repository. Every chapter ends in runnable code that exists in that release. The book explains and verifies the code; it does not replace the API reference (\texttt{API\_REFERENCE.md}) or the user guide (\texttt{USER\_GUIDE.md}).

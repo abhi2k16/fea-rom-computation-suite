@@ -1,0 +1,34 @@
+% macros.tex -- preamble of the book plan (same conventions as paper/macros.tex).
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{graphicx}
+\usepackage{booktabs,array,longtable,tabularx}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{positioning,fit,arrows.meta,calc,backgrounds}
+\usepackage[numbers,sort&compress]{natbib}
+\renewcommand{\cite}{\citep}
+\setlength{\bibsep}{2pt}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\usepackage[capitalise,noabbrev]{cleveref}
+\setlist{itemsep=2pt,topsep=3pt,parsep=0pt}
+\setlength{\parindent}{0pt}\setlength{\parskip}{4pt}
+
+\newcommand{\fea}{\texttt{fea\_engine}}
+\newcommand{\rom}{\texttt{rom\_engine}}
+\usepackage{url}\urlstyle{tt}
+\makeatletter\def\UrlBreaks{\do\_\do\.\do\/\do\,}\def\UrlBigBreaks{\do\:\do\@}\makeatother
+\DeclareRobustCommand{\code}[1]{\path{#1}}
+% code anchor: [Code: module.symbol @ tag]
+\DeclareRobustCommand{\anchor}[1]{{\sffamily[Code:\,}\path{#1}{\sffamily]}}
+\newcommand{\have}{\textcolor{green!45!black}{\textbf{exists}}}
+\newcommand{\todo}[1]{\textcolor{red!70!black}{\textbf{to produce:} #1}}
+\newcommand{\KKT}{\mathrm{KKT}}
+\newcommand{\lam}{\bm{\lambda}}
+\setlength{\emergencystretch}{5em}
+\hbadness=10000
