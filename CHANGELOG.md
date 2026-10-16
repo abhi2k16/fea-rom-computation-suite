@@ -6,6 +6,9 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 
 ## Unreleased
 
+### Added (rom_engine, greedy contact sampling for trajectories)
+- `greedy_contact_sampling`: `fom_solve` may return trajectories `(n, T)` and `(m, T)` (columns concatenated in selection order); new keywords `rel_tol` (stop when the largest indicator is at most `rel_tol` times the largest after the first round: Algorithm 2 line 15 of Balajewicz et al., read as `<=` because the printed `>` is most likely a typo) and `pass_round` (calls `make_rom(U, L, n_iter)`); `GreedyContactHistory` gained `n_columns` and `stop_reason`. New helpers `trajectory_indicator` (sums a single-state indicator over the time steps) and `linear_basis_schedule(p_first, p_last, n_last)` (the report's `p = floor(2 + (n - 1) 98/9)` is `linear_basis_schedule(2, 100, 10)`). Vector snapshots, `tol` and the two-argument `make_rom` behave as before. Tests added to `rom_engine/tests/test_contact_greedy.py` (10 new, 13 in all).
+
 ### Added (rom_engine, dynamic contact ROM)
 - `ContactROM.solve_dynamic(force, c, dt, n_steps, u0=None, v0=None, scheme="bdf2", warm_start=True, lift=True)`: reduced BDF2 contact dynamics on `M_r = U^T M U`, `A_r`, `B_r` (new optional `M=` argument of `ContactROM`; the static interface is unchanged). The two effective reduced matrices and their LCP matrices are factored once; the previous step's active set warm-starts the next LCP (`lcp_active_set` and `solve_lcp` gained an optional `active0`). Every step's reduced contact conditions are verified (relative tolerance 1e-4); a violation, or a failing LCP, stops the loop and is reported (`ok`, `failed_step`, `message`, rows from that step NaN). Returns `ContactROMDynamicResult` (reduced and lifted displacements, multipliers, gaps, velocities, iteration counts, `kkt_residual`). Tests: `rom_engine/tests/test_contact_dynamic_rom.py` (13).
 

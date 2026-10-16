@@ -2231,7 +2231,7 @@ force; `solve_contact_dynamics` defaults to the first-order two-step scheme, and
 
 On the reduced side, `nonneg_dual_basis` builds a non-negative basis for the contact forces, so reconstructed multipliers cannot
 go negative; `ContactROM(K, B, U, U_lam).solve(f, c)` solves the reduced LCP and `.inf_sup_report()` checks the rank condition. With the mass matrix (`ContactROM(K, B, U, U_lam, M=M).solve_dynamic(force, c, dt, n_steps)`) it runs a reduced BDF2 time loop, factoring the two reduced matrices once and warm-starting each LCP with the previous step's active set; it checks the reduced contact conditions at every step and reports a failure (with a pointer to the rank condition) instead of returning a wrong trajectory.
-`greedy_contact_sampling` picks snapshots by the violation of the contact conditions, `fit_contact_aware_ecsw` keeps the contact
+`greedy_contact_sampling` picks snapshots by the violation of the contact conditions (for dynamic problems the full-order solve may return whole trajectories, `trajectory_indicator` sums a single-state indicator over the time steps, `pass_round=True` hands the round number to `make_rom` so the basis sizes can follow `linear_basis_schedule`, and `rel_tol` stops when the largest indicator is at most that fraction of the one after the first round), `fit_contact_aware_ecsw` keeps the contact
 elements at weight one, and `PartitionedModel` condenses a linear zone onto the interface. Errors are compared with
 `contact_errors`. Scope: frictionless contact, constant gap map, small displacements, straight mortar interfaces.
 
