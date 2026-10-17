@@ -49,6 +49,10 @@
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-9}
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {9.1}{\ignorespaces Left: Hankel singular values of the pre-reduced model. Right: the a priori bound \textup {\hbox {\mathsurround \z@ \normalfont (\ignorespaces \ref {eq:bt-bound}\unskip \@@italiccorr )}} and the actual grid-maximum error against the retained order. The error is measured against the exact response of the pre-reduced model. Produced by \texttt {scripts/ch09\_assets.py}.\relax }}{69}{figure.caption.140}%
+\contentsline {figure}{\numberline {9.2}{\ignorespaces Error in the band $0.05$--$8\,\omega _1$ against the reduced state count: peak-relative (left) and mean relative (right).\relax }}{69}{figure.caption.141}%
+\contentsline {figure}{\numberline {9.3}{\ignorespaces Relative error against frequency for models of order $8$ on an extended band; the dotted line marks the upper end of the band of \Cref {tab:bt-compare}.\relax }}{70}{figure.caption.143}%
+\contentsline {figure}{\numberline {9.4}{\ignorespaces Tip frequency response of the full model and of the models of order $8$.\relax }}{71}{figure.caption.144}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-10}
 \addvspace {10\p@ }

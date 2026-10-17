@@ -1,2 +1,205 @@
-\chapter{Systems-and-control reduction}\label{ch:bt}
-\stubchapter{Chapter 9}
+\chapter{Systems-and-control reduction: balanced truncation, Krylov and SOAR}\label{ch:bt}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+Chapter~\ref{ch:pod} reduced a model by looking at \emph{solutions}. This chapter reduces it by looking at the \emph{input--output map}: how a chosen force enters and how a chosen response leaves. Three families do this. Balanced truncation keeps the states that are both easy to excite and easy to observe, and comes with an a priori error bound and a stability guarantee. Krylov methods match the Taylor coefficients of the transfer function at one frequency and need no Lyapunov solve. SOAR does the same without leaving the second-order form of structural dynamics. The chapter states the three methods, runs them on one damped cantilever against an independent full-order frequency sweep, and measures the bound, the accuracy at equal size, the locality of moment matching, a scale dependence found in the SOAR implementation, and stability and passivity.
+\end{tcolorbox}
+
+\section{The problem}\label{sec:bt-problem}
+
+A structural model with damping is $\bm M\ddot{\bm q}+\bm C\dot{\bm q}+\bm K\bm q=\bm b\,u(t)$ with output $y=\bm c^T\bm q$: one force $u$ acting at a chosen degree of freedom, one displacement $y$ observed. All that matters to a user of such a port is its transfer function
+\begin{equation}\label{eq:bt-tf}
+H(s)=\bm c^T\bigl(s^2\bm M+s\bm C+\bm K\bigr)^{-1}\bm b,\qquad s=i\omega,
+\end{equation}
+and the task is to find a model of much smaller order whose $H_r(s)$ is close to $H(s)$ over the band of interest. The dimension is not the number of unknowns: the first-order form used by the state-space methods has $2n$ states, $\bm x=[\bm q;\dot{\bm q}]$, and its size is the unit in which the methods below are compared (\emph{state count}; a second-order model of $k$ unknowns has $2k$ states).
+
+\paragraph{The model problem.}
+A cantilever of $24$ Euler--Bernoulli elements (\cbtNDof{} free unknowns, \cbtNState{} states) with Rayleigh damping $\bm C=\alpha\bm M+\beta\bm K$, $\alpha=2$, $\beta=10^{-5}$, the model of the package example \path{rom_engine/examples/gallery/rom_04_balanced_truncation.py}. The force and the observed displacement are both at the tip, so $\bm b=\bm c$ (a \emph{collocated} port). The first natural frequency is \cbtFOne{}~Hz. The reference is the full-order frequency sweep of \fea{} (\code{solve_frequency_sweep}), independent of everything in \rom{}, on $400$ frequencies from $0.05\omega_1$ to $8\omega_1$.
+
+\section{Mathematical structure}\label{sec:bt-math}
+
+\paragraph{Balanced truncation.}
+Write the first-order form $\dot{\bm x}=\bm A\bm x+\bm B u$, $y=\bm C_o\bm x$ with $\bm A$ stable. The controllability and observability Gramians solve two Lyapunov equations,
+\begin{equation}\label{eq:bt-lyap}
+\bm A\bm P+\bm P\bm A^T+\bm B\bm B^T=\bm 0,\qquad \bm A^T\bm Q+\bm Q\bm A+\bm C_o^T\bm C_o=\bm 0 ,
+\end{equation}
+and measure, respectively, how much a state can be excited by the input and how much it shows at the output. A change of coordinates can make both equal and diagonal, $\bm P=\bm Q=\mathrm{diag}(\sigma_1,\dots,\sigma_{2n})$; the $\sigma_k$ are the Hankel singular values, and the states with small $\sigma_k$ matter least to the input--output map~\cite{moore1981,antoulas2005}. Truncating the balanced model to its first $r$ states keeps the stability of the full model and satisfies the a priori bound~\cite{enns1984,glover1984}
+\begin{equation}\label{eq:bt-bound}
+\sup_{\omega}\;|H(i\omega)-H_r(i\omega)|\;\le\;2\sum_{k>r}\sigma_k .
+\end{equation}
+The bound is absolute (in the units of $H$, here m/N), holds for every frequency at once, and is known before any frequency response is evaluated. The method needs two Lyapunov solves of dense $2n\times2n$ systems, so it is a method for models of moderate size or for models that have already been reduced.
+
+\paragraph{Krylov moment matching.}
+Expand $H$ about a point $s_0$: $H(s_0+\sigma)=\sum_{j\ge0}m_j\sigma^j$. The moments $m_j$ are the entries of a Krylov sequence built with one sparse factorisation of $s_0\bm E-\bm A$ (the descriptor form $\bm E\dot{\bm x}=\bm A\bm x+\bm B u$ avoids inverting $\bm M$), so an orthonormal basis $\bm V$ of that Krylov subspace, used as a Galerkin projection $\bm A_r=\bm V^T\bm A\bm V$, $\bm E_r=\bm V^T\bm E\bm V$, makes the reduced transfer function match the first moments at $s_0$ exactly~\cite{besselink2013comparison}. A second basis $\bm W$ from the dual system gives the oblique (two-sided, Petrov--Galerkin) projection, which matches about twice as many moments for the same size. Matching is \emph{local}: exact in the limit at $s_0$, and nothing in the construction controls the error elsewhere, and the stability of the full model is not inherited.
+
+\paragraph{SOAR.}
+The first-order form doubles the state count. The second-order Arnoldi method of Bai and Su~\cite{bai2005soar} builds a basis of the same moments directly in the pencil $s^2\bm M+s\bm C+\bm K$, with the two-term recurrence $\bm r_j=\bm A_1\bm r_{j-1}+\bm A_2\bm r_{j-2}$, $\bm A_1=-\bm K_0^{-1}(\bm C+2s_0\bm M)$, $\bm A_2=-\bm K_0^{-1}\bm M$, $\bm K_0=\bm K+s_0\bm C+s_0^2\bm M$, and projects $\bm M,\bm C,\bm K$ by congruence. The reduced model is again second-order, with $k$ unknowns and $2k$ states.
+
+\paragraph{Passivity.}
+For a collocated port the force $u$ and the velocity $y_v=\bm b^T\dot{\bm q}$ have power $uy_v$, and the energy balance $\dot E=-\dot{\bm q}^T\bm C\dot{\bm q}+uy_v\le uy_v$ says the structure only dissipates. Because a congruence $\bm\Phi^T\bm C\bm\Phi$ keeps positive semidefiniteness for \emph{any} full-column-rank basis, every second-order Galerkin projection preserves this inequality; this is the argument in the module docstring of \anchor{rom_engine.passivity.passivity_margin} and it applies to modal truncation, POD (Chapter~\ref{ch:pod}) and SOAR. It does not apply to the first-order projections of balanced truncation and Krylov methods, for which passivity has to be checked. The frequency-domain test for a passive one-port is $\mathrm{Re}\,H_v(i\omega)\ge0$ with $H_v=i\omega H$, or equivalently that the phase of the mobility stays within $\pm90^\circ$; the experiments report $\min_\omega\cos\arg H_v$.
+
+\begin{algbox}{Choosing and running a systems-and-control reduction of a structural port}
+\begin{enumerate}[leftmargin=1.5em]
+\item Fix the port ($\bm b$, $\bm c$) and the band. Check that the damping is not zero: the Lyapunov equations \eqref{eq:bt-lyap} need a stable $\bm A$.
+\item If the full model is large or its frequencies span many orders of magnitude, pre-reduce it by modal truncation to a moderate number of modes; then apply balanced truncation to the result (\Cref{sec:bt-raw}).
+\item Balanced truncation: compute the Hankel singular values, choose $r$ from \eqref{eq:bt-bound} for the tolerance, truncate.
+\item Krylov or SOAR: choose $s_0$ inside the band of interest, build the basis from the full model with one sparse factorisation, and \emph{check the result}: pole locations, the number of basis vectors returned, a held-out frequency response.
+\item For a passive structure, check the passivity margin of the reduced model, and prefer a second-order Galerkin method if the reduced model is to be coupled into a larger simulation.
+\end{enumerate}
+\end{algbox}
+
+\section{Implementation in the packages}\label{sec:bt-impl}
+
+The three method families share one entry convention, \code{from_MCK(M, K, B, Cout, C=..., ...)}, and one output convention, \code{frequency_response(omegas)}, so that the same comparison code runs on all of them (\Cref{lst:bt-run}). \Cref{tab:bt-map} lists the code. The package also contains the singular-perturbation variant of balanced truncation, which keeps the static gain exactly, a frequency-weighted variant, and an optimal Hankel-norm variant; these are \emph{not} tested in this book.
+
+\begin{lstlisting}[caption={The three reductions on one collocated port; M, K, C are the free-dof matrices and B the tip load vector.},label={lst:bt-run}]
+import numpy as np
+from scipy.linalg import eigh
+from rom_engine.balanced_truncation import BalancedTruncationROM
+from rom_engine.krylov import KrylovROM
+from rom_engine.soar import soar_basis, SOARROM
+
+# balanced truncation, after modal pre-reduction to 15 modes
+lam, Vf = eigh(K, M); Vp = Vf[:, :15]
+Mp, Kp, Cp, Bp = Vp.T @ M @ Vp, Vp.T @ K @ Vp, Vp.T @ C @ Vp, Vp.T @ B
+bt = BalancedTruncationROM.from_MCK(Mp, Kp, Bp, Bp, C=Cp, r=8)
+print(bt.h_infinity_error_bound(), bt.is_stable())
+
+# Krylov about s0 = 0 on the FULL model: 8 states, one-sided and two-sided
+k1 = KrylovROM.from_MCK(M, K, B, B, C=C, s0=0.0, k=8)
+k2 = KrylovROM.from_MCK(M, K, B, B, C=C, s0=0.0, k=4, two_sided=True)
+
+# SOAR: 4 unknowns = 8 states; load and time rescaled first (see text)
+w1 = np.sqrt(lam[0])
+V = soar_basis(w1**2 * M, K, B / np.linalg.norm(np.linalg.solve(K, B)), 4, C=w1 * C)
+soar = SOARROM(M, C, K, B.reshape(-1, 1), B.reshape(1, -1), V, 0.0)
+
+H = [m.frequency_response(omegas) for m in (bt, k1, k2, soar)]
+\end{lstlisting}
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+Concept & Code \\
+\midrule
+state-space form (descriptor and explicit) of $(\bm M,\bm C,\bm K)$ & \anchor{rom_engine.state_space.to_state_space} \\
+Gramians, Hankel singular values, balancing transform & \anchor{rom_engine.balanced_truncation.hankel_singular_values} \\
+balanced truncation, a priori bound \eqref{eq:bt-bound} & \anchor{rom_engine.balanced_truncation.BalancedTruncationROM} \\
+singular-perturbation variant (not tested here) & \anchor{rom_engine.balanced_truncation.SingularPerturbationROM} \\
+one- and two-sided Krylov moment matching & \anchor{rom_engine.krylov.KrylovROM}, \anchor{rom_engine.krylov.arnoldi_basis} \\
+second-order Arnoldi & \anchor{rom_engine.soar.SOARROM}, \anchor{rom_engine.soar.soar_basis} \\
+passivity diagnostic & \anchor{rom_engine.passivity.passivity_margin}, \anchor{rom_engine.passivity.velocity_transfer_function} \\
+worked example & \path{rom_engine/examples/gallery/rom_04_balanced_truncation.py} \\
+\bottomrule
+\end{tabularx}
+\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:bt-map}
+\end{table}
+
+\section{Verification}\label{sec:bt-verif}
+
+All numbers come from \texttt{scripts/ch09\_assets.py}, run on \machine{}. Errors are measured against the full-order sweep over the band $0.05$--$8\,\omega_1$; two summaries are used, the largest error divided by the peak $|H|$ (``peak-relative'') and the mean of $|H_r-H|/|H|$ over the band (``mean relative''), because the first is dominated by the resonance and the second by the frequencies between resonances.
+
+\subsection{Pre-reduction and the raw model}\label{sec:bt-raw}
+
+The example applies balanced truncation not to the \cbtNState{}-state model but to the $2\times\cbtNPre$-state model obtained by truncating to the lowest \cbtNPre{} undamped modes, and the package documentation says that the raw model is numerically unreliable for the dense Lyapunov solver, because the frequencies span many orders of magnitude. We tested this. On the raw model the order-8 balanced truncation has a peak-relative error of \cbtRawErrMax and a first Hankel singular value of \cbtRawHsvOne (against \cbtPreHsvOne on the pre-reduced model, a difference that should not exist if the two models had the same input--output map to the accuracy of the modal truncation); on the pre-reduced model the same order gives \cbtBtMaxEight. The raw model's reduced system is stable. The pre-reduction itself costs accuracy: the \cbtNPre{}-mode model has a peak-relative error of \cbtPreErrMax against the full sweep, which is the floor for every balanced model of this chapter, and a mean relative error of \cbtPreErrMean.
+
+\subsection{The a priori bound}
+
+On the pre-reduced model the Hankel singular values fall to \cbtHsvRatioTen of the largest at the tenth and \cbtHsvRatioTwenty at the twentieth (\Cref{fig:bt-bt}). \Cref{eq:bt-bound} holds at \cbtBoundHolds{} of the \cbtBoundCases{} orders tested ($r=2,4,\dots,28$), where the actual error is the largest difference to the exact response of the \cbtNPre{}-mode model over the $400$ frequencies. The one exception, $r=\cbtMissOrder$, has an error of \cbtMissErr and a bound of \cbtMissBound, which is \cbtMissRel{} of the largest singular value: rounding level, not a counter-example. Where the bound is meaningful the actual error is between \cbtBoundRatioMin{} and \cbtBoundRatioMax{} of it, so the bound is safe and loose by up to a factor $25$ in this test; at $r=8$ it is \cbtBtBoundEight against an actual error of \cbtBtErrIntEight. A grid maximum is a lower bound on the $H_\infty$ norm, so this checks the bound at the sampled frequencies and does not prove it. The reduced model is stable at all \cbtBtStable{} orders, as the theorem says.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.98\linewidth]{figures/ch09_bt.pdf}
+\caption{Left: Hankel singular values of the pre-reduced model. Right: the a priori bound \eqref{eq:bt-bound} and the actual grid-maximum error against the retained order. The error is measured against the exact response of the pre-reduced model. Produced by \texttt{scripts/ch09\_assets.py}.}\label{fig:bt-bt}
+\end{figure}
+
+\subsection{Accuracy at equal state count}
+
+\Cref{fig:bt-compare} and \Cref{tab:bt-compare} compare five reductions of the same port at the same number of states: modal truncation with $r/2$ undamped modes, balanced truncation, one-sided Krylov at $s_0=0$ on the full model, two-sided Krylov with $r/2$ vectors per side, and SOAR with $r/2$ unknowns.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.98\linewidth]{figures/ch09_compare.pdf}
+\caption{Error in the band $0.05$--$8\,\omega_1$ against the reduced state count: peak-relative (left) and mean relative (right).}\label{fig:bt-compare}
+\end{figure}
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{lrrrr}
+\toprule
+ & \multicolumn{2}{c}{8 states} & \multicolumn{2}{c}{12 states} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+method & peak-rel. & mean rel. & peak-rel. & mean rel. \\
+\midrule
+modal truncation & \cbtModalMaxEight & \cbtModalMeanEight & \cbtModalMaxTwelve & \cbtModalMeanTwelve \\
+balanced truncation & \cbtBtMaxEight & \cbtBtMeanEight & \cbtBtMaxTwelve & \cbtBtMeanTwelve \\
+Krylov, one-sided & \cbtKryOneMaxEight & \cbtKryOneMeanEight & \cbtKryOneMaxTwelve & \cbtKryOneMeanTwelve \\
+Krylov, two-sided & \cbtKryTwoMaxEight & \cbtKryTwoMeanEight & \cbtKryTwoMaxTwelve & \cbtKryTwoMeanTwelve \\
+SOAR & \cbtSoarMaxEight & \cbtSoarMeanEight & \cbtSoarMaxTwelve & \cbtSoarMeanTwelve \\
+\bottomrule
+\end{tabular}
+\caption{Error against the full-order sweep at equal state count, in the band $0.05$--$8\,\omega_1$.}\label{tab:bt-compare}
+\end{table}
+
+Three results stand out. First, one-sided Krylov is the most accurate method in this band at $8$ and $12$ states (SOAR overtakes it in mean relative error from $16$): a mean relative error of \cbtKryOneMeanEight at $8$ states against \cbtBtMeanEight for balanced truncation. It is matched at $s_0=0$ and the band starts near $s_0$; the next subsection shows what that costs. Second, balanced truncation is only modestly better than modal truncation in peak-relative error at $8$ states and about seven times better at $12$, while the mean relative errors are of the same order (\cbtBtMeanEight{} against \cbtModalMeanEight{} at $8$ states). The bound \eqref{eq:bt-bound} is absolute, so it controls the large values near resonance and says little about the small values between resonances; we did not test why the in-between error is larger, and offer as a hypothesis only that the static flexibility of the discarded modes matters there. Third, two-sided Krylov, which is expected to match twice as many moments, is \emph{less} accurate than one-sided at equal state count here ($8$ and $12$ states) and only reaches comparable accuracy at $16$; we saw no benefit of two-sided projection on this port, and the documentation's warning about its fragility is the reason not to prefer it by default.
+
+\subsection{Locality of moment matching}
+
+\Cref{fig:bt-locality} extends the band to $25\,\omega_1$, which contains the third resonance, for models of order $8$ built as before. Inside the band used for the comparison the mean relative error of one-sided Krylov is \cbtNearKryOne; above $12\,\omega_1$ it is \cbtFarKryOne, and balanced truncation shows \cbtNearBt inside and \cbtFarBt above. With only $8$ states neither method represents the third mode; the difference is how the error depends on the distance from the expansion point, rising steeply for Krylov and being roughly flat for the balanced model. The mean relative errors above $12\,\omega_1$ of the two-sided Krylov model and of SOAR are \cbtFarKryTwo and \cbtFarSoar.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.62\linewidth]{figures/ch09_locality.pdf}
+\caption{Relative error against frequency for models of order $8$ on an extended band; the dotted line marks the upper end of the band of \Cref{tab:bt-compare}.}\label{fig:bt-locality}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.62\linewidth]{figures/ch09_response.pdf}
+\caption{Tip frequency response of the full model and of the models of order $8$.}\label{fig:bt-response}
+\end{figure}
+
+\subsection{A scale dependence in SOAR}
+
+SOAR is the one method here that needed care. Called on the model in SI units with a unit force, \code{soar_basis(M, K, B, 4, C=C)} returns \cbtSoarRawCols{} vector instead of $4$. The cause is read from the source: a candidate direction is dropped if its norm is below an \emph{absolute} tolerance (\code{tol=1e-12}), and with $\|\bm K^{-1}\bm b\|$ equal to \cbtStaticNorm{} and a recurrence that contracts by about $\|\bm K^{-1}\bm M\|\sim\omega_1^{-2}$ per step, the second and later vectors fall below it. The package reports this through the shape of $\bm V$ and not by an error, so a caller that does not check the shape builds a one-vector model. Rescaling the load to $\|\bm K^{-1}\bm b\|=1$ and time to $\sigma=s/\omega_1$ (which replaces $\bm M,\bm C$ by $\omega_1^2\bm M,\omega_1\bm C$ and leaves the Krylov subspace about $s_0=0$ unchanged) returns \cbtSoarScaledCols{} vectors, and all SOAR results of this chapter use it (\Cref{lst:bt-run}). We did not change the package; a relative tolerance would be the fix, and \Cref{lst:bt-run} shows the work-around.
+
+With the rescaling SOAR converges, but not as fast as one-sided Krylov at the same state count: at $8$ states its mean relative error is \cbtSoarMeanEight against \cbtKryOneMeanEight, at $12$ states \cbtSoarMeanTwelve against \cbtKryOneMeanTwelve. What SOAR gives in exchange is a reduced model that is again second-order with symmetric $\bm M_r,\bm C_r,\bm K_r$, which can be coupled to other components, and the passivity property of the next subsection.
+
+\subsection{Stability and passivity}
+
+\Cref{tab:bt-stab} reports, for $8$, $12$ and $16$ states, whether all poles of the reduced model are in the left half-plane (for the first-order models; the second-order Galerkin models are stable by congruence for damped $\bm K,\bm M,\bm C\succeq0$ and are marked with a dash), and the smallest phase cosine of the mobility over $0.05$--$25\,\omega_1$. All \cbtRowCount{} reduced models have stable poles where this was checked, so we found none of the instability that the package documentation reports for a $k=20$ Krylov model in a published benchmark (\emph{quoted from the documentation, not reproduced here}); and the passivity margin is positive for all of them, with a minimum of about \cbtPassFull for the full model and for every reduced model. That minimum sits at the lowest frequency of the sweep, where all models agree and the mobility of a lightly damped structure is almost purely imaginary, so the table says that no violation was found on this grid, not that the margins are large. Passivity is guaranteed only for the second-order Galerkin models (modal truncation, SOAR); for balanced truncation and Krylov this is evidence from one port and one grid.
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch09_stability}
+\caption{Stability and the smallest phase cosine of the mobility ($0.05$--$25\,\omega_1$) for models of $8$, $12$ and $16$ states; a dash marks second-order Galerkin models.}\label{tab:bt-stab}
+\end{table}
+
+\section{Limits and failure modes}\label{sec:bt-limits}
+
+\begin{limitsbox}
+\begin{itemize}
+\item \textbf{One port, one structure.} Every result is for a $24$-element damped cantilever with a collocated tip port, one set of damping coefficients, and one band. Rankings between methods may differ for other ports, for non-collocated ports, for several inputs, or for models with strong modal density.
+\item \textbf{Balanced truncation is a dense method.} The Lyapunov solves are cubic in the number of states, the raw \cbtNState{}-state model gave an unreliable result (\Cref{sec:bt-raw}), and the experiments use a modal pre-reduction whose own error is the accuracy floor. Large models are out of reach without a different Gramian solver, and none is tested.
+\item \textbf{The bound is absolute and loose.} It was safe at the sampled frequencies, by up to a factor of about $25$; it says little about relative error between resonances. The grid check is not a proof.
+\item \textbf{Moment matching has no error control away from $s_0$} (\Cref{fig:bt-locality}) and no stability theorem; two-sided projection gave no benefit here and may fail to build.
+\item \textbf{SOAR has a scale-dependent deflation} (absolute tolerance), reported through the returned shape rather than an error; the TOAR variant that is more robust for block starting vectors is not implemented in the package.
+\item \textbf{Passivity} is a theorem for second-order Galerkin models and only a grid check for the others; no violation was observed in this test.
+\item \textbf{Not tested:} the singular-perturbation, frequency-weighted and optimal Hankel-norm variants; several-input ports; models above \cbtNState{} states; timing.
+\end{itemize}
+\end{limitsbox}
+
+\section{Summary}\label{sec:bt-summary}
+
+Balanced truncation reduces the input--output map with a stability guarantee and the bound \eqref{eq:bt-bound}, which held at every meaningful order in the test and was loose; its cost is a dense Lyapunov solve and, here, a modal pre-reduction. One-sided Krylov moment matching was the most accurate method in the band around its expansion point at equal state count, and the least accurate away from it. SOAR keeps the second-order form and passivity by congruence, and needs a rescaling of the problem to work with the package's absolute tolerance. Two-sided Krylov gave no benefit in this test. Which method to choose depends on whether the band is narrow and known (Krylov, SOAR), whether a global guarantee is needed (balanced truncation), and whether the reduced model must be second-order (SOAR, modal truncation).
+
+\section*{Exercises}\label{sec:bt-exercises}
+\begin{enumerate}
+\item Repeat \Cref{tab:bt-compare} with the expansion point moved to $s_0=4\omega_1$ (a real shift). Where does the one-sided Krylov error now sit, and does the model stay stable?
+\item Apply balanced truncation to the model pre-reduced to $10$ and to $25$ modes. How does the accuracy floor and the order needed for a given error change?
+\item Use a non-collocated port (force at the tip, displacement at midspan). Does the passivity argument of \Cref{sec:bt-math} still apply, and what does \code{passivity_margin} report?
+\item Replace the absolute tolerance in \code{soar_basis} by a tolerance relative to the norm of the first vector, and check that the unscaled call of \Cref{sec:bt-verif} returns four vectors. (Test file: \texttt{rom\_engine/tests/test\_soar.py}.)
+\item Find the order at which \eqref{eq:bt-bound} would first guarantee a peak-relative error below $10^{-6}$ for the pre-reduced model, and compare with the order the measured error needs.
+\end{enumerate}
+
+\chapterrefs

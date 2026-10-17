@@ -1,0 +1,55 @@
+\begin{thebibliography}{6}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Moore(1981)]{moore1981}
+B.~C. Moore.
+\newblock Principal component analysis in linear systems: Controllability,
+  observability, and model reduction.
+\newblock \emph{IEEE Transactions on Automatic Control}, 26\penalty0
+  (1):\penalty0 17--32, 1981.
+\newblock \doi{10.1109/TAC.1981.1102568}.
+
+\bibitem[Antoulas(2005)]{antoulas2005}
+Athanasios~C. Antoulas.
+\newblock \emph{Approximation of Large-Scale Dynamical Systems}.
+\newblock Advances in Design and Control. SIAM, Philadelphia, 2005.
+\newblock \doi{10.1137/1.9780898718713}.
+
+\bibitem[Enns(1984)]{enns1984}
+Dale~F. Enns.
+\newblock Model reduction with balanced realizations: An error bound and a
+  frequency weighted generalization.
+\newblock In \emph{Proceedings of the 23rd IEEE Conference on Decision and
+  Control}, pages 127--132, Las Vegas, NV, 1984.
+\newblock \doi{10.1109/CDC.1984.272286}.
+
+\bibitem[Glover(1984)]{glover1984}
+Keith Glover.
+\newblock All optimal {Hankel}-norm approximations of linear multivariable
+  systems and their {$L^\infty$}-error bounds.
+\newblock \emph{International Journal of Control}, 39\penalty0 (6):\penalty0
+  1115--1193, 1984.
+
+\bibitem[Besselink et~al.(2013)Besselink, Tabak, Lutowska, van~de Wouw,
+  Nijmeijer, Rixen, Hochstenbach, and Schilders]{besselink2013comparison}
+B.~Besselink, U.~Tabak, A.~Lutowska, N.~van~de Wouw, H.~Nijmeijer, D.~J. Rixen,
+  M.~E. Hochstenbach, and W.~H.~A. Schilders.
+\newblock A comparison of model reduction techniques from structural dynamics,
+  numerical mathematics and systems and control.
+\newblock \emph{Journal of Sound and Vibration}, 332\penalty0 (19):\penalty0
+  4403--4422, 2013.
+\newblock \doi{10.1016/j.jsv.2013.03.025}.
+
+\bibitem[Bai and Su(2005)]{bai2005soar}
+Zhaojun Bai and Yangfeng Su.
+\newblock {SOAR}: A second-order {Arnoldi} method for the solution of the
+  quadratic eigenvalue problem.
+\newblock \emph{SIAM Journal on Matrix Analysis and Applications}, 26\penalty0
+  (3):\penalty0 640--659, 2005.
+\newblock \doi{10.1137/S0895479803438523}.
+
+\end{thebibliography}

@@ -1,13 +1,89 @@
 \relax 
 \providecommand\hyper@newdestlabel[2]{}
-\@writefile{toc}{\contentsline {chapter}{\numberline {9}Systems-and-control reduction}{65}{chapter.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {9}Systems-and-control reduction: balanced truncation, Krylov and SOAR}{65}{chapter.9}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{ch:bt}{{9}{65}{Systems-and-control reduction}{chapter.9}{}}
+\newlabel{ch:bt}{{9}{65}{Systems-and-control reduction: balanced truncation, Krylov and SOAR}{chapter.9}{}}
 \newlabel{ch:bt@cref}{{[chapter][9][]9}{[1][65][]65}}
+\@writefile{toc}{\contentsline {section}{\numberline {9.1}The problem}{65}{section.9.1}\protected@file@percent }
+\newlabel{sec:bt-problem}{{9.1}{65}{The problem}{section.9.1}{}}
+\newlabel{sec:bt-problem@cref}{{[section][1][9]9.1}{[1][65][]65}}
+\newlabel{eq:bt-tf}{{9.1}{65}{The problem}{equation.9.1}{}}
+\newlabel{eq:bt-tf@cref}{{[equation][1][9]9.1}{[1][65][]65}}
+\@writefile{toc}{\contentsline {paragraph}{The model problem.}{65}{section*.134}\protected@file@percent }
+\citation{moore1981,antoulas2005}
+\citation{enns1984,glover1984}
+\citation{besselink2013comparison}
+\citation{bai2005soar}
+\@writefile{toc}{\contentsline {section}{\numberline {9.2}Mathematical structure}{66}{section.9.2}\protected@file@percent }
+\newlabel{sec:bt-math}{{9.2}{66}{Mathematical structure}{section.9.2}{}}
+\newlabel{sec:bt-math@cref}{{[section][2][9]9.2}{[1][65][]66}}
+\@writefile{toc}{\contentsline {paragraph}{Balanced truncation.}{66}{section*.135}\protected@file@percent }
+\newlabel{eq:bt-lyap}{{9.2}{66}{Balanced truncation}{equation.9.2}{}}
+\newlabel{eq:bt-lyap@cref}{{[equation][2][9]9.2}{[1][65][]66}}
+\newlabel{eq:bt-bound}{{9.3}{66}{Balanced truncation}{equation.9.3}{}}
+\newlabel{eq:bt-bound@cref}{{[equation][3][9]9.3}{[1][66][]66}}
+\@writefile{toc}{\contentsline {paragraph}{Krylov moment matching.}{66}{section*.136}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{SOAR.}{66}{section*.137}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Passivity.}{66}{section*.138}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.3}Implementation in the packages}{67}{section.9.3}\protected@file@percent }
+\newlabel{sec:bt-impl}{{9.3}{67}{Implementation in the packages}{section.9.3}{}}
+\newlabel{sec:bt-impl@cref}{{[section][3][9]9.3}{[1][67][]67}}
+\newlabel{lst:bt-run}{{9.1}{67}{The three reductions on one collocated port; M, K, C are the free-dof matrices and B the tip load vector}{lstlisting.9.1}{}}
+\newlabel{lst:bt-run@cref}{{[listing][1][9]9.1}{[1][67][]67}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9.1}The three reductions on one collocated port; M, K, C are the free-dof matrices and B the tip load vector.}{67}{lstlisting.9.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.4}Verification}{67}{section.9.4}\protected@file@percent }
+\newlabel{sec:bt-verif}{{9.4}{67}{Verification}{section.9.4}{}}
+\newlabel{sec:bt-verif@cref}{{[section][4][9]9.4}{[1][67][]67}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.4.1}Pre-reduction and the raw model}{67}{subsection.9.4.1}\protected@file@percent }
+\newlabel{sec:bt-raw}{{9.4.1}{67}{Pre-reduction and the raw model}{subsection.9.4.1}{}}
+\newlabel{sec:bt-raw@cref}{{[subsection][1][9,4]9.4.1}{[1][67][]67}}
+\@writefile{lot}{\contentsline {table}{\numberline {9.1}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{68}{table.caption.139}\protected@file@percent }
+\newlabel{tab:bt-map}{{9.1}{68}{Where the concepts of this chapter live in the repository (release \booktag ).\relax }{table.caption.139}{}}
+\newlabel{tab:bt-map@cref}{{[table][1][9]9.1}{[1][67][]68}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.4.2}The a priori bound}{68}{subsection.9.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.4.3}Accuracy at equal state count}{68}{subsection.9.4.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9.1}{\ignorespaces Left: Hankel singular values of the pre-reduced model. Right: the a priori bound \textup  {\hbox {\mathsurround \z@ \normalfont  (\ignorespaces \ref  {eq:bt-bound}\unskip \@@italiccorr )}} and the actual grid-maximum error against the retained order. The error is measured against the exact response of the pre-reduced model. Produced by \texttt  {scripts/ch09\_assets.py}.\relax }}{69}{figure.caption.140}\protected@file@percent }
+\newlabel{fig:bt-bt}{{9.1}{69}{Left: Hankel singular values of the pre-reduced model. Right: the a priori bound \eqref {eq:bt-bound} and the actual grid-maximum error against the retained order. The error is measured against the exact response of the pre-reduced model. Produced by \texttt {scripts/ch09\_assets.py}.\relax }{figure.caption.140}{}}
+\newlabel{fig:bt-bt@cref}{{[figure][1][9]9.1}{[1][68][]69}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9.2}{\ignorespaces Error in the band $0.05$--$8\,\omega _1$ against the reduced state count: peak-relative (left) and mean relative (right).\relax }}{69}{figure.caption.141}\protected@file@percent }
+\newlabel{fig:bt-compare}{{9.2}{69}{Error in the band $0.05$--$8\,\omega _1$ against the reduced state count: peak-relative (left) and mean relative (right).\relax }{figure.caption.141}{}}
+\newlabel{fig:bt-compare@cref}{{[figure][2][9]9.2}{[1][68][]69}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.4.4}Locality of moment matching}{69}{subsection.9.4.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {9.2}{\ignorespaces Error against the full-order sweep at equal state count, in the band $0.05$--$8\,\omega _1$.\relax }}{70}{table.caption.142}\protected@file@percent }
+\newlabel{tab:bt-compare}{{9.2}{70}{Error against the full-order sweep at equal state count, in the band $0.05$--$8\,\omega _1$.\relax }{table.caption.142}{}}
+\newlabel{tab:bt-compare@cref}{{[table][2][9]9.2}{[1][68][]70}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9.3}{\ignorespaces Relative error against frequency for models of order $8$ on an extended band; the dotted line marks the upper end of the band of \Cref  {tab:bt-compare}.\relax }}{70}{figure.caption.143}\protected@file@percent }
+\newlabel{fig:bt-locality}{{9.3}{70}{Relative error against frequency for models of order $8$ on an extended band; the dotted line marks the upper end of the band of \Cref {tab:bt-compare}.\relax }{figure.caption.143}{}}
+\newlabel{fig:bt-locality@cref}{{[figure][3][9]9.3}{[1][69][]70}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.4.5}A scale dependence in SOAR}{70}{subsection.9.4.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.4.6}Stability and passivity}{70}{subsection.9.4.6}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9.4}{\ignorespaces Tip frequency response of the full model and of the models of order $8$.\relax }}{71}{figure.caption.144}\protected@file@percent }
+\newlabel{fig:bt-response}{{9.4}{71}{Tip frequency response of the full model and of the models of order $8$.\relax }{figure.caption.144}{}}
+\newlabel{fig:bt-response@cref}{{[figure][4][9]9.4}{[1][70][]71}}
+\@writefile{lot}{\contentsline {table}{\numberline {9.3}{\ignorespaces Stability and the smallest phase cosine of the mobility ($0.05$--$25\,\omega _1$) for models of $8$, $12$ and $16$ states; a dash marks second-order Galerkin models.\relax }}{71}{table.caption.145}\protected@file@percent }
+\newlabel{tab:bt-stab}{{9.3}{71}{Stability and the smallest phase cosine of the mobility ($0.05$--$25\,\omega _1$) for models of $8$, $12$ and $16$ states; a dash marks second-order Galerkin models.\relax }{table.caption.145}{}}
+\newlabel{tab:bt-stab@cref}{{[table][3][9]9.3}{[1][71][]71}}
+\bibstyle{unsrtnat}
+\bibdata{refs}
+\bibcite{moore1981}{{1}{1981}{{Moore}}{{}}}
+\@writefile{toc}{\contentsline {section}{\numberline {9.5}Limits and failure modes}{72}{section.9.5}\protected@file@percent }
+\newlabel{sec:bt-limits}{{9.5}{72}{Limits and failure modes}{section.9.5}{}}
+\newlabel{sec:bt-limits@cref}{{[section][5][9]9.5}{[1][71][]72}}
+\@writefile{toc}{\contentsline {section}{\numberline {9.6}Summary}{72}{section.9.6}\protected@file@percent }
+\newlabel{sec:bt-summary}{{9.6}{72}{Summary}{section.9.6}{}}
+\newlabel{sec:bt-summary@cref}{{[section][6][9]9.6}{[1][72][]72}}
+\newlabel{sec:bt-exercises}{{9.6}{72}{Exercises}{section*.146}{}}
+\newlabel{sec:bt-exercises@cref}{{[section][6][9]9.6}{[1][72][]72}}
+\bibcite{antoulas2005}{{2}{2005}{{Antoulas}}{{}}}
+\bibcite{enns1984}{{3}{1984}{{Enns}}{{}}}
+\bibcite{glover1984}{{4}{1984}{{Glover}}{{}}}
+\bibcite{besselink2013comparison}{{5}{2013}{{Besselink et~al.}}{{Besselink, Tabak, Lutowska, van~de Wouw, Nijmeijer, Rixen, Hochstenbach, and Schilders}}}
+\bibcite{bai2005soar}{{6}{2005}{{Bai and Su}}{{}}}
+\@writefile{toc}{\contentsline {section}{References}{73}{section*.147}\protected@file@percent }
 \@setckpt{chapters/ch09}{
-\setcounter{page}{66}
-\setcounter{equation}{0}
+\setcounter{page}{74}
+\setcounter{equation}{3}
 \setcounter{enumi}{5}
 \setcounter{enumii}{0}
 \setcounter{enumiii}{0}
@@ -16,13 +92,13 @@
 \setcounter{mpfootnote}{0}
 \setcounter{part}{3}
 \setcounter{chapter}{9}
-\setcounter{section}{0}
+\setcounter{section}{6}
 \setcounter{subsection}{0}
 \setcounter{subsubsection}{0}
 \setcounter{paragraph}{0}
 \setcounter{subparagraph}{0}
-\setcounter{figure}{0}
-\setcounter{table}{0}
+\setcounter{figure}{4}
+\setcounter{table}{3}
 \setcounter{parentequation}{0}
 \setcounter{LT@tables}{0}
 \setcounter{LT@chunks}{0}
@@ -32,22 +108,22 @@
 \setcounter{subtable}{0}
 \setcounter{tcbbreakpart}{1}
 \setcounter{tcblayer}{0}
-\setcounter{tcolorbox@number}{22}
+\setcounter{tcolorbox@number}{25}
 \setcounter{tcbrastercolumn}{1}
 \setcounter{tcbrasterrow}{1}
 \setcounter{tcbrasternum}{1}
 \setcounter{tcbraster}{0}
-\setcounter{lstnumber}{20}
+\setcounter{lstnumber}{23}
 \setcounter{tcblisting}{0}
-\setcounter{NAT@ctr}{2}
-\setcounter{Item}{58}
+\setcounter{NAT@ctr}{6}
+\setcounter{Item}{68}
 \setcounter{Hfootnote}{0}
-\setcounter{bookmark@seq@number}{83}
+\setcounter{bookmark@seq@number}{96}
 \setcounter{proposition}{0}
 \setcounter{definition}{0}
 \setcounter{example}{0}
 \setcounter{remark}{0}
-\setcounter{tcb@cnt@algbox}{0}
-\setcounter{lstlisting}{0}
+\setcounter{tcb@cnt@algbox}{1}
+\setcounter{lstlisting}{1}
 \setcounter{section@level}{1}
 }
