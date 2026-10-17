@@ -1,2 +1,110 @@
 \chapter{Mesh topologies and structural domain partitioning}\label{ch:mesh}
-\stubchapter{Chapter 2}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+A mesh is the contract between geometry and element: nodes, connectivity, and a guarantee that every element has a positive Jacobian. This chapter describes how \fea{} generates structured meshes for lines, rectangles and boxes, with holes, notches and fillets, how it grades them by a growth ratio and not by a guessed exponent, how several element topologies are combined in one mesh by sharing nodes, and how meshes are exchanged with other tools. Each claim is checked: element areas and volumes against exact values, the realised growth ratio against the requested one, a patch test across a triangle--quadrilateral interface, and a round trip through two file formats. The chapter ends with the design lesson of the one thing that was removed, Gmsh support.
+\end{tcolorbox}
+
+\section{What a mesh is}\label{sec:me-what}
+
+A \anchor{fea_engine.mesh.Mesh} holds an array of node coordinates of shape $(n_{nodes},\dim)$ and an integer array of element connectivity of shape $(n_{el},n_{nodes/el})$, with node numbers indexing the first array. It does not know the element formulation: the same quadrilateral mesh serves a plane-stress element, a plate or a scalar field. \anchor{fea_engine.mesh.MultiBlockMesh} holds several connectivity arrays (blocks, for example a triangle block and a quadrilateral block) over \emph{one} shared node array. Nodes and elements are selected by coordinates (\code{nodes_on_line}, \code{select_nodes}) and by named node sets, which is how boundary conditions are applied without node numbers appearing in the analysis.
+
+The one property that the mesh must have for any element is a positive Jacobian determinant at every Gauss point: an inverted element gives a wrong or negative stiffness without any error being raised. \code{check_quality(element)} evaluates $\det\bm J$ at every Gauss point with the element's own shape functions and reports the ratio of the largest to the smallest value.
+
+\section{Generators}\label{sec:me-gen}
+
+\Cref{tab:me-gen} lists the generators that are used in this book and checks each one. For a mesh with straight element edges the sum of the element areas (or volumes) must equal the area of the domain; for a domain with a circular boundary the elements approximate the arc by a polygon, and the sum is lower than the exact area by an amount that must go to zero as the arc is refined. The generators are \anchor{fea_engine.mesh.rectangle_mesh}, \anchor{fea_engine.mesh.rectangle_with_hole_mesh_quarter} (a quarter of a plate with a hole, for symmetry boundary conditions), \anchor{fea_engine.mesh.hole_in_rectangle_mesh} (a hole anywhere in the rectangle, built from four quadrant blocks welded along shared edges), \anchor{fea_engine.mesh.notch_in_rectangle_mesh}, \anchor{fea_engine.mesh.fillet_in_rectangle_mesh}, and for three dimensions \anchor{fea_engine.mesh.extrude_mesh} (a quadrilateral mesh stacked into hexahedra), \anchor{fea_engine.mesh.box_mesh} and \anchor{fea_engine.mesh.box_with_hole_mesh}. \Cref{fig:me-meshes} shows four of them.
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch02_generators}
+\caption{Generators, with the relative difference between the sum of element areas (or volumes) and the exact value, and whether every Gauss-point Jacobian is positive. The rectangle, the notch and the box have straight edges and are exact; the others have a circular arc.}\label{tab:me-gen}
+\end{table}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/ch02_meshes.pdf}
+\caption{Four generated meshes: a hole off the centre of a rectangle with grading to a growth ratio (top left), a notch, a fillet, and a quarter plate with a hole. Produced by \texttt{scripts/ch02\_assets.py}.}\label{fig:me-meshes}
+\end{figure}
+
+All \cmeGenNRows{} meshes of \Cref{tab:me-gen} have positive Jacobians. The straight-edged rectangle, notch and box reproduce their area or volume to rounding. The circular boundaries lose area to the polygon: \cmeHoleErr{} for the quarter plate with hole ($R=0.3$, 16 elements round the quarter), \cmeHoleOffErr{} for the off-centre hole in the larger plate and \cmeFilletErr{} for the fillet. The through-hole box, which uses fewer elements round the hole, loses \cmeBoxHoleErr. That this is the arc and not a defect of the generator is shown by refining it: for the quarter plate the error falls from \cmeArcErrCoarse{} to \cmeArcErrFine{} when the number of elements around the quarter circle goes from 8 to 64, with observed order \cmeArcOrder, the expected second order for a polygonal arc.
+
+\section{Grading}\label{sec:me-grading}
+
+Near a hole, a notch or a fillet the stress changes quickly, and the mesh should be fine there and coarse far away. The structured generators use the power-law partition $x_i=L\,(i/n)^p$ (\anchor{fea_engine.grading.graded_partition}), uniform for $p=1$ and clustered at one end for $p>1$. A clustering exponent chosen by hand hides the quantity that matters for accuracy, the ratio of the sizes of adjacent elements. For $n=20$ and $p=2$ this ratio is \cmeGradeRatioPTwo{} (against \cmeGradeRatioPOne{} for the uniform case), more than the value of about 1.2 that is commonly cited as the target, and more than the value above which \fea{} warns (1.5). The function \anchor{fea_engine.grading.grade_for_growth_ratio} turns the question around: given a target growth ratio it finds, by bisection, the largest exponent for which the realised ratio does not exceed it, which works because the ratio increases monotonically with $p$.
+
+\Cref{fig:me-grading} (left) shows the realised ratio against $p$ and (right) the partition chosen for a target of 1.2: $p=\cmeGradeForTarget$, with realised ratio \cmeGradeRealTarget. For the targets 1.1, 1.2, 1.3, 1.5 and 2.0 the realised ratio is within 0.1\% below the target and never above it (\cmeGradeWorstOver{}\% at the worst). The hole mesh of \Cref{fig:me-meshes} (top left) uses this rule through \anchor{fea_engine.mesh.hole_in_rectangle_mesh_graded}; the ratio of the largest to the smallest element area in it is \cmeGradedSizeRatio.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/ch02_grading.pdf}
+\caption{Left: the largest ratio of adjacent element sizes of a 20-element power-law partition against the exponent. Right: the partition for a target growth ratio of 1.2, against a uniform one.}\label{fig:me-grading}
+\end{figure}
+
+\paragraph{Features and the dispatcher.} The module \code{grading} also provides a small declarative vocabulary, \code{Hole}, \code{Fillet}, \code{EdgeBias} and \code{Notch}, and \code{plan()} combines a list of features into a grading plan, warning if a growth ratio is beyond what is usually acceptable. The module is pure sizing-function mathematics and knows nothing about elements; that knowledge is kept in one other place, the dispatcher \anchor{fea_engine.build_mesh.build_mesh}, which knows which elements carry rotational bending degrees of freedom and refuses to give them a mesh type that has not been verified (\Cref{sec:me-lesson}).
+
+\section{Several element types in one mesh}\label{sec:me-multi}
+
+A \code{MultiBlockMesh} holds blocks of different topologies over one node array: \code{blocks} maps a name to a connectivity array, and \code{FESystem} takes a dictionary of the same keys with one element per block. Two blocks are joined only by \emph{shared node numbers} along their interface, so there is no separate interface object, and the interface condition (continuity of displacement) holds by construction. One constraint follows from numbering degrees of freedom per node: all blocks of one system must have the same \code{dofs_per_node}, so a membrane block and a plate-bending block cannot share a node.
+
+\paragraph{A patch test across the interface.} A rectangle $2\times1$ is built from a $4\times4$ block of quadrilaterals ($x<1$) and a triangulated block ($x>1$, each cell split into two triangles), with the interior nodes displaced randomly by up to 20\% of the cell size. The two blocks share \cmeMBShared{} nodes on the line $x=1$, and the mesh has \cmeMBQuads{} quadrilaterals and \cmeMBTris{} triangles. The boundary nodes are given a linear displacement field; a correct mixed mesh must reproduce it exactly at the interior nodes. The largest nodal error is \cmeMBErr{} relative to the largest displacement, which is rounding. This tests that the elements of the two blocks assemble into one consistent system through the shared nodes; it does not test the \emph{stress} continuity across the interface.
+
+\section{Exchange formats}\label{sec:me-io}
+
+\anchor{fea_engine.mesh_io.write_mesh} and \anchor{fea_engine.mesh_io.read_mesh} convert a \code{Mesh} or \code{MultiBlockMesh} to and from every format of the \code{meshio} package (an optional extra). \Cref{tab:me-meshio} writes a quadrilateral and a hexahedral mesh to the VTU and Abaqus INP formats and reads each back. In all four cases the nodes, the connectivity array and the set of elements (compared by the coordinates of their nodes, independent of numbering) are identical. The test is limited to two formats and two element types. For the quadratic elements, the node order of the package agrees with the order that \code{meshio} uses as its canonical order, as the package's own tests establish for the Gmsh format and a VTU round trip; it was not rerun here, and the package says that other formats have not been checked for quadratic elements.
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch02_meshio}
+\caption{Round trip of a mesh through \code{write_mesh} and \code{read_mesh}.}\label{tab:me-meshio}
+\end{table}
+
+\section{Design lesson: why Gmsh support was removed}\label{sec:me-lesson}
+
+\fea{} used to include two optional modules built on Gmsh, one for unstructured meshing (including the import of STEP and IGES geometry) and one for rendering. Both required a system OpenGL library (libGLU) that could not be reliably provided on a minimal installation, and no verified example, result or default code path used either of them: every plot of the Gmsh renderer already had a matplotlib equivalent used by all the example scripts. They were removed together with their tests, and the structured generators remain the supported way to mesh.
+
+The removal changed the contract between mesh and element in one place. The dispatcher \code{build_mesh} has to decide, from the element formulation, whether a mesh type is safe, and for elements with rotational bending degrees of freedom whose local frame is derived from the element geometry (the Mindlin plate and the shells) it does not trust a curved or unstructured mesh: the dispatcher's documentation says that, with mutually misaligned local frames, such a mesh can give a result that ``looks fine but is quietly 40x--1500x too stiff''. That is a statement of the package's own documentation, not something this chapter reproduces. The branch that formerly sent a translational-dof element to the Gmsh path now raises \code{MeshGradingError} and says why, and the set of elements treated this way is an explicit tuple, not inferred from the number of degrees of freedom, because beams have rotational degrees of freedom but no mechanism for frame misalignment. The general lesson is that a feature that cannot be verified in the environment of the users, and is not on the path of any verified result, costs more than it gives. The node-order tables for the Gmsh quadratic elements remain as static data in the element module.
+
+\paragraph{Domain partitioning, in the sense of this book.} The multi-block mesh composes a domain from parts. A different notion of partitioning, the static condensation of a linear zone onto its interface with a nonlinear zone, belongs to \rom{} and is the subject of Chapter~\ref{ch:hyper}.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.34\linewidth} X@{}}
+\toprule
+Concept & Code \\
+\midrule
+meshes & \anchor{fea_engine.mesh.Mesh}, \anchor{fea_engine.mesh.MultiBlockMesh} \\
+generators & \anchor{fea_engine.mesh.line_mesh}, \anchor{fea_engine.mesh.rectangle_mesh}, \anchor{fea_engine.mesh.box_mesh}, \anchor{fea_engine.mesh.weld_meshes}, \anchor{fea_engine.mesh.mirror_mesh} \\
+grading & \anchor{fea_engine.grading.graded_partition}, \anchor{fea_engine.grading.growth_ratio_of_partition}, \anchor{fea_engine.grading.grade_for_growth_ratio} \\
+dim-driven entry point & \anchor{fea_engine.geometry.shapes.build_system}, \anchor{fea_engine.geometry.shapes.generate_mesh} \\
+dispatcher with safety gate & \anchor{fea_engine.build_mesh.build_mesh}, \code{ROTATIONAL_DOF_ELEMENTS} \\
+exchange & \anchor{fea_engine.mesh_io.read_mesh}, \anchor{fea_engine.mesh_io.write_mesh} \\
+\bottomrule
+\end{tabularx}
+\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:me-map}
+\end{table}
+
+\begin{limitsbox}
+\begin{itemize}
+\item \textbf{Structured meshes only.} The generators are for lines, rectangles and boxes, and for the listed features; there is no unstructured generator, Delaunay triangulation or CAD import.
+\item \textbf{Arcs are polygons.} Curved boundaries are approximated with straight element edges (\Cref{tab:me-gen}); the geometric error is second order in the number of elements round the arc and is separate from the discretisation error of the analysis.
+\item \textbf{Grading is one-dimensional.} The growth ratio is controlled along a partition; the two-dimensional element sizes of the hole mesh are a consequence, and the ratio quoted for it is of element areas, not of adjacent sizes.
+\item \textbf{Mixed meshes} must have one \code{dofs_per_node}; the patch test shows displacement consistency, not stress continuity.
+\item \textbf{Exchange} was tested for two formats and two linear element types.
+\item \textbf{The 40x--1500x figure} for misaligned rotational-dof elements is quoted from the package documentation and was not reproduced.
+\end{itemize}
+\end{limitsbox}
+
+\section{Summary}\label{sec:me-summary}
+
+A mesh is nodes and connectivity with a positive-Jacobian guarantee. The structured generators of \fea{} reproduce the domain area or volume exactly where the edges are straight and with second-order error where they follow an arc; grading is requested by a growth ratio and realised within 0.1\% of it; blocks of different topology are joined by shared nodes and pass a patch test to \cmeMBErr; and meshes round-trip through the file formats tested. The one removed feature, Gmsh support, taught the package to keep the knowledge of which element tolerates which mesh in one dispatcher.
+
+\section*{Exercises}\label{sec:me-exercises}
+\begin{enumerate}
+\item Repeat the arc test of \Cref{sec:me-gen} for \code{hole_in_rectangle_mesh} and for the fillet. Is the observed order again 2?
+\item Choose a target growth ratio of 1.05 and $n=10$ for \code{grade_for_growth_ratio}. What exponent comes out, and is the ratio realised below the target?
+\item Make the interface of \Cref{sec:me-multi} slanted instead of vertical and run the patch test again. Does the error stay at rounding?
+\item Apply a pure-shear patch test (not only a linear field with a symmetric gradient) to the mixed mesh and check the recovered stress on both sides of the interface.
+\item Round-trip a \code{MultiBlockMesh} through \code{write_mesh} and \code{read_mesh}. Which information survives, and which does not (see the notes on field data in the module)?
+\end{enumerate}
+
+\chapterrefs

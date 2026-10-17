@@ -1,45 +1,52 @@
 \gdef \the@ipfilectr {@-1}
 \addvspace {10\p@ }
+\contentsline {table}{\numberline {1.1}{\ignorespaces Where each kind of extension enters \texttt {fea\_engine}{}.\relax }}{4}{table.caption.6}%
+\contentsline {table}{\numberline {1.2}{\ignorespaces Interface conformance of the registered elements, by family.\relax }}{5}{table.caption.7}%
+\contentsline {table}{\numberline {1.3}{\ignorespaces Size of the packages: Python modules and lines (including comments and docstrings) in the source tree and in the tests.\relax }}{5}{table.caption.8}%
+\contentsline {table}{\numberline {1.4}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{6}{table.caption.11}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-2}
 \addvspace {10\p@ }
+\contentsline {table}{\numberline {2.1}{\ignorespaces Generators, with the relative difference between the sum of element areas (or volumes) and the exact value, and whether every Gauss-point Jacobian is positive. The rectangle, the notch and the box have straight edges and are exact; the others have a circular arc.\relax }}{9}{table.caption.14}%
+\contentsline {table}{\numberline {2.2}{\ignorespaces Round trip of a mesh through \code {write_mesh} and \code {read_mesh}.\relax }}{11}{table.caption.19}%
+\contentsline {table}{\numberline {2.3}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{12}{table.caption.21}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-3}
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {3.1}{\ignorespaces Elements of this chapter. \code {gauss\_order} is the attribute of the class as it stands in release v1.0.1\,/\,v0.2.0; its meaning is the number of points per direction for quadrilaterals and hexahedra, and a simplex rule order for triangles and tetrahedra.\relax }}{7}{table.caption.7}%
-\contentsline {table}{\numberline {3.2}{\ignorespaces Tip deflection of a slender cantilever divided by the Euler--Bernoulli value, three hexahedra and two Poisson ratios. The 20-node mesh has the node spacing of the 8-node mesh. A 3-D beam does not reach exactly 1 even for a perfect element (root and shear effects), so only the differences between the rows are significant.\relax }}{8}{table.caption.12}%
-\contentsline {table}{\numberline {3.3}{\ignorespaces Tip deflection of a flat cantilever strip divided by the beam-theory value with plate rigidity (an approximate reference), against the number of elements along the length (a quarter as many across).\relax }}{8}{table.caption.14}%
-\contentsline {table}{\numberline {3.4}{\ignorespaces Patch tests on distorted meshes. The test helper is \texttt {\_patch} of \texttt {test\_benchmarks\_convergence.py}.\relax }}{9}{table.caption.16}%
-\contentsline {table}{\numberline {3.5}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{10}{table.caption.19}%
+\contentsline {table}{\numberline {3.1}{\ignorespaces Elements of this chapter. \code {gauss\_order} is the attribute of the class as it stands in release v1.0.1\,/\,v0.2.0; its meaning is the number of points per direction for quadrilaterals and hexahedra, and a simplex rule order for triangles and tetrahedra.\relax }}{17}{table.caption.26}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces Tip deflection of a slender cantilever divided by the Euler--Bernoulli value, three hexahedra and two Poisson ratios. The 20-node mesh has the node spacing of the 8-node mesh. A 3-D beam does not reach exactly 1 even for a perfect element (root and shear effects), so only the differences between the rows are significant.\relax }}{18}{table.caption.31}%
+\contentsline {table}{\numberline {3.3}{\ignorespaces Tip deflection of a flat cantilever strip divided by the beam-theory value with plate rigidity (an approximate reference), against the number of elements along the length (a quarter as many across).\relax }}{18}{table.caption.33}%
+\contentsline {table}{\numberline {3.4}{\ignorespaces Patch tests on distorted meshes. The test helper is \texttt {\_patch} of \texttt {test\_benchmarks\_convergence.py}.\relax }}{19}{table.caption.35}%
+\contentsline {table}{\numberline {3.5}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{20}{table.caption.38}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-4}
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {4.1}{\ignorespaces Explicit central differences on a lumped mass, around the critical step. ``Late/early'' is the largest displacement of the last 50 steps divided by that of steps 100--200.\relax }}{14}{table.caption.26}%
-\contentsline {table}{\numberline {4.2}{\ignorespaces The dynamic solvers of \texttt {fea\_engine}{}.\relax }}{17}{table.caption.33}%
-\contentsline {table}{\numberline {4.3}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{17}{table.caption.34}%
+\contentsline {table}{\numberline {4.1}{\ignorespaces Explicit central differences on a lumped mass, around the critical step. ``Late/early'' is the largest displacement of the last 50 steps divided by that of steps 100--200.\relax }}{24}{table.caption.45}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces The dynamic solvers of \texttt {fea\_engine}{}.\relax }}{27}{table.caption.52}%
+\contentsline {table}{\numberline {4.3}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{27}{table.caption.53}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-5}
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {5.1}{\ignorespaces Analytic tangent against central finite differences of the internal force, one random displacement state per element.\relax }}{22}{table.caption.44}%
-\contentsline {table}{\numberline {5.2}{\ignorespaces Static drivers of \texttt {fea\_engine}{}. The nonlinear transient drivers are not covered in this book; Chapter\nobreakspace {}\ref {ch:dyn} treats linear dynamics.\relax }}{24}{table.caption.49}%
-\contentsline {table}{\numberline {5.3}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{25}{table.caption.50}%
+\contentsline {table}{\numberline {5.1}{\ignorespaces Analytic tangent against central finite differences of the internal force, one random displacement state per element.\relax }}{32}{table.caption.63}%
+\contentsline {table}{\numberline {5.2}{\ignorespaces Static drivers of \texttt {fea\_engine}{}. The nonlinear transient drivers are not covered in this book; Chapter\nobreakspace {}\ref {ch:dyn} treats linear dynamics.\relax }}{34}{table.caption.68}%
+\contentsline {table}{\numberline {5.3}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{35}{table.caption.69}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-6}
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {6.1}{\ignorespaces Estimated working memory of a batched tangent call (the dominant arrays, not the peak resident memory), from the package's own estimate.\relax }}{28}{table.caption.57}%
-\contentsline {table}{\numberline {6.2}{\ignorespaces Loop against batched route: speed-up of the element kernels (force, tangent) and of the assembled force of the whole system, and the largest relative difference of the results. One run per family on the sandbox used for the figures of this chapter (2 CPUs).\relax }}{29}{table.caption.59}%
-\contentsline {table}{\numberline {6.3}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{31}{table.caption.64}%
+\contentsline {table}{\numberline {6.1}{\ignorespaces Estimated working memory of a batched tangent call (the dominant arrays, not the peak resident memory), from the package's own estimate.\relax }}{38}{table.caption.76}%
+\contentsline {table}{\numberline {6.2}{\ignorespaces Loop against batched route: speed-up of the element kernels (force, tangent) and of the assembled force of the whole system, and the largest relative difference of the results. One run per family on the sandbox used for the figures of this chapter (2 CPUs).\relax }}{39}{table.caption.78}%
+\contentsline {table}{\numberline {6.3}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{41}{table.caption.83}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-7}
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {7.1}{\ignorespaces The three routes of the sparse contact solver and the failure reasons each can report.\relax }}{37}{table.caption.77}%
-\contentsline {table}{\numberline {7.2}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{38}{table.caption.80}%
-\contentsline {table}{\numberline {7.3}{\ignorespaces Six obstacles on the membrane model ($484\xspace $ unknowns). ``active'' is the number of active constraints; ``it.'' the iterations of each sparse route; the last four columns are the largest difference in $\bm {u}$ and $\bm {\lambda }$ to the dense active-set solution.\relax }}{39}{table.caption.83}%
-\contentsline {table}{\numberline {7.4}{\ignorespaces The model problem on refined meshes. The dense route was not run above 3,500 unknowns. Single runs on the sandbox used for the figures of this chapter (2 CPUs).\relax }}{39}{table.caption.85}%
-\contentsline {table}{\numberline {7.5}{\ignorespaces Error at $t=2$ of a free membrane against the exact modal solution; contact inactive. ``ratio'' is the error of the two-step scheme divided by that of BDF2.\relax }}{41}{table.caption.92}%
-\contentsline {table}{\numberline {7.6}{\ignorespaces Bar impact on a rigid wall: energy relative to the initial energy, and the largest penetration, for the two schemes.\relax }}{42}{table.caption.95}%
-\contentsline {table}{\numberline {7.7}{\ignorespaces Largest wall force of the bar impact, and energy kept by a bar without obstacle (broadband initial velocity, $t=1.5$), for both schemes.\relax }}{43}{table.caption.98}%
-\contentsline {table}{\numberline {7.8}{\ignorespaces Failure reasons of \code {solve_contact_static_sparse}.\relax }}{44}{table.caption.99}%
+\contentsline {table}{\numberline {7.1}{\ignorespaces The three routes of the sparse contact solver and the failure reasons each can report.\relax }}{47}{table.caption.96}%
+\contentsline {table}{\numberline {7.2}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{48}{table.caption.99}%
+\contentsline {table}{\numberline {7.3}{\ignorespaces Six obstacles on the membrane model ($484\xspace $ unknowns). ``active'' is the number of active constraints; ``it.'' the iterations of each sparse route; the last four columns are the largest difference in $\bm {u}$ and $\bm {\lambda }$ to the dense active-set solution.\relax }}{49}{table.caption.102}%
+\contentsline {table}{\numberline {7.4}{\ignorespaces The model problem on refined meshes. The dense route was not run above 3,500 unknowns. Single runs on the sandbox used for the figures of this chapter (2 CPUs).\relax }}{49}{table.caption.104}%
+\contentsline {table}{\numberline {7.5}{\ignorespaces Error at $t=2$ of a free membrane against the exact modal solution; contact inactive. ``ratio'' is the error of the two-step scheme divided by that of BDF2.\relax }}{51}{table.caption.111}%
+\contentsline {table}{\numberline {7.6}{\ignorespaces Bar impact on a rigid wall: energy relative to the initial energy, and the largest penetration, for the two schemes.\relax }}{52}{table.caption.114}%
+\contentsline {table}{\numberline {7.7}{\ignorespaces Largest wall force of the bar impact, and energy kept by a bar without obstacle (broadband initial velocity, $t=1.5$), for both schemes.\relax }}{53}{table.caption.117}%
+\contentsline {table}{\numberline {7.8}{\ignorespaces Failure reasons of \code {solve_contact_static_sparse}.\relax }}{54}{table.caption.118}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-8}
 \addvspace {10\p@ }

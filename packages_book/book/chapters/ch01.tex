@@ -1,2 +1,162 @@
 \chapter{The design of a decoupled scientific engine}\label{ch:arch}
-\stubchapter{Chapter 1}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+The two packages of this book, \fea{} and \rom{}, are meant to grow without rewriting what exists: a new element, material, geometry, load, solution strategy or linear-algebra backend should be added by a subclass or a registry entry. This chapter describes the structure that makes this possible and tests the claims it rests on. It shows the flow from material to post-processing, the small interface that the solvers use to talk to elements, a new element added in about twenty lines to a solver that was not changed, an interface test of all 34 registered elements, the rule that \rom{} never imports \fea{}, and the backend dispatcher, including a cost it has on sparse systems that the book measured and the package documentation does not mention.
+\end{tcolorbox}
+
+\section{One system, many problems}\label{sec:ar-system}
+
+Whatever the physical problem is (a membrane, a beam, a shell with contact), the solvers of \fea{} work on one algebraic form,
+\begin{equation}\label{eq:ar-system}
+\bm M\ddot{\bm u}+\bm C\dot{\bm u}+\bm K\bm u=\bm F ,
+\end{equation}
+or, for nonlinear problems, on the residual $\bm f_{int}(\bm u)-\bm F$ and its tangent (Chapter~\ref{ch:nonlin}). The vectors and matrices are plain NumPy or SciPy arrays. Everything that is specific to a problem is pushed into the construction of $\bm M,\bm C,\bm K$ (or of $\bm f_{int}$ and $\bm K_T$), and everything that is specific to a solution method is in the solvers. The design question of this chapter is where the boundary between the two sits, and how narrow it can be made.
+
+\section{The flow and the layers}\label{sec:ar-flow}
+
+\Cref{fig:ar-flow} shows the flow of a typical analysis. A \emph{material} gives the constitutive matrix (for example \code{D_plane_stress(Material(...))}); a \emph{mesh} gives nodes and element connectivity (\code{Mesh}, or \code{MultiBlockMesh} for several element topologies, Chapter~\ref{ch:mesh}); an \emph{element} formulation turns coordinates and a material into element matrices or forces; the system \anchor{fea_engine.solver.FESystem} assembles them, applies boundary conditions and loads, and calls a \emph{solver}; \emph{post-processing} recovers stress, strain and fields from the result. A layer knows only the layer next to it: the mesh does not know which element will use it, and the solver does not know which element it is solving for.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[node distance=1.0cm and 0.75cm, box/.style={draw,rounded corners,minimum height=0.9cm,minimum width=2.15cm,align=center,font=\small,fill=gray!8}, arr/.style={-{Stealth},thick}]
+\node[box] (mat) {material\\\code{Material}, $\bm D$};
+\node[box,right=of mat] (mesh) {mesh\\\code{Mesh}};
+\node[box,right=of mesh] (el) {element\\\code{Element}};
+\node[box,right=of el] (sys) {system\\\code{FESystem}};
+\node[box,below=1.0cm of sys] (sol) {solver\\static, modal,\\transient, Newton};
+\node[box,left=of sol] (post) {post-processing\\stress, fields, export};
+\node[box,left=of post,fill=blue!8] (rom) {\code{rom_engine}\\plain arrays};
+\draw[arr] (mat)--(mesh); \draw[arr] (mesh)--(el); \draw[arr] (el)--(sys); \draw[arr] (sys)--(sol); \draw[arr] (sol)--(post);
+\draw[arr,dashed] (sys.south west) .. controls +(-0.3,-0.8) and +(0.3,0.8) .. (rom.north east) node[midway,above,sloped,font=\scriptsize]{$\bm M,\bm K,\bm F$ as arrays};
+\end{tikzpicture}
+\caption{The flow of an analysis in \fea{}. The dashed arrow is the only link to \rom{}: matrices and vectors as plain arrays, never an import.}\label{fig:ar-flow}
+\end{figure}
+
+\section{The element interface}\label{sec:ar-interface}
+
+The narrow boundary is the base class \anchor{fea_engine.elements.base.Element}. An element declares four class attributes, \code{n_nodes}, \code{dofs_per_node}, \code{dim} (the dimension of the natural-coordinate space) and \code{gauss_order}, and provides the shape functions in the natural coordinates, \code{shape_and_derivs}. From these the base class implements the Gauss loop \emph{once}: if the element supplies a strain-displacement matrix \code{B_matrix}, the generic \code{stiffness} computes $\int\bm B^{T}\bm D\bm B$ (\Cref{eq:el-K}) and the generic \code{mass} computes $\int\rho\bm N^{T}\bm N$. An element that needs more overrides the method it needs: the Mindlin plate overrides \code{stiffness} for selective reduced integration, and the Euler--Bernoulli beam uses a closed form. Nonlinear elements provide the pair \code{internal_force} and \code{tangent_stiffness} instead (or as well). Optional capabilities are declared by attributes and methods the solvers look for: \code{supports_batch} with the batched kernels of Chapter~\ref{ch:batch}, \code{state} and \code{commit_state} for history variables (Chapter~\ref{ch:nonlin}), and \code{lumped_mass} for the explicit method (Chapter~\ref{ch:dyn}).
+
+The contact elements of \fea{} are in the same registry but have no interpolation: they define force and tangent from a gap function and do not implement \code{shape_and_derivs}, which raises \code{NotImplementedError} for them. The interface is therefore not a single fixed set of methods, but ``what the solver calls'': the assembly asks the element for matrices (linear) or for force and tangent (nonlinear), and the element is free in how it computes them.
+
+\section{Extending the engine: a new element}\label{sec:ar-extend}
+
+The claim of the design is that a new element touches no existing code. \Cref{lst:ar-bar} defines a two-node bar with one displacement per node (a one-dimensional element, $\bm B=\mathrm dN/\mathrm dx$, with the stiffness $\bm D=EA$ as a $1\times1$ matrix) as a subclass, registers it with one line (after \texttt{from fea\_engine.elements import Element, ELEMENT\_REGISTRY, jacobian}), and uses it with the existing assembly, static solver and modal solver.
+
+\begin{lstlisting}[caption={A new element by subclassing, and the one registry line. Nothing in \texttt{fea\_engine} is edited.},label={lst:ar-bar}]
+class Bar1D(Element):
+    n_nodes, dofs_per_node, dim, gauss_order = 2, 1, 1, 1
+    dof_names = ("u",)
+
+    def shape_and_derivs(self, natural_coords):
+        (xi,) = natural_coords
+        return np.array([(1 - xi) / 2, (1 + xi) / 2]), np.array([[-0.5, 0.5]])
+
+    def B_matrix(self, natural_coords, elem_coords):
+        _, dN = self.shape_and_derivs(natural_coords)
+        J, detJ = jacobian(dN, elem_coords)
+        return np.linalg.solve(J, dN), detJ
+
+ELEMENT_REGISTRY["bar1d"] = Bar1D                      # the one registry line
+
+m = line_mesh(L, n)
+s = FESystem(m, ELEMENT_REGISTRY["bar1d"]())
+s.assemble_stiffness(np.array([[E * A]]))
+s.assemble_mass(np.array([[rho * A]]))
+s.fix_dofs([0], [0]); s.add_nodal_force([n], 0, P)
+U = s.solve_static(); f, _ = s.solve_modal(n_modes=1)
+\end{lstlisting}
+
+The listing was run for 1, 2, 4, 8, 16 and 32 elements ($E=210$ GPa, $A=10^{-4}$ m$^2$, $\rho=7800$ kg/m$^3$, $L=2$ m). The static tip displacement equals $PL/(EA)$ to \cdeExtStatic{} (the linear element is exact for this problem), and the first axial frequency converges to $\sqrt{E/\rho}/(4L)$ with observed order \cdeExtFreqOrder{}, from an error of \cdeExtFreqCoarse{} with one element. The existing solvers ran on the new element unchanged, which is what the design promises. It does not show that every solver works with every new element: a path-dependent or batched element must also meet the conventions of \Cref{sec:ar-interface}.
+
+\section{The six extension points}\label{sec:ar-points}
+
+\Cref{tab:ar-points} lists where each kind of extension enters. In each case the repository's own convention is a dictionary or a base class, so that a new item is added in one place.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.17\linewidth} >{\raggedright\arraybackslash}p{0.32\linewidth} X@{}}
+\toprule
+extension & where it enters & what to provide \\
+\midrule
+material & \anchor{fea_engine.material.CONSTITUTIVE_REGISTRY}; the \code{D_...} functions & a dataclass and a function returning the constitutive matrix (or a state update for inelastic laws) \\
+geometry / mesh & \anchor{fea_engine.geometry.shapes.GEOMETRY_REGISTRY} & a generator returning a \code{Mesh} \\
+element & \anchor{fea_engine.elements.ELEMENT_REGISTRY} & an \code{Element} subclass (\Cref{lst:ar-bar}) \\
+load & \anchor{fea_engine.loads.LoadPattern}, \code{TimeHistoryLoad}, \code{HarmonicLoad}, \code{PSDLoad} & an object that returns a force vector, for a time or a frequency \\
+solution strategy & the drivers of \code{nonlinear_solver}, \code{NewtonOptions} & a function that calls assembly and the linear solve \\
+backend & \code{backend=} of \code{FESystem}, \code{backend_dispatch} & \code{"scipy"}, \code{"torch"} or \code{"auto"} (\Cref{sec:ar-backend}) \\
+\bottomrule
+\end{tabularx}
+\caption{Where each kind of extension enters \fea{}.}\label{tab:ar-points}
+\end{table}
+
+\section{Does the interface hold? A conformance test}\label{sec:ar-conform}
+
+A registry is only useful if every entry honours the interface. The test of this chapter loops over all \cdeRegTotal{} entries of \code{ELEMENT_REGISTRY} and checks, without needing a material, that each is a subclass of \code{Element}, that \code{n_nodes}, \code{dofs_per_node}, \code{dim} and \code{gauss_order} are positive integers, and, for the interpolated elements, that the shape functions at the natural origin sum to one and that the derivative array has the shape $(\dim,n_{nodes})$ (beam and shell elements, whose first nodal values need not be a partition of unity, skip the sum test). For the contact elements, which have no interpolation, it checks that \code{internal_force} and \code{tangent_stiffness} are callable. \Cref{tab:ar-registry} gives the result: all \cdeRegPass{} entries pass. The test checks the interface and not the physics; the physics is the subject of Chapters~\ref{ch:elem}, \ref{ch:nonlin} and \ref{ch:contact}.
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch01_registry}
+\caption{Interface conformance of the registered elements, by family.}\label{tab:ar-registry}
+\end{table}
+
+\section{Two packages, one direction of dependence}\label{sec:ar-packages}
+
+\Cref{tab:ar-packages} gives the size of the packages at the release of this book. The rule that \rom{} works on plain arrays and does not depend on \fea{} can be checked in the source: parsing every module of both packages for import statements shows \cdeFeaImportsRom{} imports of \rom{} in \fea{} and \cdeRomImportsFea{} imports of \fea{} in \rom{}. The tests of \rom{} do import \fea{} (in \cdeRomTestsImportFea{} of \cdeRomTestFiles{} test files), because that is where a reduced model is compared with the full model it came from. The consequence is that \rom{} can reduce a model from any finite element code, as long as the code provides $\bm M$, $\bm K$ and the force as arrays, and that the hooks for hyper-reduction (Chapters~\ref{ch:batch} and~\ref{ch:hyper}) take plain callables instead of an \fea{} object.
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch01_packages}
+\caption{Size of the packages: Python modules and lines (including comments and docstrings) in the source tree and in the tests.}\label{tab:ar-packages}
+\end{table}
+
+\section{Backend dispatch and what it costs}\label{sec:ar-backend}
+
+\code{FESystem(..., backend=...)} chooses the linear-algebra backend of \code{solve_static}: \code{"scipy"} (the default), \code{"torch"} (conjugate gradients on CPU or GPU) or \code{"auto"}. The automatic choice is made at solve time by \anchor{fea_engine.backend_dispatch.select_backend}: a free-dof block that is symmetric positive definite (SPD) and larger than \cdeDispThreshold{} dofs is routed to the torch conjugate-gradient path, everything else to SciPy; a non-SPD matrix is never given to the conjugate-gradient solver. The threshold is a documented rule of thumb and not a benchmark result.
+
+\paragraph{Measured cost of the automatic choice.} \Cref{fig:ar-dispatch} compares \code{solve_static} with \code{backend="scipy"} and \code{backend="auto"} for a sparse plane-stress plate with up to \cdeDispMaxDof{} dofs, a range in which \code{auto} always picks the SciPy path. The two give the same answer, but \code{auto} is slower, and by an amount that grows quickly: at the largest size \code{auto} takes \cdeDispExtraFracLarge{}\% more time than \code{scipy}, \cdeDispExtraMs{} ms more in absolute terms, and the extra time grows with the dof count with an observed exponent of \cdeDispSlope{}. The cause is visible in the source. The SPD test of \code{select_backend} converts the sparse matrix to a dense array and runs a dense Cholesky factorisation, which is $O(n^3)$ in time and $O(n^2)$ in memory, and it does so on every solve, even when the answer decides nothing (below the threshold the SciPy path is taken regardless). For a free-dof count of 5\,000, the dense array takes about \cdeDenseFiveK{} GB; for 50\,000 it would take about \cdeDenseFiveK0{} GB (computed as $8n^2$ bytes, not measured). Until the probe works on the sparse matrix, the practical advice is to pass \code{backend="scipy"} for large sparse systems and to use \code{"auto"} only where the system is small.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/ch01_dispatch.pdf}
+\caption{\code{solve_static} time on a sparse plane-stress plate with \code{backend="scipy"} and \code{backend="auto"} (left), and the extra time of \code{auto} (right). Minimum of three runs on \machine{}. The torch path was not run (torch is \cdeHasTorch{} in the sandbox), and none of the sizes exceeds the threshold at which \code{auto} would choose it.}\label{fig:ar-dispatch}
+\end{figure}
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.38\linewidth} X@{}}
+\toprule
+Concept & Code \\
+\midrule
+system, assembly, boundary conditions, solvers & \anchor{fea_engine.solver.FESystem} \\
+element base class and quadrature & \anchor{fea_engine.elements.base.Element}, \anchor{fea_engine.elements.base.gauss_product} \\
+registries & \anchor{fea_engine.elements.ELEMENT_REGISTRY}, \anchor{fea_engine.geometry.shapes.GEOMETRY_REGISTRY}, \anchor{fea_engine.material.CONSTITUTIVE_REGISTRY} \\
+dispatcher & \anchor{fea_engine.backend_dispatch.select_backend} \\
+\bottomrule
+\end{tabularx}
+\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:ar-map}
+\end{table}
+
+\begin{limitsbox}
+\begin{itemize}
+\item \textbf{The interface test is shallow.} It checks attributes, shape functions and the presence of the force and tangent methods, not that an element is correct (\Cref{tab:ar-registry}).
+\item \textbf{Extension is easy for the common case.} A new element with the generic Gauss loop is about twenty lines. Elements with history variables, mixed formulations or batched kernels have to follow the conventions of Chapters~\ref{ch:nonlin} and~\ref{ch:batch}.
+\item \textbf{The \code{auto} backend has a large cost on sparse systems} (\Cref{fig:ar-dispatch}), because of its dense SPD probe, and the torch branch was not exercised here.
+\item \textbf{Line counts} include comments and docstrings, so they measure documentation as well as code.
+\item \textbf{One model of extension.} Registries are Python dictionaries: an extension is made in code by the user, and there is no plug-in discovery.
+\end{itemize}
+\end{limitsbox}
+
+\section{Summary}\label{sec:ar-summary}
+
+\fea{} separates material, mesh, element, system, solver and post-processing, and the only thing a solver needs from an element is the matrix or the force and tangent. The consequence was tested: a new element of twenty lines worked with the existing static and modal solvers with an error of \cdeExtStatic{}; all \cdeRegTotal{} registered elements satisfy the interface test; and \rom{} is independent of \fea{} at the source level. The measured cost of \code{backend="auto"} is an example of why the book tests design claims: the dispatcher works, but not for free.
+
+\section*{Exercises}\label{sec:ar-exercises}
+\begin{enumerate}
+\item Add a two-node element for a linear spring ($\bm K=k[[1,-1],[-1,1]]$) as in \Cref{lst:ar-bar}, using \code{stiffness} directly instead of \code{B_matrix}. Which of the interface checks of \Cref{sec:ar-conform} does it still need to pass?
+\item Extend the conformance test to call \code{stiffness} with a suitable material for every non-contact element and check symmetry and the number of zero eigenvalues (rigid-body modes). Which elements need which material argument?
+\item Reproduce \Cref{fig:ar-dispatch} with the dense Cholesky of the probe timed on its own. Does it account for the extra time of \code{auto}?
+\item Write a one-line change of \code{_is_spd} that tests a sparse matrix without densifying it (for example with a sparse Cholesky or an \code{eigsh} test of the smallest eigenvalue), and compare the time with \Cref{fig:ar-dispatch}.
+\item Parse the source of \rom{} for the modules that mention \fea{} in comments or docstrings. Is any of them a dependency in disguise (a hidden convention)?
+\end{enumerate}
+
+\chapterrefs
