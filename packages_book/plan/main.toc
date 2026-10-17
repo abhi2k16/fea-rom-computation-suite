@@ -4,7 +4,7 @@
 \contentsline {paragraph}{Technology.}{2}{section*.4}%
 \contentsline {paragraph}{Included.}{2}{section*.5}%
 \contentsline {paragraph}{Excluded.}{2}{section*.6}%
-\contentsline {paragraph}{How the book relates to the repository.}{2}{section*.7}%
+\contentsline {paragraph}{How the book relates to the repository.}{3}{section*.7}%
 \contentsline {section}{\numberline {2}Changes from the first outline}{3}{section.2}%
 \contentsline {section}{\numberline {3}Master chapter map}{3}{section.3}%
 \contentsline {section}{\numberline {4}Chapter plans}{4}{section.4}%
@@ -16,9 +16,9 @@
 \contentsline {subsection}{\numberline {4.6}Chapter 6: Computational acceleration: vectorised assembly and batched kernels}{7}{subsection.4.6}%
 \contentsline {subsection}{\numberline {4.7}Chapter 7: Unilateral contact mechanics and sparse active sets}{8}{subsection.4.7}%
 \contentsline {subsection}{\numberline {4.8}Chapter 8: Projection-based reduction: POD, Galerkin and affine sweeps}{9}{subsection.4.8}%
-\contentsline {subsection}{\numberline {4.9}Chapter 9: Systems-and-control reduction}{9}{subsection.4.9}%
+\contentsline {subsection}{\numberline {4.9}Chapter 9: Systems-and-control reduction}{10}{subsection.4.9}%
 \contentsline {subsection}{\numberline {4.10}Chapter 10: Frequency-domain ROMs and certified error bounds}{10}{subsection.4.10}%
-\contentsline {subsection}{\numberline {4.11}Chapter 11: Substructuring and component reduction}{10}{subsection.4.11}%
+\contentsline {subsection}{\numberline {4.11}Chapter 11: Substructuring and component reduction}{11}{subsection.4.11}%
 \contentsline {subsection}{\numberline {4.12}Chapter 12: Non-intrusive identification and nonlinear ROMs}{11}{subsection.4.12}%
 \contentsline {subsection}{\numberline {4.13}Chapter 13: Hyper-reduction and contact reduced-order models}{12}{subsection.4.13}%
 \contentsline {subsection}{\numberline {4.14}Chapter 14: Verification, reproduction studies and a parametric pipeline}{12}{subsection.4.14}%
@@ -30,7 +30,8 @@
 \contentsline {subsection}{\numberline {5.4}Inventory of items still to produce}{14}{subsection.5.4}%
 \contentsline {section}{\numberline {6}Production plan}{14}{section.6}%
 \contentsline {subsection}{\numberline {6.1}Folder layout}{14}{subsection.6.1}%
-\contentsline {subsection}{\numberline {6.2}Order of work}{14}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.2}Order of work}{15}{subsection.6.2}%
 \contentsline {subsection}{\numberline {6.3}Risks}{15}{subsection.6.3}%
 \contentsline {subsection}{\numberline {6.4}Decisions taken}{15}{subsection.6.4}%
-\contentsline {subsection}{\numberline {6.5}Progress}{15}{subsection.6.5}%
+\contentsline {subsection}{\numberline {6.5}Blueprint review: items adopted}{15}{subsection.6.5}%
+\contentsline {subsection}{\numberline {6.6}Progress}{16}{subsection.6.6}%
