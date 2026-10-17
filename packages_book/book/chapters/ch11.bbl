@@ -1,0 +1,48 @@
+\begin{thebibliography}{7}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Guyan(1965)]{guyan1965}
+Robert~J. Guyan.
+\newblock Reduction of stiffness and mass matrices.
+\newblock \emph{AIAA Journal}, 3\penalty0 (2):\penalty0 380, 1965.
+\newblock \doi{10.2514/3.2874}.
+
+\bibitem[Hurty(1965)]{hurty1965}
+Walter~C. Hurty.
+\newblock Dynamic analysis of structural systems using component modes.
+\newblock \emph{AIAA Journal}, 3\penalty0 (4), 1965.
+
+\bibitem[Craig and Bampton(1968)]{craig1968}
+Roy~R. Craig and Mervyn C.~C. Bampton.
+\newblock Coupling of substructures for dynamic analyses.
+\newblock \emph{AIAA Journal}, 6\penalty0 (7):\penalty0 1313--1319, 1968.
+\newblock \doi{10.2514/3.4741}.
+
+\bibitem[Rubin(1975)]{rubin1975}
+Sheldon Rubin.
+\newblock Improved component-mode representation for structural dynamic
+  analysis.
+\newblock \emph{AIAA Journal}, 13\penalty0 (8), 1975.
+
+\bibitem[MacNeal(1971)]{macneal1971}
+Richard~H. MacNeal.
+\newblock A hybrid method of component mode synthesis.
+\newblock \emph{Computers \& Structures}, 1\penalty0 (4), 1971.
+
+\bibitem[Castanier et~al.(2001)Castanier, Tan, and Pierre]{castanier2001}
+Matthew~P. Castanier, Yung-Chang Tan, and Christophe Pierre.
+\newblock Characteristic constraint modes for component mode synthesis.
+\newblock \emph{AIAA Journal}, 39\penalty0 (6), 2001.
+
+\bibitem[Ritzert et~al.(2025)Ritzert, Kehls, Reese, and Brepols]{ritzert2025}
+S.~Ritzert, J.~Kehls, S.~Reese, and T.~Brepols.
+\newblock Component-based model-order reduction with mortar tied contact for
+  nonlinear quasi-static mechanical problems.
+\newblock \emph{International Journal for Numerical Methods in Engineering},
+  2025.
+
+\end{thebibliography}

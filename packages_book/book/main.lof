@@ -62,6 +62,9 @@
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-11}
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {11.1}{\ignorespaces Largest relative error of the first four frequencies against the reduced size, Craig--Bampton (two halves) and Guyan (transverse masters, evenly spaced).\relax }}{85}{figure.caption.169}%
+\contentsline {figure}{\numberline {11.2}{\ignorespaces Left: Craig--Bampton error of the standalone membrane against reduced size. Right: error with $40$ fixed-interface modes against the number of interface coordinates kept; the two interface bases coincide.\relax }}{86}{figure.caption.170}%
+\contentsline {figure}{\numberline {11.3}{\ignorespaces Relative error of the component-POD assembly against the POD rank of each component.\relax }}{87}{figure.caption.173}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-12}
 \addvspace {10\p@ }

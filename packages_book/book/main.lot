@@ -69,6 +69,9 @@
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-11}
 \addvspace {10\p@ }
+\contentsline {table}{\numberline {11.1}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0). The dual Craig--Bampton, joint-interface-mode and Fourier interface bases of \code {interface_reduction.py} are not tested here.\relax }}{84}{table.caption.168}%
+\contentsline {table}{\numberline {11.2}{\ignorespaces Free-interface and Craig--Bampton models of a chain of $40$ masses, interface at two nodes. ``lowest $n_m$ freq.'': largest relative error of the lowest $n_m$ frequencies; ``modes $n_m{+}1$ to size'': the frequencies above those, up to the model size; ``static tip error'': relative error of the displacement at the end node under a unit force at that node.\relax }}{86}{table.caption.171}%
+\contentsline {table}{\numberline {11.3}{\ignorespaces Component POD of two non-matching nonlinear membranes tied by a mortar operator: error of the reduced assembly against the full tied solution.\relax }}{87}{table.caption.172}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-12}
 \addvspace {10\p@ }
