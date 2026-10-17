@@ -50,6 +50,9 @@
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-8}
 \addvspace {10\p@ }
+\contentsline {table}{\numberline {8.1}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{60}{table.caption.126}%
+\contentsline {table}{\numberline {8.2}{\ignorespaces Relative error of the lowest frequencies of the reduced eigenproblem against the full model, for bases of $r$ POD modes of the static snapshots (a dash: fewer than five modes in the basis).\relax }}{62}{table.caption.129}%
+\contentsline {table}{\numberline {8.3}{\ignorespaces Offline cost and per-query cost on two sizes of the beam; break-even is the offline cost divided by the saving per query against re-assembly. Single runs on the sandbox used for the figures of this chapter (2 CPUs).\relax }}{62}{table.caption.131}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-9}
 \addvspace {10\p@ }

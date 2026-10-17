@@ -134,26 +134,43 @@
 \contentsline {part}{III\hspace {1em}Reduced-order modelling (\texttt {rom\_engine})}{56}{part.3}%
 \gdef \the@ipfilectr {@-8}
 \contentsline {chapter}{\numberline {8}Projection-based reduction: POD, Galerkin and affine sweeps}{57}{chapter.8}%
+\contentsline {section}{\numberline {8.1}The problem}{57}{section.8.1}%
+\contentsline {paragraph}{The model problem.}{57}{section*.121}%
+\contentsline {section}{\numberline {8.2}Mathematical structure}{58}{section.8.2}%
+\contentsline {paragraph}{Snapshots and POD.}{58}{section*.122}%
+\contentsline {paragraph}{Weighted POD.}{58}{section*.123}%
+\contentsline {paragraph}{Galerkin projection.}{58}{section*.124}%
+\contentsline {paragraph}{Affine parameter dependence.}{58}{section*.125}%
+\contentsline {section}{\numberline {8.3}Implementation in the packages}{59}{section.8.3}%
+\contentsline {section}{\numberline {8.4}Verification}{59}{section.8.4}%
+\contentsline {subsection}{\numberline {8.4.1}Singular values and the held-out error}{59}{subsection.8.4.1}%
+\contentsline {subsection}{\numberline {8.4.2}Weighted against Euclidean POD}{61}{subsection.8.4.2}%
+\contentsline {subsection}{\numberline {8.4.3}How the snapshots are chosen}{61}{subsection.8.4.3}%
+\contentsline {subsection}{\numberline {8.4.4}Modal analysis in the subspace}{61}{subsection.8.4.4}%
+\contentsline {subsection}{\numberline {8.4.5}Offline and online cost}{61}{subsection.8.4.5}%
+\contentsline {section}{\numberline {8.5}Limits and failure modes}{63}{section.8.5}%
+\contentsline {section}{\numberline {8.6}Summary}{63}{section.8.6}%
+\contentsline {section}{References}{63}{section*.133}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-9}
-\contentsline {chapter}{\numberline {9}Systems-and-control reduction}{58}{chapter.9}%
+\contentsline {chapter}{\numberline {9}Systems-and-control reduction}{65}{chapter.9}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-10}
-\contentsline {chapter}{\numberline {10}Frequency-domain ROMs and certified error bounds}{59}{chapter.10}%
+\contentsline {chapter}{\numberline {10}Frequency-domain ROMs and certified error bounds}{66}{chapter.10}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-11}
-\contentsline {chapter}{\numberline {11}Substructuring and component reduction}{60}{chapter.11}%
+\contentsline {chapter}{\numberline {11}Substructuring and component reduction}{67}{chapter.11}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-12}
-\contentsline {chapter}{\numberline {12}Non-intrusive identification and nonlinear ROMs}{61}{chapter.12}%
+\contentsline {chapter}{\numberline {12}Non-intrusive identification and nonlinear ROMs}{68}{chapter.12}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-13}
-\contentsline {chapter}{\numberline {13}Hyper-reduction and contact reduced-order models}{62}{chapter.13}%
+\contentsline {chapter}{\numberline {13}Hyper-reduction and contact reduced-order models}{69}{chapter.13}%
 \gdef \the@ipfilectr {}
-\contentsline {part}{IV\hspace {1em}Verification}{63}{part.4}%
+\contentsline {part}{IV\hspace {1em}Verification}{70}{part.4}%
 \gdef \the@ipfilectr {@-14}
-\contentsline {chapter}{\numberline {14}Verification, reproduction studies and a parametric pipeline}{64}{chapter.14}%
+\contentsline {chapter}{\numberline {14}Verification, reproduction studies and a parametric pipeline}{71}{chapter.14}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-15}
-\contentsline {chapter}{\numberline {A}Differentiable assembly and autograd tangents}{65}{appendix.A}%
+\contentsline {chapter}{\numberline {A}Differentiable assembly and autograd tangents}{72}{appendix.A}%
 \gdef \the@ipfilectr {}

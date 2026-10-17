@@ -1,2 +1,188 @@
 \chapter{Projection-based reduction: POD, Galerkin and affine sweeps}\label{ch:pod}
-\stubchapter{Chapter 8}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+A reduced-order model replaces a system with thousands of unknowns by one with a handful, and is worth building only when the same system has to be solved many times. This chapter builds the simplest such model, the one the rest of Part~III refines: collect solutions (snapshots), extract a basis from them by the singular value decomposition (POD), and project the equations onto it (Galerkin). When the stiffness depends on parameters through a sum of fixed matrices, the projection is done once and every new parameter costs a small dense solve. The chapter measures what this buys and what it does not: how fast the singular values fall, how the error of the reduced solution follows the projection error, whether the choice of snapshots and of the inner product matters, and where the offline cost is repaid.
+\end{tcolorbox}
+
+\section{The problem}\label{sec:pod-problem}
+
+Let $\bm K(\bm\mu)\in\mathbb R^{n\times n}$ be a symmetric positive definite stiffness matrix that depends on parameters $\bm\mu$ (a modulus, a thickness, the position of a load), and let $\bm f(\bm\mu)$ be the load. The full-order model (FOM) is the parametric linear system
+\begin{equation}\label{eq:pod-fom}
+\bm K(\bm\mu)\,\bm u(\bm\mu)=\bm f(\bm\mu).
+\end{equation}
+Design studies, optimisation and uncertainty analysis need $\bm u(\bm\mu)$ for hundreds or thousands of values of $\bm\mu$. The reduction method of this chapter rests on one assumption: the solutions $\bm u(\bm\mu)$, which live in $\mathbb R^n$, are well approximated by a subspace of small dimension $r\ll n$. Whether that is true is not a property of the method but of the problem, and \Cref{sec:pod-verif} measures it before anything is built.
+
+\paragraph{The model problem.}
+All experiments use the two-region cantilever of the package example \path{rom_engine/examples/two_region_beam_rom.py}: a unit-length Euler--Bernoulli beam of $120$ elements with two stiffness regions, so that $\bm K(\bm\mu)=\mu_1\bm K_1+\mu_2\bm K_2$ with $\mu_1,\mu_2\in[0.5,5]$ and $\bm K_1,\bm K_2$ the stiffness of each region at unit modulus. It has \cpdNFree free unknowns. Two choices of the load matter, and the first is a lesson in itself.
+
+With a single tip load the solution of this beam is $\bm u=\bm u_a/\mu_1+\bm u_b/\mu_2$ for two fixed vectors: the beam is statically determinate, so its solution set has dimension exactly two and two modes are exact. We found this in a first version of the experiments, where the singular values dropped from $10^{2}$ to $10^{-8}$ after the second one and every later question had a trivial answer. That is a useful fact about determinate structures, and it makes a poor test. The experiments below therefore add the \emph{position of a unit point load}, $\xi\in[0.1,0.9]$ of the span, as a third parameter, so that $\bm\mu=(\mu_1,\mu_2,\xi)$. The load vector $\bm f(\xi)$ is not affine in $\xi$; it is assembled by the test script and projected on the fly, which is fine for the accuracy experiments but is not an online-efficient treatment (the limits box says so).
+
+\section{Mathematical structure}\label{sec:pod-math}
+
+\paragraph{Snapshots and POD.}
+Solve \eqref{eq:pod-fom} for $N$ training parameters $\bm\mu_1,\dots,\bm\mu_N$ and collect the solutions as the columns of the snapshot matrix $\bm S=[\bm u(\bm\mu_1)\ \cdots\ \bm u(\bm\mu_N)]\in\mathbb R^{n\times N}$. Its singular value decomposition $\bm S=\bm U\bm\Sigma\bm W^T$ gives the basis $\bm V=[\bm U_{:,1}\ \cdots\ \bm U_{:,r}]$ of the first $r$ left singular vectors. By the Eckart--Young theorem no matrix of rank $r$ is closer to $\bm S$ in the Frobenius norm than $\bm V\bm V^T\bm S$, and the distance is
+\begin{equation}\label{eq:pod-ey}
+\|\bm S-\bm V\bm V^T\bm S\|_F^2=\sum_{k>r}\sigma_k^2 .
+\end{equation}
+The singular values are therefore a computable bound on how well $r$ modes represent the \emph{training} solutions, and $\sum_{k\le r}\sigma_k^2/\sum_k\sigma_k^2$ is the usual ``energy captured''. The method is known in this form as proper orthogonal decomposition, and in the reduced-basis community as the basis step of the reduced-basis method~\cite{berkooz1993pod,hesthaven2016rb}. Equation~\eqref{eq:pod-ey} says nothing about parameters that were not trained; that is measured by held-out tests in \Cref{sec:pod-verif}.
+
+\paragraph{Weighted POD.}
+If the state carries physical units that differ between components (displacements and rotations, as here) or the mesh is non-uniform, the Euclidean inner product weights the unknowns arbitrarily. The mass-weighted variant replaces $\bm S$ by $\bm L^T\bm S$ with $\bm M=\bm L\bm L^T$, takes the SVD, and maps the vectors back, so that $\bm V^T\bm M\bm V=\bm I$ and the basis is optimal in the discrete $L^2$ norm. \anchor{rom_engine.pod.PodBasis} does this with \code{fit(S, M=M)}.
+
+\paragraph{Galerkin projection.}
+Approximate $\bm u\approx\bm V\bm q$ and require the residual to be orthogonal to the basis, $\bm V^T(\bm K\bm V\bm q-\bm f)=\bm 0$:
+\begin{equation}\label{eq:pod-galerkin}
+\bm K_r\bm q=\bm f_r,\qquad \bm K_r=\bm V^T\bm K\bm V\in\mathbb R^{r\times r},\quad \bm f_r=\bm V^T\bm f .
+\end{equation}
+For symmetric positive definite $\bm K$ this is the orthogonal projection in the energy norm $\|\bm v\|_K^2=\bm v^T\bm K\bm v$, so the reduced solution is the best approximation from $\mathrm{span}(\bm V)$ in that norm, $\|\bm u-\bm V\bm q\|_K=\min_{\bm w}\|\bm u-\bm V\bm w\|_K$ (Céa's lemma applied to the discrete problem). The energy-norm optimality does not transfer to the Euclidean norm used in \cref{eq:pod-ey}, so the Galerkin state error and the Euclidean projection error differ by a factor that depends on $\bm K$; \Cref{sec:pod-verif} measures it. The same projection of a generalised eigenproblem $\bm K\bm\phi=\omega^2\bm M\bm\phi$ gives $\bm K_r\bm z=\omega^2\bm M_r\bm z$, which \code{GalerkinROM.solve_modal} solves (this is the dynamics of Chapter~\ref{ch:dyn} in the subspace).
+
+\paragraph{Affine parameter dependence.}
+Projecting \eqref{eq:pod-galerkin} costs $O(n^2r)$ for a dense matrix, and if it were repeated for every $\bm\mu$ nothing would be saved. When
+\begin{equation}\label{eq:pod-affine}
+\bm K(\bm\mu)=\sum_{q=1}^{Q}\theta_q(\bm\mu)\,\bm K_q,
+\end{equation}
+with scalar functions $\theta_q$ and parameter-free matrices $\bm K_q$, the projection commutes with the sum, $\bm K_r(\bm\mu)=\sum_q\theta_q(\bm\mu)\,\bm V^T\bm K_q\bm V$, so each $\bm V^T\bm K_q\bm V$ is computed once offline and the online cost for a new $\bm\mu$ is the sum of $Q$ small matrices and an $r\times r$ solve, independent of $n$. \anchor{rom_engine.affine.AffineDecomposition} stores the $\bm K_q$ and the function $\bm\theta$, \code{project(V)} does the offline step, and \code{assemble_reduced(mu)} the online sum.
+
+\begin{algbox}{Offline--online reduced basis for a parametric stiffness}
+\textbf{Offline (once).}
+\begin{enumerate}[leftmargin=1.5em]
+\item Choose $N$ training parameters, for example by an optimal Latin hypercube (\anchor{rom_engine.sampling.optimal_lhs}).
+\item Solve the FOM for each and form $\bm S$.
+\item Compute the POD basis $\bm V$ with $r$ chosen from the singular values (and from a held-out error, \Cref{fig:pod-pod}).
+\item Project the affine terms, $\bm K_{q,r}=\bm V^T\bm K_q\bm V$, and any parameter-free load, $\bm f_r=\bm V^T\bm f$.
+\end{enumerate}
+\textbf{Online (per parameter).}
+\begin{enumerate}[leftmargin=1.5em,resume]
+\item Form $\bm K_r(\bm\mu)=\sum_q\theta_q(\bm\mu)\bm K_{q,r}$, solve $\bm K_r\bm q=\bm f_r$, and expand $\bm u\approx\bm V\bm q$ only if the full field is needed.
+\end{enumerate}
+\end{algbox}
+
+\section{Implementation in the packages}\label{sec:pod-impl}
+
+\Cref{lst:pod-run} is the whole pipeline on the model problem; \Cref{tab:pod-map} lists where each step lives. The three classes are deliberately separate: \code{PodBasis} knows only about snapshots, \code{GalerkinROM} only about a basis and matrices, \code{AffineDecomposition} only about a sum of matrices. A basis can come from any source (POD, modal truncation, the Krylov bases of Chapter~\ref{ch:bt}) and the other two classes do not care.
+
+\begin{lstlisting}[caption={Offline--online pipeline on the two-region beam (matrices K1, K2 are the dense free-dof blocks; theta is the coefficient function).},label={lst:pod-run}]
+import numpy as np
+from rom_engine import PodBasis, GalerkinROM, AffineDecomposition
+from rom_engine.sampling import optimal_lhs
+
+# offline
+rng = np.random.default_rng(0)
+mus = 0.5 + 4.5 * optimal_lhs(16, 2, rng=rng)          # (EI1, EI2) training design
+S = np.column_stack([np.linalg.solve(m[0] * K1 + m[1] * K2, F) for m in mus])
+pod = PodBasis().fit(S, n_modes=8)                       # or M=M for mass-weighted POD
+aff = AffineDecomposition([K1, K2], lambda mu: [mu[0], mu[1]]).project(pod.V)
+Fr = pod.V.T @ F
+
+# online: one 8 x 8 solve per parameter
+q = np.linalg.solve(aff.assemble_reduced((2.0, 1.0)), Fr)
+u = pod.V @ q
+
+# modal analysis in the subspace
+rom = GalerkinROM(pod.V).reduce_system(2.0 * K1 + 1.0 * K2, M)
+freq_hz, _, _ = rom.solve_modal(n_modes=5)
+\end{lstlisting}
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+Concept & Code \\
+\midrule
+snapshot SVD, truncation by rank or energy, mass-weighted variant & \anchor{rom_engine.pod.PodBasis} \\
+Galerkin projection of $\bm K,\bm M,\bm f$; static and modal solves & \anchor{rom_engine.galerkin.GalerkinROM} \\
+affine sum $\sum_q\theta_q\bm K_q$, offline projection, online assembly & \anchor{rom_engine.affine.AffineDecomposition} \\
+optimal Latin hypercube design & \anchor{rom_engine.sampling.optimal_lhs} \\
+parametric mode sensitivities (used for mode-tracking in parameter studies) & \anchor{rom_engine.parametric_modes.mode_sensitivities} \\
+worked examples & \path{rom_engine/examples/gallery/rom_01_pod_basis.py}, \path{rom_02_galerkin_parametric_rom.py} \\
+\bottomrule
+\end{tabularx}
+\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:pod-map}
+\end{table}
+
+\section{Verification}\label{sec:pod-verif}
+
+Each claim below is a measurement from \texttt{scripts/ch08\_assets.py}, run on \machine{}. Errors are relative, $\|\bm u-\bm V\bm q\|/\|\bm u\|$ in the Euclidean norm, and are the worst value over \cpdNTest held-out parameters drawn at random, not seen in training. Timings are single runs; no test asserts them.
+
+\subsection{Singular values and the held-out error}
+
+\Cref{fig:pod-pod} uses \cpdNSnap training solutions from an optimal Latin hypercube. The singular values fall by a factor of \cpdSvDecade between the first and the fourth, and reach \cpdSvTwelve of the first at $r=12$. The held-out error follows them down more slowly: Galerkin state error \cpdGalerkinErrSix with $6$ modes, \cpdGalerkinErrTwelve with $12$, and \cpdGalerkinErrLast with $24$. To reach $5\%$ takes \cpdModesForFivePct modes, and to reach $1\%$ takes \cpdModesForOnePct. The training spectrum goes to rounding level (\cpdSvLast of the first value by the last of the $60$), but the held-out error does not, which is the point of testing on parameters that were not trained.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.98\linewidth]{figures/ch08_pod.pdf}
+\caption{Left: normalised singular values of the \cpdNSnap training snapshots. Right: worst relative error on \cpdNTest unseen parameters against the number of modes $r$, for the Euclidean projection error and for the Galerkin solve with Euclidean and with mass-weighted POD. Produced by \texttt{scripts/ch08\_assets.py}.}\label{fig:pod-pod}
+\end{figure}
+
+The Galerkin state error is never more than \cpdGalerkinOverProj times the Euclidean projection error of the same basis (largest ratio over the $24$ sizes), consistent with the energy-norm optimality of \cref{eq:pod-galerkin}: the reduced solve loses little against the best approximation in the subspace. A singular-value plot alone would have suggested a much faster decay than the unseen parameters show, and the measured \cpdModesForOnePct modes for $1\%$ is the figure to trust.
+
+\subsection{Weighted against Euclidean POD}
+
+Mass-weighted POD has $\|\bm V^T\bm M\bm V-\bm I\|_{\max}$ equal to \cpdMassOrth{} and Euclidean POD has $\|\bm V^T\bm V-\bm I\|_{\max}$ equal to \cpdEucOrth{}, so each basis is orthonormal in its own inner product to rounding. On this problem the two choices give nearly the same Galerkin error (\cpdMassErrSix against \cpdGalerkinErrSix at $r=6$, and \cpdMassErrTwelve against \cpdGalerkinErrTwelve at $r=12$); the weighted basis is lower at \cpdMassWins of the \cpdMassCompared sizes. We read this as a small effect on a beam with a uniform mesh, and we do not claim it carries over to non-uniform meshes or to meshes with mixed unknown types, where the weighting is expected to matter more; that was not tested.
+
+\subsection{How the snapshots are chosen}
+
+\Cref{fig:pod-snap} compares an optimal (maximin) Latin hypercube with uniform random sampling at equal budget, with the basis size set to $\min(N,12)$ and five random repetitions for each size. The optimal design has the lower median error at \cpdOlhsBetterCount of the \cpdSnapCases sizes: at $N=20$ the median is \cpdSnapOlhsB against \cpdSnapRandB for random sampling, and at $N=10$ it is \cpdSnapOlhsA against \cpdSnapRandA. Five repetitions are few, and the one size where random wins shows that the ordering is not guaranteed; the dependence on the budget is the stronger result, since the error falls with $N$ until the basis size saturates at $12$.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.62\linewidth]{figures/ch08_snapshots.pdf}
+\caption{Median Galerkin state error on \cpdNTest unseen parameters against the number of snapshots, optimal Latin hypercube against random sampling, five repetitions each.}\label{fig:pod-snap}
+\end{figure}
+
+\subsection{Modal analysis in the subspace}
+
+The basis above was built from \emph{static} solutions, and a static basis is not a modal basis. \Cref{tab:pod-modal} projects $\bm K$ and $\bm M$ at $\bm\mu=(2,1)$ and compares the lowest frequencies with the full eigenproblem. The first frequency is within \cpdModalErrOneAtSix with $6$ modes and the third within \cpdModalErrThreeAtSix, but the fifth is still off by \cpdModalErrFiveAtTwelve with $12$ modes. A basis built for the displacement under these loads resolves the modes that the loads excite, and the higher modes require either a richer set of snapshots or a different method (Chapters~\ref{ch:bt} and~\ref{ch:cms}).
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch08_modal}
+\caption{Relative error of the lowest frequencies of the reduced eigenproblem against the full model, for bases of $r$ POD modes of the static snapshots (a dash: fewer than five modes in the basis).}\label{tab:pod-modal}
+\end{table}
+
+\subsection{Offline and online cost}
+
+\Cref{fig:pod-sweep} and \Cref{tab:pod-cost} compare one parameter query in three ways on two sizes of the same beam: re-assembling the full matrix with the helper of the example and solving, summing the stored affine terms and solving, and the reduced solve of \cref{lst:pod-run}. The reduced solve takes about \cpdOnlineUs~$\mu$s per query in the largest run, independent of $n$ in the two sizes measured, while a full query takes \cpdCostSpeedAffine times longer at \cpdNFree unknowns with affine assembly and \cpdCostSpeedReasm times longer with re-assembly, and \cpdCostSpeedAffineBig and \cpdCostSpeedReasmBig times longer at \cpdBigNf unknowns. The offline step (snapshots, SVD, projection) is repaid after $3$ queries at the smaller size and \cpdBreakEvenBig at the larger one against re-assembly, and after about \cpdBreakEvenAffBig queries at the larger size against the affine full solve.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.62\linewidth]{figures/ch08_sweep.pdf}
+\caption{Time per query: reduced solve, full solve with affine assembly, full solve with re-assembly, at two sizes of the beam. Logarithmic axis; single runs on \machine.}\label{fig:pod-sweep}
+\end{figure}
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch08_cost}
+\caption{Offline cost and per-query cost on two sizes of the beam; break-even is the offline cost divided by the saving per query against re-assembly. Single runs on \machine.}\label{tab:pod-cost}
+\end{table}
+
+These speed-ups are inflated by the baseline. The full solves here use dense \code{numpy.linalg.solve} on a matrix whose entries are almost all zero, which is how the example builds its models; a banded or sparse factorisation of this tri-diagonal-block system is far cheaper than the dense solve, and the speed-up against it would be much smaller. The result that survives is the break-even structure (a modest offline cost repaid after tens of queries) and the scaling (the reduced solve does not grow with $n$), not the ratios.
+
+\section{Limits and failure modes}\label{sec:pod-limits}
+
+\begin{limitsbox}
+\begin{itemize}
+\item \textbf{The basis is only as good as the snapshots.} The held-out error (\Cref{fig:pod-pod}) is the only guide to accuracy at untrained parameters; singular values describe training data. No certified error bound is given in this chapter (Chapter~\ref{ch:freq} adds one).
+\item \textbf{Affine structure is a requirement, not a convenience.} If $\bm K$ or $\bm f$ is not a sum of fixed terms, the online step is not independent of $n$. Here the load position makes $\bm f$ non-affine, and the experiments of \Cref{sec:pod-verif} project it per query, so they test accuracy and not online efficiency; the cost experiments use the fixed tip load.
+\item \textbf{Geometry changes are not handled.} A parameter that moves the mesh breaks \cref{eq:pod-affine}; the package has no empirical-interpolation route for it in this chapter.
+\item \textbf{Static bases do not give modal accuracy} (\Cref{tab:pod-modal}); the higher frequencies are poorly captured.
+\item \textbf{Determinate structures are trivial.} A single-load statically determinate beam has an exactly two-dimensional solution set; conclusions drawn from it do not transfer.
+\item \textbf{Weighted POD} was compared on one uniform-mesh beam only.
+\item \textbf{Timings} are single runs on \machine{} with a dense baseline; sizes up to \cpdBigNf unknowns only.
+\end{itemize}
+\end{limitsbox}
+
+\section{Summary}\label{sec:pod-summary}
+
+POD extracts a low-dimensional basis from solutions by the SVD, \cref{eq:pod-ey}; Galerkin projection turns the large system into an $r\times r$ one, \cref{eq:pod-galerkin}, and is the best approximation in the energy norm. If the parameter dependence is affine, \cref{eq:pod-affine}, the projection is done once and each new parameter costs a small solve. On the model beam, held-out error is the figure to trust: \cpdModesForOnePct modes for $1\%$ although the singular values suggest fewer. The offline cost is repaid after a few to a few tens of queries, but the speed-up ratios reported here depend on a dense baseline.
+
+\section*{Exercises}\label{sec:pod-exercises}
+\begin{enumerate}
+\item Reproduce \Cref{fig:pod-pod} with only $(\mu_1,\mu_2)$ varying and the tip load fixed. Where do the singular values drop to rounding level, and why? (Script: \texttt{scripts/ch08\_assets.py}.)
+\item Replace the held-out parameter set by one drawn from $\xi\in[0.1,0.3]$ only. Does a basis trained on the full range still reach the same error?
+\item Use \code{fit(S, energy_threshold=0.9999)} instead of a fixed rank. How many modes does it select, and what is the held-out error? Does the training energy predict the held-out error?
+\item Add a third affine term (a stiffer segment) to \cref{lst:pod-run}. What changes in the offline projection cost and in the online cost?
+\item Use a sparse factorisation (\code{scipy.sparse.linalg.splu}) for the full solves of \Cref{tab:pod-cost} and report the new break-even numbers.
+\end{enumerate}
+
+\chapterrefs

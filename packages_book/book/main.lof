@@ -43,6 +43,9 @@
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-8}
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {8.1}{\ignorespaces Left: normalised singular values of the 60\xspace training snapshots. Right: worst relative error on 40\xspace unseen parameters against the number of modes $r$, for the Euclidean projection error and for the Galerkin solve with Euclidean and with mass-weighted POD. Produced by \texttt {scripts/ch08\_assets.py}.\relax }}{60}{figure.caption.127}%
+\contentsline {figure}{\numberline {8.2}{\ignorespaces Median Galerkin state error on 40\xspace unseen parameters against the number of snapshots, optimal Latin hypercube against random sampling, five repetitions each.\relax }}{61}{figure.caption.128}%
+\contentsline {figure}{\numberline {8.3}{\ignorespaces Time per query: reduced solve, full solve with affine assembly, full solve with re-assembly, at two sizes of the beam. Logarithmic axis; single runs on the sandbox used for the figures of this chapter (2 CPUs).\relax }}{62}{figure.caption.130}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-9}
 \addvspace {10\p@ }
