@@ -56,6 +56,9 @@
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-10}
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {10.1}{\ignorespaces Left: the full-order tip response and the two frequencies chosen by the greedy loop for a $5$-column basis (shaded). Right: maximum held-out error near the resonances against the number of basis columns for the three bases.\relax }}{78}{figure.caption.155}%
+\contentsline {figure}{\numberline {10.2}{\ignorespaces The $5$-column greedy model on 300\xspace {} candidate frequencies. Left: true error, residual norm and hierarchical indicator against frequency. Right: the two indicators against the true error.\relax }}{79}{figure.caption.157}%
+\contentsline {figure}{\numberline {10.3}{\ignorespaces Left: true $\sigma _{\qopname \relax m{min}}(\bm {A}(\omega ))$ and the two lower bounds from $15$ references (bounds clipped at the plotting floor where they are zero). Right: true error and the certified bound where it is finite.\relax }}{80}{figure.caption.159}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-11}
 \addvspace {10\p@ }

@@ -62,6 +62,10 @@
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-10}
 \addvspace {10\p@ }
+\contentsline {table}{\numberline {10.1}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{77}{table.caption.154}%
+\contentsline {table}{\numberline {10.2}{\ignorespaces Held-out relative error of the three bases. ``median'' and ``max (near)'' are over the 60\xspace {} frequencies near the resonances, ``max (band)'' over the 100\xspace {} band-wide frequencies.\relax }}{78}{table.caption.156}%
+\contentsline {table}{\numberline {10.3}{\ignorespaces Frequencies (of 200\xspace {}) at which a finite certified bound exists, and the median ratio of the bound to the true error where it does, against the number of reference frequencies.\relax }}{79}{table.caption.158}%
+\contentsline {table}{\numberline {10.4}{\ignorespaces Random-vibration response of reduced models against the full-order result on the same $6000$-point grid: relative RMS error and the largest PSD error relative to the peak PSD.\relax }}{79}{table.caption.160}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-11}
 \addvspace {10\p@ }
