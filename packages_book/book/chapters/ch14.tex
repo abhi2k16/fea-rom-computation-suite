@@ -1,2 +1,53 @@
 \chapter{Verification, reproduction studies and a parametric pipeline}\label{ch:verif}
-\stubchapter{Chapter 14}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+Chapters~\ref{ch:arch} to~\ref{ch:hyper} each ended with their own verification section. This chapter collects what those sections established, says what kind of evidence each one is and what it cannot show, then goes further in two directions: the reconstruction of published studies from the packages alone, and one complete run, from mesh to a held-out prediction, that is reported according to Appendix~\ref{ch:conv}.
+\textbf{After this chapter the reader can:} (i) place any number of this book on the ladder from unit test to integrated run and say what it does not prove; (ii) read the outcome table of the reproduction studies, including the ones that failed; (iii) run the integrated pipeline on their own model and report it with offline, online and lifting cost and with a local quantity next to the global error.
+\end{tcolorbox}
+
+\section{What ``verified'' means in this book}\label{sec:vf-levels}
+
+A claim that a piece of code is correct can be supported at six levels, and each level answers a different question. \Cref{fig:vf-pyramid} lists them. A unit test (level 1) asks whether the code does what its author meant on one input. A closed-form benchmark (level 2) asks whether that is also what the mathematics says, on a case where the exact answer is known and is not computed by the code under test. Convergence orders and the agreement of independent solvers (level 3) ask whether the error falls at the rate the method promises, and whether two different routes to the same quantity give the same number. For reduced models (level 4) the question changes to accuracy on parameters or loads that were not used in training, and to whether a bound held. A reproduction (level 5) asks whether a method described in somebody else's words, rebuilt from the packages without their code, recovers what its authors report. An integrated run (level 6) asks whether the pieces still work when they are connected: a model built by the mesh tools, solved by the engine, reduced, and used on data that none of the earlier steps saw.
+
+\tikzfigure[0.98\linewidth]{ch14_pyramid}{The six levels of evidence used in this book. Lower levels contain many small cases and are cheap to repeat; higher levels contain few cases and test more of the stack at once. A higher level does not replace a lower one: it can pass while a component below it is wrong in a region it does not visit.}{fig:vf-pyramid}
+
+Two rules apply to every level. The first is that the reference must not come from the code under test (Appendix~\ref{ch:conv}); a closed form, a quadrature of an integral, a much finer model computed another way, or a published number are references, the same solver at another setting is not. The second is that a pass is a statement about the cases that were run. The sections below therefore state, for each group of results, the case, the reference, the number, and what was not tried.
+
+\section{Component verification in one table}\label{sec:vf-component}
+
+\Cref{tab:vf-map} lists, chapter by chapter, one headline check of the verification sections. The numbers are the macros that the chapter scripts generated (they are the same numbers as in the chapters, not new measurements) on the machine named in each chapter. The last column points to the section where the case, the reference and the qualifications are given; the entry in the table is a summary and should not be quoted without them.
+
+\begin{table}[tbp]
+\centering\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Headline checks from Chapters~\ref{ch:elem} to~\ref{ch:hyper}. ``Level'' refers to \Cref{fig:vf-pyramid}. An error without a unit is a relative error.}\label{tab:vf-map}
+\begin{tabularx}{\linewidth}{@{}l c >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{2.0cm}@{}}
+\toprule
+Ch. & Level & Check and reference & Result & Where \\
+\midrule
+\ref{ch:elem} & 2 & patch test, all \cecPatchCount{} continuum elements, exact linear field & worst error \cecPatchWorst{} & \Cref{sec:el-verif} \\
+\ref{ch:elem} & 2, 3 & Euler--Bernoulli cantilever frequency, closed form; Timoshenko tip deflection, closed form & observed orders \cecEBFreqOrder{} (theory 4) and \cecTimoOrder{} (theory 2) & \Cref{sec:el-verif} \\
+\ref{ch:dyn} & 3 & Newmark, error against the exact discrete solution & observed order \cdyNewmarkOrder{} (theory 2) & \Cref{ch:dyn} \\
+\ref{ch:dyn} & 3 & harmonic response against an independent modal sum & difference \cdyHarmDiff{} & \Cref{ch:dyn} \\
+\ref{ch:nonlin} & 2 & tangent stiffness against finite differences of the internal force & tangent error \cnlTangentWorst{} & \Cref{sec:nl-verif} \\
+\ref{ch:nonlin} & 2 & von Mises truss, closed form (displacement control; arc length) & errors \cnlTrussErrDC{} and \cnlTrussErrAL{}; load control fails at the limit load & \Cref{sec:nl-verif} \\
+\ref{ch:batch} & 3 & chunked batched assembly against the unchunked batched assembly & difference \cbkChunkDiff{} & \Cref{sec:bk-verif} \\
+\ref{ch:contact} & 3 & contact problems on six obstacles (\ctcAgreeN{} unknowns), sparse routes, Lemke and projected Gauss--Seidel against the dense active-set solver & differences at most \ctcAgreeRedMax{}, \ctcAgreeSadMax{} and \ctcAgreeLemkeMax{}; projected Gauss--Seidel \ctcAgreePgsMax{} (its own tolerance) & \Cref{sec:ct-verif-static} \\
+\ref{ch:contact} & 3 & BDF2 contact, observed order & \ctcOrdBdfLast{} (theory 2); largest energy reaches \ctcImpBdfMaxVfine{} times the initial value at the finest step & \Cref{ch:contact} \\
+\ref{ch:pod} & 4 & POD--Galerkin, held-out state error & \cpdGalerkinErrTwelve{} with 12 modes, \cpdGalerkinErrLast{} with 24 & \Cref{sec:pod-verif} \\
+\ref{ch:bt} & 4 & a priori balanced-truncation bound against the grid maximum of the error & held in \cbtBoundHolds{} of \cbtBoundCases{} cases; the miss is at rounding level (\cbtMissErr{} against \cbtMissBound{}) & \Cref{sec:bt-verif} \\
+\ref{ch:freq} & 4 & certified bound, linear-programme lower bound & held at all \cfrLpBoundFinite{} frequencies where it was finite; median bound-to-error ratio \cfrLpRatioMed{} & \Cref{sec:fr-verif} \\
+\ref{ch:cms} & 4 & Craig--Bampton, largest error of the first four frequencies & \ccmCbFiveErr{} with five modes, \ccmCbAllErr{} with all (exact) & \Cref{sec:cm-verif} \\
+\ref{ch:nonint} & 3, 4 & Duffing backbone by harmonic balance against time integration & frequency error \cnmErrOne{}, \cnmErrThree{}, \cnmErrSeven{} with 1, 3, 7 harmonics & \Cref{sec:ni-verif} \\
+\ref{ch:hyper} & 4 & reduced contact problem with the SVD dual basis, against the full-order BDF2 reference & reduced KKT residual \chdSvdTwentyKktOut{} (20 modes), yet negative lifted multipliers; the NMF basis gives none: a small residual is not a valid contact state & \Cref{sec:hy-verif} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Three entries deserve a second look because they show the limits of the table itself. The balanced-truncation bound is reported as held in \cbtBoundHolds{} of \cbtBoundCases{} cases, not in all of them: the one miss is a case at rounding level, where both numbers are far below anything that matters, and the book reports it as a miss. The certified bound of Chapter~\ref{ch:freq} is valid wherever it is finite, and it is finite at few frequencies, so its guarantee covers a small part of the band. And the SVD dual basis of Chapter~\ref{ch:hyper} satisfies the reduced KKT conditions to rounding error and still gives negative lifted multipliers, which is why that chapter judges a reduced contact model by the lifted multipliers and not by the reduced residual.
+
+\subsection{What the component checks do not show}\label{sec:vf-notshow}
+
+The checks of \Cref{tab:vf-map} cover the element types and the analyses named, on simple geometries: beams, a plate, small plane bodies, one cantilever with two material regions. They do not cover three-dimensional plasticity against an independent reference, shells in contact, or the Koiter--Newton solvers; those parts are exercised by the unit tests of the repository and are not evaluated here. The reduced models are tested on one or two structures each, with parameters and loads drawn from the ranges of the training. Error is reported against a full-order model computed with the same engine, so a defect common to both (a wrong element, a wrong load) would not be seen by a ROM check; the closed-form checks of levels 2 and 3 are what guard against that. Wall-clock times are for the 2-CPU machine named in each chapter and for a dense baseline unless a chapter says otherwise.
+
+\stubchapter{Sections 14.3 to 14.5: reproduction studies, integrated parametric pipeline, limits and exercises}

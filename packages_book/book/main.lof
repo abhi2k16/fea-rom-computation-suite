@@ -111,6 +111,7 @@
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-15}
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {14.1}{\ignorespaces The six levels of evidence used in this book. Lower levels contain many small cases and are cheap to repeat; higher levels contain few cases and test more of the stack at once. A higher level does not replace a lower one: it can pass while a component below it is wrong in a region it does not visit.\relax }}{139}{figure.caption.246}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-16}
 \addvspace {10\p@ }

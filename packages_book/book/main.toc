@@ -266,21 +266,24 @@
 \contentsline {part}{IV\hspace {1em}Verification}{137}{part.4}%
 \gdef \the@ipfilectr {@-15}
 \contentsline {chapter}{\numberline {14}Verification, reproduction studies and a parametric pipeline}{138}{chapter.14}%
+\contentsline {section}{\numberline {14.1}What ``verified'' means in this book}{138}{section.14.1}%
+\contentsline {section}{\numberline {14.2}Component verification in one table}{139}{section.14.2}%
+\contentsline {subsection}{\numberline {14.2.1}What the component checks do not show}{139}{subsection.14.2.1}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-16}
-\contentsline {chapter}{\numberline {A}Differentiable assembly and autograd tangents}{139}{appendix.A}%
+\contentsline {chapter}{\numberline {A}Differentiable assembly and autograd tangents}{141}{appendix.A}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-17}
-\contentsline {chapter}{\numberline {B}Verification conventions and tolerances}{140}{appendix.B}%
-\contentsline {section}{\numberline {B.1}A template for a convergence study}{140}{section.B.1}%
-\contentsline {section}{\numberline {B.2}Tolerances used in the book}{140}{section.B.2}%
-\contentsline {section}{\numberline {B.3}What a reported ROM number states}{140}{section.B.3}%
+\contentsline {chapter}{\numberline {B}Verification conventions and tolerances}{142}{appendix.B}%
+\contentsline {section}{\numberline {B.1}A template for a convergence study}{142}{section.B.1}%
+\contentsline {section}{\numberline {B.2}Tolerances used in the book}{142}{section.B.2}%
+\contentsline {section}{\numberline {B.3}What a reported ROM number states}{142}{section.B.3}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-18}
-\contentsline {chapter}{\numberline {C}Notation and glossary}{142}{appendix.C}%
-\contentsline {section}{\numberline {C.1}Notation}{142}{section.C.1}%
-\contentsline {section}{\numberline {C.2}Glossary}{142}{section.C.2}%
+\contentsline {chapter}{\numberline {C}Notation and glossary}{144}{appendix.C}%
+\contentsline {section}{\numberline {C.1}Notation}{144}{section.C.1}%
+\contentsline {section}{\numberline {C.2}Glossary}{144}{section.C.2}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-19}
-\contentsline {chapter}{\numberline {D}Chapters, scripts and package tests}{144}{appendix.D}%
+\contentsline {chapter}{\numberline {D}Chapters, scripts and package tests}{146}{appendix.D}%
 \gdef \the@ipfilectr {}
