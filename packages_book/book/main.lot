@@ -75,6 +75,10 @@
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-12}
 \addvspace {10\p@ }
+\contentsline {table}{\numberline {12.1}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{92}{table.caption.180}%
+\contentsline {table}{\numberline {12.2}{\ignorespaces Loewner identification of the first four modes of a damped cantilever from $2\times 7\xspace $ frequency samples, against relative noise on the samples. Errors are over the successful draws only; a dash means no draw succeeded.\relax }}{93}{table.caption.182}%
+\contentsline {table}{\numberline {12.3}{\ignorespaces Largest relative error of the mid-span deflection over the held-out static load sweep, against the number of retained modes, for a linear modal model, the polynomial (ICE) model and the RBF surrogate trained with $45$ samples.\relax }}{94}{table.caption.184}%
+\contentsline {table}{\numberline {12.4}{\ignorespaces Relative error of the inferred operators against the Galerkin projection of the true matrices, against relative noise on the accelerations; whether the unconstrained least-squares operators were already symmetric positive definite.\relax }}{96}{table.caption.188}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-13}
 \addvspace {10\p@ }

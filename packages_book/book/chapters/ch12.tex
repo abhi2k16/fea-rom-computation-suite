@@ -1,2 +1,222 @@
 \chapter{Non-intrusive identification and nonlinear ROMs}\label{ch:nonint}
-\stubchapter{Chapter 12}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+Every method of Chapters~\ref{ch:pod} to~\ref{ch:cms} is handed the system matrices and projects them. This chapter drops that requirement in two ways. The first is identification from data alone: a Loewner pencil reads natural frequencies and damping from sampled frequency responses, and operator inference learns reduced mass and stiffness matrices from states, accelerations and forces. The second is a hybrid for geometric nonlinearity: the linear part of the model stays intrusive in a small modal basis, and only the nonlinear restoring force is fitted from full-order solutions, either by a polynomial (the ICE family) or by a radial-basis surrogate (the multi-fidelity method of He et al.). A harmonic-balance continuation then turns such a model into a nonlinear normal mode backbone.\par\smallskip
+\textbf{After this chapter the reader can:} (i) identify modal frequencies and damping from a frequency response with the Loewner pencil and say when the result is not to be trusted; (ii) build and test a polynomial or an RBF modal force model for a geometrically nonlinear structure against held-out full-order solves; (iii) trace and check a backbone curve by harmonic balance; (iv) learn symmetric positive definite reduced operators from data and run contact dynamics with them; (v) state what each of these methods was and was not tested on in this book.
+\end{tcolorbox}
+
+\section{The problem}\label{sec:ni-problem}
+
+``Non-intrusive'' covers two different situations. In the first, there is no access to $\bm K,\bm M,\bm C$ at all: the data are measured or exported responses of a black-box model. In the second, the linear matrices are available and are projected as usual, but the nonlinear internal force of a full-order model is accessible only through solves, so it has to be \emph{fitted} in the reduced coordinates. Both are data-driven; what is learned, and what is assumed known, differs.
+
+\section{Mathematical structure}\label{sec:ni-math}
+
+\paragraph{Loewner identification.}
+For a linear system with transfer function $H(\omega)$ sampled at two disjoint sets of frequencies $\{\omega_\alpha\}$ and $\{\omega_\beta\}$ (each of size $n$) the Loewner pencil is built from divided differences of the data, with $\hat x$ the sampled response:
+\begin{equation}\label{eq:ni-loewner}
+\tilde E_{ab}=\frac{\hat x_{\alpha,a}-\hat x_{\beta,b}}{\omega_{\alpha,a}^2-\omega_{\beta,b}^2},\qquad
+\tilde A_{ab}=\frac{\omega_{\alpha,a}^2\hat x_{\alpha,a}-\omega_{\beta,b}^2\hat x_{\beta,b}}{\omega_{\alpha,a}^2-\omega_{\beta,b}^2},
+\end{equation}
+and the generalised eigenvalues of $(\tilde A,\tilde E)$ approximate the squared complex natural frequencies, $\lambda_i\approx\omega_i^2$~\cite{mayo2007loewner,liu2026fsi}. The natural frequency is $f_i=\mathrm{Re}(\omega_i)/2\pi$ and a loss factor $\eta_i=\mathrm{Im}(\omega_i)/\mathrm{Re}(\omega_i)$ is read from the imaginary part. The method never forms a state-space realisation, and the data are a handful of complex numbers at one reference degree of freedom. The pencil has $n$ eigenvalues, more than the number of physical modes in the band when $n$ is oversized, so some are spurious and have to be screened out by band and sign of the damping.
+
+\paragraph{Operator inference.}
+Given states $\bm x_t$, accelerations $\bm a_t$ and applied forces $\bm f_t$ in reduced coordinates $\bm x=[\bm u_b;\bm q]$ (the physical boundary unknowns $\bm u_b$ plus modal amplitudes $\bm q$ of the fixed-boundary interior modes, a Craig--Bampton structure as in Chapter~\ref{ch:cms}), infer $\bm M,\bm K$ by least squares,
+\begin{equation}\label{eq:ni-opinf}
+\min_{\bm M,\bm K\succ0}\ \sum_t\|\bm M\bm a_t+\bm K\bm x_t-\bm f_t\|^2,
+\end{equation}
+with the positive definiteness enforced through Cholesky parametrisation if the unconstrained solution violates it~\cite{peherstorfer2016opinf,manvelyan2025}. The inferred model is then used for contact dynamics through the same linear complementarity problem as in Chapter~\ref{ch:contact}.
+
+\paragraph{Hybrid nonlinear modal models.}
+Take the linear modes $\bm V$ (mass-normalised, $\bm V^T\bm M\bm V=\bm I$, $\bm V^T\bm K\bm V=\bm\Lambda$) as the basis. For a static load with modal image $\hat{\bm f}=\bm V^T\bm f$ the reduced equation is
+\begin{equation}\label{eq:ni-modal}
+\bm\Lambda\bm q_{nl}+\bm f_{nl}(\bm q_{nl})=\hat{\bm f},
+\end{equation}
+where $\bm f_{nl}$ is the nonlinear modal restoring force, to be learned. Two model families are in \rom{}.
+
+\emph{Polynomial (ICE and relatives).} Fit $\bm f_{nl}$ as a quadratic-plus-cubic polynomial of $\bm q_{nl}$ itself, by least squares on solutions of the full nonlinear model at prescribed loads~\cite{hollkamp2008ice,mignolet2013review}. Evaluating the model for a given load requires a Newton solve of \eqref{eq:ni-modal}.
+
+\emph{RBF surrogate (multi-fidelity).} Fit $\bm f_{nl}$ as a radial-basis interpolant of the \emph{linear} modal displacement $\bm q_l=\bm\Lambda^{-1}\hat{\bm f}$~\cite{he2023mfsnlrom}. Because \eqref{eq:ni-modal} gives $\bm q_{nl}=\bm q_l-\bm\Lambda^{-1}\bm f_{nl}$, the nonlinear response follows by one evaluation, with no Newton iteration. The package fixes the scaling factor of the general multi-fidelity identity at $\rho=1$.
+
+Two further constructions are in the package and are described here only briefly. A quadratic manifold $\bm u=\bm\Phi\bm q+\tfrac12\bm\Omega(\bm q,\bm q)$ lets the state curve away from the linear subspace and can take $\bm\Omega$ from a least-squares fit of snapshots or from modal derivatives (the shape that must be added to a mode when the structure deflects along another one), without any snapshot~\cite{jain2017qm}. Neither is tested in this book.
+
+\paragraph{Nonlinear normal modes by harmonic balance.}
+For $\ddot{\bm q}+\bm\Lambda\bm q+\bm f_{nl}(\bm q)=\bm 0$ look for periodic solutions of frequency $\omega$, $\bm q(t)=\bm Z_0+\sum_{k\le H}(\bm Z_{2k-1}\cos k\omega t+\bm Z_{2k}\sin k\omega t)$. Balancing harmonics gives
+\begin{equation}\label{eq:ni-hbm}
+\bm A(\omega)\bm Z+\bm F_{nl}(\bm Z)=\bm 0,\qquad \bm A(\omega)_k=\bm\Lambda-(k\omega)^2\bm I,
+\end{equation}
+with the harmonics $\bm F_{nl}$ of the nonlinear force computed by sampling in time and transforming back (alternating frequency--time). Fixing the amplitude of the first harmonic of a master mode and solving for $\omega$ and the remaining coefficients, point after point, traces the backbone, the amplitude--frequency curve of the nonlinear normal mode~\cite{kerschen2009nnm,peeters2009nnm}. Where the curve folds in amplitude, pseudo-arclength continuation~\cite{keller1977} is needed.
+
+\begin{algbox}{Hybrid nonlinear modal ROM (polynomial or RBF)}
+\begin{enumerate}[leftmargin=1.5em]
+\item Compute the linear modes $\bm V$ and frequencies of the full model; choose how many to keep.
+\item Choose training loads: modal force amplitudes sampled so that the resulting displacements span the range of interest (an optimal Latin hypercube over per-mode target amplitudes).
+\item Solve the full nonlinear model for each training load; project the solution on $\bm V$ to get $\bm q_{nl}$, and form $\bm f_{nl}=\hat{\bm f}-\bm\Lambda\bm q_{nl}$ and $\bm q_l=\bm\Lambda^{-1}\hat{\bm f}$.
+\item Fit the polynomial in $\bm q_{nl}$, or the RBF interpolant in $\bm q_l$.
+\item Evaluate: Newton on \eqref{eq:ni-modal} (polynomial) or one RBF evaluation (surrogate); compare with \emph{held-out} full-order solves, including a linear modal model as the baseline that shows how much nonlinearity the test contains.
+\end{enumerate}
+\end{algbox}
+
+\section{Implementation in the packages}\label{sec:ni-impl}
+
+\begin{lstlisting}[caption={A hybrid nonlinear modal ROM, a Loewner fit and an operator-inference fit (fx: fixture with modes V, mass matrix, frequencies and a full-order solver).},label={lst:ni-run}]
+from rom_engine.nonlinear_rom import PolynomialModalROM, MultiFidelitySurrogate, AppliedLoadStrategy
+from rom_engine.loewner import LoewnerROM
+from rom_engine.operator_inference import infer_contact_operators
+
+Lam = (2 * np.pi * fx["freq_hz"]) ** 2
+strategy = AppliedLoadStrategy((0.3, 3.0), 0.01, 45, np.random.default_rng(0))
+q_l, q_nl, F_nl = strategy.generate(fx["V"], fx["M_ff"], fx["freq_hz"], fx["mode_shape_peaks"], fx["fom_solver"])
+ice = PolynomialModalROM(3).fit(q_nl, F_nl)                      # Newton per query
+q, ok = ice.predict(F_ext=f_hat, Lambda=Lam, q0=q_prev)
+mfs = MultiFidelitySurrogate().fit(q_l, F_nl)                    # no Newton per query
+q = mfs.reconstruct_q_nl(f_hat / Lam, Lam)
+
+rom = LoewnerROM.fit(omega_a, omega_b, x_a, x_b)                 # four arrays: no K, M, C
+model = infer_contact_operators(U, A, F, boundary, Phi, Psi)     # states, accelerations, forces
+X, U_red, lam = model.simulate_contact(force, B, c, h, n_steps)
+\end{lstlisting}
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+Concept & Code \\
+\midrule
+Loewner pencil, frequencies, damping, mode shapes & \anchor{rom_engine.loewner.LoewnerROM} \\
+polynomial (ICE) modal force model & \anchor{rom_engine.nonlinear_rom.PolynomialModalROM} \\
+RBF surrogate (multi-fidelity) & \anchor{rom_engine.nonlinear_rom.MultiFidelitySurrogate} \\
+training-load generation & \anchor{rom_engine.nonlinear_rom.AppliedLoadStrategy} \\
+harmonic balance, backbone continuation & \anchor{rom_engine.nnm.HarmonicBalanceSystem}, \anchor{rom_engine.nnm.solve_nnm_backbone} \\
+pseudo-arclength backbone & \anchor{rom_engine.nnm.solve_nnm_backbone_arclength} \\
+SPD operator inference, contact dynamics & \anchor{rom_engine.operator_inference.infer_contact_operators} \\
+quadratic manifold, modal derivatives (not tested here) & \anchor{rom_engine.quadratic_manifold.QuadraticManifold}, \anchor{rom_engine.modal_derivatives.static_modal_derivatives} \\
+intrusive nonlinear Galerkin ROM (not tested here) & \anchor{rom_engine.intrusive_nonlinear_rom.IntrusiveNonlinearROM} \\
+worked example & \path{rom_engine/examples/gallery/rom_05_nonlinear_modal_rom.py} \\
+\bottomrule
+\end{tabularx}
+\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:ni-map}
+\end{table}
+
+\paragraph{A remark on neural models.}
+The package also contains two trainable models that need PyTorch: a Fourier neural operator that maps a reduced excitation time series to a response trajectory (\code{neural_operator.py}, following the FRINO architecture~\cite{yang2025frino,li2021fno}) and a parameterised latent neural ODE trained by curriculum over a parameter sweep (\code{parameterized_latent_ode.py}, after \cite{chen2018neuralode}). They are experimental, they were not run for this book, and they are not discussed further; the pure-NumPy parts of those modules, a central-difference residual of the reduced equation of motion and a validated fourth-order Runge--Kutta step, are the reusable pieces.
+
+\section{Verification}\label{sec:ni-verif}
+
+All numbers are from \texttt{scripts/ch12\_assets.py}, run on \machine{}; timings are single runs.
+
+\subsection{Loewner identification}
+
+The model is the damped cantilever of Chapters~\ref{ch:bt} and~\ref{ch:freq} ($20$ elements, Rayleigh damping). The band is $0.7f_1$ to $1.3f_4$, \cldBandLo{} to \cldBandHi{}~Hz, containing \cldNModes{} modes at \cldFreqs{}~Hz with loss factors from \cldEtaTrueMin{} to \cldEtaTrueMax{}; the reference is the damped eigenproblem. The ``measured'' data are \fea{}'s harmonic response at the tip for \cldNPool{} frequencies in the band (with $0.1\%$ jitter). For each draw, \cldNInterp{} frequencies go into each of the two interpolation sets (oversized, three more than the number of modes), complex Gaussian noise of a given relative size is added to the samples, the pencil is built, and eigenvalues outside the band or with negative damping are discarded. A draw is a \emph{success} if every true mode has an identified frequency within $2\%$. \Cref{tab:ni-loewner} reports \cldNDraw{} random draws of the interpolation sets per noise level.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{rrrrr}
+\toprule
+noise & successes (of \cldNDraw{}) & median frequency error & max frequency error & median $|\Delta\eta|$ \\
+\midrule
+0 & \cldZeroFound & \cldZeroFreqMed & \cldZeroFreqMax & \cldZeroEtaMed \\
+$10^{-4}$ & \cldFourEFound & \cldFourEFreqMed & \cldFourEFreqMax & \cldFourEEtaMed \\
+$10^{-3}$ & \cldThreeEFound & \cldThreeEFreqMed & \cldThreeEFreqMax & \cldThreeEEtaMed \\
+$10^{-2}$ & \cldTwoEFound & \cldTwoEFreqMed & \cldTwoEFreqMax & \cldTwoEEtaMed \\
+$10^{-1}$ & \cldOneEFound & \cldOneEFreqMed & \cldOneEFreqMax & \cldOneEEtaMed \\
+\bottomrule
+\end{tabular}
+\caption{Loewner identification of the first four modes of a damped cantilever from $2\times\cldNInterp$ frequency samples, against relative noise on the samples. Errors are over the successful draws only; a dash means no draw succeeded.}\label{tab:ni-loewner}
+\end{table}
+
+The method is accurate when it works and unreliable as a procedure. With noise-free data \cldZeroFound{} of \cldNDraw{} draws find all four modes, and in those the median worst-mode frequency error is \cldZeroFreqMed; the other draws miss at least one mode by more than $2\%$ (the failures were not analysed further). The success rate then falls with noise, \cldFourEFound{} of \cldNDraw{} at $10^{-4}$, \cldTwoEFound{} at $10^{-2}$, and no draw at $10^{-1}$. Damping is identified much less well than frequency: even without noise the median absolute error of the loss factor, \cldZeroEtaMed, is comparable to the smallest true loss factor (\cldEtaTrueMin), so the damping of the first mode is not reliably recovered. The raw pencil of one noise-free draw has \cldRawEig{} eigenvalues, of which \cldInBand{} are in the band and valid. A practical procedure would redraw the interpolation sets and keep only the eigenvalues that persist across draws; this was not tested.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.98\linewidth]{figures/ch12_loewner.pdf}
+\caption{Left: fraction of the \cldNDraw{} draws in which all four modes were found within $2\%$, against noise. Right: identified (in-band) frequencies and loss factors of one noise-free draw against the damped eigenproblem.}\label{fig:ni-loewner}
+\end{figure}
+
+\subsection{Nonlinear modal ROMs on a clamped--clamped beam}
+
+The model is a clamped--clamped chain of \cnlNElem{} corotational beam elements (\cnlNDof{} unknowns), the benchmark of the multi-fidelity literature. Training uses $45$ full-order static solves at modal loads sampled by an optimal Latin hypercube. The test is a \emph{held-out} central point-load sweep of \cnlNLoads{} loads up to \cnlMaxLoad{}~N, each solved by the full nonlinear solver (in $30$ load increments). At the largest load the mid-span deflection is \cnlDefl~mm on a $1$~m span, and the nonlinear and linear full-order responses differ by \cnlNlEffectPct\%, so the test does contain finite nonlinearity. An earlier sweep to $900$~N, with a deflection of $2.7$~mm, did not: the linear and polynomial models had the same error there, which is why the sweep was extended and why the linear model is reported as the baseline.
+
+\Cref{tab:ni-nlrom} gives the largest relative error of the mid-span deflection over the sweep. A linear modal model with $3$ modes misses by \cnlLinThree{} (the nonlinearity, as the linear model has no other error source of that size); the polynomial model brings this to \cnlIceThree{} with $3$ modes, and the RBF surrogate to \cnlMfsThree. With $2$ modes the polynomial and the surrogate both give about $3\times10^{-2}$ (\cnlIceTwo{} and \cnlMfsTwo), and adding a fourth mode changes nothing (\cnlIceFour{} and \cnlMfsFour). The polynomial model is the more accurate in this test, by about a factor $8$ at $3$ modes. The polynomial error does not improve with more training samples (\cnlSamTenIce{} with $10$, \cnlSamTwentyIce{} with $20$, \cnlSamNinetyIce{} with $90$): it has reached a floor set by the basis and the polynomial form, not by the data. The surrogate improves slowly with samples (\cnlSamTenMfs{} with $10$, \cnlSamNinetyMfs{} with $90$) and does not reach the polynomial's accuracy at $90$.
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch12_nlrom}
+\caption{Largest relative error of the mid-span deflection over the held-out static load sweep, against the number of retained modes, for a linear modal model, the polynomial (ICE) model and the RBF surrogate trained with $45$ samples.}\label{tab:ni-nlrom}
+\end{table}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.98\linewidth]{figures/ch12_nlrom.pdf}
+\caption{Left: load--deflection curve of the full-order model and of $3$-mode linear, polynomial and RBF models. Right: largest error against the number of modes.}\label{fig:ni-nlrom}
+\end{figure}
+
+\paragraph{Cost.} Per load, the full nonlinear solve takes \cnlFomMs~ms, the polynomial model's Newton solve \cnlIceMs~ms (a factor \cnlSpeedIce) and the surrogate's single evaluation \cnlMfsMs~ms (a factor \cnlSpeedMfs). Generating the $45$ training solutions took \cnlTrainSec~s, so the polynomial model is repaid after about $14$ load cases (training time divided by the saving per query). These are single timings of a small model, of the online solve only, with the $30$-increment full-order solver as the baseline; they do not include the cost of choosing the modes or of any setup.
+
+\subsection{Nonlinear normal mode backbone}
+
+An independent check is available for the Duffing oscillator $\ddot q+\lambda q+k_3q^3=0$ ($\lambda=100$, $k_3=5\times10^4$): its frequency at a given release amplitude can be measured by integrating the equation and timing the period. \Cref{fig:ni-nnm} compares that measurement with the harmonic-balance backbone for $1$, $3$ and $7$ harmonics at six amplitudes from $0.005$ to \cnmAmpMax. The comparison is made at the same peak amplitude, $q(0)$, reconstructed from the harmonic-balance coefficients; the prescribed quantity is the first-harmonic amplitude, which differs from the peak once higher harmonics are present, and comparing at equal first-harmonic amplitude would conflate the two. The relative frequency error is \cnmErrOne{} with one harmonic, \cnmErrThree{} with three and \cnmErrSeven{} with seven: it converges geometrically with the number of harmonics. With one harmonic the result reproduces the closed form $\omega^2=\lambda+\tfrac34k_3a^2$ to \cnmClosedForm. The backbone is hardening, with $\omega/\omega_0=\cnmHard$ at the largest amplitude. The pseudo-arclength driver agrees with the natural-parameter one to \cnmArcVsNat{} at the \cnmArcPts{} test amplitudes inside the range it traced (it reached an amplitude of \cnmArcMaxAmp); the Duffing backbone does not fold, so this tests agreement and not the capability of continuing through a fold.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.62\linewidth]{figures/ch12_nnm.pdf}
+\caption{Duffing backbone: time-integration frequencies at the release amplitudes, and harmonic-balance backbones with $1$ and $7$ harmonics.}\label{fig:ni-nnm}
+\end{figure}
+
+The same machinery was run on the $3$-mode polynomial model of the beam: all \cnmBeamConv{} of \cnmBeamPts{} points converged and the backbone rises monotonically, to $\omega/\omega_1=\cnmBeamHard$ at a modal amplitude of $0.01$. This result has \emph{no} full-order reference in this book (the package's test file for it uses the full-order model; we did not rerun it), so it shows that the pipeline runs and hardens, not that the frequencies are right.
+
+\subsection{Operator inference and contact}
+
+The model is a spring--mass chain of \coiNFull{} unknowns, two of them boundary unknowns, with the interior reduced to $10$ fixed-boundary modes (\coiNRed{} reduced unknowns); the forced response is generated by accurate time integration (functions of the package's own test file). The fitted $\bm M,\bm K$ are compared with the Galerkin projection of the true matrices. With exact data the relative errors are \coiMZero{} (mass) and \coiKZero{} (stiffness), and the projection residual of the data on the subspace is \coiProjRes. \Cref{tab:ni-opinf} adds noise to the accelerations, relative to their maximum. The errors grow with noise, to \coiMTwoE{} and \coiKTwoE{} at $10^{-2}$ and to \coiMOneE{} and \coiKOneE{} at $10^{-1}$. The unconstrained least-squares operators are symmetric positive definite up to $10^{-2}$ noise; at $10^{-1}$ and above they are not, and the constrained fit enforces definiteness (``SPD'' below) at a large error.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{rrrrr}
+\toprule
+noise & error of $\bm M$ & error of $\bm K$ & raw fit SPD & final SPD \\
+\midrule
+0 & \coiMZero & \coiKZero & \coiSpdRawZero & \coiSpdZero \\
+$10^{-3}$ & \coiMThreeE & \coiKThreeE & \coiSpdRawThreeE & \coiSpdThreeE \\
+$10^{-2}$ & \coiMTwoE & \coiKTwoE & \coiSpdRawTwoE & \coiSpdTwoE \\
+$10^{-1}$ & \coiMOneE & \coiKOneE & \coiSpdRawOneE & \coiSpdOneE \\
+$0.5$ & \coiMHalf & \coiKHalf & \coiSpdRawHalf & \coiSpdHalf \\
+\bottomrule
+\end{tabular}
+\caption{Relative error of the inferred operators against the Galerkin projection of the true matrices, against relative noise on the accelerations; whether the unconstrained least-squares operators were already symmetric positive definite.}\label{tab:ni-opinf}
+\end{table}
+
+For contact the last mass is pushed toward an obstacle at $-0.02$ by a constant force of $-0.3$ ($h=2\times10^{-3}$, $1500$ steps). The full-order reference is \fea{}'s contact dynamics solver (maximum contact force \coiLamFom). The inferred model reproduces the full-order displacement history to \coiContInf{} of its maximum (the Galerkin model with the same basis: \coiContGal) with a smallest displacement of \coiPenInf, that is, no penetration (\Cref{fig:ni-opinf}). The inferred model is therefore as accurate as the intrusive projection with the same basis in this test. There is no speed-up at this size: \coiTimeInf{}~ms against \coiTimeFom{}~ms for the full-order solver, each a single run on a $30$-unknown model with one contact constraint.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.98\linewidth]{figures/ch12_opinf.pdf}
+\caption{Left: contact degree of freedom of the full-order model and of the inferred $12$-unknown model; the dotted line is the obstacle. Right: error of the inferred operators against acceleration noise.}\label{fig:ni-opinf}
+\end{figure}
+
+\section{Limits and failure modes}\label{sec:ni-limits}
+
+\begin{limitsbox}
+\begin{itemize}
+\item \textbf{Loewner identification is fragile.} Even with noise-free data a fifth of the random choices of interpolation points missed a mode, damping was poorly recovered, and no draw succeeded at $10\%$ noise. One structure and one band were tested; spurious eigenvalues must be screened.
+\item \textbf{The nonlinear modal ROMs were tested on one benchmark, static response only.} A clamped--clamped beam, a central point load, $3$ retained modes, one training strategy. The dynamic transient drivers, the effect of the training range relative to the test range, and different load shapes were not tested. The polynomial error reached a floor that does not shrink with more data.
+\item \textbf{The RBF surrogate was less accurate than the polynomial model} here, and slow to improve with more samples; this comparison depends on the kernel, the width and the ridge parameter, all left at their defaults.
+\item \textbf{Backbones.} The harmonic-balance machinery was checked on the Duffing oscillator against time integration, not on the beam against full-order dynamics, and not through a fold; subharmonic branches are not traced; damped forced resonance curves are not computed.
+\item \textbf{Operator inference} was tested on a linear chain with the contact node set fixed in advance, no damping, and data that excite the boundary and the interior; the inferred operators degrade quickly with noise, and no speed-up was observed at $30$ unknowns.
+\item \textbf{Quadratic manifolds, modal derivatives, the intrusive nonlinear Galerkin ROM, the neural operator and the latent ODE} are in the package and were not run for this book; the HyROM reproductions mentioned in the plan are not included.
+\end{itemize}
+\end{limitsbox}
+
+\section{Summary}\label{sec:ni-summary}
+
+Non-intrusive reduction either identifies a model from data alone or fits only the nonlinear force of a hybrid model. A Loewner pencil recovers natural frequencies from a frequency response without any matrices, but in these tests it was accurate only in favourable draws and sensitive to noise, and it recovered damping poorly. For geometric nonlinearity a polynomial modal force model reproduced the held-out static response of a clamped--clamped beam to about $9\times10^{-3}$ where the linear model missed by $16\%$, with an RBF surrogate less accurate but needing no Newton iteration. Harmonic balance traced a Duffing backbone to $10^{-9}$ against time integration with seven harmonics. Operator inference recovered the Galerkin operators of a chain to a few percent from clean data and gave contact dynamics as accurate as the intrusive projection, but it deteriorates with noise.
+
+\section*{Exercises}\label{sec:ni-exercises}
+\begin{enumerate}
+\item \emph{(Derivation)} Show that the generalised eigenvalues of \eqref{eq:ni-loewner} are the squared poles of a single-degree-of-freedom response $x(\omega)=1/(k-\omega^2m+i\omega c)$ when $n=1$, and find what $\eta$ is read from them.
+\item \emph{(Implementation)} Repeat \Cref{tab:ni-loewner} with the interpolation points chosen as the frequencies with the largest response instead of at random. Does the success rate at zero noise rise to \cldNDraw{} of \cldNDraw{}?
+\item \emph{(Implementation)} Train the polynomial and the RBF models on loads only up to $2000$~N and test to $6000$~N. Which model degrades more, and why would you expect that?
+\item \emph{(Interpretation)} The polynomial error in \Cref{sec:ni-verif} does not fall with more training samples. List two possible causes (basis, polynomial form) and design a test that separates them.
+\item \emph{(Derivation)} Derive the single-harmonic result $\omega^2=\lambda+\tfrac34k_3a^2$ from \eqref{eq:ni-hbm}, and say why the peak amplitude equals the first-harmonic amplitude only when $H=1$.
+\item \emph{(Interpretation)} The inferred contact model matched the intrusive Galerkin model but was not faster. At what model size and number of contact constraints would you expect a difference, and what in the algorithm sets it?
+\end{enumerate}
+
+\chapterrefs

@@ -68,6 +68,10 @@
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-12}
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {12.1}{\ignorespaces Left: fraction of the 30\xspace {} draws in which all four modes were found within $2\%$, against noise. Right: identified (in-band) frequencies and loss factors of one noise-free draw against the damped eigenproblem.\relax }}{94}{figure.caption.183}%
+\contentsline {figure}{\numberline {12.2}{\ignorespaces Left: load--deflection curve of the full-order model and of $3$-mode linear, polynomial and RBF models. Right: largest error against the number of modes.\relax }}{95}{figure.caption.185}%
+\contentsline {figure}{\numberline {12.3}{\ignorespaces Duffing backbone: time-integration frequencies at the release amplitudes, and harmonic-balance backbones with $1$ and $7$ harmonics.\relax }}{95}{figure.caption.187}%
+\contentsline {figure}{\numberline {12.4}{\ignorespaces Left: contact degree of freedom of the full-order model and of the inferred $12$-unknown model; the dotted line is the obstacle. Right: error of the inferred operators against acceleration noise.\relax }}{97}{figure.caption.189}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-13}
 \addvspace {10\p@ }
