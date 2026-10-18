@@ -147,15 +147,19 @@ def exp_b():
         f_hat = V.T @ shape
         loads = np.linspace(0.0, 6000.0, 12)
         mid_f, mid_i, mid_m, mid_lin = [], [], [], []
-        t_fom = t_ice = t_mfs = 0.0
+        t_fom = t_ice = t_mfs = t_lift = 0.0
+        g_ice = g_mfs = 0.0
         q_prev = np.zeros(n_modes)
         for P in loads:
             t0 = time.perf_counter(); u = fx["fom_solver"](P * shape, n_steps=30); t_fom += time.perf_counter() - t0
             mid_f.append(u[mid_local])
             t0 = time.perf_counter(); qs, conv = ice.predict(F_ext=P * f_hat, Lambda=Lam, q0=q_prev); t_ice += time.perf_counter() - t0
-            q_prev = qs; mid_i.append((V @ qs)[mid_local])
+            t0 = time.perf_counter(); ui = V @ qs; t_lift += time.perf_counter() - t0
+            q_prev = qs; mid_i.append(ui[mid_local])
             t0 = time.perf_counter(); qn = mfs.reconstruct_q_nl(P * f_hat / Lam, Lam); t_mfs += time.perf_counter() - t0
             mid_m.append((V @ qn)[mid_local])
+            if P > 0:
+                g_ice = max(g_ice, np.linalg.norm(ui - u) / np.linalg.norm(u)); g_mfs = max(g_mfs, np.linalg.norm(V @ qn - u) / np.linalg.norm(u))
             mid_lin.append((V @ (P * f_hat / Lam))[mid_local])
         mid_f, mid_i, mid_m, mid_lin = map(np.array, (mid_f, mid_i, mid_m, mid_lin))
         Kff = np.asarray(fx["K"])[np.ix_(free, free)]
@@ -164,7 +168,7 @@ def exp_b():
         rel = lambda a: np.abs(a[1:] - mid_f[1:]) / np.abs(mid_f[1:])
         rows.append(dict(r=n_modes, ice=rel(mid_i).max(), mfs=rel(mid_m).max(), lin=rel(mid_lin).max(), ice_end=rel(mid_i)[-1],
                          mfs_end=rel(mid_m)[-1], t_train=t_train, t_fom=t_fom / len(loads), t_ice=t_ice / len(loads), t_mfs=t_mfs / len(loads),
-                         mid_end=mid_f[-1], nl=nl_effect, h=None))
+                         mid_end=mid_f[-1], nl=nl_effect, h=None, t_lift=t_lift / len(loads), g_ice=g_ice, g_mfs=g_mfs))
         res_store[n_modes] = (loads, mid_f, mid_i, mid_m, mid_lin)
         print("nlrom", n_modes, {k: (f"{v:.2e}" if isinstance(v, float) else v) for k, v in rows[-1].items()}, flush=True)
     loads, mf, mi, mm, ml = res_store[3]
@@ -188,6 +192,13 @@ def exp_b():
     num("cnlDefl", f"{abs(d[3]['mid_end']) * 1000:.1f}"); num("cnlNlEffect", sci(d[3]["nl"])); num("cnlNlEffectPct", f"{100 * d[3]['nl']:.0f}"); num("cnlNLoads", "12"); num("cnlMaxLoad", "6000"); num("cnlTrainSec", f"{d[3]['t_train']:.1f}")
     num("cnlFomMs", f"{d[3]['t_fom'] * 1000:.0f}"); num("cnlIceMs", f"{d[3]['t_ice'] * 1000:.2f}"); num("cnlMfsMs", f"{d[3]['t_mfs'] * 1000:.3f}")
     num("cnlSpeedIce", f"{d[3]['t_fom'] / d[3]['t_ice']:.0f}"); num("cnlSpeedMfs", f"{d[3]['t_fom'] / d[3]['t_mfs']:.0f}")
+    num("cnlLiftUs", f"{d[3]['t_lift'] * 1e6:.0f}"); num("cnlGlobIce", sci(d[3]["g_ice"])); num("cnlGlobMfs", sci(d[3]["g_mfs"]))
+    num("cnlLocIce", sci(d[3]["ice"])); num("cnlLocMfs", sci(d[3]["mfs"]))
+    sav = d[3]["t_fom"] - d[3]["t_ice"] - d[3]["t_lift"]
+    num("cnlBreakEvenIce", f"{d[3]['t_train'] / sav:.0f}")
+    sav2 = d[3]["t_fom"] - d[3]["t_mfs"] - d[3]["t_lift"]
+    num("cnlBreakEvenMfs", f"{d[3]['t_train'] / sav2:.0f}")
+    num("cnlSpeedIceLift", f"{d[3]['t_fom'] / (d[3]['t_ice'] + d[3]['t_lift']):.0f}"); num("cnlSpeedMfsLift", f"{d[3]['t_fom'] / (d[3]['t_mfs'] + d[3]['t_lift']):.0f}")
     num("cnlNElem", str(N_ELEM)); num("cnlNDof", str(fx["n_dof"]))
     # sample-count sensitivity for ICE, 3 modes
     fx = clamped(N_ELEM, 3)

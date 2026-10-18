@@ -207,6 +207,7 @@ def exp_modal(b, pod):
 def exp_cost():
     rows = []
     figdata = {}
+    recon = {}
     for n in (120, 600):
         b = Beam(n)
         mus = design(16, "olhs", 0)[:, :2]
@@ -230,6 +231,19 @@ def exp_cost():
         for mu in test[:20]:
             np.linalg.solve(m["K_direct"](mu[0], mu[1])[np.ix_(b.free, b.free)][np.ix_(b.keep, b.keep)], b.F)
         t_reasm = (time.perf_counter() - t0) / 20
+        # reconstruction (lift to the full space), local and global error on the test set, workflow speed-up
+        Xr = [np.linalg.solve(aff.assemble_reduced(mu), Fr) for mu in test]
+        t0 = time.perf_counter()
+        for x in Xr:
+            pod.V @ x
+        t_rec = (time.perf_counter() - t0) / len(test)
+        g_err = l_err = 0.0
+        for mu, x in zip(test, Xr):
+            ref = np.linalg.solve(mu[0] * b.K1 + mu[1] * b.K2, b.F)
+            xf = pod.V @ x
+            g_err = max(g_err, np.linalg.norm(xf - ref) / np.linalg.norm(ref))
+            l_err = max(l_err, abs(xf[b.tip] - ref[b.tip]) / abs(ref[b.tip]))
+        recon[n] = (t_rec, g_err, l_err)
         err = np.nan
         offline = t_snap + t_pod + t_proj
         be = offline / (t_full - t_on) if t_full > t_on else np.inf
@@ -249,6 +263,16 @@ def exp_cost():
     num("cpdCostSpeedAffineBig", f"{tf2 / ton2:.0f}"); num("cpdCostSpeedReasmBig", f"{tr2 / ton2:.0f}")
     num("cpdBreakEven", f"{be2:.0f}"); num("cpdBreakEvenBig", f"{bb2:.0f}"); num("cpdBreakEvenAffBig", f"{bb:.0f}")
     num("cpdBigNf", str(nf2)); pass
+    for key, nn in (("", 120), ("Big", 600)):
+        tr_, ge_, le_ = recon[nn]
+        num("cpdRecUs" + key, f"{tr_ * 1e6:.1f}"); num("cpdGlobErr" + key, sci(ge_)); num("cpdLocErr" + key, sci(le_))
+    for key, r_ in (("", rows[0]), ("Big", rows[1])):
+        nn_, nf_, off_, ton_, tf_, tr2_, _, _, _ = r_
+        t_rec_ = recon[nn_][0]
+        Q = 1000
+        num("cpdWorkflow" + key, f"{Q * tr2_ / (off_ + Q * (ton_ + t_rec_)):.0f}")
+        num("cpdWorkflowSparseFree" + key, f"{Q * tf_ / (off_ + Q * (ton_ + t_rec_)):.1f}")
+    num("cpdWorkflowQ", "1000")
     num("cpdOnlineUs", f"{ton * 1e6:.0f}")
     fig, ax = plt.subplots(figsize=(5.2, 3.2))
     xs = np.arange(2); w = 0.25

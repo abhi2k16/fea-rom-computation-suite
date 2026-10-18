@@ -49,35 +49,35 @@
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-9}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {9.1}{\ignorespaces Left: Hankel singular values of the pre-reduced model. Right: the a priori bound \textup {\hbox {\mathsurround \z@ \normalfont (\ignorespaces \ref {eq:bt-bound}\unskip \@@italiccorr )}} and the actual grid-maximum error against the retained order. The error is measured against the exact response of the pre-reduced model. Produced by \texttt {scripts/ch09\_assets.py}.\relax }}{71}{figure.caption.141}%
-\contentsline {figure}{\numberline {9.2}{\ignorespaces Error in the band $0.05$--$8\,\omega _1$ against the reduced state count: peak-relative (left) and mean relative (right).\relax }}{71}{figure.caption.142}%
-\contentsline {figure}{\numberline {9.3}{\ignorespaces Relative error against frequency for models of order $8$ on an extended band; the dotted line marks the upper end of the band of \Cref {tab:bt-compare}.\relax }}{72}{figure.caption.144}%
-\contentsline {figure}{\numberline {9.4}{\ignorespaces Tip frequency response of the full model and of the models of order $8$.\relax }}{73}{figure.caption.145}%
+\contentsline {figure}{\numberline {9.1}{\ignorespaces Left: Hankel singular values of the pre-reduced model. Right: the a priori bound \textup {\hbox {\mathsurround \z@ \normalfont (\ignorespaces \ref {eq:bt-bound}\unskip \@@italiccorr )}} and the actual grid-maximum error against the retained order. The error is measured against the exact response of the pre-reduced model. Produced by \texttt {scripts/ch09\_assets.py}.\relax }}{71}{figure.caption.142}%
+\contentsline {figure}{\numberline {9.2}{\ignorespaces Error in the band $0.05$--$8\,\omega _1$ against the reduced state count: peak-relative (left) and mean relative (right).\relax }}{71}{figure.caption.143}%
+\contentsline {figure}{\numberline {9.3}{\ignorespaces Relative error against frequency for models of order $8$ on an extended band; the dotted line marks the upper end of the band of \Cref {tab:bt-compare}.\relax }}{72}{figure.caption.145}%
+\contentsline {figure}{\numberline {9.4}{\ignorespaces Tip frequency response of the full model and of the models of order $8$.\relax }}{73}{figure.caption.146}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-10}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {10.1}{\ignorespaces Left: the full-order tip response and the two frequencies chosen by the greedy loop for a $5$-column basis (shaded). Right: maximum held-out error near the resonances against the number of basis columns for the three bases.\relax }}{79}{figure.caption.156}%
-\contentsline {figure}{\numberline {10.2}{\ignorespaces The $5$-column greedy model on 300\xspace {} candidate frequencies. Left: true error, residual norm and hierarchical indicator against frequency. Right: the two indicators against the true error.\relax }}{80}{figure.caption.158}%
-\contentsline {figure}{\numberline {10.3}{\ignorespaces Left: true $\sigma _{\qopname \relax m{min}}(\bm {A}(\omega ))$ and the two lower bounds from $15$ references (bounds clipped at the plotting floor where they are zero). Right: true error and the certified bound where it is finite.\relax }}{80}{figure.caption.160}%
+\contentsline {figure}{\numberline {10.1}{\ignorespaces Left: the full-order tip response and the two frequencies chosen by the greedy loop for a $5$-column basis (shaded). Right: maximum held-out error near the resonances against the number of basis columns for the three bases.\relax }}{79}{figure.caption.157}%
+\contentsline {figure}{\numberline {10.2}{\ignorespaces The $5$-column greedy model on 300\xspace {} candidate frequencies. Left: true error, residual norm and hierarchical indicator against frequency. Right: the two indicators against the true error.\relax }}{80}{figure.caption.160}%
+\contentsline {figure}{\numberline {10.3}{\ignorespaces Left: true $\sigma _{\qopname \relax m{min}}(\bm {A}(\omega ))$ and the two lower bounds from $15$ references (bounds clipped at the plotting floor where they are zero). Right: true error and the certified bound where it is finite.\relax }}{81}{figure.caption.162}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-11}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {11.1}{\ignorespaces Largest relative error of the first four frequencies against the reduced size, Craig--Bampton (two halves) and Guyan (transverse masters, evenly spaced).\relax }}{89}{figure.caption.170}%
-\contentsline {figure}{\numberline {11.2}{\ignorespaces Left: Craig--Bampton error of the standalone membrane against reduced size. Right: error with $40$ fixed-interface modes against the number of interface coordinates kept; the two interface bases coincide.\relax }}{89}{figure.caption.171}%
-\contentsline {figure}{\numberline {11.3}{\ignorespaces Relative error of the component-POD assembly against the POD rank of each component.\relax }}{91}{figure.caption.174}%
+\contentsline {figure}{\numberline {11.1}{\ignorespaces Largest relative error of the first four frequencies against the reduced size, Craig--Bampton (two halves) and Guyan (transverse masters, evenly spaced).\relax }}{89}{figure.caption.172}%
+\contentsline {figure}{\numberline {11.2}{\ignorespaces Left: Craig--Bampton error of the standalone membrane against reduced size. Right: error with $40$ fixed-interface modes against the number of interface coordinates kept; the two interface bases coincide.\relax }}{89}{figure.caption.173}%
+\contentsline {figure}{\numberline {11.3}{\ignorespaces Relative error of the component-POD assembly against the POD rank of each component.\relax }}{91}{figure.caption.176}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-12}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {12.1}{\ignorespaces Left: fraction of the 30\xspace {} draws in which all four modes were found within $2\%$, against noise. Right: identified (in-band) frequencies and loss factors of one noise-free draw against the damped eigenproblem.\relax }}{97}{figure.caption.184}%
-\contentsline {figure}{\numberline {12.2}{\ignorespaces Left: load--deflection curve of the full-order model and of $3$-mode linear, polynomial and RBF models. Right: largest error against the number of modes.\relax }}{98}{figure.caption.186}%
-\contentsline {figure}{\numberline {12.3}{\ignorespaces Duffing backbone: time-integration frequencies at the release amplitudes, and harmonic-balance backbones with $1$ and $7$ harmonics.\relax }}{99}{figure.caption.188}%
-\contentsline {figure}{\numberline {12.4}{\ignorespaces Left: contact degree of freedom of the full-order model and of the inferred $12$-unknown model; the dotted line is the obstacle. Right: error of the inferred operators against acceleration noise.\relax }}{100}{figure.caption.190}%
+\contentsline {figure}{\numberline {12.1}{\ignorespaces Left: fraction of the 30\xspace {} draws in which all four modes were found within $2\%$, against noise. Right: identified (in-band) frequencies and loss factors of one noise-free draw against the damped eigenproblem.\relax }}{97}{figure.caption.186}%
+\contentsline {figure}{\numberline {12.2}{\ignorespaces Left: load--deflection curve of the full-order model and of $3$-mode linear, polynomial and RBF models. Right: largest error against the number of modes.\relax }}{98}{figure.caption.188}%
+\contentsline {figure}{\numberline {12.3}{\ignorespaces Duffing backbone: time-integration frequencies at the release amplitudes, and harmonic-balance backbones with $1$ and $7$ harmonics.\relax }}{99}{figure.caption.190}%
+\contentsline {figure}{\numberline {12.4}{\ignorespaces Left: contact degree of freedom of the full-order model and of the inferred $12$-unknown model; the dotted line is the obstacle. Right: error of the inferred operators against acceleration noise.\relax }}{100}{figure.caption.192}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-13}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {13.1}{\ignorespaces Left: centre displacement for an obstacle outside the training range, full order and reduced with the NMF dual basis. Middle: trajectory error against $p=p_\lambda $. Right: smallest lifted multiplier for the NMF and SVD dual bases (held-out outside obstacle).\relax }}{107}{figure.caption.200}%
-\contentsline {figure}{\numberline {13.2}{\ignorespaces Static contact ROM: error against the number of snapshots for greedy selection and for random selection (median and range of 20\xspace {} draws).\relax }}{107}{figure.caption.203}%
-\contentsline {figure}{\numberline {13.3}{\ignorespaces Left: error of the reduced force against the number of selected elements. Right: the elements selected by plain and by contact-aware ECSW; the shaded band holds the elements that touch the contact block.\relax }}{108}{figure.caption.208}%
+\contentsline {figure}{\numberline {13.1}{\ignorespaces Left: centre displacement for an obstacle outside the training range, full order and reduced with the NMF dual basis. Middle: trajectory error against $p=p_\lambda $. Right: smallest lifted multiplier for the NMF and SVD dual bases (held-out outside obstacle).\relax }}{107}{figure.caption.202}%
+\contentsline {figure}{\numberline {13.2}{\ignorespaces Static contact ROM: error against the number of snapshots for greedy selection and for random selection (median and range of 20\xspace {} draws).\relax }}{108}{figure.caption.205}%
+\contentsline {figure}{\numberline {13.3}{\ignorespaces Left: error of the reduced force against the number of selected elements. Right: the elements selected by plain and by contact-aware ECSW; the shaded band holds the elements that touch the contact block.\relax }}{108}{figure.caption.210}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-14}
 \addvspace {10\p@ }

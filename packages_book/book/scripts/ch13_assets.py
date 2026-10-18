@@ -138,6 +138,29 @@ def exp_a(ax_store):
     num("chdItersWarm", str(int(sum(r_w.iterations)))); num("chdItersCold", str(int(sum(r_c.iterations))))
     t_setup = best_of(lambda: ContactROM(mem.K, mem.B, Ux[:, :p], Ul, M=M), 3)
     num("chdTimeSetup", f"{1e3 * t_setup:.1f}")
+    # reporting: offline cost, lift cost, local quantities (peak centre displacement, peak total contact force)
+    t0 = time.perf_counter()
+    for g in train_g:
+        solve_contact_dynamics(M, mem.K, force, mem.B, mem.obstacle(g), H, N_STEPS, scheme="bdf2")
+    t_trajs = time.perf_counter() - t0
+    t0 = time.perf_counter(); Ux_ = np.linalg.svd(Utr, full_matrices=False)[0]; t_svd = time.perf_counter() - t0
+    t0 = time.perf_counter(); nonneg_dual_basis(Ltr[:, act], p); t_nmf = time.perf_counter() - t0
+    offline = t_trajs + t_svd + t_nmf + t_setup
+    t_lift = best_of(lambda: rom.solve_dynamic(force, c, H, N_STEPS, lift=True)) - t_rom
+    num("chdTimeTrajs", f"{1e3 * t_trajs:.0f}"); num("chdTimeSvd", f"{1e3 * t_svd:.0f}"); num("chdTimeNmf", f"{1e3 * t_nmf:.0f}")
+    num("chdTimeOffline", f"{1e3 * offline:.0f}"); num("chdTimeLift", f"{1e3 * max(t_lift, 0):.1f}")
+    saving = t_fom - t_rom - max(t_lift, 0)
+    num("chdBreakEven", f"{offline / saving:.0f}" if saving > 0 else "never")
+    num("chdSpeedLift", f"{t_fom / (t_rom + max(t_lift, 0)):.1f}")
+    for key in ("inside", "outside"):
+        c_, Uf_, Lf_ = fom[test_g[key]]
+        r_ = rom.solve_dynamic(force, c_, H, N_STEPS)
+        pk = lambda U_: np.abs(U_[:, n // 2]).max()
+        fk = lambda L_: L_.sum(1).max()
+        tag = "In" if key == "inside" else "Out"
+        num(f"chdPeakDisp{tag}", sci(abs(pk(r_.u) - pk(Uf_)) / pk(Uf_)))
+        num(f"chdPeakForce{tag}", sci(abs(fk(r_.lam) - fk(Lf_)) / fk(Lf_)))
+        num(f"chdGlobal{tag}", sci(np.sqrt(np.sum((r_.u - Uf_) ** 2) / np.sum(Uf_ ** 2))))
     # complete basis reproduction
     rc = ContactROM(mem.K, mem.B, np.eye(n), np.eye(n), M=M).solve_dynamic(force, c, H, N_STEPS)
     num("chdComplete", sci(np.abs(rc.u - fom[test_g["inside"]][1]).max()))
@@ -266,6 +289,27 @@ def exp_c(ax):
             num(f"cec{name}{ul_name}{tag}Conv", "yes" if cv else "no")
             num(f"cec{name}{ul_name}{tag}Pen", sci(abs(pen)) if np.isfinite(pen) else "--")
         print(tag, prm, {k: (v[0], f"{v[1]:.2g}", f"{v[2]:.2g}") for k, v in d.items()}, flush=True)
+    # reporting: offline (full solves, training matrix, NNLS, dual basis), online (reduced Newton), lift, local quantities
+    t0 = time.perf_counter(); [m.solve(*p_) for p_ in train]; t_sol = time.perf_counter() - t0
+    t0 = time.perf_counter(); Gt, bt = ecsw_training_matrix(U, Xu, m.elem_dofs, m.elem_force); t_G = time.perf_counter() - t0
+    t0 = time.perf_counter(); ecsw_weights(Gt, bt, tol=1e-6); t_w = time.perf_counter() - t0
+    t0 = time.perf_counter(); nonneg_dual_basis(Xl, r); t_n = time.perf_counter() - t0
+    prm = held[0]
+    u_f, lam_f, c_f, fe_f = m.solve(*prm)
+    t_full = best_of(lambda: m.solve(*prm))
+    t_red = best_of(lambda: solve_reduced_contact_newton(ec_plain, fe_f, U, m.B, c_f, U_lam=nmf.U))
+    qq = U.T @ u_f
+    t_lift = best_of(lambda: U @ qq, 20)
+    rr = solve_reduced_contact_newton(ec_plain, fe_f, U, m.B, c_f, U_lam=nmf.U)
+    off = t_sol + t_G + t_w + t_n
+    num("cecTimeSolves", f"{1e3 * t_sol:.0f}"); num("cecTimeG", f"{1e3 * t_G:.0f}"); num("cecTimeW", f"{1e3 * t_w:.0f}"); num("cecTimeN", f"{1e3 * t_n:.0f}")
+    num("cecTimeOffline", f"{1e3 * off:.0f}"); num("cecTimeFull", f"{1e3 * t_full:.1f}"); num("cecTimeRed", f"{1e3 * t_red:.1f}"); num("cecTimeLiftUs", f"{1e6 * t_lift:.0f}")
+    num("cecSpeedOnline", f"{t_full / t_red:.1f}")
+    sav = t_full - t_red - t_lift
+    num("cecBreakEven", f"{off / sav:.0f}" if sav > 0 else "never")
+    num("cecLocForce", sci(abs(rr.lam.sum() - lam_f.sum()) / lam_f.sum()))
+    num("cecLocPeak", sci(abs(rr.u.min() - u_f.min()) / abs(u_f.min())))
+    num("cecGlobU", sci(np.linalg.norm(rr.u - u_f) / np.linalg.norm(u_f)))
     num("cecOutScale", f"{out[0][0]:g}"); num("cecOutGap", f"{abs(out[0][1]):g}")
     num("cecTrainScaleMax", "3"); num("cecTrainGapMax", "0.25")
     # contact-force reconstruction from a partial zone

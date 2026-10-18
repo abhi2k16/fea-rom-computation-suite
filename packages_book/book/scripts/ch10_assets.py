@@ -121,6 +121,50 @@ def main():
     num("cfrGreedyWinsModal", str(wins_m))
     winsmed = sum(1 for g, u in zip(res["greedy"], res["uniform"]) if g[1] < u[1])
     num("cfrGreedyWinsMed", str(winsmed))
+    # ---- reporting: offline / online / reconstruction time, local (peak) error
+    t0 = time.perf_counter()
+    gb5, _ = greedy_train_frequency_basis(band, M, K, F, rayleigh=(alpha, beta), n_seed=3, tol=1e-12, max_modes=5)
+    t_greedy = time.perf_counter() - t0
+    t0 = time.perf_counter()
+    rom_r = FrequencyROM.from_MCK(M, K, gb5.V, rayleigh=(alpha, beta))
+    t_proj = time.perf_counter() - t0
+    F_r = rom_r.galerkin.project_vector(F)
+    oms = test_band
+    t0 = time.perf_counter()
+    Q = [rom_r.solve(om, F_r) for om in oms]
+    t_on = (time.perf_counter() - t0) / len(oms)
+    t0 = time.perf_counter()
+    for q in Q:
+        gb5.V @ q
+    t_rec = (time.perf_counter() - t0) / len(oms)
+    t0 = time.perf_counter()
+    for om in oms:
+        sysobj.solve_harmonic(om, F_full)
+    t_full = (time.perf_counter() - t0) / len(oms)
+    A_dense = lambda om: -om ** 2 * M + 1j * om * (alpha * M + beta * K) + K
+    t0 = time.perf_counter()
+    for om in oms[:40]:
+        np.linalg.solve(A_dense(om), F.astype(complex))
+    t_dense = (time.perf_counter() - t0) / 40
+    num("cfrTimeGreedyMs", f"{1e3 * t_greedy:.0f}"); num("cfrTimeProjMs", f"{1e3 * t_proj:.1f}")
+    num("cfrTimeOnUs", f"{1e6 * t_on:.0f}"); num("cfrTimeRecUs", f"{1e6 * t_rec:.0f}")
+    num("cfrTimeFullUs", f"{1e6 * t_full:.0f}"); num("cfrTimeDenseUs", f"{1e6 * t_dense:.0f}")
+    num("cfrSpeedOnline", f"{t_full / t_on:.0f}"); num("cfrSpeedLift", f"{t_full / (t_on + t_rec):.0f}")
+    num("cfrSpeedDense", f"{t_dense / (t_on + t_rec):.0f}")
+    nq = 400
+    num("cfrWorkflowQ", str(nq)); num("cfrWorkflowSpeed", f"{nq * t_full / (t_greedy + t_proj + nq * (t_on + t_rec)):.1f}")
+    num("cfrBreakEven", f"{(t_greedy + t_proj) / (t_full - t_on - t_rec):.0f}")
+    # local quantity: peak tip amplitude and peak frequency near each of the first three resonances
+    pk_amp, pk_freq = [], []
+    for i in range(3):
+        g = np.linspace(0.9, 1.1, 81) * wn[i]
+        hf = np.array([abs(truth(om)[tip]) for om in g])
+        hr = np.array([abs(rom_r.frequency_response([om], F, output_dofs=[tip])[0, 0]) for om in g])
+        pk_amp.append(abs(hr.max() - hf.max()) / hf.max()); pk_freq.append(abs(g[hr.argmax()] - g[hf.argmax()]) / wn[i])
+    for nm, a_, f_ in zip(("One", "Two", "Three"), pk_amp, pk_freq):
+        num(f"cfrPeakAmp{nm}", sci(a_)); num(f"cfrPeakFreq{nm}", sci(f_))
+    num("cfrPeakGlobal", sci(res["greedy"][ir[5]][0]))
+    print("reporting", t_greedy, t_proj, t_on, t_rec, t_full, t_dense, pk_amp, pk_freq, flush=True)
     worst_om = []
     num("cfrThirdRes", f"{wn[2] / w1:.1f}")
     fig, ax = plt.subplots(1, 2, figsize=(8.8, 3.3))
