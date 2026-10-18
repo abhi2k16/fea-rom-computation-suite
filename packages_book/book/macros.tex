@@ -14,7 +14,7 @@
 \usepackage[most]{tcolorbox}
 \usepackage{listings}
 \usepackage{tikz}
-\usetikzlibrary{positioning,fit,arrows.meta,calc,backgrounds}
+\usetikzlibrary{positioning,fit,arrows.meta,calc,backgrounds,decorations.pathreplacing,shapes.geometric}
 \usepackage[sectionbib,numbers,sort&compress]{natbib}
 \usepackage{chapterbib}
 \renewcommand{\cite}{\citep}
@@ -28,6 +28,7 @@
 \usepackage[capitalise,noabbrev]{cleveref}
 \setlist{itemsep=2pt,topsep=3pt,parsep=0pt}
 \setlength{\emergencystretch}{5em}
+\raggedbottom
 \usepackage{fancyhdr}\pagestyle{fancy}\fancyhf{}\fancyhead[LE,RO]{\thepage}\fancyhead[RE]{\small\nouppercase{\leftmark}}\fancyhead[LO]{\small\nouppercase{\rightmark}}\renewcommand{\headrulewidth}{0.3pt}\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\thepage}\renewcommand{\headrulewidth}{0pt}}
 \numberwithin{equation}{chapter}
 \numberwithin{figure}{chapter}
@@ -52,9 +53,49 @@
 
 % boxes
 \tcbset{boxsep=3pt,left=5pt,right=5pt,top=3pt,bottom=3pt,fonttitle=\bfseries\small,fontupper=\small,breakable}
-\newtcolorbox[auto counter,number within=chapter]{algbox}[2][]{colback=gray!4,colframe=gray!55,title={Algorithm \thetcbcounter: #2},#1}
+\newtcolorbox[auto counter,number within=chapter]{algbox}[2][]{colback=gray!4,colframe=gray!55,unbreakable,title={Algorithm \thetcbcounter: #2},#1}
 \newtcolorbox{limitsbox}[1][Limits, as measured]{colback=orange!5,colframe=orange!60!black,title={#1}}
 \newtcolorbox{codebox}[1]{colback=blue!3,colframe=blue!40!black,title={#1}}
+
+% pseudocode (numbered lines, after the companion paper): use inside algbox as \begin{pseudo} ... \end{pseudo}
+\newcounter{algline}\newdimen\algindent\newdimen\algtmp
+\newenvironment{pseudo}{\par\small\setcounter{algline}{0}\algindent=0pt\relax}{\par}
+\newcommand{\State}{\par\noindent\stepcounter{algline}\algtmp=\algindent\advance\algtmp by 1.8em \hangindent=\algtmp \hangafter=1
+  \hspace*{\algindent}\makebox[1.8em][l]{\scriptsize\thealgline:}}
+\newcommand{\Require}{\par\noindent\hangindent=1.8em \hangafter=1 \textbf{Require:}\ }
+\newcommand{\Ensure}{\par\noindent\hangindent=1.8em \hangafter=1 \textbf{Ensure:}\ }
+\newcommand{\Comment}[1]{\hfill$\triangleright$ #1}
+\newcommand{\algin}{\global\advance\algindent by 1.4em\relax}
+\newcommand{\algout}{\global\advance\algindent by -1.4em\relax}
+\newcommand{\For}[1]{\State\textbf{for} #1 \textbf{do}\algin}
+\newcommand{\EndFor}{\algout\State\textbf{end for}}
+\newcommand{\While}[1]{\State\textbf{while} #1 \textbf{do}\algin}
+\newcommand{\EndWhile}{\algout\State\textbf{end while}}
+\newcommand{\If}[1]{\State\textbf{if} #1 \textbf{then}\algin}
+\newcommand{\Else}{\algout\State\textbf{else}\algin}
+\newcommand{\EndIf}{\algout\State\textbf{end if}}
+\newcommand{\Repeat}{\State\textbf{repeat}\algin}
+\newcommand{\Until}[1]{\algout\State\textbf{until} #1}
+\newcommand{\Return}{\textbf{return}\ }
+% book-level lines under an algorithm: \begin{algdet}\item[Cost] ... \end{algdet}
+\newenvironment{algdet}{\par\smallskip\noindent\rule{\linewidth}{0.3pt}\par\smallskip\begin{description}[leftmargin=6.4em,labelwidth=5.9em,itemsep=1pt,topsep=0pt,parsep=0pt,font=\sffamily\bfseries\scriptsize]\scriptsize}{\end{description}}
+
+% concept diagrams (TikZ): colours follow the companion paper -- FE package blue, ROM package violet,
+% error measure green, plain arrays grey; dashed = validation only / optional
+\usepackage{adjustbox}
+\tikzset{
+  cmFE/.style={draw=blue!60!black,fill=blue!10,rounded corners=3pt,thick,align=center,inner sep=3pt,minimum height=9mm},
+  cmROM/.style={draw=violet!70!black,fill=violet!12,rounded corners=3pt,thick,align=center,inner sep=3pt,minimum height=9mm},
+  cmCERT/.style={draw=green!50!black,fill=green!12,rounded corners=3pt,thick,align=center,inner sep=3pt,minimum height=9mm},
+  cmPLAIN/.style={draw=gray!60!black,fill=gray!12,rounded corners=3pt,thick,align=center,inner sep=3pt,minimum height=9mm},
+  cmWARN/.style={draw=orange!70!black,fill=orange!12,rounded corners=3pt,thick,align=center,inner sep=3pt,minimum height=9mm},
+  cmDASH/.style={draw=gray!70!black,dashed,rounded corners=6pt,thick,align=center,inner sep=3pt},
+  cmFlow/.style={-{Latex[length=2.2mm]},thick},
+  cmFb/.style={-{Latex[length=2mm]},thick,dashed,gray!70!black},
+  cmLab/.style={font=\sffamily\scriptsize,fill=white,inner sep=1pt}
+}
+% \tikzfigure[width]{file in figures/tikz}{caption}{label}
+\newcommand{\tikzfigure}[4][\linewidth]{\begin{figure}[tbp]\centering\adjustbox{max width=#1}{\begingroup\sffamily\footnotesize\input{figures/tikz/#2}\endgroup}\caption{#3}\label{#4}\end{figure}}
 
 % listings
 \lstdefinestyle{py}{language=Python,basicstyle=\ttfamily\footnotesize,keywordstyle=\color{blue!60!black}\bfseries,

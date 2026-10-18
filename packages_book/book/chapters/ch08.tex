@@ -37,6 +37,8 @@ Approximate $\bm u\approx\bm V\bm q$ and require the residual to be orthogonal t
 \end{equation}
 For symmetric positive definite $\bm K$ this is the orthogonal projection in the energy norm $\|\bm v\|_K^2=\bm v^T\bm K\bm v$, so the reduced solution is the best approximation from $\mathrm{span}(\bm V)$ in that norm, $\|\bm u-\bm V\bm q\|_K=\min_{\bm w}\|\bm u-\bm V\bm w\|_K$ (Céa's lemma applied to the discrete problem). The energy-norm optimality does not transfer to the Euclidean norm used in \cref{eq:pod-ey}, so the Galerkin state error and the Euclidean projection error differ by a factor that depends on $\bm K$; \Cref{sec:pod-verif} measures it. The same projection of a generalised eigenproblem $\bm K\bm\phi=\omega^2\bm M\bm\phi$ gives $\bm K_r\bm z=\omega^2\bm M_r\bm z$, which \code{GalerkinROM.solve_modal} solves (this is the dynamics of Chapter~\ref{ch:dyn} in the subspace).
 
+\tikzfigure[0.8\linewidth]{ch08_projection}{Two projections of the same full-order solution onto the same subspace. The Euclidean projection is what the POD error \eqref{eq:pod-ey} bounds; the Galerkin solution minimises the energy-norm error instead, so the two points differ and so do the two errors. Schematic, not computed.}{fig:pod-projection}
+
 \paragraph{Affine parameter dependence.}
 Projecting \eqref{eq:pod-galerkin} costs $O(n^2r)$ for a dense matrix, and if it were repeated for every $\bm\mu$ nothing would be saved. When
 \begin{equation}\label{eq:pod-affine}
@@ -44,19 +46,54 @@ Projecting \eqref{eq:pod-galerkin} costs $O(n^2r)$ for a dense matrix, and if it
 \end{equation}
 with scalar functions $\theta_q$ and parameter-free matrices $\bm K_q$, the projection commutes with the sum, $\bm K_r(\bm\mu)=\sum_q\theta_q(\bm\mu)\,\bm V^T\bm K_q\bm V$, so each $\bm V^T\bm K_q\bm V$ is computed once offline and the online cost for a new $\bm\mu$ is the sum of $Q$ small matrices and an $r\times r$ solve, independent of $n$. \anchor{rom_engine.affine.AffineDecomposition} stores the $\bm K_q$ and the function $\bm\theta$, \code{project(V)} does the offline step, and \code{assemble_reduced(mu)} the online sum.
 
-\begin{algbox}{Offline--online reduced basis for a parametric stiffness}
-\textbf{Offline (once).}
-\begin{enumerate}[leftmargin=1.5em]
-\item Choose $N$ training parameters, for example by an optimal Latin hypercube (\anchor{rom_engine.sampling.optimal_lhs}).
-\item Solve the FOM for each and form $\bm S$.
-\item Compute the POD basis $\bm V$ with $r$ chosen from the singular values (and from a held-out error, \Cref{fig:pod-pod}).
-\item Project the affine terms, $\bm K_{q,r}=\bm V^T\bm K_q\bm V$, and any parameter-free load, $\bm f_r=\bm V^T\bm f$.
-\end{enumerate}
-\textbf{Online (per parameter).}
-\begin{enumerate}[leftmargin=1.5em,resume]
-\item Form $\bm K_r(\bm\mu)=\sum_q\theta_q(\bm\mu)\bm K_{q,r}$, solve $\bm K_r\bm q=\bm f_r$, and expand $\bm u\approx\bm V\bm q$ only if the full field is needed.
-\end{enumerate}
+\begin{algbox}{Proper orthogonal decomposition of a snapshot matrix (optionally mass-weighted)}
+\begin{pseudo}
+\Require snapshots $\bm S\in\mathbb R^{n\times N}$, optional mass matrix $\bm M$, rank $r$ or energy tolerance $\epsilon$
+\If{$\bm M$ is given}
+  \State $\bm L\gets\mathrm{chol}(\bm M)$ with $\bm M=\bm L\bm L^T$;\ $\tilde{\bm S}\gets\bm L^T\bm S$
+\Else
+  \State $\tilde{\bm S}\gets\bm S$
+\EndIf
+\State $[\bm U,\bm\Sigma,\bm W]\gets\mathrm{svd}(\tilde{\bm S})$ (economy size)
+\State $r\gets$ the given rank, or the smallest $r$ with $\sum_{k\le r}\sigma_k^2/\sum_k\sigma_k^2\ge1-\epsilon$
+\State $\bm V\gets\bm U_{:,1:r}$;\ \textbf{if} $\bm M$ is given \textbf{then} $\bm V\gets\bm L^{-T}\bm V$ \Comment{now $\bm V^T\bm M\bm V=\bm I$}
+\Ensure basis $\bm V\in\mathbb R^{n\times r}$ and the singular values $\sigma_k$
+\end{pseudo}
+\begin{algdet}
+\item[Cost] SVD of an $n\times N$ matrix, $O(nN^2)$ for $N\le n$; one Cholesky factorisation of $\bm M$ if weighted.
+\item[Fails when] the singular values decay slowly (a large $r$ is needed); the snapshots do not span the parameter range of interest; the captured energy is high but the held-out error is not (it says nothing about untrained parameters).
+\item[Code] \anchor{rom_engine.pod.PodBasis}, \code{fit(S, M=M)}.
+\item[Verified in] \Cref{fig:pod-pod} (singular values and held-out error), \Cref{sec:pod-verif}.
+\end{algdet}
 \end{algbox}
+
+\begin{algbox}{Offline--online reduced basis for a parametric stiffness}
+\begin{pseudo}
+\Require affine terms $\{\bm K_q\}_{q=1}^Q$ and coefficient function $\bm\theta(\bm\mu)$, load $\bm f$, training size $N$, rank $r$
+\State \textbf{Offline (once):}
+\State choose $\bm\mu_1,\dots,\bm\mu_N$ by an optimal Latin hypercube \Comment{\code{optimal_lhs}}
+\For{$i=1,\dots,N$}
+  \State solve $\bm K(\bm\mu_i)\bm u_i=\bm f$ \Comment{$N$ full-order solves}
+\EndFor
+\State $\bm V\gets$ POD of $[\bm u_1\ \cdots\ \bm u_N]$ \Comment{previous algorithm}
+\For{$q=1,\dots,Q$}
+  \State $\bm K_{q,r}\gets\bm V^T\bm K_q\bm V$
+\EndFor
+\State $\bm f_r\gets\bm V^T\bm f$
+\State \textbf{Online (for each new $\bm\mu$):}
+\State $\bm K_r\gets\sum_q\theta_q(\bm\mu)\bm K_{q,r}$;\ solve $\bm K_r\bm q=\bm f_r$
+\State $\bm u\gets\bm V\bm q$ \Comment{only if the full field is needed}
+\Ensure reduced coordinates $\bm q$ (and $\bm u$) for every query
+\end{pseudo}
+\begin{algdet}
+\item[Cost] Offline: $N$ full solves, one SVD, $Q$ projections of $O(n^2r)$ each for dense $\bm K_q$. Online: $O(Qr^2+r^3)$, independent of $n$; the lift adds $O(nr)$.
+\item[Fails when] $\bm K$ or $\bm f$ is not a sum of fixed terms (the online step then depends on $n$); the training range does not cover the query range; a loading that moves, as in \Cref{sec:pod-verif}, makes the solution set larger than the basis.
+\item[Code] \anchor{rom_engine.affine.AffineDecomposition} (\code{project}, \code{assemble_reduced}), \anchor{rom_engine.galerkin.GalerkinROM}.
+\item[Verified in] \Cref{tab:pod-cost} and \Cref{fig:pod-sweep} (costs, break-even), \Cref{sec:pod-verif} (held-out error).
+\end{algdet}
+\end{algbox}
+
+\tikzfigure{ch08_pipeline}{The offline--online pipeline of \Cref{lst:pod-run}. Blue: the full-order model; violet: the reduced-order model; grey: plain data; green: error measure; dashed: optional or validation only. Only the lift touches the full dimension $n$ online.}{fig:pod-pipeline}
 
 \section{Implementation in the packages}\label{sec:pod-impl}
 
@@ -158,6 +195,8 @@ The basis above was built from \emph{static} solutions, and a static basis is no
 \end{table}
 
 \paragraph{What the figures include.} The online time above is the reduced solve only. Lifting the reduced answer to the full space, $\bm u=\bm V\bm q$, is a separate cost of \cpdRecUs~$\mu$s at \cpdNFree{} unknowns and \cpdRecUsBig~$\mu$s at \cpdBigNf; it is paid whenever the full field is needed and is not paid if only a few reduced outputs are. The offline time of \Cref{tab:pod-cost} includes everything that precedes the first query (snapshots, SVD, projection), and the break-even counts include it. A workflow figure that includes it, for $\cpdWorkflowQ$ queries with lifting, is a factor \cpdWorkflow{} against full re-assembly at \cpdNFree{} unknowns and \cpdWorkflowBig{} at \cpdBigNf, and \cpdWorkflowSparseFree{} and \cpdWorkflowSparseFreeBig{} against the dense solve with affine assembly: smaller than the per-query ratios, as it must be. The error is reported twice. Over the test parameters the worst relative error of the full state is \cpdGlobErr{} (\cpdNFree{} unknowns) and \cpdGlobErrBig{} (\cpdBigNf), and the worst relative error of the tip deflection, the local quantity of interest, is \cpdLocErr{} and \cpdLocErrBig. They coincide here because the tip load makes the tip the dominant degree of freedom of the response, so this test does not show whether a local error can exceed the global one; the three-parameter study of \Cref{sec:pod-verif}, with a load that moves, is the better place to look for that, and a local quantity such as a reaction or a peak stress was not computed.
+
+\tikzfigure[0.7\linewidth]{ch08_breakeven}{Cumulative cost of $Q$ queries. The reduced model pays $T_{\mathrm{off}}$ first and less per query afterwards; the lines cross at the break-even $Q^\ast$. Schematic: measured values are in \Cref{tab:pod-cost}.}{fig:pod-breakeven}
 
 These speed-ups are inflated by the baseline. The full solves here use dense \code{numpy.linalg.solve} on a matrix whose entries are almost all zero, which is how the example builds its models; a banded or sparse factorisation of this tri-diagonal-block system is far cheaper than the dense solve, and the speed-up against it would be much smaller. The result that survives is the break-even structure (a modest offline cost repaid after tens of queries) and the scaling (the reduced solve does not grow with $n$), not the ratios.
 

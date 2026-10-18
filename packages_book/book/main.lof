@@ -1,86 +1,93 @@
 \gdef \the@ipfilectr {@-1}
-\addvspace {10\p@ }
-\contentsline {figure}{\numberline {1.1}{\ignorespaces The flow of an analysis in \texttt {fea\_engine}{}. The dashed arrow is the only link to \texttt {rom\_engine}{}: matrices and vectors as plain arrays, never an import.\relax }}{3}{figure.caption.6}%
-\contentsline {figure}{\numberline {1.2}{\ignorespaces \code {solve_static} time on a sparse plane-stress plate with \code {backend="scipy"} and \code {backend="auto"} (left), and the extra time of \code {auto} (right). Minimum of three runs on the sandbox used for the figures of this chapter (2 CPUs){}. The torch path was not run (torch is not installed\xspace {} in the sandbox), and none of the sizes exceeds the threshold at which \code {auto} would choose it.\relax }}{6}{figure.caption.11}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-2}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {2.1}{\ignorespaces Four generated meshes: a hole off the centre of a rectangle with grading to a growth ratio (top left), a notch, a fillet, and a quarter plate with a hole. Produced by \texttt {scripts/ch02\_assets.py}.\relax }}{9}{figure.caption.16}%
-\contentsline {figure}{\numberline {2.2}{\ignorespaces Left: the largest ratio of adjacent element sizes of a 20-element power-law partition against the exponent. Right: the partition for a target growth ratio of 1.2, against a uniform one.\relax }}{10}{figure.caption.17}%
+\contentsline {figure}{\numberline {1.1}{\ignorespaces The flow of an analysis in \texttt {fea\_engine}{}. The dashed arrow is the only link to \texttt {rom\_engine}{}: matrices and vectors as plain arrays, never an import.\relax }}{3}{figure.caption.7}%
+\contentsline {figure}{\numberline {1.2}{\ignorespaces \code {solve_static} time on a sparse plane-stress plate with \code {backend="scipy"} and \code {backend="auto"} (left), and the extra time of \code {auto} (right). Minimum of three runs on the sandbox used for the figures of this chapter (2 CPUs){}. The torch path was not run (torch is not installed\xspace {} in the sandbox), and none of the sizes exceeds the threshold at which \code {auto} would choose it.\relax }}{6}{figure.caption.12}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-3}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {3.1}{\ignorespaces Lowest eigenvalue of the clamped unit-square membrane (\code {Quad4Laplace}), consistent against lumped mass: the relative error in absolute value. The consistent-mass eigenvalue is above the exact one and the lumped-mass eigenvalue is below it. Produced by \texttt {scripts/ch03\_assets.py}.\relax }}{16}{figure.caption.26}%
-\contentsline {figure}{\numberline {3.2}{\ignorespaces Pure bending of a plane-stress beam, tip deflection divided by the exact value, against the number of elements along the beam. The quadratic elements are exact on these meshes. The helper is the one used by \texttt {fea\_engine/tests/test\_benchmarks\_convergence.py}.\relax }}{17}{figure.caption.30}%
-\contentsline {figure}{\numberline {3.3}{\ignorespaces Convergence of the first cantilever frequency of the Euler--Bernoulli beam (left) and of the tip deflection of the Reissner beam (right) with the element size, with the observed order.\relax }}{19}{figure.caption.38}%
+\contentsline {figure}{\numberline {2.1}{\ignorespaces Four generated meshes: a hole off the centre of a rectangle with grading to a growth ratio (top left), a notch, a fillet, and a quarter plate with a hole. Produced by \texttt {scripts/ch02\_assets.py}.\relax }}{9}{figure.caption.17}%
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Left: the largest ratio of adjacent element sizes of a 20-element power-law partition against the exponent. Right: the partition for a target growth ratio of 1.2, against a uniform one.\relax }}{10}{figure.caption.18}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-4}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {4.1}{\ignorespaces Newmark average acceleration: error against the exact solution of the discrete model (first mode of the 20-element cantilever, three periods) against the time step, with the observed order. Produced by \texttt {scripts/ch04\_assets.py}.\relax }}{24}{figure.caption.44}%
-\contentsline {figure}{\numberline {4.2}{\ignorespaces Largest displacement against time at $0.9$ and $1.1$ times the critical step.\relax }}{25}{figure.caption.47}%
-\contentsline {figure}{\numberline {4.3}{\ignorespaces Tip deflection of the cantilever under a step load, divided by the static value ($\zeta =1\%$): modal superposition with 1, 2 and 8 modes against all modes (left), and the largest error against all modes as a function of the number of modes retained (right).\relax }}{25}{figure.caption.49}%
-\contentsline {figure}{\numberline {4.4}{\ignorespaces Tip receptance of the cantilever ($\zeta =1\%$ at modes 1 and 3): the direct complex solve and an independent modal sum coincide on the plotted scale.\relax }}{26}{figure.caption.51}%
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Lowest eigenvalue of the clamped unit-square membrane (\code {Quad4Laplace}), consistent against lumped mass: the relative error in absolute value. The consistent-mass eigenvalue is above the exact one and the lumped-mass eigenvalue is below it. Produced by \texttt {scripts/ch03\_assets.py}.\relax }}{16}{figure.caption.27}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Pure bending of a plane-stress beam, tip deflection divided by the exact value, against the number of elements along the beam. The quadratic elements are exact on these meshes. The helper is the one used by \texttt {fea\_engine/tests/test\_benchmarks\_convergence.py}.\relax }}{17}{figure.caption.31}%
+\contentsline {figure}{\numberline {3.3}{\ignorespaces Convergence of the first cantilever frequency of the Euler--Bernoulli beam (left) and of the tip deflection of the Reissner beam (right) with the element size, with the observed order.\relax }}{19}{figure.caption.39}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-5}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {5.1}{\ignorespaces Force norm of a rigidly rotated unit-square element (a stress-free motion): linear kinematics against the total-Lagrangian element. Produced by \texttt {scripts/ch05\_assets.py}.\relax }}{30}{figure.caption.59}%
-\contentsline {figure}{\numberline {5.2}{\ignorespaces Stress--strain loop of \code {TrussPlastic2D} ($E=200$ GPa, $\sigma _y=250$ MPa, $H=5$ GPa): the element against the closed-form return map. Produced by \texttt {scripts/ch05\_assets.py}.\relax }}{32}{figure.caption.62}%
-\contentsline {figure}{\numberline {5.3}{\ignorespaces The von Mises truss: closed form \textup {\hbox {\mathsurround \z@ \normalfont (\ignorespaces \ref {eq:nl-vm}\unskip \@@italiccorr )}}, displacement control and arc length. Load control cannot pass the limit load. Produced by \texttt {scripts/ch05\_assets.py}; the problem is the one of \texttt {fea\_engine/examples/arc\_length\_snap\_through\_demo.py}.\relax }}{34}{figure.caption.67}%
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Newmark average acceleration: error against the exact solution of the discrete model (first mode of the 20-element cantilever, three periods) against the time step, with the observed order. Produced by \texttt {scripts/ch04\_assets.py}.\relax }}{24}{figure.caption.45}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Largest displacement against time at $0.9$ and $1.1$ times the critical step.\relax }}{25}{figure.caption.48}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Tip deflection of the cantilever under a step load, divided by the static value ($\zeta =1\%$): modal superposition with 1, 2 and 8 modes against all modes (left), and the largest error against all modes as a function of the number of modes retained (right).\relax }}{25}{figure.caption.50}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Tip receptance of the cantilever ($\zeta =1\%$ at modes 1 and 3): the direct complex solve and an independent modal sum coincide on the plotted scale.\relax }}{26}{figure.caption.52}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-6}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {6.1}{\ignorespaces Internal-force assembly of a \code {Quad4PlaneStressTL} plate: time of the loop and the batched route (left) and their ratio (right). Produced by \texttt {scripts/ch06\_assets.py}.\relax }}{41}{figure.caption.81}%
-\contentsline {figure}{\numberline {6.2}{\ignorespaces Wall time of the same load-controlled Newton solve with the default path and with batched assembly and a sparse tangent.\relax }}{41}{figure.caption.83}%
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Force norm of a rigidly rotated unit-square element (a stress-free motion): linear kinematics against the total-Lagrangian element. Produced by \texttt {scripts/ch05\_assets.py}.\relax }}{30}{figure.caption.60}%
+\contentsline {figure}{\numberline {5.2}{\ignorespaces Stress--strain loop of \code {TrussPlastic2D} ($E=200$ GPa, $\sigma _y=250$ MPa, $H=5$ GPa): the element against the closed-form return map. Produced by \texttt {scripts/ch05\_assets.py}.\relax }}{32}{figure.caption.63}%
+\contentsline {figure}{\numberline {5.3}{\ignorespaces The von Mises truss: closed form \textup {\hbox {\mathsurround \z@ \normalfont (\ignorespaces \ref {eq:nl-vm}\unskip \@@italiccorr )}}, displacement control and arc length. Load control cannot pass the limit load. Produced by \texttt {scripts/ch05\_assets.py}; the problem is the one of \texttt {fea\_engine/examples/arc\_length\_snap\_through\_demo.py}.\relax }}{34}{figure.caption.68}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-7}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {7.1}{\ignorespaces The model problem on a $40\times 40$ mesh ($1521\xspace $ unknowns). Left: displacement with the contact set outlined; right: contact force $\bm {\lambda }$, which is zero outside the contact set. The solver finds $295\xspace $ active constraints in $12\xspace $ iterations. Produced by \texttt {scripts/ch07\_assets.py}.\relax }}{45}{figure.caption.88}%
-\contentsline {figure}{\numberline {7.2}{\ignorespaces Penalty against exact contact on the model problem ($841\xspace $ unknowns). Left: the largest penetration falls like $1/k_p$ but never reaches zero; the exact solution has no penetration (drawn at the plotting floor). Right: the condition number of the penalty matrix grows in proportion to $k_p$; the exact route solves a system whose condition number does not depend on any parameter.\relax }}{46}{figure.caption.89}%
-\contentsline {figure}{\numberline {7.3}{\ignorespaces The active-set iteration on the model problem with $N=1521\xspace $ unknowns. Left: the number of active constraints per iteration for the \texttt {reduced} and \texttt {saddle} routes (the curves coincide). Right: the number of constraints that changed status; the last point (plotted at 0.5) is zero changes, which is the stopping test.\relax }}{47}{figure.caption.94}%
-\contentsline {figure}{\numberline {7.4}{\ignorespaces Wall time of the three routes against the number of unknowns (data of \Cref {tab:ct-scaling}).\relax }}{51}{figure.caption.106}%
-\contentsline {figure}{\numberline {7.5}{\ignorespaces Error against time step for the two schemes (data of \Cref {tab:ct-order}).\relax }}{53}{figure.caption.113}%
-\contentsline {figure}{\numberline {7.6}{\ignorespaces Bar impact, $\Delta t=0.002$. Left: wall force over the first $0.4$ time units. Right: energy relative to the initial energy over the whole run.\relax }}{54}{figure.caption.116}%
+\contentsline {figure}{\numberline {6.1}{\ignorespaces Internal-force assembly of a \code {Quad4PlaneStressTL} plate: time of the loop and the batched route (left) and their ratio (right). Produced by \texttt {scripts/ch06\_assets.py}.\relax }}{41}{figure.caption.82}%
+\contentsline {figure}{\numberline {6.2}{\ignorespaces Wall time of the same load-controlled Newton solve with the default path and with batched assembly and a sparse tangent.\relax }}{41}{figure.caption.84}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-8}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {8.1}{\ignorespaces Left: normalised singular values of the 60\xspace training snapshots. Right: worst relative error on 40\xspace unseen parameters against the number of modes $r$, for the Euclidean projection error and for the Galerkin solve with Euclidean and with mass-weighted POD. Produced by \texttt {scripts/ch08\_assets.py}.\relax }}{61}{figure.caption.128}%
-\contentsline {figure}{\numberline {8.2}{\ignorespaces Median Galerkin state error on 40\xspace unseen parameters against the number of snapshots, optimal Latin hypercube against random sampling, five repetitions each.\relax }}{62}{figure.caption.129}%
-\contentsline {figure}{\numberline {8.3}{\ignorespaces Time per query: reduced solve, full solve with affine assembly, full solve with re-assembly, at two sizes of the beam. Logarithmic axis; single runs on the sandbox used for the figures of this chapter (2 CPUs).\relax }}{63}{figure.caption.131}%
+\contentsline {figure}{\numberline {7.1}{\ignorespaces The model problem on a $40\times 40$ mesh ($1521\xspace $ unknowns). Left: displacement with the contact set outlined; right: contact force $\bm {\lambda }$, which is zero outside the contact set. The solver finds $295\xspace $ active constraints in $12\xspace $ iterations. Produced by \texttt {scripts/ch07\_assets.py}.\relax }}{45}{figure.caption.89}%
+\contentsline {figure}{\numberline {7.2}{\ignorespaces Penalty against exact contact on the model problem ($841\xspace $ unknowns). Left: the largest penetration falls like $1/k_p$ but never reaches zero; the exact solution has no penetration (drawn at the plotting floor). Right: the condition number of the penalty matrix grows in proportion to $k_p$; the exact route solves a system whose condition number does not depend on any parameter.\relax }}{46}{figure.caption.90}%
+\contentsline {figure}{\numberline {7.3}{\ignorespaces The active-set iteration on the model problem with $N=1521\xspace $ unknowns. Left: the number of active constraints per iteration for the \texttt {reduced} and \texttt {saddle} routes (the curves coincide). Right: the number of constraints that changed status; the last point (plotted at 0.5) is zero changes, which is the stopping test.\relax }}{47}{figure.caption.95}%
+\contentsline {figure}{\numberline {7.4}{\ignorespaces Wall time of the three routes against the number of unknowns (data of \Cref {tab:ct-scaling}).\relax }}{51}{figure.caption.107}%
+\contentsline {figure}{\numberline {7.5}{\ignorespaces Error against time step for the two schemes (data of \Cref {tab:ct-order}).\relax }}{53}{figure.caption.114}%
+\contentsline {figure}{\numberline {7.6}{\ignorespaces Bar impact, $\Delta t=0.002$. Left: wall force over the first $0.4$ time units. Right: energy relative to the initial energy over the whole run.\relax }}{54}{figure.caption.117}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-9}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {9.1}{\ignorespaces Left: Hankel singular values of the pre-reduced model. Right: the a priori bound \textup {\hbox {\mathsurround \z@ \normalfont (\ignorespaces \ref {eq:bt-bound}\unskip \@@italiccorr )}} and the actual grid-maximum error against the retained order. The error is measured against the exact response of the pre-reduced model. Produced by \texttt {scripts/ch09\_assets.py}.\relax }}{71}{figure.caption.142}%
-\contentsline {figure}{\numberline {9.2}{\ignorespaces Error in the band $0.05$--$8\,\omega _1$ against the reduced state count: peak-relative (left) and mean relative (right).\relax }}{71}{figure.caption.143}%
-\contentsline {figure}{\numberline {9.3}{\ignorespaces Relative error against frequency for models of order $8$ on an extended band; the dotted line marks the upper end of the band of \Cref {tab:bt-compare}.\relax }}{72}{figure.caption.145}%
-\contentsline {figure}{\numberline {9.4}{\ignorespaces Tip frequency response of the full model and of the models of order $8$.\relax }}{73}{figure.caption.146}%
+\contentsline {figure}{\numberline {8.1}{\ignorespaces Two projections of the same full-order solution onto the same subspace. The Euclidean projection is what the POD error \textup {\hbox {\mathsurround \z@ \normalfont (\ignorespaces \ref {eq:pod-ey}\unskip \@@italiccorr )}} bounds; the Galerkin solution minimises the energy-norm error instead, so the two points differ and so do the two errors. Schematic, not computed.\relax }}{60}{figure.caption.127}%
+\contentsline {figure}{\numberline {8.2}{\ignorespaces The offline--online pipeline of \Cref {lst:pod-run}. Blue: the full-order model; violet: the reduced-order model; grey: plain data; green: error measure; dashed: optional or validation only. Only the lift touches the full dimension $n$ online.\relax }}{61}{figure.caption.129}%
+\contentsline {figure}{\numberline {8.3}{\ignorespaces Left: normalised singular values of the 60\xspace training snapshots. Right: worst relative error on 40\xspace unseen parameters against the number of modes $r$, for the Euclidean projection error and for the Galerkin solve with Euclidean and with mass-weighted POD. Produced by \texttt {scripts/ch08\_assets.py}.\relax }}{63}{figure.caption.131}%
+\contentsline {figure}{\numberline {8.4}{\ignorespaces Median Galerkin state error on 40\xspace unseen parameters against the number of snapshots, optimal Latin hypercube against random sampling, five repetitions each.\relax }}{63}{figure.caption.132}%
+\contentsline {figure}{\numberline {8.5}{\ignorespaces Time per query: reduced solve, full solve with affine assembly, full solve with re-assembly, at two sizes of the beam. Logarithmic axis; single runs on the sandbox used for the figures of this chapter (2 CPUs).\relax }}{64}{figure.caption.134}%
+\contentsline {figure}{\numberline {8.6}{\ignorespaces Cumulative cost of $Q$ queries. The reduced model pays $T_{\mathrm {off}}$ first and less per query afterwards; the lines cross at the break-even $Q^\ast $. Schematic: measured values are in \Cref {tab:pod-cost}.\relax }}{65}{figure.caption.137}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-10}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {10.1}{\ignorespaces Left: the full-order tip response and the two frequencies chosen by the greedy loop for a $5$-column basis (shaded). Right: maximum held-out error near the resonances against the number of basis columns for the three bases.\relax }}{79}{figure.caption.157}%
-\contentsline {figure}{\numberline {10.2}{\ignorespaces The $5$-column greedy model on 300\xspace {} candidate frequencies. Left: true error, residual norm and hierarchical indicator against frequency. Right: the two indicators against the true error.\relax }}{80}{figure.caption.160}%
-\contentsline {figure}{\numberline {10.3}{\ignorespaces Left: true $\sigma _{\qopname \relax m{min}}(\bm {A}(\omega ))$ and the two lower bounds from $15$ references (bounds clipped at the plotting floor where they are zero). Right: true error and the certified bound where it is finite.\relax }}{81}{figure.caption.162}%
+\contentsline {figure}{\numberline {9.1}{\ignorespaces Left: Hankel singular values of the pre-reduced model. Right: the a priori bound \textup {\hbox {\mathsurround \z@ \normalfont (\ignorespaces \ref {eq:bt-bound}\unskip \@@italiccorr )}} and the actual grid-maximum error against the retained order. The error is measured against the exact response of the pre-reduced model. Produced by \texttt {scripts/ch09\_assets.py}.\relax }}{73}{figure.caption.146}%
+\contentsline {figure}{\numberline {9.2}{\ignorespaces Error in the band $0.05$--$8\,\omega _1$ against the reduced state count: peak-relative (left) and mean relative (right).\relax }}{73}{figure.caption.147}%
+\contentsline {figure}{\numberline {9.3}{\ignorespaces Relative error against frequency for models of order $8$ on an extended band; the dotted line marks the upper end of the band of \Cref {tab:bt-compare}.\relax }}{74}{figure.caption.149}%
+\contentsline {figure}{\numberline {9.4}{\ignorespaces Tip frequency response of the full model and of the models of order $8$.\relax }}{75}{figure.caption.150}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-11}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {11.1}{\ignorespaces Largest relative error of the first four frequencies against the reduced size, Craig--Bampton (two halves) and Guyan (transverse masters, evenly spaced).\relax }}{89}{figure.caption.172}%
-\contentsline {figure}{\numberline {11.2}{\ignorespaces Left: Craig--Bampton error of the standalone membrane against reduced size. Right: error with $40$ fixed-interface modes against the number of interface coordinates kept; the two interface bases coincide.\relax }}{89}{figure.caption.173}%
-\contentsline {figure}{\numberline {11.3}{\ignorespaces Relative error of the component-POD assembly against the POD rank of each component.\relax }}{91}{figure.caption.176}%
+\contentsline {figure}{\numberline {10.1}{\ignorespaces Left: the full-order tip response and the two frequencies chosen by the greedy loop for a $5$-column basis (shaded). Right: maximum held-out error near the resonances against the number of basis columns for the three bases.\relax }}{81}{figure.caption.161}%
+\contentsline {figure}{\numberline {10.2}{\ignorespaces The $5$-column greedy model on 300\xspace {} candidate frequencies. Left: true error, residual norm and hierarchical indicator against frequency. Right: the two indicators against the true error.\relax }}{82}{figure.caption.164}%
+\contentsline {figure}{\numberline {10.3}{\ignorespaces Left: true $\sigma _{\qopname \relax m{min}}(\bm {A}(\omega ))$ and the two lower bounds from $15$ references (bounds clipped at the plotting floor where they are zero). Right: true error and the certified bound where it is finite.\relax }}{83}{figure.caption.166}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-12}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {12.1}{\ignorespaces Left: fraction of the 30\xspace {} draws in which all four modes were found within $2\%$, against noise. Right: identified (in-band) frequencies and loss factors of one noise-free draw against the damped eigenproblem.\relax }}{97}{figure.caption.186}%
-\contentsline {figure}{\numberline {12.2}{\ignorespaces Left: load--deflection curve of the full-order model and of $3$-mode linear, polynomial and RBF models. Right: largest error against the number of modes.\relax }}{98}{figure.caption.188}%
-\contentsline {figure}{\numberline {12.3}{\ignorespaces Duffing backbone: time-integration frequencies at the release amplitudes, and harmonic-balance backbones with $1$ and $7$ harmonics.\relax }}{99}{figure.caption.190}%
-\contentsline {figure}{\numberline {12.4}{\ignorespaces Left: contact degree of freedom of the full-order model and of the inferred $12$-unknown model; the dotted line is the obstacle. Right: error of the inferred operators against acceleration noise.\relax }}{100}{figure.caption.192}%
+\contentsline {figure}{\numberline {11.1}{\ignorespaces Largest relative error of the first four frequencies against the reduced size, Craig--Bampton (two halves) and Guyan (transverse masters, evenly spaced).\relax }}{92}{figure.caption.176}%
+\contentsline {figure}{\numberline {11.2}{\ignorespaces Left: Craig--Bampton error of the standalone membrane against reduced size. Right: error with $40$ fixed-interface modes against the number of interface coordinates kept; the two interface bases coincide.\relax }}{92}{figure.caption.177}%
+\contentsline {figure}{\numberline {11.3}{\ignorespaces Relative error of the component-POD assembly against the POD rank of each component.\relax }}{94}{figure.caption.180}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-13}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {13.1}{\ignorespaces Left: centre displacement for an obstacle outside the training range, full order and reduced with the NMF dual basis. Middle: trajectory error against $p=p_\lambda $. Right: smallest lifted multiplier for the NMF and SVD dual bases (held-out outside obstacle).\relax }}{107}{figure.caption.202}%
-\contentsline {figure}{\numberline {13.2}{\ignorespaces Static contact ROM: error against the number of snapshots for greedy selection and for random selection (median and range of 20\xspace {} draws).\relax }}{108}{figure.caption.205}%
-\contentsline {figure}{\numberline {13.3}{\ignorespaces Left: error of the reduced force against the number of selected elements. Right: the elements selected by plain and by contact-aware ECSW; the shaded band holds the elements that touch the contact block.\relax }}{108}{figure.caption.210}%
+\contentsline {figure}{\numberline {12.1}{\ignorespaces Left: fraction of the 30\xspace {} draws in which all four modes were found within $2\%$, against noise. Right: identified (in-band) frequencies and loss factors of one noise-free draw against the damped eigenproblem.\relax }}{100}{figure.caption.190}%
+\contentsline {figure}{\numberline {12.2}{\ignorespaces Left: load--deflection curve of the full-order model and of $3$-mode linear, polynomial and RBF models. Right: largest error against the number of modes.\relax }}{101}{figure.caption.192}%
+\contentsline {figure}{\numberline {12.3}{\ignorespaces Duffing backbone: time-integration frequencies at the release amplitudes, and harmonic-balance backbones with $1$ and $7$ harmonics.\relax }}{102}{figure.caption.194}%
+\contentsline {figure}{\numberline {12.4}{\ignorespaces Left: contact degree of freedom of the full-order model and of the inferred $12$-unknown model; the dotted line is the obstacle. Right: error of the inferred operators against acceleration noise.\relax }}{103}{figure.caption.196}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-14}
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {13.1}{\ignorespaces Idea of ECSW on a chain of $14$ elements (schematic; the weights are illustrative). Top: the full reduced force sums all elements with weight one. Bottom: a few elements with positive weights reproduce it; in the contact-aware variant the elements at potential contact are kept at weight one.\relax }}{108}{figure.caption.200}%
+\contentsline {figure}{\numberline {13.2}{\ignorespaces Reduction of a contact problem. The primal basis is a POD of displacement snapshots; the dual basis must be non-negative. The rank of the reduced constraint matrix is checked before the reduced LCP is solved; the dashed box shows the failure of a signed basis measured in \Cref {sec:hy-verif}.\relax }}{109}{figure.caption.202}%
+\contentsline {figure}{\numberline {13.3}{\ignorespaces The greedy loop of snapshot selection. The indicator needs only reduced solves, so scanning all candidates is cheap; the full-order model is called once per round.\relax }}{110}{figure.caption.204}%
+\contentsline {figure}{\numberline {13.4}{\ignorespaces Hybrid hyper-reduction on a reduced integration domain (schematic). Balance equations are written only at the dofs $P$ whose elements all lie in the RID; the contact forces on the RID are finite-element unknowns, so no dual basis is needed.\relax }}{110}{figure.caption.206}%
+\contentsline {figure}{\numberline {13.5}{\ignorespaces Linear and nonlinear zones. The linear interior is condensed onto the interface; the nonlinear problem is solved on the unknowns of $N$ (including $B$) and the interior is recovered afterwards.\relax }}{111}{figure.caption.208}%
+\contentsline {figure}{\numberline {13.6}{\ignorespaces Left: centre displacement for an obstacle outside the training range, full order and reduced with the NMF dual basis. Middle: trajectory error against $p=p_\lambda $. Right: smallest lifted multiplier for the NMF and SVD dual bases (held-out outside obstacle).\relax }}{113}{figure.caption.211}%
+\contentsline {figure}{\numberline {13.7}{\ignorespaces Static contact ROM: error against the number of snapshots for greedy selection and for random selection (median and range of 20\xspace {} draws).\relax }}{114}{figure.caption.214}%
+\contentsline {figure}{\numberline {13.8}{\ignorespaces Left: error of the reduced force against the number of selected elements. Right: the elements selected by plain and by contact-aware ECSW; the shaded band holds the elements that touch the contact block.\relax }}{115}{figure.caption.219}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-15}
 \addvspace {10\p@ }
@@ -92,5 +99,8 @@
 \addvspace {10\p@ }
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-18}
+\addvspace {10\p@ }
+\gdef \the@ipfilectr {}
+\gdef \the@ipfilectr {@-19}
 \addvspace {10\p@ }
 \gdef \the@ipfilectr {}

@@ -1,0 +1,22 @@
+\begin{tikzpicture}[font=\sffamily\scriptsize]
+\node[anchor=east] at (-0.2,3.0) {full sum};
+\node[anchor=east] at (-0.2,1.3) {ECSW};
+\foreach \i in {1,...,14}{
+  \draw[fill=gray!12,thick] (\i*0.9,2.7) rectangle ++(0.8,0.6);
+  \node at (\i*0.9+0.4,3.0) {1};
+  \node[gray] at (\i*0.9+0.4,2.45) {\tiny $e{=}\i$};
+}
+\foreach \i/\w in {2/2.4, 5/3.1, 8/4.4, 9/1.7}{
+  \draw[fill=violet!25,draw=violet!70!black,very thick] (\i*0.9,1.0) rectangle ++(0.8,0.6);
+  \node at (\i*0.9+0.4,1.3) {$\w$};
+}
+\foreach \i in {1,3,4,6,7}{ \draw[gray,dashed] (\i*0.9,1.0) rectangle ++(0.8,0.6); \node[gray] at (\i*0.9+0.4,1.3) {0}; }
+\foreach \i in {11,12,13,14}{
+  \draw[fill=red!15,draw=red!70!black,very thick] (\i*0.9,1.0) rectangle ++(0.8,0.6);
+  \node at (\i*0.9+0.4,1.3) {1};
+}
+\draw[gray,dashed] (10*0.9,1.0) rectangle ++(0.8,0.6); \node[gray] at (10*0.9+0.4,1.3) {0};
+\draw[cmFlow] (7.2,2.2) -- (7.2,1.85) node[midway,right,xshift=2mm,align=left] {NNLS: $\min_{\bm w\ge\bm 0}\|\bm G\bm w-\bm b\|\le\varepsilon\|\bm b\|$};
+\draw[decorate,decoration={brace,mirror,amplitude=4pt}] (11*0.9,0.85) -- (14*0.9+0.8,0.85) node[midway,below=4pt,align=center] {contact elements\\pinned at weight 1\\(contact-aware variant)};
+\node[align=left,anchor=west] at (1.0,0.2) {$\bm f_r(\bm q)\approx\sum_{e\in\mathcal E}w_e\bm V_e^T\bm f_e(\bm V_e\bm q)$\\evaluate only the \textcolor{violet!70!black}{violet} and \textcolor{red!70!black}{red} elements};
+\end{tikzpicture}
