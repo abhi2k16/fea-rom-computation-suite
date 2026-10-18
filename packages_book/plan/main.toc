@@ -34,4 +34,5 @@
 \contentsline {subsection}{\numberline {6.3}Risks}{15}{subsection.6.3}%
 \contentsline {subsection}{\numberline {6.4}Decisions taken}{15}{subsection.6.4}%
 \contentsline {subsection}{\numberline {6.5}Blueprint review: items adopted}{15}{subsection.6.5}%
-\contentsline {subsection}{\numberline {6.6}Progress}{16}{subsection.6.6}%
+\contentsline {subsection}{\numberline {6.6}Presentation upgrade: abbreviations, algorithms, figures}{16}{subsection.6.6}%
+\contentsline {subsection}{\numberline {6.7}Progress}{17}{subsection.6.7}%
