@@ -41,15 +41,61 @@ where $\beta_{\mathrm{LB}}\le\sigma_{\min}$ is any lower bound that can be evalu
 \paragraph{Random vibration.}
 For a stationary random load with a fixed spatial pattern $\bm F_0$ and input spectrum $S_{\mathrm{in}}(f)$, the output PSD at a sensor is $S_{\mathrm{out}}(f)=|H(f)|^2S_{\mathrm{in}}(f)$ with $H$ the transfer function from $\bm F_0$ to that output, and the RMS response is $\sigma=\bigl(\int S_{\mathrm{out}}\,df\bigr)^{1/2}$. A reduced model replaces $H$ by $H_r$; the integral is evaluated by the trapezoidal rule on the frequency grid.
 
-\begin{algbox}{Greedy frequency-domain ROM with an optional certified bound}
-\begin{enumerate}[leftmargin=1.5em]
-\item Choose the band, a fine candidate pool of frequencies in it, a load pattern $\bm F$, and a few seed frequencies.
-\item Solve the full model at the seeds, form the POD basis of the (complex) snapshots, and build $\bm A_r(\omega)$.
-\item At every unused candidate evaluate the indicator (residual norm for the first round, then hierarchical). Solve the full model at the worst candidate, add it to the snapshots, rebuild the basis.
-\item Stop at the target number of columns or when the worst indicator falls below a tolerance. Keep the list of selected frequencies for audit.
-\item Optional: build a lower bound $\beta_{\mathrm{LB}}$ from reference singular values, and report $\|\bm\rho\|/\beta_{\mathrm{LB}}$ as a certified bound wherever it is finite. Otherwise validate on held-out frequencies, especially near the resonances.
-\end{enumerate}
+\begin{algbox}{PSD response and RMS from a reduced model}
+\begin{pseudo}
+\Require reduced model $H_r$, input spectrum $S_{\mathrm{in}}(f)$, frequency grid $f_1<\dots<f_m$
+\For{$i=1,\dots,m$}
+  \State $H_r(f_i)\gets$ small complex solve for the sensor output;\ $S_{\mathrm{out}}(f_i)\gets|H_r(f_i)|^2S_{\mathrm{in}}(f_i)$
+\EndFor
+\State $\sigma\gets\big(\sum_i\tfrac12(S_{\mathrm{out},i}+S_{\mathrm{out},i+1})\,\Delta f_i\big)^{1/2}$ \Comment{trapezoidal rule}
+\Ensure $S_{\mathrm{out}}(f)$ and RMS $\sigma$
+\end{pseudo}
+\begin{algdet}
+\item[Cost] $m$ small solves; the full-order model would need $m$ full solves.
+\item[Fails when] the grid is too coarse to resolve the resonance peaks (lightly damped modes need several points per half-power width); the load is not a single fixed pattern.
+\item[Code] \anchor{rom_engine.random_vibration.psd_response}.
+\item[Verified in] \Cref{tab:fr-psd}.
+\end{algdet}
 \end{algbox}
+
+\begin{algbox}{Certified error bound at a frequency}
+\begin{pseudo}
+\Require reduced solution $\bm x_r(\omega)$, references $\omega_1,\dots,\omega_J$ with exact $\sigma_{\min}(\bm A(\omega_j))$ (offline), affine terms $\theta_q$, $\|\bm A_q\|_2$
+\State $\bm\rho\gets\bm F-\bm A(\omega)\bm x_r$ \Comment{full-size residual, one product per matrix term}
+\State $\beta_{\mathrm{LB}}\gets\max_j\big[\sigma_{\min}(\bm A(\omega_j))-\sum_q|\theta_q(\omega)-\theta_q(\omega_j)|\,\|\bm A_q\|_2\big]$ \Comment{Weyl; or an SCM linear program}
+\If{$\beta_{\mathrm{LB}}>0$} $\Delta\gets\|\bm\rho\|/\beta_{\mathrm{LB}}$ \Else{} $\Delta\gets+\infty$ \EndIf
+\Ensure $\|\bm x(\omega)-\bm x_r(\omega)\|\le\Delta$
+\end{pseudo}
+\begin{algdet}
+\item[Cost] online: one residual (a full-size product) plus $O(J\,Q)$; offline: $J$ exact smallest singular values of full-size matrices.
+\item[Fails when] $\beta_{\mathrm{LB}}\le0$ near a resonance (the bound is $+\infty$, correct but useless); the references are too sparse for the affine terms to move far from them.
+\item[Code] \anchor{rom_engine.scm.SingularValueLowerBound}, \anchor{rom_engine.scm_lp.LPSingularValueLowerBound}, \anchor{rom_engine.scm.certified_error_bound}.
+\item[Verified in] \Cref{fig:fr-bound} (lower bounds and bound against the true error).
+\end{algdet}
+\end{algbox}
+
+\tikzfigure[0.9\linewidth]{ch10_bound}{The certified bound. The residual is computed online at full size; the lower bound on $\sigma_{\min}$ is built offline from a few exact values.}{fig:fr-boundidea}
+
+\begin{algbox}{Greedy frequency-domain ROM with an optional certified bound}
+\begin{pseudo}
+\Require band, candidate pool $\Omega$, load pattern $\bm F$, seed frequencies, column budget or tolerance
+\State full-order solves at the seeds;\ POD basis $\bm V$ of the complex snapshots;\ build $\bm A_r(\omega)$
+\Repeat
+  \State indicator $I(\omega)$ for every unused $\omega\in\Omega$ \Comment{residual norm in round 1, then hierarchical}
+  \State $\omega^\ast\gets\arg\max I$;\ full-order solve at $\omega^\ast$;\ add the snapshot;\ rebuild $\bm V$
+\Until{column budget reached or $\max I<\mathrm{tol}$}
+\State optional: build $\beta_{\mathrm{LB}}$ and report $\|\bm\rho\|/\beta_{\mathrm{LB}}$ where finite; otherwise validate on held-out frequencies near resonances
+\Ensure basis $\bm V$, list of selected $\omega^\ast$ (for audit)
+\end{pseudo}
+\begin{algdet}
+\item[Cost] offline: one full-order solve per selected frequency plus $O(Qnr)$ per candidate and round; online: one small complex solve per query.
+\item[Fails when] the indicator is small away from a resonance that was never sampled (neither indicator is a bound); the candidate pool does not contain the peak.
+\item[Code] \anchor{rom_engine.greedy.greedy_train_frequency_basis}, \anchor{rom_engine.frequency.build_pod_basis_from_frf_snapshots}.
+\item[Verified in] \Cref{fig:fr-greedy}, \Cref{fig:fr-ind}, \Cref{tab:fr-greedy}.
+\end{algdet}
+\end{algbox}
+
+\tikzfigure[0.98\linewidth]{ch10_greedy}{The greedy loop in the frequency domain. Full-order solves happen only at the frequencies chosen by the indicator.}{fig:fr-greedyidea}
 
 \section{Implementation in the packages}\label{sec:fr-impl}
 

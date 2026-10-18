@@ -29,23 +29,97 @@ and measure, respectively, how much a state can be excited by the input and how 
 \end{equation}
 The bound is absolute (in the units of $H$, here m/N), holds for every frequency at once, and is known before any frequency response is evaluated. The method needs two Lyapunov solves of dense $2n\times2n$ systems, so it is a method for models of moderate size or for models that have already been reduced.
 
+\begin{algbox}{Square-root balanced truncation}
+\begin{pseudo}
+\Require stable $(\bm A,\bm B,\bm C_o)$ of order $N$, target order $r$ or tolerance
+\State solve the two Lyapunov equations \eqref{eq:bt-lyap} for $\bm P,\bm Q$;\ Cholesky $\bm P=\bm S\bm S^T$, $\bm Q=\bm R\bm R^T$
+\State SVD $\bm R^T\bm S=\bm U\bm\Sigma\bm V^T$;\ Hankel singular values $\sigma_k=\Sigma_{kk}$
+\State choose $r$ so that $2\sum_{k>r}\sigma_k\le\mathrm{tol}$ (if not given)
+\State $\bm T\gets\bm S\bm V_r\bm\Sigma_r^{-1/2}$,\ $\bm W\gets\bm R\bm U_r\bm\Sigma_r^{-1/2}$
+\State $\bm A_r\gets\bm W^T\bm A\bm T$,\ $\bm B_r\gets\bm W^T\bm B$,\ $\bm C_r\gets\bm C_o\bm T$
+\Ensure reduced model of order $r$ and the a priori bound \eqref{eq:bt-bound}
+\end{pseudo}
+\begin{algdet}
+\item[Cost] two dense Lyapunov solves, $O(N^3)$ time and $O(N^2)$ memory, with $N=2n$ states.
+\item[Fails when] $\bm A$ is not stable (no Gramians); the Gramians are numerically singular or very ill conditioned, as for the raw model of \Cref{sec:bt-raw}.
+\item[Code] \anchor{rom_engine.balanced_truncation.BalancedTruncationROM}, \anchor{rom_engine.balanced_truncation.hankel_singular_values}.
+\item[Verified in] \Cref{fig:bt-bt} (bound against the grid maximum), \Cref{fig:bt-compare}.
+\end{algdet}
+\end{algbox}
+
 \paragraph{Krylov moment matching.}
 Expand $H$ about a point $s_0$: $H(s_0+\sigma)=\sum_{j\ge0}m_j\sigma^j$. The moments $m_j$ are the entries of a Krylov sequence built with one sparse factorisation of $s_0\bm E-\bm A$ (the descriptor form $\bm E\dot{\bm x}=\bm A\bm x+\bm B u$ avoids inverting $\bm M$), so an orthonormal basis $\bm V$ of that Krylov subspace, used as a Galerkin projection $\bm A_r=\bm V^T\bm A\bm V$, $\bm E_r=\bm V^T\bm E\bm V$, makes the reduced transfer function match the first moments at $s_0$ exactly~\cite{besselink2013comparison}. A second basis $\bm W$ from the dual system gives the oblique (two-sided, Petrov--Galerkin) projection, which matches about twice as many moments for the same size. Matching is \emph{local}: exact in the limit at $s_0$, and nothing in the construction controls the error elsewhere, and the stability of the full model is not inherited.
+
+\begin{algbox}{Arnoldi basis for moment matching at $s_0$}
+\begin{pseudo}
+\Require $\bm E,\bm A,\bm B$, expansion point $s_0$, number of vectors $k$, deflation tolerance
+\State factor $\bm F\gets s_0\bm E-\bm A$ \emph{once} (sparse)
+\State $\bm v\gets\bm F^{-1}\bm B$;\ $\bm V\gets[\bm v/\|\bm v\|]$
+\For{$j=2,\dots,k$}
+  \State $\bm w\gets\bm F^{-1}\bm E\bm v_{j-1}$ \Comment{next moment direction}
+  \State orthogonalise $\bm w$ against the columns of $\bm V$ (modified Gram--Schmidt, twice)
+  \If{$\|\bm w\|\le$ tolerance} \textbf{deflate and stop} \Else{} append $\bm w/\|\bm w\|$ to $\bm V$ \EndIf
+\EndFor
+\State $\bm A_r\gets\bm V^T\bm A\bm V$,\ $\bm E_r\gets\bm V^T\bm E\bm V$,\ $\bm B_r\gets\bm V^T\bm B$ \Comment{one-sided; two-sided adds $\bm W$ from the dual system}
+\Ensure basis $\bm V$ (the number of columns returned may be less than $k$), reduced model
+\end{pseudo}
+\begin{algdet}
+\item[Cost] one sparse factorisation and $k$ back-substitutions; $O(Nk^2)$ for the orthogonalisation.
+\item[Fails when] $s_0\bm E-\bm A$ is singular or the tolerance deflates early (check the returned number of vectors); no error is controlled away from $s_0$ and stability is not inherited.
+\item[Code] \anchor{rom_engine.krylov.arnoldi_basis}, \anchor{rom_engine.krylov.KrylovROM}.
+\item[Verified in] \Cref{fig:bt-locality} (local accuracy), \Cref{tab:bt-compare}.
+\end{algdet}
+\end{algbox}
 
 \paragraph{SOAR.}
 The first-order form doubles the state count. The second-order Arnoldi method of Bai and Su~\cite{bai2005soar} builds a basis of the same moments directly in the pencil $s^2\bm M+s\bm C+\bm K$, with the two-term recurrence $\bm r_j=\bm A_1\bm r_{j-1}+\bm A_2\bm r_{j-2}$, $\bm A_1=-\bm K_0^{-1}(\bm C+2s_0\bm M)$, $\bm A_2=-\bm K_0^{-1}\bm M$, $\bm K_0=\bm K+s_0\bm C+s_0^2\bm M$, and projects $\bm M,\bm C,\bm K$ by congruence. The reduced model is again second-order, with $k$ unknowns and $2k$ states.
 
+\begin{algbox}{SOAR basis in the second-order pencil}
+\begin{pseudo}
+\Require $\bm M,\bm C,\bm K$, port vector $\bm b$, point $s_0$, size $k$
+\State $\bm K_0\gets\bm K+s_0\bm C+s_0^2\bm M$;\ factor once;\ $\bm A_1\gets-\bm K_0^{-1}(\bm C+2s_0\bm M)$,\ $\bm A_2\gets-\bm K_0^{-1}\bm M$ (applied, never formed)
+\State $\bm r_0\gets\bm K_0^{-1}\bm b$;\ $\bm r_{-1}\gets\bm 0$
+\For{$j=1,\dots,k$}
+  \State $\bm r_j\gets\bm A_1\bm r_{j-1}+\bm A_2\bm r_{j-2}$ (for $j=1$ use $\bm r_0$)
+  \State orthogonalise $\bm r_j$ against the columns of $\bm\Phi$; append if its norm exceeds the \emph{absolute} tolerance, otherwise deflate
+\EndFor
+\State $\bm M_r,\bm C_r,\bm K_r\gets\bm\Phi^T\bm M\bm\Phi,\ \bm\Phi^T\bm C\bm\Phi,\ \bm\Phi^T\bm K\bm\Phi$ \Comment{congruence}
+\Ensure second-order reduced model with $k$ unknowns ($2k$ states)
+\end{pseudo}
+\begin{algdet}
+\item[Cost] one sparse factorisation, $k$ solves; no first-order doubling of the state.
+\item[Fails when] the deflation tolerance does not match the scale of the data (reported through the returned shape); block starting vectors need the TOAR variant, which is not implemented.
+\item[Code] \anchor{rom_engine.soar.soar_basis}, \anchor{rom_engine.soar.SOARROM}.
+\item[Verified in] \Cref{fig:bt-response}, \Cref{tab:bt-compare}; passivity grid check in \Cref{tab:bt-stab}.
+\end{algdet}
+\end{algbox}
+
 \paragraph{Passivity.}
 For a collocated port the force $u$ and the velocity $y_v=\bm b^T\dot{\bm q}$ have power $uy_v$, and the energy balance $\dot E=-\dot{\bm q}^T\bm C\dot{\bm q}+uy_v\le uy_v$ says the structure only dissipates. Because a congruence $\bm\Phi^T\bm C\bm\Phi$ keeps positive semidefiniteness for \emph{any} full-column-rank basis, every second-order Galerkin projection preserves this inequality; this is the argument in the module docstring of \anchor{rom_engine.passivity.passivity_margin} and it applies to modal truncation, POD (Chapter~\ref{ch:pod}) and SOAR. It does not apply to the first-order projections of balanced truncation and Krylov methods, for which passivity has to be checked. The frequency-domain test for a passive one-port is $\mathrm{Re}\,H_v(i\omega)\ge0$ with $H_v=i\omega H$, or equivalently that the phase of the mobility stays within $\pm90^\circ$; the experiments report $\min_\omega\cos\arg H_v$.
 
+\tikzfigure[0.98\linewidth]{ch09_map}{Map of the systems-and-control methods of this chapter: modal pre-reduction followed by balanced truncation for moderate models, Krylov or SOAR for large sparse ones; every route ends at the same check against held-out data.}{fig:bt-mapidea}
+
 \begin{algbox}{Choosing and running a systems-and-control reduction of a structural port}
-\begin{enumerate}[leftmargin=1.5em]
-\item Fix the port ($\bm b$, $\bm c$) and the band. Check that the damping is not zero: the Lyapunov equations \eqref{eq:bt-lyap} need a stable $\bm A$.
-\item If the full model is large or its frequencies span many orders of magnitude, pre-reduce it by modal truncation to a moderate number of modes; then apply balanced truncation to the result (\Cref{sec:bt-raw}).
-\item Balanced truncation: compute the Hankel singular values, choose $r$ from \eqref{eq:bt-bound} for the tolerance, truncate.
-\item Krylov or SOAR: choose $s_0$ inside the band of interest, build the basis from the full model with one sparse factorisation, and \emph{check the result}: pole locations, the number of basis vectors returned, a held-out frequency response.
-\item For a passive structure, check the passivity margin of the reduced model, and prefer a second-order Galerkin method if the reduced model is to be coupled into a larger simulation.
-\end{enumerate}
+\begin{pseudo}
+\Require port ($\bm b,\bm c$), band, tolerance, full model size
+\State check that the damping is not zero \Comment{the Lyapunov equations need a stable $\bm A$}
+\If{the model is small, or has been pre-reduced}
+  \State pre-reduce by modal truncation if frequencies span many orders of magnitude (\Cref{sec:bt-raw});\ run square-root balanced truncation; choose $r$ from \eqref{eq:bt-bound}
+\Else
+  \State choose $s_0$ inside the band;\ build Arnoldi or SOAR basis with one sparse factorisation
+\EndIf
+\State \textbf{check:} pole locations, number of basis vectors returned, a held-out frequency response
+\If{structure is passive and the model will be coupled into a larger simulation}
+  \State prefer SOAR (second-order congruence) and check the passivity margin
+\EndIf
+\Ensure reduced port model with its check
+\end{pseudo}
+\begin{algdet}
+\item[Cost] dominated by the chosen branch (dense $O(N^3)$ or one sparse factorisation).
+\item[Fails when] the checks are skipped: moment matching has no error control away from $s_0$ and the first-order projections are not passive by construction.
+\item[Code] \Cref{sec:bt-impl}.
+\item[Verified in] \Cref{tab:bt-compare}.
+\end{algdet}
 \end{algbox}
 
 \section{Implementation in the packages}\label{sec:bt-impl}

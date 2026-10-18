@@ -36,6 +36,23 @@ Instead of fixing the interface, retain the lowest $n_m$ modes of the part with 
 \paragraph{Interface reduction.}
 Craig--Bampton keeps every interface unknown, which is expensive when the interface is a surface with many nodes. Replace $\bm u_b$ by a few amplitudes of interface shapes, $\bm u_b=\bm\Psi_\Gamma\bm q_\Gamma$. Characteristic constraint modes~\cite{castanier2001} take the lowest eigenvectors of the interface block of the Craig--Bampton model, $\bm K_{bb}^{r}\bm x=\lambda\bm M_{bb}^{r}\bm x$ (with the reduced $bb$ blocks). Another choice is the Gram--Schmidt orthogonalisation of the interface rows of modes of the full model. Either gives a reduced model with $n_\Gamma+n_m$ coordinates; with all interface modes kept the model is unchanged.
 
+\begin{algbox}{Interface reduction of a Craig--Bampton model}
+\begin{pseudo}
+\Require Craig--Bampton model with interface blocks $\bm K^r_{bb},\bm M^r_{bb}$, number of interface modes $n_\Gamma$
+\State solve $\bm K^r_{bb}\bm x=\lambda\bm M^r_{bb}\bm x$;\ keep the $n_\Gamma$ lowest eigenvectors as $\bm\Psi_\Gamma$ \Comment{characteristic constraint modes; or Gram--Schmidt on mode rows}
+\State $\bm T_\Gamma\gets\mathrm{diag}(\bm\Psi_\Gamma,\bm I_{n_m})$;\ project the reduced matrices
+\Ensure model with $n_\Gamma+n_m$ coordinates per part set
+\end{pseudo}
+\begin{algdet}
+\item[Cost] one eigenproblem of size $n_b$ (the interface of the reduced model, cheap compared with the part).
+\item[Fails when] the interface shapes that matter in the band are not among the lowest interface modes; with all interface modes kept the model is unchanged.
+\item[Code] \anchor{rom_engine.interface_reduction.interface_reduced_craig_bampton}, \anchor{rom_engine.interface_reduction.gram_schmidt_interface_modes}.
+\item[Verified in] \Cref{fig:cm-iface} (the two interface bases coincide).
+\end{algdet}
+\end{algbox}
+
+\tikzfigure[0.98\linewidth]{ch11_interface}{Interface reduction replaces the interface unknowns of a Craig--Bampton model by a few interface modes.}{fig:cm-ifaceidea}
+
 \paragraph{Component POD with a mortar tie.}
 For nonlinear parts, or parts with non-matching interface meshes, the part is reduced from nonlinear solutions computed with \emph{prescribed interface displacements}~\cite{ritzert2025}. The interface values are parametrised by a few smooth functions (translation, rotation, Legendre polynomials) whose coefficients, together with a load factor, are sampled with an optimal Latin hypercube, so that the basis of a part does not depend on the neighbour. In an assembly of a master part $a$ and a slave part $b$ tied by the mortar operator $\bm P$ (slave interface $=\bm P\times$ master interface), the unknowns are $\bm x=[\bm q_a;\bm q_b]$ with
 \begin{equation}\label{eq:cm-comp}
@@ -43,14 +60,45 @@ For nonlinear parts, or parts with non-matching interface meshes, the part is re
 \end{equation}
 and the reduced Newton system is $\bm T^T\bm R(\bm T\bm x)=\bm 0$ with tangent $\bm T^T\bm K_t\bm T$. The forces are still evaluated on the full meshes (no hyper-reduction, Chapter~\ref{ch:hyper}), so the saving is in the linear algebra only.
 
+\begin{algbox}{Component POD with a mortar tie}
+\begin{pseudo}
+\Require parts $a$ (master), $b$ (slave), mortar operator $\bm P$, interface parametrisation, sample count
+\State sample interface-displacement coefficients and a load factor with an optimal Latin hypercube
+\For{each sample, for each part}
+  \State solve the nonlinear part problem with the \emph{prescribed} interface displacement;\ store the snapshot
+\EndFor
+\State POD of the snapshots of each part $\to\bm V_a,\ \bm\Phi_b$ \Comment{independent of the neighbour}
+\State assemble $\bm T$ from \eqref{eq:cm-comp};\ \textbf{Newton:} $\bm T^T\bm R(\bm T\bm x)=\bm0$ with tangent $\bm T^T\bm K_t\bm T$
+\Ensure reduced solution $\bm x$ and full displacement $\bm T\bm x$
+\end{pseudo}
+\begin{algdet}
+\item[Cost] offline: samples $\times$ parts nonlinear solves; online: forces still evaluated on the full meshes, so only the linear algebra is reduced.
+\item[Fails when] the sampled interface functions do not span what the neighbour imposes; the mortar tie is not exact for the chosen interface meshes.
+\item[Code] \anchor{rom_engine.component_pod.ComponentBasis}, \anchor{rom_engine.component_pod.ReducedAssembly}.
+\item[Verified in] \Cref{tab:cm-comp}, \Cref{fig:cm-comp}.
+\end{algdet}
+\end{algbox}
+
+\tikzfigure[0.98\linewidth]{ch11_cb}{Craig--Bampton substructuring: the interface unknowns are physical and shared, so parts are joined by adding reduced matrices.}{fig:cm-cbidea}
+
 \begin{algbox}{Craig--Bampton substructuring of an assembly}
-\begin{enumerate}[leftmargin=1.5em]
-\item For each part, identify the interface unknowns and list them in the same physical order in every part that shares them.
-\item For each part: solve the fixed-interface eigenproblem $\bm K_{ii}\bm\Phi=\bm M_{ii}\bm\Phi\bm\Omega^2$, keep $n_m$ modes, form the constraint modes $\bm\Psi=-\bm K_{ii}^{-1}\bm K_{ib}$, and project $\bm K,\bm M$ with \eqref{eq:cm-cb}.
-\item Join the reduced parts by adding the matrices at the global interface indices.
-\item Solve the reduced eigenproblem (or the reduced response) and recover each part's full displacement with its own $\bm T$.
-\item Check the model on the assembly: frequencies against the full model if available, and the effect of increasing $n_m$.
-\end{enumerate}
+\begin{pseudo}
+\Require parts $k$ with $\bm K^{(k)},\bm M^{(k)}$, interface lists, modes per part $n_m^{(k)}$
+\State list the interface unknowns in the same physical order in every part that shares them
+\For{each part $k$}
+  \State solve $\bm K_{ii}\bm\Phi=\bm M_{ii}\bm\Phi\bm\Omega^2$ (mass-normalised);\ keep $n_m^{(k)}$ lowest modes
+  \State $\bm\Psi\gets-\bm K_{ii}^{-1}\bm K_{ib}$;\ $\bm T\gets\begin{bmatrix}\bm I&\bm0\\\bm\Psi&\bm\Phi_{n_m}\end{bmatrix}$;\ $\bm K_r\gets\bm T^T\bm K\bm T$,\ $\bm M_r\gets\bm T^T\bm M\bm T$
+\EndFor
+\State add the reduced matrices at the global interface indices \Comment{displacement compatibility}
+\State solve the reduced eigenproblem or response;\ recover each part's displacement with its own $\bm T$
+\Ensure reduced assembly of size (global interface unknowns) $+\sum_kn_m^{(k)}$
+\end{pseudo}
+\begin{algdet}
+\item[Cost] per part one eigenproblem of the interior block and one factorisation of $\bm K_{ii}$ with $n_b$ back-substitutions.
+\item[Fails when] the interface is large (every interface unknown is kept); a part has rigid-body motion with the interface fixed (it does not); the retained modes are too few for the band (error falls as $n_m$ grows).
+\item[Code] \anchor{rom_engine.cms.craig_bampton}, \anchor{rom_engine.cms.couple}, \anchor{rom_engine.cms.guyan}.
+\item[Verified in] \Cref{fig:cm-cb} (error against reduced size, with Guyan as comparison).
+\end{algdet}
 \end{algbox}
 
 \section{Implementation in the packages}\label{sec:cm-impl}

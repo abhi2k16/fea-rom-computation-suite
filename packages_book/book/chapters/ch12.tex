@@ -19,12 +19,51 @@ For a linear system with transfer function $H(\omega)$ sampled at two disjoint s
 \end{equation}
 and the generalised eigenvalues of $(\tilde A,\tilde E)$ approximate the squared complex natural frequencies, $\lambda_i\approx\omega_i^2$~\cite{mayo2007loewner,liu2026fsi}. The natural frequency is $f_i=\mathrm{Re}(\omega_i)/2\pi$ and a loss factor $\eta_i=\mathrm{Im}(\omega_i)/\mathrm{Re}(\omega_i)$ is read from the imaginary part. The method never forms a state-space realisation, and the data are a handful of complex numbers at one reference degree of freedom. The pencil has $n$ eigenvalues, more than the number of physical modes in the band when $n$ is oversized, so some are spurious and have to be screened out by band and sign of the damping.
 
+\begin{algbox}{Loewner identification of natural frequencies and loss factors}
+\begin{pseudo}
+\Require responses $\hat x(\omega)$ at one reference dof at disjoint sets $\{\omega_{\alpha,a}\},\{\omega_{\beta,b}\}$ (size $n$ each), band, damping sign convention
+\State build $\tilde E,\tilde A$ from \eqref{eq:ni-loewner}
+\State generalised eigenvalues $\lambda_i$ of $(\tilde A,\tilde E)$;\ $\omega_i\gets\sqrt{\lambda_i}$
+\State discard eigenvalues outside the band and those with the wrong sign of damping \Comment{spurious}
+\State $f_i\gets\mathrm{Re}\,\omega_i/2\pi$,\ $\eta_i\gets\mathrm{Im}\,\omega_i/\mathrm{Re}\,\omega_i$
+\Ensure natural frequencies and loss factors
+\end{pseudo}
+\begin{algdet}
+\item[Cost] one generalised eigenproblem of size $n$; data are $2n$ complex numbers.
+\item[Fails when] $n$ is oversized (spurious eigenvalues remain after the screen) or the data are noisy (the detection rate falls, \Cref{fig:ni-loewner}); the pencil is rank deficient.
+\item[Code] \anchor{rom_engine.loewner.LoewnerROM}.
+\item[Verified in] \Cref{tab:ni-loewner}, \Cref{fig:ni-loewner}.
+\end{algdet}
+\end{algbox}
+
+\tikzfigure[0.98\linewidth]{ch12_loewner}{The Loewner route from a handful of complex numbers to natural frequencies and loss factors, without a state-space model.}{fig:ni-loewneridea}
+
 \paragraph{Operator inference.}
 Given states $\bm x_t$, accelerations $\bm a_t$ and applied forces $\bm f_t$ in reduced coordinates $\bm x=[\bm u_b;\bm q]$ (the physical boundary unknowns $\bm u_b$ plus modal amplitudes $\bm q$ of the fixed-boundary interior modes, a Craig--Bampton structure as in Chapter~\ref{ch:cms}), infer $\bm M,\bm K$ by least squares,
 \begin{equation}\label{eq:ni-opinf}
 \min_{\bm M,\bm K\succ0}\ \sum_t\|\bm M\bm a_t+\bm K\bm x_t-\bm f_t\|^2,
 \end{equation}
 with the positive definiteness enforced through Cholesky parametrisation if the unconstrained solution violates it~\cite{peherstorfer2016opinf,manvelyan2025}. The inferred model is then used for contact dynamics through the same linear complementarity problem as in Chapter~\ref{ch:contact}.
+
+\begin{algbox}{Operator inference for contact dynamics}
+\begin{pseudo}
+\Require trajectories $\bm x_t,\bm a_t,\bm f_t$ in reduced coordinates $[\bm u_b;\bm q]$
+\State least squares for $\bm M,\bm K$ from \eqref{eq:ni-opinf}
+\If{the symmetric part of $\bm M$ or $\bm K$ is not positive definite}
+  \State re-fit with a Cholesky parametrisation \Comment{enforces $\succ0$}
+\EndIf
+\State use $(\bm M,\bm K)$ in the contact dynamics of Chapter~\ref{ch:contact}
+\Ensure inferred reduced operators
+\end{pseudo}
+\begin{algdet}
+\item[Cost] one least-squares solve with the number of unknowns of the operators; training needs trajectories (full-order runs).
+\item[Fails when] the training motion does not excite the operator entries that contact will need; noise on the accelerations degrades the operators (\Cref{tab:ni-opinf}).
+\item[Code] \anchor{rom_engine.operator_inference.infer_contact_operators}.
+\item[Verified in] \Cref{tab:ni-opinf}, \Cref{fig:ni-opinf}.
+\end{algdet}
+\end{algbox}
+
+\tikzfigure[0.98\linewidth]{ch12_hybrid}{Operator inference in the Craig--Bampton coordinates: reduced operators are fitted from signals and used in the unchanged contact problem.}{fig:ni-opinfidea}
 
 \paragraph{Hybrid nonlinear modal models.}
 Take the linear modes $\bm V$ (mass-normalised, $\bm V^T\bm M\bm V=\bm I$, $\bm V^T\bm K\bm V=\bm\Lambda$) as the basis. For a static load with modal image $\hat{\bm f}=\bm V^T\bm f$ the reduced equation is
@@ -46,15 +85,47 @@ For $\ddot{\bm q}+\bm\Lambda\bm q+\bm f_{nl}(\bm q)=\bm 0$ look for periodic sol
 \end{equation}
 with the harmonics $\bm F_{nl}$ of the nonlinear force computed by sampling in time and transforming back (alternating frequency--time). Fixing the amplitude of the first harmonic of a master mode and solving for $\omega$ and the remaining coefficients, point after point, traces the backbone, the amplitude--frequency curve of the nonlinear normal mode~\cite{kerschen2009nnm,peeters2009nnm}. Where the curve folds in amplitude, pseudo-arclength continuation~\cite{keller1977} is needed.
 
-\begin{algbox}{Hybrid nonlinear modal ROM (polynomial or RBF)}
-\begin{enumerate}[leftmargin=1.5em]
-\item Compute the linear modes $\bm V$ and frequencies of the full model; choose how many to keep.
-\item Choose training loads: modal force amplitudes sampled so that the resulting displacements span the range of interest (an optimal Latin hypercube over per-mode target amplitudes).
-\item Solve the full nonlinear model for each training load; project the solution on $\bm V$ to get $\bm q_{nl}$, and form $\bm f_{nl}=\hat{\bm f}-\bm\Lambda\bm q_{nl}$ and $\bm q_l=\bm\Lambda^{-1}\hat{\bm f}$.
-\item Fit the polynomial in $\bm q_{nl}$, or the RBF interpolant in $\bm q_l$.
-\item Evaluate: Newton on \eqref{eq:ni-modal} (polynomial) or one RBF evaluation (surrogate); compare with \emph{held-out} full-order solves, including a linear modal model as the baseline that shows how much nonlinearity the test contains.
-\end{enumerate}
+\begin{algbox}{Backbone by harmonic balance with pseudo-arclength continuation}
+\begin{pseudo}
+\Require $\bm\Lambda,\bm f_{nl}$, number of harmonics $H$, start $(\omega_0,\bm Z_0)$ (linear mode), amplitude range
+\Repeat
+  \State predictor: step along the tangent of the solution curve $(\bm Z,\omega)$ by a fixed arc length
+  \State corrector: Newton on $\bm A(\omega)\bm Z+\bm F_{nl}(\bm Z)=\bm0$ with the arc-length constraint; $\bm F_{nl}$ by alternating frequency--time (sample, evaluate, transform)
+  \State record $(\omega,\text{amplitude of the first harmonic of the master mode})$
+\Until{amplitude range covered}
+\Ensure backbone curve
+\end{pseudo}
+\begin{algdet}
+\item[Cost] one nonlinear solve of size $(2H+1)n_q$ per point, with FFTs for the forces.
+\item[Fails when] too few harmonics for the amplitude (the backbone is wrong without a warning, see the one-harmonic curve in \Cref{fig:ni-nnm}); internal resonances are not tested here.
+\item[Code] \anchor{rom_engine.nnm.solve_nnm_backbone}, \anchor{rom_engine.nnm.solve_nnm_backbone_arclength}, \anchor{rom_engine.nnm.HarmonicBalanceSystem}.
+\item[Verified in] \Cref{fig:ni-nnm} (Duffing backbone against time integration).
+\end{algdet}
 \end{algbox}
+
+\tikzfigure[0.7\linewidth]{ch12_nnm}{Sketch of a hardening backbone and what continuation does along it.}{fig:ni-nnmidea}
+
+\begin{algbox}{Hybrid nonlinear modal ROM (polynomial or RBF)}
+\begin{pseudo}
+\Require full model, number of modes, training amplitudes
+\State linear modes $\bm V,\bm\Lambda$;\ choose how many to keep
+\State training loads: optimal Latin hypercube over per-mode target amplitudes
+\For{each training load $\hat{\bm f}$}
+  \State full nonlinear solve $\to\bm u$;\ $\bm q_{nl}\gets\bm V^T\bm u$;\ $\bm f_{nl}\gets\hat{\bm f}-\bm\Lambda\bm q_{nl}$;\ $\bm q_l\gets\bm\Lambda^{-1}\hat{\bm f}$
+\EndFor
+\State fit the polynomial in $\bm q_{nl}$ \textbf{or} the RBF interpolant in $\bm q_l$
+\State evaluate: Newton on \eqref{eq:ni-modal} (polynomial) or one RBF evaluation (surrogate)
+\Ensure model; compare with \emph{held-out} full solves and a linear modal baseline
+\end{pseudo}
+\begin{algdet}
+\item[Cost] offline: one nonlinear full-order solve per training load; online: Newton on $n_q$ unknowns, or one RBF evaluation.
+\item[Fails when] too few modes for the nonlinearity (\Cref{fig:ni-nlrom}, right); the test loads leave the training range (not tested here); a baseline is not reported (then it is unknown how much nonlinearity the test holds).
+\item[Code] \anchor{rom_engine.nonlinear_rom.PolynomialModalROM}, \anchor{rom_engine.nonlinear_rom.MultiFidelitySurrogate}, \anchor{rom_engine.nonlinear_rom.AppliedLoadStrategy}.
+\item[Verified in] \Cref{tab:ni-nlrom}, \Cref{fig:ni-nlrom}.
+\end{algdet}
+\end{algbox}
+
+\tikzfigure[0.98\linewidth]{ch12_nlrom}{The two hybrid nonlinear modal models from the same training data: polynomial (Newton at evaluation) and RBF surrogate (one evaluation).}{fig:ni-nlromidea}
 
 \section{Implementation in the packages}\label{sec:ni-impl}
 
