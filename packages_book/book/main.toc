@@ -7,280 +7,280 @@
 \contentsline {section}{\numberline {1.1}One system, many problems}{2}{section.1.1}%
 \contentsline {section}{\numberline {1.2}The flow and the layers}{2}{section.1.2}%
 \contentsline {section}{\numberline {1.3}The element interface}{3}{section.1.3}%
-\contentsline {section}{\numberline {1.4}Extending the engine: a new element}{3}{section.1.4}%
-\contentsline {section}{\numberline {1.5}The six extension points}{4}{section.1.5}%
-\contentsline {section}{\numberline {1.6}Does the interface hold? A conformance test}{4}{section.1.6}%
-\contentsline {section}{\numberline {1.7}Two packages, one direction of dependence}{5}{section.1.7}%
-\contentsline {section}{\numberline {1.8}Backend dispatch and what it costs}{5}{section.1.8}%
-\contentsline {paragraph}{Measured cost of the automatic choice.}{5}{section*.11}%
-\contentsline {section}{\numberline {1.9}Summary}{7}{section.1.9}%
-\contentsline {section}{References}{7}{section*.15}%
+\contentsline {section}{\numberline {1.4}Extending the engine: a new element}{4}{section.1.4}%
+\contentsline {section}{\numberline {1.5}The six extension points}{5}{section.1.5}%
+\contentsline {section}{\numberline {1.6}Does the interface hold? A conformance test}{6}{section.1.6}%
+\contentsline {section}{\numberline {1.7}Two packages, one direction of dependence}{6}{section.1.7}%
+\contentsline {section}{\numberline {1.8}Backend dispatch and what it costs}{6}{section.1.8}%
+\contentsline {paragraph}{Measured cost of the automatic choice.}{7}{section*.12}%
+\contentsline {section}{\numberline {1.9}Summary}{8}{section.1.9}%
+\contentsline {section}{References}{9}{section*.16}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-3}
-\contentsline {chapter}{\numberline {2}Mesh topologies and structural domain partitioning}{8}{chapter.2}%
-\contentsline {section}{\numberline {2.1}What a mesh is}{8}{section.2.1}%
-\contentsline {section}{\numberline {2.2}Generators}{8}{section.2.2}%
-\contentsline {section}{\numberline {2.3}Grading}{10}{section.2.3}%
-\contentsline {paragraph}{Features and the dispatcher.}{10}{section*.19}%
-\contentsline {section}{\numberline {2.4}Several element types in one mesh}{11}{section.2.4}%
-\contentsline {paragraph}{A patch test across the interface.}{11}{section*.20}%
-\contentsline {section}{\numberline {2.5}Exchange formats}{11}{section.2.5}%
-\contentsline {section}{\numberline {2.6}Design lesson: why Gmsh support was removed}{11}{section.2.6}%
-\contentsline {paragraph}{Domain partitioning, in the sense of this book.}{12}{section*.22}%
-\contentsline {section}{\numberline {2.7}Summary}{13}{section.2.7}%
-\contentsline {section}{References}{13}{section*.25}%
+\contentsline {chapter}{\numberline {2}Mesh topologies and structural domain partitioning}{10}{chapter.2}%
+\contentsline {section}{\numberline {2.1}What a mesh is}{10}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Generators}{11}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Grading}{12}{section.2.3}%
+\contentsline {paragraph}{Features and the dispatcher.}{13}{section*.21}%
+\contentsline {section}{\numberline {2.4}Several element types in one mesh}{14}{section.2.4}%
+\contentsline {paragraph}{A patch test across the interface.}{14}{section*.22}%
+\contentsline {section}{\numberline {2.5}Exchange formats}{14}{section.2.5}%
+\contentsline {section}{\numberline {2.6}Design lesson: why Gmsh support was removed}{15}{section.2.6}%
+\contentsline {paragraph}{Domain partitioning, in the sense of this book.}{15}{section*.25}%
+\contentsline {section}{\numberline {2.7}Summary}{16}{section.2.7}%
+\contentsline {section}{References}{16}{section*.28}%
 \gdef \the@ipfilectr {}
-\contentsline {part}{II\hspace {1em}Full-order physics (\texttt {fea\_engine})}{14}{part.2}%
+\contentsline {part}{II\hspace {1em}Full-order physics (\texttt {fea\_engine})}{17}{part.2}%
 \gdef \the@ipfilectr {@-4}
-\contentsline {chapter}{\numberline {3}Linear continua and structural elements}{15}{chapter.3}%
-\contentsline {section}{\numberline {3.1}From the weak form to an element matrix}{15}{section.3.1}%
-\contentsline {paragraph}{The mass matrix: consistent or lumped.}{15}{section*.26}%
-\contentsline {section}{\numberline {3.2}The element families}{16}{section.3.2}%
-\contentsline {paragraph}{Structural elements.}{16}{section*.29}%
-\contentsline {section}{\numberline {3.3}Locking and how the elements avoid it}{16}{section.3.3}%
-\contentsline {paragraph}{Bending of continuum elements.}{17}{section*.30}%
-\contentsline {paragraph}{Volumetric locking and mean-dilatation B-bar.}{18}{section*.32}%
-\contentsline {paragraph}{Shear locking in the plate and its cure.}{18}{section*.34}%
-\contentsline {section}{\numberline {3.4}Verification}{19}{section.3.4}%
-\contentsline {paragraph}{Patch tests.}{19}{section*.36}%
-\contentsline {paragraph}{Beams.}{19}{section*.38}%
-\contentsline {section}{\numberline {3.5}Summary}{21}{section.3.5}%
-\contentsline {section}{References}{21}{section*.42}%
+\contentsline {chapter}{\numberline {3}Linear continua and structural elements}{18}{chapter.3}%
+\contentsline {section}{\numberline {3.1}From the weak form to an element matrix}{18}{section.3.1}%
+\contentsline {paragraph}{The mass matrix: consistent or lumped.}{19}{section*.30}%
+\contentsline {section}{\numberline {3.2}The element families}{19}{section.3.2}%
+\contentsline {paragraph}{Structural elements.}{20}{section*.33}%
+\contentsline {section}{\numberline {3.3}Locking and how the elements avoid it}{20}{section.3.3}%
+\contentsline {paragraph}{Bending of continuum elements.}{20}{section*.35}%
+\contentsline {paragraph}{Volumetric locking and mean-dilatation B-bar.}{21}{section*.37}%
+\contentsline {paragraph}{Shear locking in the plate and its cure.}{22}{section*.39}%
+\contentsline {section}{\numberline {3.4}Verification}{22}{section.3.4}%
+\contentsline {paragraph}{Patch tests.}{22}{section*.41}%
+\contentsline {paragraph}{Beams.}{23}{section*.43}%
+\contentsline {section}{\numberline {3.5}Summary}{24}{section.3.5}%
+\contentsline {section}{References}{25}{section*.47}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-5}
-\contentsline {chapter}{\numberline {4}Dynamics: modal, transient, harmonic and random response}{22}{chapter.4}%
-\contentsline {section}{\numberline {4.1}The semi-discrete problem}{22}{section.4.1}%
-\contentsline {section}{\numberline {4.2}Natural frequencies and modes}{22}{section.4.2}%
-\contentsline {paragraph}{Damping.}{23}{section*.43}%
-\contentsline {section}{\numberline {4.3}Implicit integration: Newmark}{23}{section.4.3}%
-\contentsline {paragraph}{Accuracy test with an exact reference.}{23}{section*.44}%
-\contentsline {section}{\numberline {4.4}Explicit integration and the critical step}{23}{section.4.4}%
-\contentsline {paragraph}{The limit is sharp.}{24}{section*.46}%
-\contentsline {paragraph}{Which critical step.}{24}{section*.49}%
-\contentsline {section}{\numberline {4.5}Modal superposition}{25}{section.4.5}%
-\contentsline {section}{\numberline {4.6}Frequency-domain response}{26}{section.4.6}%
-\contentsline {paragraph}{Check against an independent modal sum.}{26}{section*.51}%
-\contentsline {paragraph}{Random vibration.}{26}{section*.53}%
-\contentsline {section}{\numberline {4.7}Choosing a method}{26}{section.4.7}%
-\contentsline {section}{\numberline {4.8}Summary}{28}{section.4.8}%
-\contentsline {section}{References}{28}{section*.57}%
+\contentsline {chapter}{\numberline {4}Dynamics: modal, transient, harmonic and random response}{26}{chapter.4}%
+\contentsline {section}{\numberline {4.1}The semi-discrete problem}{26}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Natural frequencies and modes}{26}{section.4.2}%
+\contentsline {paragraph}{Damping.}{27}{section*.48}%
+\contentsline {section}{\numberline {4.3}Implicit integration: Newmark}{27}{section.4.3}%
+\contentsline {paragraph}{Accuracy test with an exact reference.}{27}{section*.49}%
+\contentsline {section}{\numberline {4.4}Explicit integration and the critical step}{28}{section.4.4}%
+\contentsline {paragraph}{The limit is sharp.}{29}{section*.52}%
+\contentsline {paragraph}{Which critical step.}{29}{section*.55}%
+\contentsline {section}{\numberline {4.5}Modal superposition}{30}{section.4.5}%
+\contentsline {section}{\numberline {4.6}Frequency-domain response}{30}{section.4.6}%
+\contentsline {paragraph}{Check against an independent modal sum.}{31}{section*.57}%
+\contentsline {paragraph}{Random vibration.}{31}{section*.59}%
+\contentsline {section}{\numberline {4.7}Choosing a method}{32}{section.4.7}%
+\contentsline {section}{\numberline {4.8}Summary}{33}{section.4.8}%
+\contentsline {section}{References}{34}{section*.64}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-6}
-\contentsline {chapter}{\numberline {5}Material and geometric nonlinearity}{29}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Why a nonlinear solver is different}{29}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Total-Lagrangian kinematics}{30}{section.5.2}%
-\contentsline {paragraph}{The truss: the smallest complete example.}{30}{section*.58}%
-\contentsline {paragraph}{Why total Lagrangian: rotation invariance.}{30}{section*.59}%
-\contentsline {section}{\numberline {5.3}Material nonlinearity}{31}{section.5.3}%
-\contentsline {paragraph}{Hyperelasticity.}{31}{section*.61}%
-\contentsline {paragraph}{$J_2$ plasticity: history variables.}{31}{section*.62}%
-\contentsline {section}{\numberline {5.4}Verification of the elements}{32}{section.5.4}%
-\contentsline {paragraph}{Tangent consistency.}{32}{section*.64}%
-\contentsline {paragraph}{Elastica.}{32}{section*.66}%
-\contentsline {section}{\numberline {5.5}Following the response}{33}{section.5.5}%
-\contentsline {paragraph}{The snap-through truss.}{33}{section*.67}%
-\contentsline {paragraph}{Choosing a driver.}{33}{section*.69}%
-\contentsline {section}{\numberline {5.6}Solver settings}{33}{section.5.6}%
-\contentsline {section}{\numberline {5.7}Summary}{35}{section.5.7}%
-\contentsline {section}{References}{35}{section*.73}%
+\contentsline {chapter}{\numberline {5}Material and geometric nonlinearity}{35}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Why a nonlinear solver is different}{35}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Total-Lagrangian kinematics}{36}{section.5.2}%
+\contentsline {paragraph}{The truss: the smallest complete example.}{37}{section*.66}%
+\contentsline {paragraph}{Why total Lagrangian: rotation invariance.}{37}{section*.67}%
+\contentsline {section}{\numberline {5.3}Material nonlinearity}{37}{section.5.3}%
+\contentsline {paragraph}{Hyperelasticity.}{37}{section*.69}%
+\contentsline {paragraph}{$J_2$ plasticity: history variables.}{38}{section*.70}%
+\contentsline {section}{\numberline {5.4}Verification of the elements}{39}{section.5.4}%
+\contentsline {paragraph}{Tangent consistency.}{39}{section*.72}%
+\contentsline {paragraph}{Elastica.}{39}{section*.74}%
+\contentsline {section}{\numberline {5.5}Following the response}{40}{section.5.5}%
+\contentsline {paragraph}{The snap-through truss.}{40}{section*.75}%
+\contentsline {paragraph}{Choosing a driver.}{42}{section*.78}%
+\contentsline {section}{\numberline {5.6}Solver settings}{42}{section.5.6}%
+\contentsline {section}{\numberline {5.7}Summary}{43}{section.5.7}%
+\contentsline {section}{References}{43}{section*.82}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-7}
-\contentsline {chapter}{\numberline {6}Computational acceleration: vectorised assembly and batched kernels}{38}{chapter.6}%
-\contentsline {section}{\numberline {6.1}Where the time goes}{38}{section.6.1}%
-\contentsline {section}{\numberline {6.2}What the batched path does}{38}{section.6.2}%
-\contentsline {paragraph}{No Python loop over elements.}{39}{section*.74}%
-\contentsline {paragraph}{One contraction over the Gauss points.}{39}{section*.75}%
-\contentsline {paragraph}{Caches built once per block.}{39}{section*.76}%
-\contentsline {paragraph}{Memory limit.}{39}{section*.77}%
-\contentsline {section}{\numberline {6.3}Using it}{39}{section.6.3}%
-\contentsline {section}{\numberline {6.4}Verification}{40}{section.6.4}%
-\contentsline {paragraph}{Four element families.}{40}{section*.79}%
-\contentsline {paragraph}{Scaling with the number of elements.}{41}{section*.81}%
-\contentsline {paragraph}{A whole Newton solve.}{41}{section*.83}%
-\contentsline {section}{\numberline {6.5}Related pieces}{41}{section.6.5}%
-\contentsline {section}{\numberline {6.6}Limits}{42}{section.6.6}%
-\contentsline {section}{\numberline {6.7}Summary}{43}{section.6.7}%
-\contentsline {section}{References}{43}{section*.87}%
+\contentsline {chapter}{\numberline {6}Computational acceleration: vectorised assembly and batched kernels}{46}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Where the time goes}{46}{section.6.1}%
+\contentsline {section}{\numberline {6.2}What the batched path does}{46}{section.6.2}%
+\contentsline {paragraph}{No Python loop over elements.}{47}{section*.83}%
+\contentsline {paragraph}{One contraction over the Gauss points.}{47}{section*.84}%
+\contentsline {paragraph}{Caches built once per block.}{47}{section*.85}%
+\contentsline {paragraph}{Memory limit.}{47}{section*.86}%
+\contentsline {section}{\numberline {6.3}Using it}{48}{section.6.3}%
+\contentsline {section}{\numberline {6.4}Verification}{49}{section.6.4}%
+\contentsline {paragraph}{Four element families.}{49}{section*.89}%
+\contentsline {paragraph}{Scaling with the number of elements.}{49}{section*.91}%
+\contentsline {paragraph}{A whole Newton solve.}{49}{section*.93}%
+\contentsline {section}{\numberline {6.5}Related pieces}{50}{section.6.5}%
+\contentsline {section}{\numberline {6.6}Limits}{51}{section.6.6}%
+\contentsline {section}{\numberline {6.7}Summary}{52}{section.6.7}%
+\contentsline {section}{References}{52}{section*.97}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-8}
-\contentsline {chapter}{\numberline {7}Exact unilateral contact: sparse active sets and BDF2}{44}{chapter.7}%
-\contentsline {section}{\numberline {7.1}The problem}{44}{section.7.1}%
-\contentsline {paragraph}{The model problem.}{44}{section*.88}%
-\contentsline {section}{\numberline {7.2}Why not a penalty?}{45}{section.7.2}%
-\contentsline {section}{\numberline {7.3}Mathematical structure}{45}{section.7.3}%
-\contentsline {paragraph}{A minimisation problem.}{45}{section*.91}%
-\contentsline {paragraph}{The condensed problem.}{46}{section*.92}%
-\contentsline {paragraph}{Complementarity as an equation.}{46}{section*.93}%
-\contentsline {section}{\numberline {7.4}The primal-dual active-set method and its three routes}{47}{section.7.4}%
-\contentsline {paragraph}{The algorithm.}{47}{section*.94}%
-\contentsline {paragraph}{Finite termination, and where it is not guaranteed.}{47}{section*.96}%
-\contentsline {paragraph}{Three routes.}{48}{section*.97}%
-\contentsline {section}{\numberline {7.5}Implementation}{48}{section.7.5}%
-\contentsline {paragraph}{Design decisions.}{48}{section*.99}%
-\contentsline {paragraph}{A complete example.}{48}{section*.100}%
-\contentsline {section}{\numberline {7.6}Verification of the static solvers}{49}{section.7.6}%
-\contentsline {paragraph}{The contact conditions.}{49}{section*.102}%
-\contentsline {paragraph}{Agreement with the dense solvers.}{49}{section*.103}%
-\contentsline {paragraph}{Behaviour with problem size.}{50}{section*.105}%
-\contentsline {paragraph}{A larger case, measured on the author's machine.}{51}{section*.108}%
-\contentsline {section}{\numberline {7.7}Contact dynamics}{51}{section.7.7}%
-\contentsline {paragraph}{The semi-discrete problem.}{51}{section*.109}%
-\contentsline {paragraph}{The default scheme (first order).}{51}{section*.110}%
-\contentsline {paragraph}{BDF2.}{52}{section*.111}%
-\contentsline {paragraph}{Order of accuracy.}{52}{section*.112}%
-\contentsline {paragraph}{Impact: where BDF2 is not enough.}{52}{section*.115}%
-\contentsline {paragraph}{How the energy gain depends on the time step.}{53}{section*.118}%
-\contentsline {section}{\numberline {7.8}Failure modes and limits}{54}{section.7.8}%
-\contentsline {section}{\numberline {7.9}Summary}{55}{section.7.9}%
-\contentsline {section}{References}{56}{section*.122}%
+\contentsline {chapter}{\numberline {7}Exact unilateral contact: sparse active sets and BDF2}{53}{chapter.7}%
+\contentsline {section}{\numberline {7.1}The problem}{53}{section.7.1}%
+\contentsline {paragraph}{The model problem.}{53}{section*.98}%
+\contentsline {section}{\numberline {7.2}Why not a penalty?}{54}{section.7.2}%
+\contentsline {section}{\numberline {7.3}Mathematical structure}{54}{section.7.3}%
+\contentsline {paragraph}{A minimisation problem.}{54}{section*.101}%
+\contentsline {paragraph}{The condensed problem.}{55}{section*.102}%
+\contentsline {paragraph}{Complementarity as an equation.}{55}{section*.103}%
+\contentsline {section}{\numberline {7.4}The primal-dual active-set method and its three routes}{56}{section.7.4}%
+\contentsline {paragraph}{The algorithm.}{56}{section*.104}%
+\contentsline {paragraph}{Finite termination, and where it is not guaranteed.}{56}{section*.107}%
+\contentsline {paragraph}{Three routes.}{57}{section*.108}%
+\contentsline {section}{\numberline {7.5}Implementation}{57}{section.7.5}%
+\contentsline {paragraph}{Design decisions.}{57}{section*.110}%
+\contentsline {paragraph}{A complete example.}{58}{section*.111}%
+\contentsline {section}{\numberline {7.6}Verification of the static solvers}{59}{section.7.6}%
+\contentsline {paragraph}{The contact conditions.}{59}{section*.113}%
+\contentsline {paragraph}{Agreement with the dense solvers.}{59}{section*.114}%
+\contentsline {paragraph}{Behaviour with problem size.}{60}{section*.116}%
+\contentsline {paragraph}{A larger case, measured on the author's machine.}{60}{section*.119}%
+\contentsline {section}{\numberline {7.7}Contact dynamics}{60}{section.7.7}%
+\contentsline {paragraph}{The semi-discrete problem.}{60}{section*.120}%
+\contentsline {paragraph}{The default scheme (first order).}{61}{section*.121}%
+\contentsline {paragraph}{BDF2.}{61}{section*.122}%
+\contentsline {paragraph}{Order of accuracy.}{62}{section*.123}%
+\contentsline {paragraph}{Impact: where BDF2 is not enough.}{62}{section*.126}%
+\contentsline {paragraph}{How the energy gain depends on the time step.}{63}{section*.129}%
+\contentsline {section}{\numberline {7.8}Failure modes and limits}{64}{section.7.8}%
+\contentsline {section}{\numberline {7.9}Summary}{64}{section.7.9}%
+\contentsline {section}{References}{65}{section*.133}%
 \gdef \the@ipfilectr {}
-\contentsline {part}{III\hspace {1em}Reduced-order modelling (\texttt {rom\_engine})}{57}{part.3}%
+\contentsline {part}{III\hspace {1em}Reduced-order modelling (\texttt {rom\_engine})}{67}{part.3}%
 \gdef \the@ipfilectr {@-9}
-\contentsline {chapter}{\numberline {8}Projection-based reduction: POD, Galerkin and affine sweeps}{58}{chapter.8}%
-\contentsline {section}{\numberline {8.1}The problem}{58}{section.8.1}%
-\contentsline {paragraph}{The model problem.}{58}{section*.123}%
-\contentsline {section}{\numberline {8.2}Mathematical structure}{59}{section.8.2}%
-\contentsline {paragraph}{Snapshots and POD.}{59}{section*.124}%
-\contentsline {paragraph}{Weighted POD.}{59}{section*.125}%
-\contentsline {paragraph}{Galerkin projection.}{59}{section*.126}%
-\contentsline {paragraph}{Affine parameter dependence.}{59}{section*.128}%
-\contentsline {section}{\numberline {8.3}Implementation in the packages}{61}{section.8.3}%
-\contentsline {section}{\numberline {8.4}Verification}{62}{section.8.4}%
-\contentsline {subsection}{\numberline {8.4.1}Singular values and the held-out error}{62}{subsection.8.4.1}%
-\contentsline {subsection}{\numberline {8.4.2}Weighted against Euclidean POD}{62}{subsection.8.4.2}%
-\contentsline {subsection}{\numberline {8.4.3}How the snapshots are chosen}{63}{subsection.8.4.3}%
-\contentsline {subsection}{\numberline {8.4.4}Modal analysis in the subspace}{63}{subsection.8.4.4}%
-\contentsline {subsection}{\numberline {8.4.5}Offline and online cost}{64}{subsection.8.4.5}%
-\contentsline {paragraph}{What the figures include.}{64}{section*.136}%
-\contentsline {section}{\numberline {8.5}Limits and failure modes}{65}{section.8.5}%
-\contentsline {section}{\numberline {8.6}Summary}{65}{section.8.6}%
-\contentsline {section}{References}{66}{section*.139}%
+\contentsline {chapter}{\numberline {8}Projection-based reduction: POD, Galerkin and affine sweeps}{68}{chapter.8}%
+\contentsline {section}{\numberline {8.1}The problem}{68}{section.8.1}%
+\contentsline {paragraph}{The model problem.}{68}{section*.134}%
+\contentsline {section}{\numberline {8.2}Mathematical structure}{69}{section.8.2}%
+\contentsline {paragraph}{Snapshots and POD.}{69}{section*.135}%
+\contentsline {paragraph}{Weighted POD.}{69}{section*.136}%
+\contentsline {paragraph}{Galerkin projection.}{69}{section*.137}%
+\contentsline {paragraph}{Affine parameter dependence.}{69}{section*.139}%
+\contentsline {section}{\numberline {8.3}Implementation in the packages}{71}{section.8.3}%
+\contentsline {section}{\numberline {8.4}Verification}{72}{section.8.4}%
+\contentsline {subsection}{\numberline {8.4.1}Singular values and the held-out error}{72}{subsection.8.4.1}%
+\contentsline {subsection}{\numberline {8.4.2}Weighted against Euclidean POD}{72}{subsection.8.4.2}%
+\contentsline {subsection}{\numberline {8.4.3}How the snapshots are chosen}{73}{subsection.8.4.3}%
+\contentsline {subsection}{\numberline {8.4.4}Modal analysis in the subspace}{73}{subsection.8.4.4}%
+\contentsline {subsection}{\numberline {8.4.5}Offline and online cost}{74}{subsection.8.4.5}%
+\contentsline {paragraph}{What the figures include.}{74}{section*.147}%
+\contentsline {section}{\numberline {8.5}Limits and failure modes}{75}{section.8.5}%
+\contentsline {section}{\numberline {8.6}Summary}{75}{section.8.6}%
+\contentsline {section}{References}{76}{section*.150}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-10}
-\contentsline {chapter}{\numberline {9}Systems-and-control reduction: balanced truncation, Krylov and SOAR}{69}{chapter.9}%
-\contentsline {section}{\numberline {9.1}The problem}{69}{section.9.1}%
-\contentsline {paragraph}{The model problem.}{69}{section*.140}%
-\contentsline {section}{\numberline {9.2}Mathematical structure}{70}{section.9.2}%
-\contentsline {paragraph}{Balanced truncation.}{70}{section*.141}%
-\contentsline {paragraph}{Krylov moment matching.}{70}{section*.142}%
-\contentsline {paragraph}{SOAR.}{70}{section*.143}%
-\contentsline {paragraph}{Passivity.}{70}{section*.144}%
-\contentsline {section}{\numberline {9.3}Implementation in the packages}{71}{section.9.3}%
-\contentsline {section}{\numberline {9.4}Verification}{71}{section.9.4}%
-\contentsline {subsection}{\numberline {9.4.1}Pre-reduction and the raw model}{72}{subsection.9.4.1}%
-\contentsline {subsection}{\numberline {9.4.2}The a priori bound}{72}{subsection.9.4.2}%
-\contentsline {subsection}{\numberline {9.4.3}Accuracy at equal state count}{73}{subsection.9.4.3}%
-\contentsline {subsection}{\numberline {9.4.4}Locality of moment matching}{74}{subsection.9.4.4}%
-\contentsline {subsection}{\numberline {9.4.5}A scale dependence in SOAR}{74}{subsection.9.4.5}%
-\contentsline {subsection}{\numberline {9.4.6}Stability and passivity}{75}{subsection.9.4.6}%
-\contentsline {section}{\numberline {9.5}Limits and failure modes}{76}{section.9.5}%
-\contentsline {section}{\numberline {9.6}Summary}{76}{section.9.6}%
-\contentsline {section}{References}{77}{section*.153}%
+\contentsline {chapter}{\numberline {9}Systems-and-control reduction: balanced truncation, Krylov and SOAR}{79}{chapter.9}%
+\contentsline {section}{\numberline {9.1}The problem}{79}{section.9.1}%
+\contentsline {paragraph}{The model problem.}{79}{section*.151}%
+\contentsline {section}{\numberline {9.2}Mathematical structure}{80}{section.9.2}%
+\contentsline {paragraph}{Balanced truncation.}{80}{section*.152}%
+\contentsline {paragraph}{Krylov moment matching.}{80}{section*.153}%
+\contentsline {paragraph}{SOAR.}{80}{section*.154}%
+\contentsline {paragraph}{Passivity.}{80}{section*.155}%
+\contentsline {section}{\numberline {9.3}Implementation in the packages}{81}{section.9.3}%
+\contentsline {section}{\numberline {9.4}Verification}{81}{section.9.4}%
+\contentsline {subsection}{\numberline {9.4.1}Pre-reduction and the raw model}{82}{subsection.9.4.1}%
+\contentsline {subsection}{\numberline {9.4.2}The a priori bound}{82}{subsection.9.4.2}%
+\contentsline {subsection}{\numberline {9.4.3}Accuracy at equal state count}{83}{subsection.9.4.3}%
+\contentsline {subsection}{\numberline {9.4.4}Locality of moment matching}{84}{subsection.9.4.4}%
+\contentsline {subsection}{\numberline {9.4.5}A scale dependence in SOAR}{84}{subsection.9.4.5}%
+\contentsline {subsection}{\numberline {9.4.6}Stability and passivity}{85}{subsection.9.4.6}%
+\contentsline {section}{\numberline {9.5}Limits and failure modes}{86}{section.9.5}%
+\contentsline {section}{\numberline {9.6}Summary}{86}{section.9.6}%
+\contentsline {section}{References}{87}{section*.164}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-11}
-\contentsline {chapter}{\numberline {10}Frequency-domain ROMs, greedy training and certified bounds}{78}{chapter.10}%
-\contentsline {section}{\numberline {10.1}The problem}{78}{section.10.1}%
-\contentsline {paragraph}{The model problem.}{78}{section*.154}%
-\contentsline {section}{\numberline {10.2}Mathematical structure}{79}{section.10.2}%
-\contentsline {paragraph}{Affine in $\omega $.}{79}{section*.155}%
-\contentsline {paragraph}{Which basis.}{79}{section*.156}%
-\contentsline {paragraph}{Greedy training.}{79}{section*.157}%
-\contentsline {paragraph}{A certified bound.}{79}{section*.158}%
-\contentsline {paragraph}{Random vibration.}{79}{section*.159}%
-\contentsline {section}{\numberline {10.3}Implementation in the packages}{80}{section.10.3}%
-\contentsline {section}{\numberline {10.4}Verification}{80}{section.10.4}%
-\contentsline {subsection}{\numberline {10.4.1}Greedy against uniform against modal training}{80}{subsection.10.4.1}%
-\contentsline {paragraph}{Cost and local accuracy of the greedy $5$-column model.}{81}{section*.163}%
-\contentsline {subsection}{\numberline {10.4.2}Error indicators}{82}{subsection.10.4.2}%
-\contentsline {subsection}{\numberline {10.4.3}The certified bound}{82}{subsection.10.4.3}%
-\contentsline {subsection}{\numberline {10.4.4}Random vibration}{83}{subsection.10.4.4}%
-\contentsline {section}{\numberline {10.5}Limits and failure modes}{83}{section.10.5}%
-\contentsline {section}{\numberline {10.6}Summary}{84}{section.10.6}%
-\contentsline {section}{References}{84}{section*.169}%
+\contentsline {chapter}{\numberline {10}Frequency-domain ROMs, greedy training and certified bounds}{88}{chapter.10}%
+\contentsline {section}{\numberline {10.1}The problem}{88}{section.10.1}%
+\contentsline {paragraph}{The model problem.}{88}{section*.165}%
+\contentsline {section}{\numberline {10.2}Mathematical structure}{89}{section.10.2}%
+\contentsline {paragraph}{Affine in $\omega $.}{89}{section*.166}%
+\contentsline {paragraph}{Which basis.}{89}{section*.167}%
+\contentsline {paragraph}{Greedy training.}{89}{section*.168}%
+\contentsline {paragraph}{A certified bound.}{89}{section*.169}%
+\contentsline {paragraph}{Random vibration.}{89}{section*.170}%
+\contentsline {section}{\numberline {10.3}Implementation in the packages}{90}{section.10.3}%
+\contentsline {section}{\numberline {10.4}Verification}{90}{section.10.4}%
+\contentsline {subsection}{\numberline {10.4.1}Greedy against uniform against modal training}{90}{subsection.10.4.1}%
+\contentsline {paragraph}{Cost and local accuracy of the greedy $5$-column model.}{91}{section*.174}%
+\contentsline {subsection}{\numberline {10.4.2}Error indicators}{92}{subsection.10.4.2}%
+\contentsline {subsection}{\numberline {10.4.3}The certified bound}{92}{subsection.10.4.3}%
+\contentsline {subsection}{\numberline {10.4.4}Random vibration}{93}{subsection.10.4.4}%
+\contentsline {section}{\numberline {10.5}Limits and failure modes}{93}{section.10.5}%
+\contentsline {section}{\numberline {10.6}Summary}{94}{section.10.6}%
+\contentsline {section}{References}{94}{section*.180}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-12}
-\contentsline {chapter}{\numberline {11}Substructuring and component reduction}{88}{chapter.11}%
-\contentsline {section}{\numberline {11.1}The problem}{88}{section.11.1}%
-\contentsline {section}{\numberline {11.2}Mathematical structure}{88}{section.11.2}%
-\contentsline {paragraph}{Guyan (static) condensation.}{88}{section*.170}%
-\contentsline {paragraph}{Craig--Bampton.}{89}{section*.171}%
-\contentsline {paragraph}{Free-interface reduction.}{89}{section*.172}%
-\contentsline {paragraph}{Interface reduction.}{89}{section*.173}%
-\contentsline {paragraph}{Component POD with a mortar tie.}{89}{section*.174}%
-\contentsline {section}{\numberline {11.3}Implementation in the packages}{90}{section.11.3}%
-\contentsline {section}{\numberline {11.4}Verification}{90}{section.11.4}%
-\contentsline {subsection}{\numberline {11.4.1}Coupled halves of a beam, and Guyan at equal size}{90}{subsection.11.4.1}%
-\contentsline {subsection}{\numberline {11.4.2}Reducing the interface}{91}{subsection.11.4.2}%
-\contentsline {subsection}{\numberline {11.4.3}Free-interface reduction}{92}{subsection.11.4.3}%
-\contentsline {subsection}{\numberline {11.4.4}Component POD with a mortar tie}{93}{subsection.11.4.4}%
-\contentsline {section}{\numberline {11.5}Limits and failure modes}{94}{section.11.5}%
-\contentsline {section}{\numberline {11.6}Summary}{94}{section.11.6}%
-\contentsline {section}{References}{95}{section*.182}%
+\contentsline {chapter}{\numberline {11}Substructuring and component reduction}{98}{chapter.11}%
+\contentsline {section}{\numberline {11.1}The problem}{98}{section.11.1}%
+\contentsline {section}{\numberline {11.2}Mathematical structure}{98}{section.11.2}%
+\contentsline {paragraph}{Guyan (static) condensation.}{98}{section*.181}%
+\contentsline {paragraph}{Craig--Bampton.}{99}{section*.182}%
+\contentsline {paragraph}{Free-interface reduction.}{99}{section*.183}%
+\contentsline {paragraph}{Interface reduction.}{99}{section*.184}%
+\contentsline {paragraph}{Component POD with a mortar tie.}{99}{section*.185}%
+\contentsline {section}{\numberline {11.3}Implementation in the packages}{100}{section.11.3}%
+\contentsline {section}{\numberline {11.4}Verification}{100}{section.11.4}%
+\contentsline {subsection}{\numberline {11.4.1}Coupled halves of a beam, and Guyan at equal size}{100}{subsection.11.4.1}%
+\contentsline {subsection}{\numberline {11.4.2}Reducing the interface}{101}{subsection.11.4.2}%
+\contentsline {subsection}{\numberline {11.4.3}Free-interface reduction}{102}{subsection.11.4.3}%
+\contentsline {subsection}{\numberline {11.4.4}Component POD with a mortar tie}{103}{subsection.11.4.4}%
+\contentsline {section}{\numberline {11.5}Limits and failure modes}{104}{section.11.5}%
+\contentsline {section}{\numberline {11.6}Summary}{104}{section.11.6}%
+\contentsline {section}{References}{105}{section*.193}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-13}
-\contentsline {chapter}{\numberline {12}Non-intrusive identification and nonlinear ROMs}{96}{chapter.12}%
-\contentsline {section}{\numberline {12.1}The problem}{96}{section.12.1}%
-\contentsline {section}{\numberline {12.2}Mathematical structure}{96}{section.12.2}%
-\contentsline {paragraph}{Loewner identification.}{96}{section*.183}%
-\contentsline {paragraph}{Operator inference.}{97}{section*.184}%
-\contentsline {paragraph}{Hybrid nonlinear modal models.}{97}{section*.185}%
-\contentsline {paragraph}{Nonlinear normal modes by harmonic balance.}{97}{section*.186}%
-\contentsline {section}{\numberline {12.3}Implementation in the packages}{98}{section.12.3}%
-\contentsline {paragraph}{A remark on neural models.}{98}{section*.188}%
-\contentsline {section}{\numberline {12.4}Verification}{98}{section.12.4}%
-\contentsline {subsection}{\numberline {12.4.1}Loewner identification}{98}{subsection.12.4.1}%
-\contentsline {subsection}{\numberline {12.4.2}Nonlinear modal ROMs on a clamped--clamped beam}{100}{subsection.12.4.2}%
-\contentsline {paragraph}{Cost and a global error.}{101}{section*.193}%
-\contentsline {subsection}{\numberline {12.4.3}Nonlinear normal mode backbone}{101}{subsection.12.4.3}%
-\contentsline {subsection}{\numberline {12.4.4}Operator inference and contact}{102}{subsection.12.4.4}%
-\contentsline {section}{\numberline {12.5}Limits and failure modes}{103}{section.12.5}%
-\contentsline {section}{\numberline {12.6}Summary}{104}{section.12.6}%
-\contentsline {section}{References}{104}{section*.198}%
+\contentsline {chapter}{\numberline {12}Non-intrusive identification and nonlinear ROMs}{106}{chapter.12}%
+\contentsline {section}{\numberline {12.1}The problem}{106}{section.12.1}%
+\contentsline {section}{\numberline {12.2}Mathematical structure}{106}{section.12.2}%
+\contentsline {paragraph}{Loewner identification.}{106}{section*.194}%
+\contentsline {paragraph}{Operator inference.}{107}{section*.195}%
+\contentsline {paragraph}{Hybrid nonlinear modal models.}{107}{section*.196}%
+\contentsline {paragraph}{Nonlinear normal modes by harmonic balance.}{107}{section*.197}%
+\contentsline {section}{\numberline {12.3}Implementation in the packages}{108}{section.12.3}%
+\contentsline {paragraph}{A remark on neural models.}{108}{section*.199}%
+\contentsline {section}{\numberline {12.4}Verification}{108}{section.12.4}%
+\contentsline {subsection}{\numberline {12.4.1}Loewner identification}{108}{subsection.12.4.1}%
+\contentsline {subsection}{\numberline {12.4.2}Nonlinear modal ROMs on a clamped--clamped beam}{110}{subsection.12.4.2}%
+\contentsline {paragraph}{Cost and a global error.}{111}{section*.204}%
+\contentsline {subsection}{\numberline {12.4.3}Nonlinear normal mode backbone}{111}{subsection.12.4.3}%
+\contentsline {subsection}{\numberline {12.4.4}Operator inference and contact}{112}{subsection.12.4.4}%
+\contentsline {section}{\numberline {12.5}Limits and failure modes}{113}{section.12.5}%
+\contentsline {section}{\numberline {12.6}Summary}{114}{section.12.6}%
+\contentsline {section}{References}{114}{section*.209}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-14}
-\contentsline {chapter}{\numberline {13}Hyper-reduction and contact reduced-order models}{106}{chapter.13}%
-\contentsline {section}{\numberline {13.1}The problem}{106}{section.13.1}%
-\contentsline {section}{\numberline {13.2}Mathematical structure}{106}{section.13.2}%
-\contentsline {paragraph}{Energy-conserving sampling and weighting.}{106}{section*.199}%
-\contentsline {paragraph}{Contact in a reduced model.}{107}{section*.201}%
-\contentsline {paragraph}{Snapshot selection by the contact conditions.}{108}{section*.203}%
-\contentsline {paragraph}{Contact-aware ECSW and the hybrid reduced domain.}{109}{section*.205}%
-\contentsline {paragraph}{Linear and nonlinear zones.}{110}{section*.207}%
-\contentsline {section}{\numberline {13.3}Implementation in the packages}{112}{section.13.3}%
-\contentsline {section}{\numberline {13.4}Verification}{113}{section.13.4}%
-\contentsline {subsection}{\numberline {13.4.1}Dynamic contact on an obstacle membrane}{113}{subsection.13.4.1}%
-\contentsline {paragraph}{Cost and local quantities.}{114}{section*.212}%
-\contentsline {subsection}{\numberline {13.4.2}Greedy snapshot selection}{114}{subsection.13.4.2}%
-\contentsline {subsection}{\numberline {13.4.3}ECSW on a hardening chain with contact}{114}{subsection.13.4.3}%
-\contentsline {paragraph}{Tolerance.}{115}{section*.215}%
-\contentsline {paragraph}{Plain against contact-aware weights.}{115}{section*.217}%
-\contentsline {paragraph}{Offline, online and lift cost of the chain model.}{115}{section*.220}%
-\contentsline {paragraph}{Reconstructing contact forces and the rank condition.}{116}{section*.221}%
-\contentsline {paragraph}{Batched evaluation.}{116}{section*.222}%
-\contentsline {subsection}{\numberline {13.4.4}Linear and nonlinear zones}{116}{subsection.13.4.4}%
-\contentsline {subsection}{\numberline {13.4.5}Hybrid hyper-reduction on a reduced integration domain}{116}{subsection.13.4.5}%
-\contentsline {section}{\numberline {13.5}Limits and failure modes}{117}{section.13.5}%
-\contentsline {section}{\numberline {13.6}Summary}{117}{section.13.6}%
-\contentsline {section}{References}{118}{section*.225}%
+\contentsline {chapter}{\numberline {13}Hyper-reduction and contact reduced-order models}{116}{chapter.13}%
+\contentsline {section}{\numberline {13.1}The problem}{116}{section.13.1}%
+\contentsline {section}{\numberline {13.2}Mathematical structure}{116}{section.13.2}%
+\contentsline {paragraph}{Energy-conserving sampling and weighting.}{116}{section*.210}%
+\contentsline {paragraph}{Contact in a reduced model.}{117}{section*.212}%
+\contentsline {paragraph}{Snapshot selection by the contact conditions.}{118}{section*.214}%
+\contentsline {paragraph}{Contact-aware ECSW and the hybrid reduced domain.}{119}{section*.216}%
+\contentsline {paragraph}{Linear and nonlinear zones.}{120}{section*.218}%
+\contentsline {section}{\numberline {13.3}Implementation in the packages}{122}{section.13.3}%
+\contentsline {section}{\numberline {13.4}Verification}{123}{section.13.4}%
+\contentsline {subsection}{\numberline {13.4.1}Dynamic contact on an obstacle membrane}{123}{subsection.13.4.1}%
+\contentsline {paragraph}{Cost and local quantities.}{124}{section*.223}%
+\contentsline {subsection}{\numberline {13.4.2}Greedy snapshot selection}{124}{subsection.13.4.2}%
+\contentsline {subsection}{\numberline {13.4.3}ECSW on a hardening chain with contact}{124}{subsection.13.4.3}%
+\contentsline {paragraph}{Tolerance.}{125}{section*.226}%
+\contentsline {paragraph}{Plain against contact-aware weights.}{125}{section*.228}%
+\contentsline {paragraph}{Offline, online and lift cost of the chain model.}{125}{section*.231}%
+\contentsline {paragraph}{Reconstructing contact forces and the rank condition.}{126}{section*.232}%
+\contentsline {paragraph}{Batched evaluation.}{126}{section*.233}%
+\contentsline {subsection}{\numberline {13.4.4}Linear and nonlinear zones}{126}{subsection.13.4.4}%
+\contentsline {subsection}{\numberline {13.4.5}Hybrid hyper-reduction on a reduced integration domain}{126}{subsection.13.4.5}%
+\contentsline {section}{\numberline {13.5}Limits and failure modes}{127}{section.13.5}%
+\contentsline {section}{\numberline {13.6}Summary}{127}{section.13.6}%
+\contentsline {section}{References}{128}{section*.236}%
 \gdef \the@ipfilectr {}
-\contentsline {part}{IV\hspace {1em}Verification}{121}{part.4}%
+\contentsline {part}{IV\hspace {1em}Verification}{131}{part.4}%
 \gdef \the@ipfilectr {@-15}
-\contentsline {chapter}{\numberline {14}Verification, reproduction studies and a parametric pipeline}{122}{chapter.14}%
+\contentsline {chapter}{\numberline {14}Verification, reproduction studies and a parametric pipeline}{132}{chapter.14}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-16}
-\contentsline {chapter}{\numberline {A}Differentiable assembly and autograd tangents}{123}{appendix.A}%
+\contentsline {chapter}{\numberline {A}Differentiable assembly and autograd tangents}{133}{appendix.A}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-17}
-\contentsline {chapter}{\numberline {B}Verification conventions and tolerances}{124}{appendix.B}%
-\contentsline {section}{\numberline {B.1}A template for a convergence study}{124}{section.B.1}%
-\contentsline {section}{\numberline {B.2}Tolerances used in the book}{124}{section.B.2}%
-\contentsline {section}{\numberline {B.3}What a reported ROM number states}{124}{section.B.3}%
+\contentsline {chapter}{\numberline {B}Verification conventions and tolerances}{134}{appendix.B}%
+\contentsline {section}{\numberline {B.1}A template for a convergence study}{134}{section.B.1}%
+\contentsline {section}{\numberline {B.2}Tolerances used in the book}{134}{section.B.2}%
+\contentsline {section}{\numberline {B.3}What a reported ROM number states}{134}{section.B.3}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-18}
-\contentsline {chapter}{\numberline {C}Notation and glossary}{126}{appendix.C}%
-\contentsline {section}{\numberline {C.1}Notation}{126}{section.C.1}%
-\contentsline {section}{\numberline {C.2}Glossary}{126}{section.C.2}%
+\contentsline {chapter}{\numberline {C}Notation and glossary}{136}{appendix.C}%
+\contentsline {section}{\numberline {C.1}Notation}{136}{section.C.1}%
+\contentsline {section}{\numberline {C.2}Glossary}{136}{section.C.2}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-19}
-\contentsline {chapter}{\numberline {D}Chapters, scripts and package tests}{128}{appendix.D}%
+\contentsline {chapter}{\numberline {D}Chapters, scripts and package tests}{138}{appendix.D}%
 \gdef \the@ipfilectr {}

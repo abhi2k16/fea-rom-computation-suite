@@ -68,14 +68,25 @@ Indeed, if $g_i>0$ the maximum is $0$ and the equation forces $\lambda_i=0$; if 
 Let $\mathcal A_k$ be the set of constraints assumed active at iteration $k$. The Newton step for \eqref{eq:ct-nonsmooth} treats the constraints in $\mathcal A_k$ as equalities $(\bm B\bm u)_i=c_i$, sets $\lambda_i=0$ outside, solves the resulting linear system, and then reclassifies each constraint by the sign of $\lambda_i-c_pg_i$.
 
 \begin{algbox}{Primal-dual active set (semismooth Newton)}
-\begin{enumerate}[leftmargin=1.5em]
-\item Choose $\mathcal A_0$ (empty, or the active set of a nearby problem: a warm start).
-\item Solve for $(\bm u,\bm\lambda_{\mathcal A})$: $\ \bm K\bm u-\bm B_{\mathcal A}^T\bm\lambda_{\mathcal A}=\bm f,\ \ \bm B_{\mathcal A}\bm u=\bm c_{\mathcal A}$; set $\lambda_i=0$ for $i\notin\mathcal A$.
-\item Compute the gap $\bm g=\bm B\bm u-\bm c$.
-\item Update $\mathcal A_{k+1}=\{\,i:\ \lambda_i-c_p\,g_i>0\,\}$.
-\item If $\mathcal A_{k+1}=\mathcal A_k$ and the contact conditions hold to the tolerance, stop. If $\mathcal A_{k+1}$ has been seen before, report cycling. Otherwise return to step 2.
-\end{enumerate}
+\begin{pseudo}
+\Require $\bm K,\bm f,\bm B,\bm c$, scale $c_p$, initial active set $\mathcal A_0$ (empty, or a warm start)
+\Repeat
+  \State solve $\bm K\bm u-\bm B_{\mathcal A}^T\bm\lambda_{\mathcal A}=\bm f$,\ $\bm B_{\mathcal A}\bm u=\bm c_{\mathcal A}$;\ $\lambda_i\gets0$ for $i\notin\mathcal A$ \Comment{\texttt{reduced}, \texttt{saddle} or \texttt{condensed} route}
+  \State $\bm g\gets\bm B\bm u-\bm c$
+  \State $\mathcal A_{k+1}\gets\{i:\lambda_i-c_pg_i>0\}$
+  \If{$\mathcal A_{k+1}$ was seen before} \textbf{report cycling and stop} \EndIf
+\Until{$\mathcal A_{k+1}=\mathcal A_k$ and the contact conditions hold to the tolerance}
+\Ensure $\bm u$, $\bm\lambda\ge\bm0$, active set
+\end{pseudo}
+\begin{algdet}
+\item[Cost] one sparse factorisation per iteration (free block for \texttt{reduced}, saddle-point matrix for \texttt{saddle}); a warm start from a nearby problem saves iterations.
+\item[Fails when] $\bm K$ is not an M-matrix (no finite-termination guarantee: the solver reports cycling or stalling); the dense \texttt{condensed} route needs about $8(nm+m^2)$ bytes.
+\item[Code] \anchor{fea_engine.contact_solvers.solve_contact_static_sparse}.
+\item[Verified in] \Cref{fig:ct-trace}, \Cref{tab:ct-agree} (agreement with the dense solvers).
+\end{algdet}
 \end{algbox}
+
+\tikzfigure[0.98\linewidth]{ch07_complementarity}{Left: the complementarity condition (red) against a penalty law (blue, dashed), which lets the gap become negative. Right: the active-set iteration in four steps.}{fig:ct-idea}
 
 The constant $c_p$ sets the scale on which gap and force are compared; the implementation takes the mean diagonal of $\bm K$ (divided by the mean squared row norm of $\bm B$ for a general $\bm B$), so that the two terms have the same units. Starting from an empty set, the first iterate is the unconstrained solution; every constraint it violates enters the active set, and constraints that were wrongly included leave in later iterations. \Cref{fig:ct-trace} shows this on the model problem: the active set starts with $\ctcTraceFirst$ constraints and shrinks monotonically to the final $\ctcTraceFinal$, and the number of constraints that change status per iteration falls to zero. Both routes have the same number of active constraints at every iteration.
 
@@ -231,6 +242,22 @@ The second-order backward differentiation formula~\cite{hairer1996ode2} applied 
 \Bigl(\tfrac{9}{4h^2}\bm M+\bm K\Bigr)\bm u_{n+1}=\bm f_{n+1}+\bm B^T\bm\lambda_{n+1}+\bm M\Bigl[\tfrac{3(4\bm u_n-\bm u_{n-1})}{4h^2}+\tfrac{4\bm v_n-\bm v_{n-1}}{2h}\Bigr],
 \end{equation}
 together with the contact conditions at $\bm u_{n+1}$. The first step is a BDF1 step, $(\bm M/h^2+\bm K)\bm u_1=\dots$ with $\bm v_1=(\bm u_1-\bm u_0)/h$, and contact is enforced at every step including the first. Both effective matrices are factored once. The unknowns of each step are solved by the static solvers; with \code{method="pdas"} the sparse solver is used at every step with the previous contact set as the warm start.
+
+\begin{algbox}{One BDF2 step with contact}
+\begin{pseudo}
+\Require $\bm M,\bm K,\bm B,\bm c$, step $h$, states $(\bm u_n,\bm v_n)$ and $(\bm u_{n-1},\bm v_{n-1})$, load $\bm f_{n+1}$, previous active set
+\State \textbf{first step (BDF1):} matrix $\bm M/h^2+\bm K$, right-hand side from $\bm u_0,\bm v_0$; \textbf{later steps:} $\tfrac{9}{4h^2}\bm M+\bm K$ and $\bm M\big[\tfrac{3(4\bm u_n-\bm u_{n-1})}{4h^2}+\tfrac{4\bm v_n-\bm v_{n-1}}{2h}\big]$ (factored once)
+\State solve $(\ \cdot\ )\bm u_{n+1}=\bm f_{n+1}+\bm B^T\bm\lambda_{n+1}+(\ \cdot\ )$ with $\bm B\bm u_{n+1}\ge\bm c$,\ $\bm\lambda_{n+1}\ge\bm0$, complementarity \Comment{static contact solver, previous contact set as warm start}
+\State $\bm v_{n+1}\gets(3\bm u_{n+1}-4\bm u_n+\bm u_{n-1})/(2h)$ \Comment{BDF1: $(\bm u_1-\bm u_0)/h$}
+\Ensure $(\bm u_{n+1},\bm v_{n+1},\bm\lambda_{n+1})$ or the failing step with its reason
+\end{pseudo}
+\begin{algdet}
+\item[Cost] one back-substituted contact solve per step; both effective matrices factored once.
+\item[Fails when] a contact solve fails inside a run (\code{info} holds \code{failed_step}, \code{reason}, \code{suggestion}); the energy rises across contact steps (BDF2 is not energy-conserving).
+\item[Code] \anchor{fea_engine.contact_solvers.solve_contact_dynamics}, \anchor{fea_engine.contact_solvers.ContactDynamicsInfo}.
+\item[Verified in] \Cref{tab:ct-order} (second order), \Cref{tab:ct-impact} (impact energy).
+\end{algdet}
+\end{algbox}
 
 \begin{lstlisting}[caption={Contact time stepping: default scheme and BDF2.},label={lst:ct-dyn}]
 from fea_engine import solve_contact_dynamics

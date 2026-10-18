@@ -33,6 +33,29 @@ All elements of one block (one element type with one material) share the referen
 \caption{Estimated working memory of a batched tangent call (the dominant arrays, not the peak resident memory), from the package's own estimate.}\label{tab:bk-chunk}
 \end{table}
 
+\tikzfigure[0.98\linewidth]{ch06_batched}{Loop against batched assembly. The loop is the default and the reference; the batched path replaces the element loop by array contractions, in chunks, with a cached sparse pattern.}{fig:bk-flow}
+
+\begin{algbox}{Batched assembly of the tangent for one block}
+\begin{pseudo}
+\Require block of $E$ elements (one type, one material), displacement $\bm u$, memory budget
+\State \textbf{once per block:} reference gradients $\partial\bm N/\partial\bm X$ and weights $w_gJ_{0,g}$ (geometry cache); CSR pattern and, for every element-matrix entry, its position in the data array (one sort)
+\State split the elements into chunks whose estimated working memory is under the budget
+\For{each chunk}
+  \State gather $\bm u_e$ for all elements of the chunk, shape $(E_c,n_{dof})$
+  \State $\bm F,\bm E,\bm S$ at all Gauss points of the chunk by contractions \Comment{no Python loop over elements}
+  \State element tangents $\bm K_e=\sum_g w_gJ_{0,g}[\bm B^T\bm D\bm B+\text{geometric}]$, shape $(E_c,n_{dof},n_{dof})$
+  \State accumulate the entries into the CSR data array with one \texttt{bincount} through the position map
+\EndFor
+\Ensure sparse tangent $\bm K_T$ (never an $n\times n$ dense array)
+\end{pseudo}
+\begin{algdet}
+\item[Cost] $O(E\,n_g\,n_{dof}^2)$ arithmetic with no per-element interpreter overhead; working memory $\propto E_c\,n_g\,n_{str}\,n_{dof}$ per chunk.
+\item[Fails when] the element is path-dependent or has no batched kernel (reported by \code{batch_support_report}, and the block stays on the loop); the mesh or Gauss order changes (the cache is rebuilt, compared exactly).
+\item[Code] \code{assemble_tangent_stiffness(..., vectorized=True, sparse=True)}, \code{batch_support_report}.
+\item[Verified in] \Cref{sec:bk-verif}: agreement with the loop and the measured gain on four element families.
+\end{algdet}
+\end{algbox}
+
 \section{Using it}\label{sec:bk-use}
 
 The loop remains the default. The batched path is requested with \code{vectorized=True} on an assembly call, or for a whole analysis with \code{fes.batched = True}; an explicit argument overrides the attribute. Before running, \code{batch_support_report} says for every block whether it can be batched, and after an assembly \code{last_assembly_modes} says what was done.

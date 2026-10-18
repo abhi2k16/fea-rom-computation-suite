@@ -14,14 +14,27 @@ A linear model solves $\bm K\bm u=\bm f$ once. A nonlinear model has an internal
 Two things change. First, the solution has to be found by iteration: Newton's method linearises \eqref{eq:nl-residual} with the tangent stiffness $\bm K_T(\bm u)=\partial\bm f_{int}/\partial\bm u$. Second, the response may have no unique answer for a given load: when the load-displacement curve turns back, there are several equilibrium states for one $\lambda$, and a method that prescribes $\lambda$ cannot follow the curve (\Cref{sec:nl-paths}). The standard references are \citet{zienkiewicz2013fem}, \citet{bathe2014fep} and, for inelasticity, \citet{simo1998inelasticity}.
 
 \begin{algbox}{Newton iteration for one load step}
-\begin{enumerate}[leftmargin=1.5em]
-\item Given the converged state at load $\lambda_n$, set the new load $\lambda_{n+1}$ and start from $\bm u^{0}=\bm u_n$.
-\item Assemble $\bm f_{int}(\bm u^{k})$ and the residual $\bm r^{k}=\bm f_{int}(\bm u^{k})-\lambda_{n+1}\bm f_{ref}$ on the free unknowns.
-\item If $\|\bm r^{k}\|$ is below the tolerance (relative to the load), stop.
-\item Assemble $\bm K_T(\bm u^{k})$, solve $\bm K_T\,\Delta\bm u=-\bm r^{k}$ on the free unknowns, and set $\bm u^{k+1}=\bm u^{k}+\Delta\bm u$ (with a line search if the plain step fails).
-\item After convergence, update the history variables of the material once, and move to the next step.
-\end{enumerate}
+\begin{pseudo}
+\Require converged state $(\bm u_n,\lambda_n)$, new load $\lambda_{n+1}$, tolerance
+\State $\bm u^0\gets\bm u_n$
+\For{$k=0,1,\dots$}
+  \State assemble $\bm f_{int}(\bm u^k)$;\ $\bm r^k\gets\bm f_{int}(\bm u^k)-\lambda_{n+1}\bm f_{ref}$ on the free unknowns
+  \If{$\|\bm r^k\|\le\mathrm{tol}$ (relative to the load)} \textbf{stop} \EndIf
+  \State assemble $\bm K_T(\bm u^k)$;\ solve $\bm K_T\Delta\bm u=-\bm r^k$ on the free unknowns
+  \State $\bm u^{k+1}\gets\bm u^k+\Delta\bm u$ \Comment{with a line search if the plain step fails}
+\EndFor
+\State commit the history variables once
+\Ensure converged state at $\lambda_{n+1}$
+\end{pseudo}
+\begin{algdet}
+\item[Cost] one assembly and one factorisation per iteration; quadratic convergence only if $\bm K_T$ is the exact derivative of $\bm f_{int}$.
+\item[Fails when] the load is beyond a limit point (use displacement control or arc length); the tangent is inconsistent (slow convergence); the step is too large.
+\item[Code] \anchor{fea_engine.nonlinear_solver.solve_nonlinear_static}, \anchor{fea_engine.newton_options.NewtonOptions}.
+\item[Verified in] \Cref{tab:nl-tangent} (tangent against finite differences), \Cref{fig:nl-vm}.
+\end{algdet}
 \end{algbox}
+
+\tikzfigure[0.7\linewidth]{ch05_newton}{One Newton iteration on a scalar equilibrium curve (schematic): the tangent at $\bm u^0$ is followed to the load level, and the new iterate is the foot of that line.}{fig:nl-newtonidea}
 
 Step~4 is why the tangent matters. If $\bm K_T$ is the exact derivative of $\bm f_{int}$, the iteration converges quadratically near the solution; if it is only approximate, convergence is slower or fails. \Cref{sec:nl-verif} measures how close the tangents of \fea{} are to the exact derivative.
 
@@ -58,6 +71,27 @@ For large strains, the St.~Venant--Kirchhoff law is replaced by a strain-energy 
 Plasticity depends on the path, not only on the current displacement: the stress is a function of the plastic strain accumulated so far. The material keeps a state, here $\{\varepsilon_p,\alpha\}$ (plastic strain and accumulated plastic strain), and the solver treats it in two phases. During a Newton iteration the element computes a \emph{trial} response from the state of the last converged step and does not change the state. Only when the step has converged, the solver calls the element's \code{commit_state} \emph{once}, which replays the same computation and stores the new state. If the state were changed during iterations, a step that is later rejected would leave a wrong history behind.
 
 For the uniaxial bar of \anchor{fea_engine.elements.trusses.TrussPlastic2D} with the material \anchor{fea_engine.material.PlasticMaterial1D} (modulus $E$, initial yield stress $\sigma_y$, isotropic hardening modulus $H$) the return map is closed form. The trial stress is $\sigma^{tr}=E(\varepsilon-\varepsilon_p^n)$ and the yield function is $f=|\sigma^{tr}|-(\sigma_y+H\alpha^n)$. If $f\le0$ the step is elastic; otherwise the plastic multiplier is $\Delta\gamma=f/(E+H)$, the stress becomes $\sigma=\sigma^{tr}-E\,\Delta\gamma\,\operatorname{sign}\sigma^{tr}$, and the consistent tangent is $E_T=EH/(E+H)$. The same structure, with a radial return in deviatoric space, is used by the continuum element \anchor{fea_engine.elements.nonlinear_solids.Hex8PlasticJ2}, \citep{simo1985tangent,simo1998inelasticity}.
+
+\begin{algbox}{Return map for a bar with isotropic hardening (closed form)}
+\begin{pseudo}
+\Require strain $\varepsilon$ of the trial step; stored $\varepsilon_p^n$, $\alpha^n$; $E,\ \sigma_y,\ H$
+\State $\sigma^{tr}\gets E(\varepsilon-\varepsilon_p^n)$;\ $f\gets|\sigma^{tr}|-(\sigma_y+H\alpha^n)$
+\If{$f\le0$}
+  \State $\sigma\gets\sigma^{tr}$;\ $E_T\gets E$ \Comment{elastic step}
+\Else
+  \State $\Delta\gamma\gets f/(E+H)$;\ $\sigma\gets\sigma^{tr}-E\Delta\gamma\,\mathrm{sign}\,\sigma^{tr}$;\ $E_T\gets EH/(E+H)$
+  \State trial state: $\varepsilon_p\gets\varepsilon_p^n+\Delta\gamma\,\mathrm{sign}\,\sigma^{tr}$,\ $\alpha\gets\alpha^n+\Delta\gamma$
+\EndIf
+\State \textbf{only} \texttt{commit\_state} after the Newton step has converged stores $(\varepsilon_p,\alpha)$
+\Ensure stress $\sigma$, consistent tangent $E_T$
+\end{pseudo}
+\begin{algdet}
+\item[Cost] a handful of scalar operations per element and iteration; the continuum element does the radial return in deviatoric space.
+\item[Fails when] the state is changed during iterations (a rejected step would leave a wrong history); the tangent is not the consistent one (loss of quadratic convergence).
+\item[Code] \anchor{fea_engine.elements.trusses.TrussPlastic2D}, \anchor{fea_engine.material.PlasticMaterial1D}.
+\item[Verified in] \Cref{fig:nl-plast} (closed-form return map), hand-solved load cycle.
+\end{algdet}
+\end{algbox}
 
 \Cref{fig:nl-plast} drives a bar with $E=200$ GPa, $\sigma_y=250$ MPa and $H=5$ GPa through a load cycle: tension to $1.8\sigma_y$, unloading, and compression into reverse yield. Four properties follow from the return map, and all are visible in the figure and checked against the hand solution. The stress at the peak is \cnlPlPeak$\,\sigma_y$. The first unloading is elastic with slope $\cnlPlUnloadSlope\,E$. The reversed branch leaves the elastic line at a compressive stress of \cnlPlReverseYield$\,\sigma_y$, equal to the hardened yield stress $\cnlPlHardenedYield\,\sigma_y$ reached on the way up: this is isotropic hardening, which has no Bauschinger effect. And the reversed branch continues with the slope $E_T=\cnlPlTangentSlope$ GPa. The whole stress history agrees with the closed form to \cnlPlErr (relative to the peak stress).
 
@@ -130,6 +164,29 @@ lam, U = nls.solve_nonlinear_arc_length(
 \includegraphics[width=0.7\linewidth]{figures/ch05_vonmises.pdf}
 \caption{The von Mises truss: closed form \eqref{eq:nl-vm}, displacement control and arc length. Load control cannot pass the limit load. Produced by \texttt{scripts/ch05\_assets.py}; the problem is the one of \texttt{fea\_engine/examples/arc\_length\_snap\_through\_demo.py}.}\label{fig:nl-vm}
 \end{figure}
+
+\tikzfigure[0.95\linewidth]{ch05_snapthrough}{Following a response with a limit point (schematic). Load control cannot pass the limit load; displacement control follows a snap-through but not a snap-back; arc length constrains the step length and makes the load factor an unknown.}{fig:nl-pathsidea}
+
+\begin{algbox}{Crisfield cylindrical arc length for one step}
+\begin{pseudo}
+\Require converged $(\bm u_n,\lambda_n)$, arc radius $\Delta_L$, previous step increment
+\State $\delta\bm u_f\gets\bm K_T^{-1}\bm f_{ref}$;\ predictor $\Delta\bm u\gets\pm\Delta_L\,\delta\bm u_f/\|\delta\bm u_f\|$,\ $\Delta\lambda\gets\pm\Delta_L/\|\delta\bm u_f\|$ \Comment{sign: continue the previous direction}
+\Repeat
+  \State $\bm r\gets\bm f_{int}(\bm u)-\lambda\bm f_{ref}$;\ $\delta\bm u_r\gets-\bm K_T^{-1}\bm r$;\ $\delta\bm u_f\gets\bm K_T^{-1}\bm f_{ref}$
+  \State solve $\|\Delta\bm u+\delta\bm u_r+\delta\lambda\,\delta\bm u_f\|^2=\Delta_L^2$ for $\delta\lambda$ \Comment{quadratic, two roots}
+  \State take the root whose increment has the larger dot product with the increment accumulated in this step
+  \State $\Delta\bm u\gets\Delta\bm u+\delta\bm u_r+\delta\lambda\,\delta\bm u_f$;\ $\Delta\lambda\gets\Delta\lambda+\delta\lambda$;\ update $(\bm u,\lambda)$
+\Until{$\|\bm r\|$ below tolerance}
+\State commit the history variables once
+\Ensure next point $(\bm u_{n+1},\lambda_{n+1})$ on the path
+\end{pseudo}
+\begin{algdet}
+\item[Cost] two linear solves per iteration with the same tangent; a fixed radius, no step adaptation.
+\item[Fails when] $\Delta_L$ is too large (the predictor can jump to another branch or the corrector fail); the wrong root is picked at a sharp turn.
+\item[Code] \anchor{fea_engine.nonlinear_solver.solve_nonlinear_arc_length}.
+\item[Verified in] \Cref{fig:nl-vm} (the von Mises truss against its closed form). Koiter--Newton, in the same module, is not verified in this book.
+\end{algdet}
+\end{algbox}
 
 \paragraph{Choosing a driver.}
 \Cref{tab:nl-drivers} lists the drivers. Load control is the cheapest and the right default for a response that rises monotonically with the load. Displacement control suits a problem where the displacement of one point is the natural control (an indentation, a snap with one dominant dof). Arc length \citep{riks1979,crisfield1981} needs only a reference load and handles turning points in load and in displacement. Koiter--Newton \citep{liang2014koiternewton} replaces the linear predictor of arc length by a cubic one built from an asymptotic expansion; it is not exercised in this chapter.

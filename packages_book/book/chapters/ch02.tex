@@ -11,6 +11,26 @@ A \anchor{fea_engine.mesh.Mesh} holds an array of node coordinates of shape $(n_
 
 The one property that the mesh must have for any element is a positive Jacobian determinant at every Gauss point: an inverted element gives a wrong or negative stiffness without any error being raised. \code{check_quality(element)} evaluates $\det\bm J$ at every Gauss point with the element's own shape functions and reports the ratio of the largest to the smallest value.
 
+\tikzfigure[0.55\linewidth]{ch02_jacobian}{Why a positive Jacobian matters. A convex element has $\det\bm J>0$ at every Gauss point; a re-entrant corner makes it non-positive and the stiffness wrong without an error message.}{fig:me-jacobian}
+
+\begin{algbox}{Mesh quality check}
+\begin{pseudo}
+\Require mesh, element formulation (shape functions, Gauss rule)
+\For{each element $e$ and each Gauss point $g$}
+  \State $\bm J\gets\partial\bm x/\partial\bm\xi$ from the node coordinates and the shape-function derivatives
+  \State $d_{eg}\gets\det\bm J$
+\EndFor
+\State report $\min d_{eg}$, $\max d_{eg}/\min d_{eg}$ and whether all $d_{eg}>0$
+\Ensure quality report
+\end{pseudo}
+\begin{algdet}
+\item[Cost] $n_e\,n_g$ small determinants.
+\item[Fails when] it is not called: nothing else checks it. A positive ratio of the extremes says the element is distorted, not wrong.
+\item[Code] \code{check_quality(element)} on \anchor{fea_engine.mesh.Mesh}.
+\item[Verified in] \Cref{tab:me-gen} (all generated meshes pass).
+\end{algdet}
+\end{algbox}
+
 \section{Generators}\label{sec:me-gen}
 
 \Cref{tab:me-gen} lists the generators that are used in this book and checks each one. For a mesh with straight element edges the sum of the element areas (or volumes) must equal the area of the domain; for a domain with a circular boundary the elements approximate the arc by a polygon, and the sum is lower than the exact area by an amount that must go to zero as the arc is refined. The generators are \anchor{fea_engine.mesh.rectangle_mesh}, \anchor{fea_engine.mesh.rectangle_with_hole_mesh_quarter} (a quarter of a plate with a hole, for symmetry boundary conditions), \anchor{fea_engine.mesh.hole_in_rectangle_mesh} (a hole anywhere in the rectangle, built from four quadrant blocks welded along shared edges), \anchor{fea_engine.mesh.notch_in_rectangle_mesh}, \anchor{fea_engine.mesh.fillet_in_rectangle_mesh}, and for three dimensions \anchor{fea_engine.mesh.extrude_mesh} (a quadrilateral mesh stacked into hexahedra), \anchor{fea_engine.mesh.box_mesh} and \anchor{fea_engine.mesh.box_with_hole_mesh}. \Cref{fig:me-meshes} shows four of them.
@@ -33,6 +53,28 @@ All \cmeGenNRows{} meshes of \Cref{tab:me-gen} have positive Jacobians. The stra
 
 Near a hole, a notch or a fillet the stress changes quickly, and the mesh should be fine there and coarse far away. The structured generators use the power-law partition $x_i=L\,(i/n)^p$ (\anchor{fea_engine.grading.graded_partition}), uniform for $p=1$ and clustered at one end for $p>1$. A clustering exponent chosen by hand hides the quantity that matters for accuracy, the ratio of the sizes of adjacent elements. For $n=20$ and $p=2$ this ratio is \cmeGradeRatioPTwo{} (against \cmeGradeRatioPOne{} for the uniform case), more than the value of about 1.2 that is commonly cited as the target, and more than the value above which \fea{} warns (1.5). The function \anchor{fea_engine.grading.grade_for_growth_ratio} turns the question around: given a target growth ratio it finds, by bisection, the largest exponent for which the realised ratio does not exceed it, which works because the ratio increases monotonically with $p$.
 
+\begin{algbox}{Grading to a target growth ratio by bisection}
+\begin{pseudo}
+\Require number of elements $n$, target growth ratio $\rho^\ast$, bracket $[p_{lo},p_{hi}]$ with $p_{lo}=1$
+\State define $\rho(p)=\max_i h_{i+1}/h_i$ for the partition $x_i=L(i/n)^p$ \Comment{increases with $p$}
+\While{$p_{hi}-p_{lo}>$ tolerance}
+  \State $p\gets(p_{lo}+p_{hi})/2$
+  \If{$\rho(p)\le\rho^\ast$}
+    \State $p_{lo}\gets p$
+  \Else
+    \State $p_{hi}\gets p$
+  \EndIf
+\EndWhile
+\Ensure $p=p_{lo}$: the largest exponent whose ratio does not exceed $\rho^\ast$
+\end{pseudo}
+\begin{algdet}
+\item[Cost] about $\log_2((p_{hi}-p_{lo})/\mathrm{tol})$ evaluations of $\rho$, each $O(n)$.
+\item[Fails when] the target is below what $n$ elements can give for any $p>1$ (returns $p=1$, uniform); bisection relies on $\rho(p)$ being monotone, which holds for this partition.
+\item[Code] \anchor{fea_engine.grading.grade_for_growth_ratio}, \anchor{fea_engine.grading.growth_ratio_of_partition}.
+\item[Verified in] \Cref{fig:me-grading} (realised ratio within $0.1\,\%$ below the target).
+\end{algdet}
+\end{algbox}
+
 \Cref{fig:me-grading} (left) shows the realised ratio against $p$ and (right) the partition chosen for a target of 1.2: $p=\cmeGradeForTarget$, with realised ratio \cmeGradeRealTarget. For the targets 1.1, 1.2, 1.3, 1.5 and 2.0 the realised ratio is within 0.1\% below the target and never above it (\cmeGradeWorstOver{}\% at the worst). The hole mesh of \Cref{fig:me-meshes} (top left) uses this rule through \anchor{fea_engine.mesh.hole_in_rectangle_mesh_graded}; the ratio of the largest to the smallest element area in it is \cmeGradedSizeRatio.
 
 \begin{figure}[ht]
@@ -48,6 +90,8 @@ Near a hole, a notch or a fillet the stress changes quickly, and the mesh should
 A \code{MultiBlockMesh} holds blocks of different topologies over one node array: \code{blocks} maps a name to a connectivity array, and \code{FESystem} takes a dictionary of the same keys with one element per block. Two blocks are joined only by \emph{shared node numbers} along their interface, so there is no separate interface object, and the interface condition (continuity of displacement) holds by construction. One constraint follows from numbering degrees of freedom per node: all blocks of one system must have the same \code{dofs_per_node}, so a membrane block and a plate-bending block cannot share a node.
 
 \paragraph{A patch test across the interface.} A rectangle $2\times1$ is built from a $4\times4$ block of quadrilaterals ($x<1$) and a triangulated block ($x>1$, each cell split into two triangles), with the interior nodes displaced randomly by up to 20\% of the cell size. The two blocks share \cmeMBShared{} nodes on the line $x=1$, and the mesh has \cmeMBQuads{} quadrilaterals and \cmeMBTris{} triangles. The boundary nodes are given a linear displacement field; a correct mixed mesh must reproduce it exactly at the interior nodes. The largest nodal error is \cmeMBErr{} relative to the largest displacement, which is rounding. This tests that the elements of the two blocks assemble into one consistent system through the shared nodes; it does not test the \emph{stress} continuity across the interface.
+
+\tikzfigure[0.85\linewidth]{ch02_multiblock}{A multi-block mesh: a quadrilateral and a triangle block over one shared node array. The interface nodes (red) belong to both blocks.}{fig:me-multiblock}
 
 \section{Exchange formats}\label{sec:me-io}
 

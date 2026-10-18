@@ -18,6 +18,31 @@ Inserting the interpolation $u\approx\sum_a N_a u_a$ and the same functions for 
 \end{equation}
 The integrals are computed by Gauss quadrature on the reference element, with $d\Omega=\det\bm J\,d\xi$ and $\bm B$ mapped by the Jacobian $\bm J$. The elasticity elements have the same structure with a vector field: $\bm K_e=\int\bm B^{T}\bm D\bm B\,d\Omega$, where $\bm B$ is the strain-displacement matrix and $\bm D$ the elasticity matrix \citep{zienkiewicz2013fem,bathe2014fep}. Everything else in this chapter is a choice of $\bm N$, of $\bm D$, or of the quadrature rule in \eqref{eq:el-K}.
 
+\tikzfigure[0.98\linewidth]{ch03_weak2matrix}{From the weak form to the matrices. The choices that decide whether an element is right are the interpolation, the material matrix and the quadrature rule.}{fig:el-weak2matrix}
+
+\begin{algbox}{Element stiffness and mass by Gauss quadrature}
+\begin{pseudo}
+\Require node coordinates $\bm x_e$, material matrix $\bm D$ (or $\kappa$), density $\rho$, Gauss rule $\{\bm\xi_g,w_g\}$
+\State $\bm K_e\gets\bm 0$;\ $\bm M_e\gets\bm 0$
+\For{each Gauss point $g$}
+  \State $\bm N,\ \partial\bm N/\partial\bm\xi\gets$ shape functions at $\bm\xi_g$
+  \State $\bm J\gets(\partial\bm N/\partial\bm\xi)\,\bm x_e$;\ $\det\bm J$;\ $\bm B\gets\bm J^{-1}\partial\bm N/\partial\bm\xi$ mapped into strain--displacement form
+  \State $\bm K_e\gets\bm K_e+w_g\det\bm J\;\bm B^T\bm D\bm B$
+  \State $\bm M_e\gets\bm M_e+w_g\det\bm J\;\rho\bm N^T\bm N$
+\EndFor
+\If{lumped mass requested}
+  \State $\bm M_e\gets$ HRZ lumping of $\bm M_e$ \Comment{diagonal, same total mass}
+\EndIf
+\Ensure $\bm K_e$, $\bm M_e$
+\end{pseudo}
+\begin{algdet}
+\item[Cost] $n_g$ evaluations of $O(d^2n_{str})$ each; the rule sets the rank of $\bm K_e$.
+\item[Fails when] the rule is too low (hourglass modes, rank deficiency) or too high for the physics (locking, \Cref{sec:el-locking}); the Jacobian is not positive.
+\item[Code] \anchor{fea_engine.elements.base.Element} (\code{stiffness}, \code{mass}), \code{assemble_lumped_mass}.
+\item[Verified in] \Cref{sec:el-verif} (patch tests, beams), \Cref{fig:el-mass} (mass choices).
+\end{algdet}
+\end{algbox}
+
 \paragraph{The mass matrix: consistent or lumped.}
 The same interpolation gives the consistent mass matrix $\bm M_e=\int\rho\bm N^{T}\bm N\,d\Omega$, which is sparse with the pattern of $\bm K$. A lumped mass matrix is diagonal: \fea{} provides element-by-element HRZ lumping (\code{assemble_lumped_mass}), which keeps the total mass of the element. The diagonal form is what the explicit time integration of Chapter~\ref{ch:dyn} needs, since it makes the solve for the accelerations trivial. The choice has a measurable effect on the eigenvalues. For the lowest eigenvalue of the unit-square membrane, $\lambda_1=2\pi^2$ for a clamped edge, \Cref{fig:el-mass} shows that the consistent mass overestimates it and the lumped mass underestimates it, both with the error falling like $h^{\cecMassConsOrder}$ and $h^{\cecMassLumpOrder}$. On the finest mesh the consistent mass is high by \cecMassConsFine{} and the lumped mass is low by \cecMassLumpFine{}. The signs are the usual ones for these two choices, and an average of the two is a classical way to reduce the error; this chapter does not test that.
 
@@ -43,6 +68,8 @@ The beam elements use a one-dimensional mesh. \anchor{fea_engine.elements.beams.
 \section{Locking and how the elements avoid it}\label{sec:el-locking}
 
 Locking is an element behaving too stiffly for a deformation mode that its interpolation cannot reproduce without also producing a parasitic strain. It is the one error in this chapter that grows when the problem gets \emph{easier} (a thinner beam, a more incompressible material), which is why it needs a test of its own.
+
+\tikzfigure[0.98\linewidth]{ch03_locking}{The mechanism of shear locking in a bilinear element under bending (schematic). The exact bending mode curves the edges and has no shear strain; the bilinear interpolation keeps the edges straight, which produces a parasitic shear strain and an artificially stiff element.}{fig:el-lockmech}
 
 \paragraph{Bending of continuum elements.}
 A 4-node quadrilateral in bending cannot represent the curvature of a beam without shear strain, and the parasitic shear stiffens the beam. \Cref{fig:el-bending} loads a plane-stress beam by a pure end moment and plots the ratio of the computed tip deflection to the exact one (the exact solution is quadratic in the displacements, so it lies in the space of the quadratic elements). The linear elements converge from below: at 4 elements along the beam the ratio is \cecBendQuadFour{} for \code{Quad4PlaneStress} and \cecBendTriFour{} for \code{Tri3PlaneStress}, and at 32 elements it is \cecBendQuadThirtytwo{} and \cecBendTriThirtytwo{}. The observed order of the quadrilateral error is \cecBendQuadOrder, close to the expected second order. The quadratic elements \code{Quad8PlaneStress} and \code{Tri6PlaneStress} reproduce the exact solution up to rounding (\cecBendQuadEightErr{} and \cecBendTriSixErr{} for the tested meshes), as the theory says they must.

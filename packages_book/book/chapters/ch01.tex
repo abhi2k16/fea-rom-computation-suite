@@ -17,27 +17,35 @@ or, for nonlinear problems, on the residual $\bm f_{int}(\bm u)-\bm F$ and its t
 
 \Cref{fig:ar-flow} shows the flow of a typical analysis. A \emph{material} gives the constitutive matrix (for example \code{D_plane_stress(Material(...))}); a \emph{mesh} gives nodes and element connectivity (\code{Mesh}, or \code{MultiBlockMesh} for several element topologies, Chapter~\ref{ch:mesh}); an \emph{element} formulation turns coordinates and a material into element matrices or forces; the system \anchor{fea_engine.solver.FESystem} assembles them, applies boundary conditions and loads, and calls a \emph{solver}; \emph{post-processing} recovers stress, strain and fields from the result. A layer knows only the layer next to it: the mesh does not know which element will use it, and the solver does not know which element it is solving for.
 
-\begin{figure}[ht]
-\centering
-\begin{tikzpicture}[node distance=1.0cm and 0.75cm, box/.style={draw,rounded corners,minimum height=0.9cm,minimum width=2.15cm,align=center,font=\small,fill=gray!8}, arr/.style={-{Stealth},thick}]
-\node[box] (mat) {material\\\code{Material}, $\bm D$};
-\node[box,right=of mat] (mesh) {mesh\\\code{Mesh}};
-\node[box,right=of mesh] (el) {element\\\code{Element}};
-\node[box,right=of el] (sys) {system\\\code{FESystem}};
-\node[box,below=1.0cm of sys] (sol) {solver\\static, modal,\\transient, Newton};
-\node[box,left=of sol] (post) {post-processing\\stress, fields, export};
-\node[box,left=of post,fill=blue!8] (rom) {\code{rom_engine}\\plain arrays};
-\draw[arr] (mat)--(mesh); \draw[arr] (mesh)--(el); \draw[arr] (el)--(sys); \draw[arr] (sys)--(sol); \draw[arr] (sol)--(post);
-\draw[arr,dashed] (sys.south west) .. controls +(-0.3,-0.8) and +(0.3,0.8) .. (rom.north east) node[midway,above,sloped,font=\scriptsize]{$\bm M,\bm K,\bm F$ as arrays};
-\end{tikzpicture}
-\caption{The flow of an analysis in \fea{}. The dashed arrow is the only link to \rom{}: matrices and vectors as plain arrays, never an import.}\label{fig:ar-flow}
-\end{figure}
+\tikzfigure[0.98\linewidth]{ch01_flow}{The flow of an analysis in \fea{} (blue: package code; grey: data; violet: \rom{}; green: validation only; dashed: optional). The link to \rom{} is plain arrays, never an import.}{fig:ar-flow}
 
 \section{The element interface}\label{sec:ar-interface}
 
 The narrow boundary is the base class \anchor{fea_engine.elements.base.Element}. An element declares four class attributes, \code{n_nodes}, \code{dofs_per_node}, \code{dim} (the dimension of the natural-coordinate space) and \code{gauss_order}, and provides the shape functions in the natural coordinates, \code{shape_and_derivs}. From these the base class implements the Gauss loop \emph{once}: if the element supplies a strain-displacement matrix \code{B_matrix}, the generic \code{stiffness} computes $\int\bm B^{T}\bm D\bm B$ (\Cref{eq:el-K}) and the generic \code{mass} computes $\int\rho\bm N^{T}\bm N$. An element that needs more overrides the method it needs: the Mindlin plate overrides \code{stiffness} for selective reduced integration, and the Euler--Bernoulli beam uses a closed form. Nonlinear elements provide the pair \code{internal_force} and \code{tangent_stiffness} instead (or as well). Optional capabilities are declared by attributes and methods the solvers look for: \code{supports_batch} with the batched kernels of Chapter~\ref{ch:batch}, \code{state} and \code{commit_state} for history variables (Chapter~\ref{ch:nonlin}), and \code{lumped_mass} for the explicit method (Chapter~\ref{ch:dyn}).
 
 The contact elements of \fea{} are in the same registry but have no interpolation: they define force and tangent from a gap function and do not implement \code{shape_and_derivs}, which raises \code{NotImplementedError} for them. The interface is therefore not a single fixed set of methods, but ``what the solver calls'': the assembly asks the element for matrices (linear) or for force and tangent (nonlinear), and the element is free in how it computes them.
+
+\tikzfigure[0.62\linewidth]{ch01_interface}{The element interface. The base class owns the Gauss loop; a subclass supplies the interpolation and overrides only what differs.}{fig:ar-interface}
+
+\begin{algbox}{Global assembly of $\bm K$ (and, identically, $\bm M$)}
+\begin{pseudo}
+\Require system with element blocks, material (or per-block materials) $\bm D$, node coordinates, element-to-dof maps
+\State allocate $\bm K$ (dense, or sparse triplets)
+\For{each block $b$ and each element $e$ of $b$}
+  \State gather the node coordinates $\bm x_e$ and the dof map $\mathcal D_e$
+  \State $\bm K_e\gets$ \texttt{element.stiffness}$(\bm x_e,\bm D)$ \Comment{Gauss loop of the base class, or an override}
+  \State $\bm K[\mathcal D_e,\mathcal D_e]\gets\bm K[\mathcal D_e,\mathcal D_e]+\bm K_e$
+\EndFor
+\State apply boundary conditions on the free/fixed split afterwards
+\Ensure assembled stiffness (calling again \emph{replaces} it unless \texttt{accumulate=True})
+\end{pseudo}
+\begin{algdet}
+\item[Cost] $n_e$ element matrices of $O(n_g\,d^3)$ each, plus one scatter-add per element; the Python loop over elements dominates for small elements (Chapter~\ref{ch:batch} removes it).
+\item[Fails when] an element has a non-positive Jacobian (no error is raised, Chapter~\ref{ch:mesh}); the element does not implement the method that the call asks for (e.g.\ contact elements have no \texttt{shape\_and\_derivs}).
+\item[Code] \anchor{fea_engine.solver.FESystem} (\code{assemble_stiffness}, \code{assemble_mass}), \anchor{fea_engine.elements.base.Element}.
+\item[Verified in] \Cref{tab:ar-registry} (interface conformance), \Cref{lst:ar-bar} (a new element on the unchanged assembly).
+\end{algdet}
+\end{algbox}
 
 \section{Extending the engine: a new element}\label{sec:ar-extend}
 
@@ -113,6 +121,28 @@ A registry is only useful if every entry honours the interface. The test of this
 \section{Backend dispatch and what it costs}\label{sec:ar-backend}
 
 \code{FESystem(..., backend=...)} chooses the linear-algebra backend of \code{solve_static}: \code{"scipy"} (the default), \code{"torch"} (conjugate gradients on CPU or GPU) or \code{"auto"}. The automatic choice is made at solve time by \anchor{fea_engine.backend_dispatch.select_backend}: a free-dof block that is symmetric positive definite (SPD) and larger than \cdeDispThreshold{} dofs is routed to the torch conjugate-gradient path, everything else to SciPy; a non-SPD matrix is never given to the conjugate-gradient solver. The threshold is a documented rule of thumb and not a benchmark result.
+
+\begin{algbox}{Choice of the linear-algebra backend in \texttt{solve\_static}}
+\begin{pseudo}
+\Require free-dof block $\bm K_{ff}$, load, \texttt{backend} $\in\{$scipy, torch, auto$\}$
+\If{\texttt{backend} = auto}
+  \State $\mathrm{spd}\gets$ \texttt{\_is\_spd}$(\bm K_{ff})$ \Comment{dense Cholesky of a densified copy}
+  \If{$\mathrm{spd}$ \textbf{and} $n_{ff}>5000$}
+    \State \texttt{backend} $\gets$ torch (conjugate gradients)
+  \Else
+    \State \texttt{backend} $\gets$ scipy (direct)
+  \EndIf
+\EndIf
+\State solve $\bm K_{ff}\bm u_f=\bm f_f$ with the chosen backend
+\Ensure displacement; a non-SPD matrix is never sent to conjugate gradients
+\end{pseudo}
+\begin{algdet}
+\item[Cost] The probe costs $O(n^3)$ time and $O(n^2)$ memory on \emph{every} solve, also below the threshold where its answer decides nothing.
+\item[Fails when] the system is large and sparse: the probe, not the solve, dominates (measured below). Use \texttt{backend="scipy"} there.
+\item[Code] \anchor{fea_engine.backend_dispatch.select_backend}.
+\item[Verified in] \Cref{fig:ar-dispatch}.
+\end{algdet}
+\end{algbox}
 
 \paragraph{Measured cost of the automatic choice.} \Cref{fig:ar-dispatch} compares \code{solve_static} with \code{backend="scipy"} and \code{backend="auto"} for a sparse plane-stress plate with up to \cdeDispMaxDof{} dofs, a range in which \code{auto} always picks the SciPy path. The two give the same answer, but \code{auto} is slower, and by an amount that grows quickly: at the largest size \code{auto} takes \cdeDispExtraFracLarge{}\% more time than \code{scipy}, \cdeDispExtraMs{} ms more in absolute terms, and the extra time grows with the dof count with an observed exponent of \cdeDispSlope{}. The cause is visible in the source. The SPD test of \code{select_backend} converts the sparse matrix to a dense array and runs a dense Cholesky factorisation, which is $O(n^3)$ in time and $O(n^2)$ in memory, and it does so on every solve, even when the answer decides nothing (below the threshold the SciPy path is taken regardless). For a free-dof count of 5\,000, the dense array takes about \cdeDenseFiveK{} GB; for 50\,000 it would take about \cdeDenseFiveK0{} GB (computed as $8n^2$ bytes, not measured). Until the probe works on the sparse matrix, the practical advice is to pass \code{backend="scipy"} for large sparse systems and to use \code{"auto"} only where the system is small.
 

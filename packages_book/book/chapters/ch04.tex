@@ -28,11 +28,23 @@ The undamped free vibrations $\bm u=\bm\phi\sin\omega t$ satisfy the generalised
 The Newmark family \citep{newmark1959} advances $(\bm u,\dot{\bm u},\ddot{\bm u})$ by one step $\Delta t$ using the parameters $\beta$ and $\gamma$. The default of \code{solve_transient_implicit} is the average-acceleration rule, $\beta=\tfrac14$, $\gamma=\tfrac12$, which is unconditionally stable for a linear time-invariant system; the stability is what lets the step be chosen for accuracy and not for stability.
 
 \begin{algbox}{Implicit Newmark ($\beta=\tfrac14$, $\gamma=\tfrac12$) for the linear problem}
-\begin{enumerate}[leftmargin=1.5em]
-\item Compute the initial acceleration $\ddot{\bm u}_0=\bm M^{-1}(\bm f_0-\bm C\bm v_0-\bm K\bm u_0)$.
-\item Form and factor \emph{once} the effective matrix $\bm K_{eff}=\bm K+\tfrac{1}{\beta\Delta t^2}\bm M+\tfrac{\gamma}{\beta\Delta t}\bm C$.
-\item For each step: build the right-hand side from $\bm f_{n+1}$ and the known state $(\bm u_n,\dot{\bm u}_n,\ddot{\bm u}_n)$, solve $\bm K_{eff}\bm u_{n+1}=\text{rhs}$ by back-substitution, then update $\ddot{\bm u}_{n+1}$ and $\dot{\bm u}_{n+1}$.
-\end{enumerate}
+\begin{pseudo}
+\Require $\bm M,\bm C,\bm K$, load $\bm f(t)$, initial state $(\bm u_0,\bm v_0)$, step $\Delta t$, number of steps
+\State $\bm a_0\gets\bm M^{-1}(\bm f_0-\bm C\bm v_0-\bm K\bm u_0)$
+\State $\bm K_{eff}\gets\bm K+\frac{1}{\beta\Delta t^2}\bm M+\frac{\gamma}{\beta\Delta t}\bm C$;\ factor $\bm K_{eff}$ \emph{once}
+\For{$n=0,1,\dots$}
+  \State rhs $\gets\bm f_{n+1}+\bm M\big(\tfrac{\bm u_n}{\beta\Delta t^2}+\tfrac{\bm v_n}{\beta\Delta t}+(\tfrac1{2\beta}-1)\bm a_n\big)+\bm C\big(\tfrac{\gamma\bm u_n}{\beta\Delta t}+(\tfrac\gamma\beta-1)\bm v_n+\tfrac{\Delta t}2(\tfrac\gamma\beta-2)\bm a_n\big)$
+  \State solve $\bm K_{eff}\bm u_{n+1}=$ rhs by back-substitution
+  \State $\bm a_{n+1}\gets\frac{\bm u_{n+1}-\bm u_n}{\beta\Delta t^2}-\frac{\bm v_n}{\beta\Delta t}-(\tfrac1{2\beta}-1)\bm a_n$;\ $\bm v_{n+1}\gets\bm v_n+\Delta t[(1-\gamma)\bm a_n+\gamma\bm a_{n+1}]$
+\EndFor
+\Ensure displacement history $\bm u_n$
+\end{pseudo}
+\begin{algdet}
+\item[Cost] one factorisation, then one back-substitution per step.
+\item[Fails when] the step is too coarse for the highest mode that matters (period elongation, no instability); the matrix is non-constant (nonlinear problems need Newton in every step).
+\item[Code] \anchor{fea_engine.solver.FESystem} (\code{solve_transient_implicit}).
+\item[Verified in] \Cref{fig:dy-newmark} (observed order 2, error against the exact discrete solution).
+\end{algdet}
 \end{algbox}
 
 For a linear system $\bm K_{eff}$ does not change, so the code factors it once (dense LU, or SuperLU if the system is sparse) and each step costs one back-substitution. Loads are given as \anchor{fea_engine.loads.TimeHistoryLoad}: a fixed spatial pattern (\anchor{fea_engine.loads.LoadPattern}) times a function of time.
@@ -53,6 +65,26 @@ The central-difference method (\code{solve_transient_explicit}) computes $\bm u_
 \Delta t\le\Delta t_c=\frac{2}{\omega_{max}},
 \end{equation}
 where $\omega_{max}$ is the largest frequency of the discrete system \emph{with the mass matrix that the method uses}. The code does not check the step: the docstring tells the user to compute the critical step and take a fraction of it.
+
+\tikzfigure[0.85\linewidth]{ch04_stability}{Stability of the two integrators in terms of $\omega\Delta t$ for the highest frequency of the discrete system (schematic).}{fig:dy-stabmap}
+
+\begin{algbox}{Central differences with the critical step}
+\begin{pseudo}
+\Require lumped (diagonal) $\bm M$, diagonal or zero $\bm C$, $\bm K$, load, $(\bm u_0,\bm v_0)$
+\State $\omega_{\max}\gets$ largest eigenfrequency of $(\bm K,\bm M)$;\ $\Delta t_c\gets2/\omega_{\max}$;\ choose $\Delta t\le f\,\Delta t_c$ with $f<1$
+\State $\bm a_0\gets\bm M^{-1}(\bm f_0-\bm C\bm v_0-\bm K\bm u_0)$;\ $\bm u_{-1}\gets\bm u_0-\Delta t\,\bm v_0+\tfrac{\Delta t^2}{2}\bm a_0$
+\For{$n=0,1,\dots$}
+  \State $\bm u_{n+1}\gets\big(\tfrac{\bm M}{\Delta t^2}+\tfrac{\bm C}{2\Delta t}\big)^{-1}\big[\bm f_n-\bm K\bm u_n+\tfrac{2\bm M}{\Delta t^2}\bm u_n-\big(\tfrac{\bm M}{\Delta t^2}-\tfrac{\bm C}{2\Delta t}\big)\bm u_{n-1}\big]$ \Comment{element-wise division}
+\EndFor
+\Ensure displacement history; no linear system is solved
+\end{pseudo}
+\begin{algdet}
+\item[Cost] one product with $\bm K$ per step; $\Delta t_c$ needs one eigenvalue solve (or the element-wise estimate, \code{critical_timestep_local}).
+\item[Fails when] $\Delta t>\Delta t_c$: the response grows without bound (a threshold, not a gradual loss); the code does \emph{not} check the step; a consistent mass matrix removes the cheap update.
+\item[Code] \anchor{fea_engine.solver.FESystem} (\code{solve_transient_explicit}, \code{critical_timestep}).
+\item[Verified in] \Cref{tab:dy-stab}, \Cref{fig:dy-explicit}.
+\end{algdet}
+\end{algbox}
 
 \paragraph{The limit is sharp.}
 \Cref{tab:dy-stab} integrates a plane-stress bar (20 elements, lumped mass, $E=1$ GPa, $\rho=1000$ kg/m$^3$, a short tip pulse) at fractions of the critical step computed from $\omega_{max}$ of $(\bm K,\bm M_{lumped})$, $\Delta t_c=$\,\cdyDtcLumped s. Up to $0.99\,\Delta t_c$ the response stays bounded (the late amplitude is within a few per cent of the early one). At $1.01\,\Delta t_c$ it grows by a factor \cdyGrowJustOver{} over the run and at $1.1\,\Delta t_c$ by \cdyGrowUnstable{}: a threshold, not a gradual degradation. \Cref{fig:dy-explicit} shows the two histories.
@@ -93,6 +125,22 @@ With Rayleigh damping calibrated at modes 1 and 3, a Newmark solution of the ful
 
 For a harmonic load $\bm f=\bm F_0e^{i\Omega t}$ the steady response solves the complex system $(-\Omega^2\bm M+i\Omega\bm C+\bm K)\bm U_0=\bm F_0$. \code{solve_harmonic(Omega, F0)} does this directly at one frequency, and \code{solve_frequency_sweep} repeats it for an array. At $\Omega=0$ the system is the static one: for the test beam the tip deflection from \code{solve_harmonic(0, F0)} differs from $PL^3/(3EI)$ by \cdyHarmZeroErr.
 
+\begin{algbox}{Frequency sweep of the steady-state response}
+\begin{pseudo}
+\Require $\bm M,\bm C,\bm K$, load amplitude $\bm F_0$, frequencies $\Omega_1,\dots,\Omega_m$
+\For{$j=1,\dots,m$}
+  \State solve $(-\Omega_j^2\bm M+i\Omega_j\bm C+\bm K)\bm U_j=\bm F_0$ \Comment{one complex solve}
+\EndFor
+\Ensure complex amplitudes $\bm U_j$ (receptance at any dof by reading the entry)
+\end{pseudo}
+\begin{algdet}
+\item[Cost] $m$ complex factorisations of size $n$; a modal sum is far cheaper for many frequencies when few modes matter.
+\item[Fails when] $\Omega$ is at a resonance of an undamped model (the matrix is singular); damping is not proportional and a modal sum is attempted.
+\item[Code] \code{solve_harmonic}, \code{solve_frequency_sweep}.
+\item[Verified in] \Cref{fig:dy-harm} (against an independent modal sum).
+\end{algdet}
+\end{algbox}
+
 \paragraph{Check against an independent modal sum.}
 For proportional damping the receptance is $H(\Omega)=\sum_i\phi_i(x)\phi_i(x_f)/(\omega_i^2-\Omega^2+2i\zeta_i\omega_i\Omega)$, built here from the eigenpairs of all $\cdyModalAll$ modes with the Rayleigh ratios $\zeta_i$. \Cref{fig:dy-harm} compares it with the direct solve over $0.5$--$160$ Hz. The largest difference is \cdyHarmDiff{} relative to the largest value, which is a check of the direct solve and of the damping bookkeeping (the two share only the matrices). The peak is at \cdyHarmPeakHz{} Hz with an amplification of \cdyHarmAmp{} over the static value, close to the $\cdyShareOne/(2\zeta)=\cdyHarmPred$ expected from the first mode alone.
 
@@ -104,6 +152,8 @@ For proportional damping the receptance is $H(\Omega)=\sum_i\phi_i(x)\phi_i(x_f)
 
 \paragraph{Random vibration.}
 \code{solve_random_vibration(freqs, psd, F0, dof)} is a thin layer on the sweep: the output power spectral density is $S_{out}(f)=|H(f)|^2S_{in}(f)$ for a load with spatial pattern $\bm F_0$ and a one-sided input PSD sampled at the frequencies given, and the RMS response is the square root of its trapezoidal integral. With a flat input PSD on $1$--$160$ Hz the RMS tip response agrees with the integral of the modal-sum receptance to \cdyRandomDiff. This checks that the layer composes the sweep and the integral correctly; it does not test a statistical model of the load, and it assumes a stationary random load with a known PSD and a single output.
+
+\tikzfigure[0.7\linewidth]{ch04_solvers}{Which dynamic solver for which problem (\Cref{tab:dy-choose} gives the same choice with costs).}{fig:dy-choose}
 
 \section{Choosing a method}\label{sec:dy-choose}
 
