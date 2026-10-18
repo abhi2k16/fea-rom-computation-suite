@@ -1,7 +1,8 @@
 \chapter{The design of a decoupled scientific engine}\label{ch:arch}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-The two packages of this book, \fea{} and \rom{}, are meant to grow without rewriting what exists: a new element, material, geometry, load, solution strategy or linear-algebra backend should be added by a subclass or a registry entry. This chapter describes the structure that makes this possible and tests the claims it rests on. It shows the flow from material to post-processing, the small interface that the solvers use to talk to elements, a new element added in about twenty lines to a solver that was not changed, an interface test of all 34 registered elements, the rule that \rom{} never imports \fea{}, and the backend dispatcher, including a cost it has on sparse systems that the book measured and the package documentation does not mention.
+The two packages of this book, \fea{} and \rom{}, are meant to grow without rewriting what exists: a new element, material, geometry, load, solution strategy or linear-algebra backend should be added by a subclass or a registry entry. This chapter describes the structure that makes this possible and tests the claims it rests on. It shows the flow from material to post-processing, the small interface that the solvers use to talk to elements, a new element added in about twenty lines to a solver that was not changed, an interface test of all 34 registered elements, the rule that \rom{} never imports \fea{}, and the backend dispatcher, including a cost it has on sparse systems that the book measured and the package documentation does not mention.\par\smallskip
+\textbf{After this chapter the reader can:} (i) add an element to \fea{} by subclassing and say which interface checks it must pass; (ii) state why \rom{} does not import \fea{} and how that is checked; (iii) read the choice of the backend dispatcher and name the cost of its \code{auto} setting on sparse systems.
 \end{tcolorbox}
 
 \section{One system, many problems}\label{sec:ar-system}
@@ -123,17 +124,17 @@ A registry is only useful if every entry honours the interface. The test of this
 
 \begin{table}[ht]
 \centering\small
-\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.38\linewidth} X@{}}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.38\linewidth} X >{\centering\arraybackslash}p{0.11\linewidth}@{}}
 \toprule
-Concept & Code \\
+Concept & Code & Script calls \\
 \midrule
-system, assembly, boundary conditions, solvers & \anchor{fea_engine.solver.FESystem} \\
-element base class and quadrature & \anchor{fea_engine.elements.base.Element}, \anchor{fea_engine.elements.base.gauss_product} \\
-registries & \anchor{fea_engine.elements.ELEMENT_REGISTRY}, \anchor{fea_engine.geometry.shapes.GEOMETRY_REGISTRY}, \anchor{fea_engine.material.CONSTITUTIVE_REGISTRY} \\
-dispatcher & \anchor{fea_engine.backend_dispatch.select_backend} \\
+system, assembly, boundary conditions, solvers & \anchor{fea_engine.solver.FESystem} & yes \\
+element base class and quadrature & \anchor{fea_engine.elements.base.Element}, \anchor{fea_engine.elements.base.gauss_product} & part \\
+registries & \anchor{fea_engine.elements.ELEMENT_REGISTRY}, \anchor{fea_engine.geometry.shapes.GEOMETRY_REGISTRY}, \anchor{fea_engine.material.CONSTITUTIVE_REGISTRY} & -- \\
+dispatcher & \anchor{fea_engine.backend_dispatch.select_backend} & no \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:ar-map}
+\caption{Where the concepts of this chapter live in the repository (release \booktag). The last column says whether the chapter's script \texttt{scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:ar-map}
 \end{table}
 
 \begin{limitsbox}
@@ -152,11 +153,12 @@ dispatcher & \anchor{fea_engine.backend_dispatch.select_backend} \\
 
 \section*{Exercises}\label{sec:ar-exercises}
 \begin{enumerate}
-\item Add a two-node element for a linear spring ($\bm K=k[[1,-1],[-1,1]]$) as in \Cref{lst:ar-bar}, using \code{stiffness} directly instead of \code{B_matrix}. Which of the interface checks of \Cref{sec:ar-conform} does it still need to pass?
-\item Extend the conformance test to call \code{stiffness} with a suitable material for every non-contact element and check symmetry and the number of zero eigenvalues (rigid-body modes). Which elements need which material argument?
-\item Reproduce \Cref{fig:ar-dispatch} with the dense Cholesky of the probe timed on its own. Does it account for the extra time of \code{auto}?
-\item Write a one-line change of \code{_is_spd} that tests a sparse matrix without densifying it (for example with a sparse Cholesky or an \code{eigsh} test of the smallest eigenvalue), and compare the time with \Cref{fig:ar-dispatch}.
-\item Parse the source of \rom{} for the modules that mention \fea{} in comments or docstrings. Is any of them a dependency in disguise (a hidden convention)?
+\item \emph{(Implementation)} Add a two-node element for a linear spring ($\bm K=k[[1,-1],[-1,1]]$) as in \Cref{lst:ar-bar}, using \code{stiffness} directly instead of \code{B_matrix}. Which of the interface checks of \Cref{sec:ar-conform} does it still need to pass?
+\item \emph{(Implementation)} Extend the conformance test to call \code{stiffness} with a suitable material for every non-contact element and check symmetry and the number of zero eigenvalues (rigid-body modes). Which elements need which material argument?
+\item \emph{(Implementation)} Reproduce \Cref{fig:ar-dispatch} with the dense Cholesky of the probe timed on its own. Does it account for the extra time of \code{auto}?
+\item \emph{(Implementation)} Write a one-line change of \code{_is_spd} that tests a sparse matrix without densifying it (for example with a sparse Cholesky or an \code{eigsh} test of the smallest eigenvalue), and compare the time with \Cref{fig:ar-dispatch}.
+\item \emph{(Interpretation)} Parse the source of \rom{} for the modules that mention \fea{} in comments or docstrings. Is any of them a dependency in disguise (a hidden convention)?
+\item \emph{(Derivation)} The probe of the backend dispatcher factors a dense matrix. Show that its cost grows as $n^3/3$ floating-point operations, while a sparse banded Cholesky factorisation costs of the order of $nb^2$ for bandwidth $b$, and find, for $b=50$, the size $n$ above which the probe costs more than the solve it guards.
 \end{enumerate}
 
 \chapterrefs

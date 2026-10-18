@@ -1,7 +1,8 @@
 \chapter{Systems-and-control reduction: balanced truncation, Krylov and SOAR}\label{ch:bt}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-Chapter~\ref{ch:pod} reduced a model by looking at \emph{solutions}. This chapter reduces it by looking at the \emph{input--output map}: how a chosen force enters and how a chosen response leaves. Three families do this. Balanced truncation keeps the states that are both easy to excite and easy to observe, and comes with an a priori error bound and a stability guarantee. Krylov methods match the Taylor coefficients of the transfer function at one frequency and need no Lyapunov solve. SOAR does the same without leaving the second-order form of structural dynamics. The chapter states the three methods, runs them on one damped cantilever against an independent full-order frequency sweep, and measures the bound, the accuracy at equal size, the locality of moment matching, a scale dependence found in the SOAR implementation, and stability and passivity.
+Chapter~\ref{ch:pod} reduced a model by looking at \emph{solutions}. This chapter reduces it by looking at the \emph{input--output map}: how a chosen force enters and how a chosen response leaves. Three families do this. Balanced truncation keeps the states that are both easy to excite and easy to observe, and comes with an a priori error bound and a stability guarantee. Krylov methods match the Taylor coefficients of the transfer function at one frequency and need no Lyapunov solve. SOAR does the same without leaving the second-order form of structural dynamics. The chapter states the three methods, runs them on one damped cantilever against an independent full-order frequency sweep, and measures the bound, the accuracy at equal size, the locality of moment matching, a scale dependence found in the SOAR implementation, and stability and passivity.\par\smallskip
+\textbf{After this chapter the reader can:} (i) choose among balanced truncation, Krylov projection and SOAR for a given input--output problem; (ii) check the a priori bound and the stability of a reduced model; (iii) recognise that moment matching is accurate only near its expansion point.
 \end{tcolorbox}
 
 \section{The problem}\label{sec:bt-problem}
@@ -78,21 +79,21 @@ H = [m.frequency_response(omegas) for m in (bt, k1, k2, soar)]
 
 \begin{table}[ht]
 \centering\small
-\begin{tabularx}{\linewidth}{@{}l X@{}}
+\begin{tabularx}{\linewidth}{@{}l X >{\centering\arraybackslash}p{0.11\linewidth}@{}}
 \toprule
-Concept & Code \\
+Concept & Code & Script calls \\
 \midrule
-state-space form (descriptor and explicit) of $(\bm M,\bm C,\bm K)$ & \anchor{rom_engine.state_space.to_state_space} \\
-Gramians, Hankel singular values, balancing transform & \anchor{rom_engine.balanced_truncation.hankel_singular_values} \\
-balanced truncation, a priori bound \eqref{eq:bt-bound} & \anchor{rom_engine.balanced_truncation.BalancedTruncationROM} \\
-singular-perturbation variant (not tested here) & \anchor{rom_engine.balanced_truncation.SingularPerturbationROM} \\
-one- and two-sided Krylov moment matching & \anchor{rom_engine.krylov.KrylovROM}, \anchor{rom_engine.krylov.arnoldi_basis} \\
-second-order Arnoldi & \anchor{rom_engine.soar.SOARROM}, \anchor{rom_engine.soar.soar_basis} \\
-passivity diagnostic & \anchor{rom_engine.passivity.passivity_margin}, \anchor{rom_engine.passivity.velocity_transfer_function} \\
-worked example & \path{rom_engine/examples/gallery/rom_04_balanced_truncation.py} \\
+state-space form (descriptor and explicit) of $(\bm M,\bm C,\bm K)$ & \anchor{rom_engine.state_space.to_state_space} & no \\
+Gramians, Hankel singular values, balancing transform & \anchor{rom_engine.balanced_truncation.hankel_singular_values} & no \\
+balanced truncation, a priori bound \eqref{eq:bt-bound} & \anchor{rom_engine.balanced_truncation.BalancedTruncationROM} & yes \\
+singular-perturbation variant (not tested here) & \anchor{rom_engine.balanced_truncation.SingularPerturbationROM} & no \\
+one- and two-sided Krylov moment matching & \anchor{rom_engine.krylov.KrylovROM}, \anchor{rom_engine.krylov.arnoldi_basis} & part \\
+second-order Arnoldi & \anchor{rom_engine.soar.SOARROM}, \anchor{rom_engine.soar.soar_basis} & yes \\
+passivity diagnostic & \anchor{rom_engine.passivity.passivity_margin}, \anchor{rom_engine.passivity.velocity_transfer_function} & yes \\
+worked example & \path{rom_engine/examples/gallery/rom_04_balanced_truncation.py} & -- \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:bt-map}
+\caption{Where the concepts of this chapter live in the repository (release \booktag). The last column says whether the chapter's script \texttt{scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:bt-map}
 \end{table}
 
 \section{Verification}\label{sec:bt-verif}
@@ -195,11 +196,12 @@ Balanced truncation reduces the input--output map with a stability guarantee and
 
 \section*{Exercises}\label{sec:bt-exercises}
 \begin{enumerate}
-\item Repeat \Cref{tab:bt-compare} with the expansion point moved to $s_0=4\omega_1$ (a real shift). Where does the one-sided Krylov error now sit, and does the model stay stable?
-\item Apply balanced truncation to the model pre-reduced to $10$ and to $25$ modes. How does the accuracy floor and the order needed for a given error change?
-\item Use a non-collocated port (force at the tip, displacement at midspan). Does the passivity argument of \Cref{sec:bt-math} still apply, and what does \code{passivity_margin} report?
-\item Replace the absolute tolerance in \code{soar_basis} by a tolerance relative to the norm of the first vector, and check that the unscaled call of \Cref{sec:bt-verif} returns four vectors. (Test file: \texttt{rom\_engine/tests/test\_soar.py}.)
-\item Find the order at which \eqref{eq:bt-bound} would first guarantee a peak-relative error below $10^{-6}$ for the pre-reduced model, and compare with the order the measured error needs.
+\item \emph{(Implementation)} Repeat \Cref{tab:bt-compare} with the expansion point moved to $s_0=4\omega_1$ (a real shift). Where does the one-sided Krylov error now sit, and does the model stay stable?
+\item \emph{(Implementation)} Apply balanced truncation to the model pre-reduced to $10$ and to $25$ modes. How does the accuracy floor and the order needed for a given error change?
+\item \emph{(Interpretation)} Use a non-collocated port (force at the tip, displacement at midspan). Does the passivity argument of \Cref{sec:bt-math} still apply, and what does \code{passivity_margin} report?
+\item \emph{(Implementation)} Replace the absolute tolerance in \code{soar_basis} by a tolerance relative to the norm of the first vector, and check that the unscaled call of \Cref{sec:bt-verif} returns four vectors. (Test file: \texttt{rom\_engine/tests/test\_soar.py}.)
+\item \emph{(Implementation)} Find the order at which \eqref{eq:bt-bound} would first guarantee a peak-relative error below $10^{-6}$ for the pre-reduced model, and compare with the order the measured error needs.
+\item \emph{(Derivation)} For $\bm E\dot{\bm x}=\bm A\bm x+\bm B u$, show that if $\bm V$ spans the Krylov subspace $\mathcal K_r\big((\bm A-s_0\bm E)^{-1}\bm E,(\bm A-s_0\bm E)^{-1}\bm B\big)$ and $\bm W=\bm V$, the first $r$ Taylor coefficients of the reduced transfer function about $s_0$ equal those of the full one.
 \end{enumerate}
 
 \chapterrefs

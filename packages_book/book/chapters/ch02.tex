@@ -1,7 +1,8 @@
 \chapter{Mesh topologies and structural domain partitioning}\label{ch:mesh}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-A mesh is the contract between geometry and element: nodes, connectivity, and a guarantee that every element has a positive Jacobian. This chapter describes how \fea{} generates structured meshes for lines, rectangles and boxes, with holes, notches and fillets, how it grades them by a growth ratio and not by a guessed exponent, how several element topologies are combined in one mesh by sharing nodes, and how meshes are exchanged with other tools. Each claim is checked: element areas and volumes against exact values, the realised growth ratio against the requested one, a patch test across a triangle--quadrilateral interface, and a round trip through two file formats. The chapter ends with the design lesson of the one thing that was removed, Gmsh support.
+A mesh is the contract between geometry and element: nodes, connectivity, and a guarantee that every element has a positive Jacobian. This chapter describes how \fea{} generates structured meshes for lines, rectangles and boxes, with holes, notches and fillets, how it grades them by a growth ratio and not by a guessed exponent, how several element topologies are combined in one mesh by sharing nodes, and how meshes are exchanged with other tools. Each claim is checked: element areas and volumes against exact values, the realised growth ratio against the requested one, a patch test across a triangle--quadrilateral interface, and a round trip through two file formats. The chapter ends with the design lesson of the one thing that was removed, Gmsh support.\par\smallskip
+\textbf{After this chapter the reader can:} (i) generate a structured mesh and grade it by a growth ratio instead of a guessed exponent; (ii) combine element topologies in a multi-block mesh and verify the interface by a patch test; (iii) check a mesh for positive Jacobians and exchange it through a file format.
 \end{tcolorbox}
 
 \section{What a mesh is}\label{sec:me-what}
@@ -68,19 +69,19 @@ The removal changed the contract between mesh and element in one place. The disp
 
 \begin{table}[ht]
 \centering\small
-\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.34\linewidth} X@{}}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.34\linewidth} X >{\centering\arraybackslash}p{0.11\linewidth}@{}}
 \toprule
-Concept & Code \\
+Concept & Code & Script calls \\
 \midrule
-meshes & \anchor{fea_engine.mesh.Mesh}, \anchor{fea_engine.mesh.MultiBlockMesh} \\
-generators & \anchor{fea_engine.mesh.line_mesh}, \anchor{fea_engine.mesh.rectangle_mesh}, \anchor{fea_engine.mesh.box_mesh}, \anchor{fea_engine.mesh.weld_meshes}, \anchor{fea_engine.mesh.mirror_mesh} \\
-grading & \anchor{fea_engine.grading.graded_partition}, \anchor{fea_engine.grading.growth_ratio_of_partition}, \anchor{fea_engine.grading.grade_for_growth_ratio} \\
-dim-driven entry point & \anchor{fea_engine.geometry.shapes.build_system}, \anchor{fea_engine.geometry.shapes.generate_mesh} \\
-dispatcher with safety gate & \anchor{fea_engine.build_mesh.build_mesh}, \code{ROTATIONAL_DOF_ELEMENTS} \\
-exchange & \anchor{fea_engine.mesh_io.read_mesh}, \anchor{fea_engine.mesh_io.write_mesh} \\
+meshes & \anchor{fea_engine.mesh.Mesh}, \anchor{fea_engine.mesh.MultiBlockMesh} & yes \\
+generators & \anchor{fea_engine.mesh.line_mesh}, \anchor{fea_engine.mesh.rectangle_mesh}, \anchor{fea_engine.mesh.box_mesh}, \anchor{fea_engine.mesh.weld_meshes}, \anchor{fea_engine.mesh.mirror_mesh} & part \\
+grading & \anchor{fea_engine.grading.graded_partition}, \anchor{fea_engine.grading.growth_ratio_of_partition}, \anchor{fea_engine.grading.grade_for_growth_ratio} & yes \\
+dim-driven entry point & \anchor{fea_engine.geometry.shapes.build_system}, \anchor{fea_engine.geometry.shapes.generate_mesh} & no \\
+dispatcher with safety gate & \anchor{fea_engine.build_mesh.build_mesh}, \code{ROTATIONAL_DOF_ELEMENTS} & no \\
+exchange & \anchor{fea_engine.mesh_io.read_mesh}, \anchor{fea_engine.mesh_io.write_mesh} & yes \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:me-map}
+\caption{Where the concepts of this chapter live in the repository (release \booktag). The last column says whether the chapter's script \texttt{scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:me-map}
 \end{table}
 
 \begin{limitsbox}
@@ -100,11 +101,12 @@ A mesh is nodes and connectivity with a positive-Jacobian guarantee. The structu
 
 \section*{Exercises}\label{sec:me-exercises}
 \begin{enumerate}
-\item Repeat the arc test of \Cref{sec:me-gen} for \code{hole_in_rectangle_mesh} and for the fillet. Is the observed order again 2?
-\item Choose a target growth ratio of 1.05 and $n=10$ for \code{grade_for_growth_ratio}. What exponent comes out, and is the ratio realised below the target?
-\item Make the interface of \Cref{sec:me-multi} slanted instead of vertical and run the patch test again. Does the error stay at rounding?
-\item Apply a pure-shear patch test (not only a linear field with a symmetric gradient) to the mixed mesh and check the recovered stress on both sides of the interface.
-\item Round-trip a \code{MultiBlockMesh} through \code{write_mesh} and \code{read_mesh}. Which information survives, and which does not (see the notes on field data in the module)?
+\item \emph{(Implementation)} Repeat the arc test of \Cref{sec:me-gen} for \code{hole_in_rectangle_mesh} and for the fillet. Is the observed order again 2?
+\item \emph{(Implementation)} Choose a target growth ratio of 1.05 and $n=10$ for \code{grade_for_growth_ratio}. What exponent comes out, and is the ratio realised below the target?
+\item \emph{(Implementation)} Make the interface of \Cref{sec:me-multi} slanted instead of vertical and run the patch test again. Does the error stay at rounding?
+\item \emph{(Implementation)} Apply a pure-shear patch test (not only a linear field with a symmetric gradient) to the mixed mesh and check the recovered stress on both sides of the interface.
+\item \emph{(Interpretation)} Round-trip a \code{MultiBlockMesh} through \code{write_mesh} and \code{read_mesh}. Which information survives, and which does not (see the notes on field data in the module)?
+\item \emph{(Derivation)} Show that the Jacobian determinant of a bilinear quadrilateral is a linear function of the natural coordinates, and that it is positive everywhere in the element if and only if it is positive at the four corners.
 \end{enumerate}
 
 \chapterrefs

@@ -2,73 +2,73 @@
 \providecommand\hyper@newdestlabel[2]{}
 \citation{belytschko2014nonlinear}
 \citation{cuvelier2014assemble}
-\@writefile{toc}{\contentsline {chapter}{\numberline {6}Computational acceleration: vectorised assembly and batched kernels}{37}{chapter.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {6}Computational acceleration: vectorised assembly and batched kernels}{38}{chapter.6}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{ch:batch}{{6}{37}{Computational acceleration: vectorised assembly and batched kernels}{chapter.6}{}}
-\newlabel{ch:batch@cref}{{[chapter][6][]6}{[1][37][]37}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.1}Where the time goes}{37}{section.6.1}\protected@file@percent }
-\newlabel{sec:bk-time}{{6.1}{37}{Where the time goes}{section.6.1}{}}
-\newlabel{sec:bk-time@cref}{{[section][1][6]6.1}{[1][37][]37}}
-\newlabel{eq:bk-gp}{{6.1}{37}{Where the time goes}{equation.6.1}{}}
-\newlabel{eq:bk-gp@cref}{{[equation][1][6]6.1}{[1][37][]37}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.2}What the batched path does}{37}{section.6.2}\protected@file@percent }
-\newlabel{sec:bk-idea}{{6.2}{37}{What the batched path does}{section.6.2}{}}
-\newlabel{sec:bk-idea@cref}{{[section][2][6]6.2}{[1][37][]37}}
-\@writefile{toc}{\contentsline {paragraph}{No Python loop over elements.}{38}{section*.72}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{One contraction over the Gauss points.}{38}{section*.73}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Caches built once per block.}{38}{section*.74}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Memory limit.}{38}{section*.75}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {6.1}{\ignorespaces Estimated working memory of a batched tangent call (the dominant arrays, not the peak resident memory), from the package's own estimate.\relax }}{38}{table.caption.76}\protected@file@percent }
-\newlabel{tab:bk-chunk}{{6.1}{38}{Estimated working memory of a batched tangent call (the dominant arrays, not the peak resident memory), from the package's own estimate.\relax }{table.caption.76}{}}
-\newlabel{tab:bk-chunk@cref}{{[table][1][6]6.1}{[1][38][]38}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.3}Using it}{38}{section.6.3}\protected@file@percent }
-\newlabel{sec:bk-use}{{6.3}{38}{Using it}{section.6.3}{}}
-\newlabel{sec:bk-use@cref}{{[section][3][6]6.3}{[1][38][]38}}
-\newlabel{lst:bk-use}{{6.1}{38}{Requesting batched assembly and checking what was used (plate of \cbkChunkedPlateElems {} \texttt {Quad4PlaneStressTL} elements)}{lstlisting.6.1}{}}
-\newlabel{lst:bk-use@cref}{{[listing][1][6]6.1}{[1][38][]38}}
-\@writefile{lol}{\contentsline {lstlisting}{\numberline {6.1}Requesting batched assembly and checking what was used (plate of 192\xspace  {} \texttt  {Quad4PlaneStressTL} elements).}{38}{lstlisting.6.1}\protected@file@percent }
-\newlabel{lst:bk-newton}{{6.2}{39}{A load-controlled Newton solve with batched assembly and a sparse tangent}{lstlisting.6.2}{}}
-\newlabel{lst:bk-newton@cref}{{[listing][2][6]6.2}{[1][39][]39}}
-\@writefile{lol}{\contentsline {lstlisting}{\numberline {6.2}A load-controlled Newton solve with batched assembly and a sparse tangent.}{39}{lstlisting.6.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {6.4}Verification}{39}{section.6.4}\protected@file@percent }
-\newlabel{sec:bk-verif}{{6.4}{39}{Verification}{section.6.4}{}}
-\newlabel{sec:bk-verif@cref}{{[section][4][6]6.4}{[1][39][]39}}
-\@writefile{toc}{\contentsline {paragraph}{Four element families.}{39}{section*.77}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {6.2}{\ignorespaces Loop against batched route: speed-up of the element kernels (force, tangent) and of the assembled force of the whole system, and the largest relative difference of the results. One run per family on the sandbox used for the figures of this chapter (2 CPUs).\relax }}{39}{table.caption.78}\protected@file@percent }
-\newlabel{tab:bk-families}{{6.2}{39}{Loop against batched route: speed-up of the element kernels (force, tangent) and of the assembled force of the whole system, and the largest relative difference of the results. One run per family on \machine .\relax }{table.caption.78}{}}
-\newlabel{tab:bk-families@cref}{{[table][2][6]6.2}{[1][39][]39}}
-\@writefile{toc}{\contentsline {paragraph}{Scaling with the number of elements.}{39}{section*.79}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {6.1}{\ignorespaces Internal-force assembly of a \code  {Quad4PlaneStressTL} plate: time of the loop and the batched route (left) and their ratio (right). Produced by \texttt  {scripts/ch06\_assets.py}.\relax }}{40}{figure.caption.80}\protected@file@percent }
-\newlabel{fig:bk-scaling}{{6.1}{40}{Internal-force assembly of a \code {Quad4PlaneStressTL} plate: time of the loop and the batched route (left) and their ratio (right). Produced by \texttt {scripts/ch06\_assets.py}.\relax }{figure.caption.80}{}}
-\newlabel{fig:bk-scaling@cref}{{[figure][1][6]6.1}{[1][40][]40}}
-\@writefile{toc}{\contentsline {paragraph}{A whole Newton solve.}{40}{section*.81}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {6.2}{\ignorespaces Wall time of the same load-controlled Newton solve with the default path and with batched assembly and a sparse tangent.\relax }}{40}{figure.caption.82}\protected@file@percent }
-\newlabel{fig:bk-newton}{{6.2}{40}{Wall time of the same load-controlled Newton solve with the default path and with batched assembly and a sparse tangent.\relax }{figure.caption.82}{}}
-\newlabel{fig:bk-newton@cref}{{[figure][2][6]6.2}{[1][40][]40}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.5}Related pieces}{40}{section.6.5}\protected@file@percent }
-\newlabel{sec:bk-related}{{6.5}{40}{Related pieces}{section.6.5}{}}
-\newlabel{sec:bk-related@cref}{{[section][5][6]6.5}{[1][40][]40}}
-\@writefile{lot}{\contentsline {table}{\numberline {6.3}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0).\relax }}{41}{table.caption.83}\protected@file@percent }
-\newlabel{tab:bk-map}{{6.3}{41}{Where the concepts of this chapter live in the repository (release \booktag ).\relax }{table.caption.83}{}}
-\newlabel{tab:bk-map@cref}{{[table][3][6]6.3}{[1][41][]41}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.6}Limits}{41}{section.6.6}\protected@file@percent }
-\newlabel{sec:bk-limits}{{6.6}{41}{Limits}{section.6.6}{}}
-\newlabel{sec:bk-limits@cref}{{[section][6][6]6.6}{[1][41][]41}}
+\newlabel{ch:batch}{{6}{38}{Computational acceleration: vectorised assembly and batched kernels}{chapter.6}{}}
+\newlabel{ch:batch@cref}{{[chapter][6][]6}{[1][38][]38}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.1}Where the time goes}{38}{section.6.1}\protected@file@percent }
+\newlabel{sec:bk-time}{{6.1}{38}{Where the time goes}{section.6.1}{}}
+\newlabel{sec:bk-time@cref}{{[section][1][6]6.1}{[1][38][]38}}
+\newlabel{eq:bk-gp}{{6.1}{38}{Where the time goes}{equation.6.1}{}}
+\newlabel{eq:bk-gp@cref}{{[equation][1][6]6.1}{[1][38][]38}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.2}What the batched path does}{38}{section.6.2}\protected@file@percent }
+\newlabel{sec:bk-idea}{{6.2}{38}{What the batched path does}{section.6.2}{}}
+\newlabel{sec:bk-idea@cref}{{[section][2][6]6.2}{[1][38][]38}}
+\@writefile{toc}{\contentsline {paragraph}{No Python loop over elements.}{39}{section*.73}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{One contraction over the Gauss points.}{39}{section*.74}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Caches built once per block.}{39}{section*.75}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Memory limit.}{39}{section*.76}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6.1}{\ignorespaces Estimated working memory of a batched tangent call (the dominant arrays, not the peak resident memory), from the package's own estimate.\relax }}{39}{table.caption.77}\protected@file@percent }
+\newlabel{tab:bk-chunk}{{6.1}{39}{Estimated working memory of a batched tangent call (the dominant arrays, not the peak resident memory), from the package's own estimate.\relax }{table.caption.77}{}}
+\newlabel{tab:bk-chunk@cref}{{[table][1][6]6.1}{[1][39][]39}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.3}Using it}{39}{section.6.3}\protected@file@percent }
+\newlabel{sec:bk-use}{{6.3}{39}{Using it}{section.6.3}{}}
+\newlabel{sec:bk-use@cref}{{[section][3][6]6.3}{[1][39][]39}}
+\newlabel{lst:bk-use}{{6.1}{40}{Requesting batched assembly and checking what was used (plate of \cbkChunkedPlateElems {} \texttt {Quad4PlaneStressTL} elements)}{lstlisting.6.1}{}}
+\newlabel{lst:bk-use@cref}{{[listing][1][6]6.1}{[1][39][]40}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {6.1}Requesting batched assembly and checking what was used (plate of 192\xspace  {} \texttt  {Quad4PlaneStressTL} elements).}{40}{lstlisting.6.1}\protected@file@percent }
+\newlabel{lst:bk-newton}{{6.2}{40}{A load-controlled Newton solve with batched assembly and a sparse tangent}{lstlisting.6.2}{}}
+\newlabel{lst:bk-newton@cref}{{[listing][2][6]6.2}{[1][40][]40}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {6.2}A load-controlled Newton solve with batched assembly and a sparse tangent.}{40}{lstlisting.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.4}Verification}{40}{section.6.4}\protected@file@percent }
+\newlabel{sec:bk-verif}{{6.4}{40}{Verification}{section.6.4}{}}
+\newlabel{sec:bk-verif@cref}{{[section][4][6]6.4}{[1][40][]40}}
+\@writefile{toc}{\contentsline {paragraph}{Four element families.}{40}{section*.78}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6.2}{\ignorespaces Loop against batched route: speed-up of the element kernels (force, tangent) and of the assembled force of the whole system, and the largest relative difference of the results. One run per family on the sandbox used for the figures of this chapter (2 CPUs).\relax }}{40}{table.caption.79}\protected@file@percent }
+\newlabel{tab:bk-families}{{6.2}{40}{Loop against batched route: speed-up of the element kernels (force, tangent) and of the assembled force of the whole system, and the largest relative difference of the results. One run per family on \machine .\relax }{table.caption.79}{}}
+\newlabel{tab:bk-families@cref}{{[table][2][6]6.2}{[1][40][]40}}
+\@writefile{toc}{\contentsline {paragraph}{Scaling with the number of elements.}{41}{section*.80}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.1}{\ignorespaces Internal-force assembly of a \code  {Quad4PlaneStressTL} plate: time of the loop and the batched route (left) and their ratio (right). Produced by \texttt  {scripts/ch06\_assets.py}.\relax }}{41}{figure.caption.81}\protected@file@percent }
+\newlabel{fig:bk-scaling}{{6.1}{41}{Internal-force assembly of a \code {Quad4PlaneStressTL} plate: time of the loop and the batched route (left) and their ratio (right). Produced by \texttt {scripts/ch06\_assets.py}.\relax }{figure.caption.81}{}}
+\newlabel{fig:bk-scaling@cref}{{[figure][1][6]6.1}{[1][41][]41}}
+\@writefile{toc}{\contentsline {paragraph}{A whole Newton solve.}{41}{section*.82}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.2}{\ignorespaces Wall time of the same load-controlled Newton solve with the default path and with batched assembly and a sparse tangent.\relax }}{41}{figure.caption.83}\protected@file@percent }
+\newlabel{fig:bk-newton}{{6.2}{41}{Wall time of the same load-controlled Newton solve with the default path and with batched assembly and a sparse tangent.\relax }{figure.caption.83}{}}
+\newlabel{fig:bk-newton@cref}{{[figure][2][6]6.2}{[1][41][]41}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.5}Related pieces}{41}{section.6.5}\protected@file@percent }
+\newlabel{sec:bk-related}{{6.5}{41}{Related pieces}{section.6.5}{}}
+\newlabel{sec:bk-related@cref}{{[section][5][6]6.5}{[1][41][]41}}
+\@writefile{lot}{\contentsline {table}{\numberline {6.3}{\ignorespaces Where the concepts of this chapter live in the repository (release v1.0.1\,/\,v0.2.0). The last column says whether the chapter's script \texttt  {scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.\relax }}{42}{table.caption.84}\protected@file@percent }
+\newlabel{tab:bk-map}{{6.3}{42}{Where the concepts of this chapter live in the repository (release \booktag ). The last column says whether the chapter's script \texttt {scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.\relax }{table.caption.84}{}}
+\newlabel{tab:bk-map@cref}{{[table][3][6]6.3}{[1][42][]42}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.6}Limits}{42}{section.6.6}\protected@file@percent }
+\newlabel{sec:bk-limits}{{6.6}{42}{Limits}{section.6.6}{}}
+\newlabel{sec:bk-limits@cref}{{[section][6][6]6.6}{[1][42][]42}}
 \bibstyle{unsrtnat}
 \bibdata{refs}
 \bibcite{belytschko2014nonlinear}{{1}{2014}{{Belytschko et~al.}}{{Belytschko, Liu, Moran, and Elkhodary}}}
 \bibcite{cuvelier2014assemble}{{2}{2014}{{Cuvelier et~al.}}{{Cuvelier, Japhet, and Scarella}}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.7}Summary}{42}{section.6.7}\protected@file@percent }
-\newlabel{sec:bk-summary}{{6.7}{42}{Summary}{section.6.7}{}}
-\newlabel{sec:bk-summary@cref}{{[section][7][6]6.7}{[1][41][]42}}
-\newlabel{sec:bk-exercises}{{6.7}{42}{Exercises}{section*.84}{}}
-\newlabel{sec:bk-exercises@cref}{{[section][7][6]6.7}{[1][42][]42}}
-\@writefile{toc}{\contentsline {section}{References}{42}{section*.85}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.7}Summary}{43}{section.6.7}\protected@file@percent }
+\newlabel{sec:bk-summary}{{6.7}{43}{Summary}{section.6.7}{}}
+\newlabel{sec:bk-summary@cref}{{[section][7][6]6.7}{[1][43][]43}}
+\newlabel{sec:bk-exercises}{{6.7}{43}{Exercises}{section*.85}{}}
+\newlabel{sec:bk-exercises@cref}{{[section][7][6]6.7}{[1][43][]43}}
+\@writefile{toc}{\contentsline {section}{References}{43}{section*.86}\protected@file@percent }
 \@setckpt{chapters/ch06}{
-\setcounter{page}{43}
+\setcounter{page}{44}
 \setcounter{equation}{1}
-\setcounter{enumi}{5}
+\setcounter{enumi}{7}
 \setcounter{enumii}{0}
 \setcounter{enumiii}{0}
 \setcounter{enumiv}{0}
@@ -90,9 +90,9 @@
 \setcounter{continuedfloat}{0}
 \setcounter{subfigure}{0}
 \setcounter{subtable}{0}
-\setcounter{tcbbreakpart}{1}
+\setcounter{tcbbreakpart}{2}
 \setcounter{tcblayer}{0}
-\setcounter{tcolorbox@number}{15}
+\setcounter{tcolorbox@number}{18}
 \setcounter{tcbrastercolumn}{1}
 \setcounter{tcbrasterrow}{1}
 \setcounter{tcbrasternum}{1}
@@ -100,7 +100,7 @@
 \setcounter{lstnumber}{4}
 \setcounter{tcblisting}{0}
 \setcounter{NAT@ctr}{2}
-\setcounter{Item}{38}
+\setcounter{Item}{45}
 \setcounter{Hfootnote}{0}
 \setcounter{bookmark@seq@number}{57}
 \setcounter{proposition}{0}

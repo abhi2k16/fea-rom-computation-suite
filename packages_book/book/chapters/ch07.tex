@@ -1,7 +1,8 @@
 \chapter{Exact unilateral contact: sparse active sets and BDF2}\label{ch:contact}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-Contact is the first place where the solver cannot be a single linear solve: the set of points in contact is unknown and has to be found. This chapter enforces frictionless contact \emph{exactly}, with Lagrange multipliers, and does so for models with tens of thousands of unknowns. It shows why a penalty parameter is the wrong tool, derives the primal-dual active-set method as a semismooth Newton iteration, explains the three sparse computation routes of \anchor{fea_engine.contact_solvers.solve_contact_static_sparse} and how the solver reports a route that does not suit the problem, and then adds a second-order time scheme (BDF2) for impact problems. Every claim is followed by the measurement that supports it, and the limits are stated next to the results.
+Contact is the first place where the solver cannot be a single linear solve: the set of points in contact is unknown and has to be found. This chapter enforces frictionless contact \emph{exactly}, with Lagrange multipliers, and does so for models with tens of thousands of unknowns. It shows why a penalty parameter is the wrong tool, derives the primal-dual active-set method as a semismooth Newton iteration, explains the three sparse computation routes of \anchor{fea_engine.contact_solvers.solve_contact_static_sparse} and how the solver reports a route that does not suit the problem, and then adds a second-order time scheme (BDF2) for impact problems. Every claim is followed by the measurement that supports it, and the limits are stated next to the results.\par\smallskip
+\textbf{After this chapter the reader can:} (i) explain why a penalty parameter is the wrong tool for contact; (ii) state the primal-dual active-set method as a semismooth Newton iteration and choose among the three sparse routes; (iii) run an impact with BDF2 and read its energy behaviour.
 \end{tcolorbox}
 
 \section{The problem}\label{sec:ct-problem}
@@ -163,19 +164,19 @@ print(r.ok, r.route, r.fallbacks)            # True condensed ['reduced', 'saddl
 
 \begin{table}[ht]
 \centering\small
-\begin{tabularx}{\linewidth}{@{}l X@{}}
+\begin{tabularx}{\linewidth}{@{}l X >{\centering\arraybackslash}p{0.11\linewidth}@{}}
 \toprule
-Concept & Code \\
+Concept & Code & Script calls \\
 \midrule
-sparse primal-dual active set, three routes & \anchor{fea_engine.contact_solvers.solve_contact_static_sparse} \\
-result with route, reason, message, suggestion, \texttt{active\_mask} & \anchor{fea_engine.contact_solvers.ContactResult} \\
-dense reference solvers (\texttt{active\_set}, \texttt{lemke}, \texttt{pgs}, \texttt{pdas}) & \anchor{fea_engine.contact_solvers.solve_contact_static} \\
-contact time stepping, first order and BDF2 & \anchor{fea_engine.contact_solvers.solve_contact_dynamics}, \anchor{fea_engine.contact_solvers.ContactDynamicsInfo} \\
-scalar membrane element & \anchor{fea_engine.elements.scalar.Quad4Laplace} \\
-penalty contact elements (the contrast of \Cref{sec:ct-penalty}) & \anchor{fea_engine.elements.contact.GapContactPenalty} \\
+sparse primal-dual active set, three routes & \anchor{fea_engine.contact_solvers.solve_contact_static_sparse} & yes \\
+result with route, reason, message, suggestion, \texttt{active\_mask} & \anchor{fea_engine.contact_solvers.ContactResult} & no \\
+dense reference solvers (\texttt{active\_set}, \texttt{lemke}, \texttt{pgs}, \texttt{pdas}) & \anchor{fea_engine.contact_solvers.solve_contact_static} & yes \\
+contact time stepping, first order and BDF2 & \anchor{fea_engine.contact_solvers.solve_contact_dynamics}, \anchor{fea_engine.contact_solvers.ContactDynamicsInfo} & part \\
+scalar membrane element & \anchor{fea_engine.elements.scalar.Quad4Laplace} & yes \\
+penalty contact elements (the contrast of \Cref{sec:ct-penalty}) & \anchor{fea_engine.elements.contact.GapContactPenalty} & no \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:ct-map}
+\caption{Where the concepts of this chapter live in the repository (release \booktag). The last column says whether the chapter's script \texttt{scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:ct-map}
 \end{table}
 
 \section{Verification of the static solvers}\label{sec:ct-verif-static}
@@ -323,11 +324,11 @@ Frictionless contact is the problem \eqref{eq:ct-kkt}, a convex quadratic progra
 
 \section*{Exercises}\label{sec:ct-exercises}
 \begin{enumerate}
-\item Run \Cref{lst:ct-static} with a floor at height $-10$ (no contact) and with a floor at $-0.01$ (contact almost everywhere). How does the number of iterations change, and why? (Script: \texttt{fea\_engine/examples/gallery/fea\_09\_sparse\_obstacle\_contact.py}.)
-\item Repeat the experiment of \Cref{fig:ct-penalty} on a mesh twice as fine. Does the penetration at a fixed $k_p/\overline{K_{ii}}$ change? Explain with the scaling of $\overline{K_{ii}}$ with the mesh.
-\item Replace $\bm B=\bm I$ by $\bm B=\begin{bmatrix}\bm I&\bm 0\end{bmatrix}+\epsilon\bm S$ with a random sparse $\bm S$, so that \texttt{reduced} is no longer applicable. Which reason does \texttt{reduced} report, and does \texttt{saddle} still match the dense solution? (Test: \texttt{fea\_engine/tests/test\_contact\_solvers\_sparse.py}.)
-\item Derive \eqref{eq:ct-bdf2} from the two BDF2 formulas given above, and check the first-step matrix $\bm M/h^2+\bm K$ the same way.
-\item \Cref{tab:ct-impact} lists four time steps. Add $\Delta t=0.0005$ and decide whether the largest BDF2 energy keeps approaching the limit near $0.7\%$. Then test the explanation of the text by recording the energy change across each contact step (script: \texttt{scripts/ch07\_assets.py}, function \texttt{bar\_impact}; test: \texttt{fea\_engine/tests/test\_contact\_dynamics\_bdf2.py}).
+\item \emph{(Implementation)} Run \Cref{lst:ct-static} with a floor at height $-10$ (no contact) and with a floor at $-0.01$ (contact almost everywhere). How does the number of iterations change, and why? (Script: \texttt{fea\_engine/examples/gallery/fea\_09\_sparse\_obstacle\_contact.py}.)
+\item \emph{(Implementation)} Repeat the experiment of \Cref{fig:ct-penalty} on a mesh twice as fine. Does the penetration at a fixed $k_p/\overline{K_{ii}}$ change? Explain with the scaling of $\overline{K_{ii}}$ with the mesh.
+\item \emph{(Implementation)} Replace $\bm B=\bm I$ by $\bm B=\begin{bmatrix}\bm I&\bm 0\end{bmatrix}+\epsilon\bm S$ with a random sparse $\bm S$, so that \texttt{reduced} is no longer applicable. Which reason does \texttt{reduced} report, and does \texttt{saddle} still match the dense solution? (Test: \texttt{fea\_engine/tests/test\_contact\_solvers\_sparse.py}.)
+\item \emph{(Derivation)} Derive \eqref{eq:ct-bdf2} from the two BDF2 formulas given above, and check the first-step matrix $\bm M/h^2+\bm K$ the same way.
+\item \emph{(Interpretation)} \Cref{tab:ct-impact} lists four time steps. Add $\Delta t=0.0005$ and decide whether the largest BDF2 energy keeps approaching the limit near $0.7\%$. Then test the explanation of the text by recording the energy change across each contact step (script: \texttt{scripts/ch07\_assets.py}, function \texttt{bar\_impact}; test: \texttt{fea\_engine/tests/test\_contact\_dynamics\_bdf2.py}).
 \end{enumerate}
 
 \chapterrefs

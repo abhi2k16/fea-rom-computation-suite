@@ -1,7 +1,8 @@
 \chapter{Computational acceleration: vectorised assembly and batched kernels}\label{ch:batch}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-A nonlinear element has no stored matrix: its force and tangent are recomputed from the current displacement in every Newton iteration, so assembly is paid for again and again. The default implementation does this one element at a time in Python, and for small elements most of the time goes into the interpreter. This chapter explains the opt-in batched path of \fea{}, which computes all elements of a block with array operations, keeps the tangent sparse and lets the Newton drivers use a sparse factorisation. It shows what the batched path computes, how its caches and memory limit work, how the code reports a block that cannot be batched, and then measures the gain and the agreement with the loop on four element families. The loop stays the default and the reference: every batched result is compared with it.
+A nonlinear element has no stored matrix: its force and tangent are recomputed from the current displacement in every Newton iteration, so assembly is paid for again and again. The default implementation does this one element at a time in Python, and for small elements most of the time goes into the interpreter. This chapter explains the opt-in batched path of \fea{}, which computes all elements of a block with array operations, keeps the tangent sparse and lets the Newton drivers use a sparse factorisation. It shows what the batched path computes, how its caches and memory limit work, how the code reports a block that cannot be batched, and then measures the gain and the agreement with the loop on four element families. The loop stays the default and the reference: every batched result is compared with it.\par\smallskip
+\textbf{After this chapter the reader can:} (i) decide when the batched assembly path pays off; (ii) check a batched result against the loop that is its reference; (iii) read the support report for a block that cannot be batched; (iv) set the chunk size to bound memory.
 \end{tcolorbox}
 
 \section{Where the time goes}\label{sec:bk-time}
@@ -90,17 +91,17 @@ The same idea appears in other places of the packages; this chapter does not ben
 
 \begin{table}[ht]
 \centering\small
-\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.42\linewidth} X@{}}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.42\linewidth} X >{\centering\arraybackslash}p{0.11\linewidth}@{}}
 \toprule
-Concept & Code \\
+Concept & Code & Script calls \\
 \midrule
-batch protocol, chunking, geometry and pattern caches & \anchor{fea_engine.batched_kernels.chunk_slices}, \anchor{fea_engine.batched_kernels.SparsePatternCache}, \anchor{fea_engine.batched_kernels.BlockGeometryCache} \\
-batched elements & \anchor{fea_engine.elements.nonlinear_solids.Quad4PlaneStressTL}, \anchor{fea_engine.elements.hex_tl.Hex8SolidTL}, \anchor{fea_engine.elements.hex_tl.Hex20SolidTL}, \anchor{fea_engine.elements.nonlinear_solids.Tet10SolidTL} \\
-assembly entry points & \anchor{fea_engine.solver.FESystem} (\code{assemble_internal_force}, \code{assemble_tangent_stiffness}, \code{batch_support_report}) \\
-sparse Newton settings & \anchor{fea_engine.newton_options.NewtonOptions} \\
+batch protocol, chunking, geometry and pattern caches & \anchor{fea_engine.batched_kernels.chunk_slices}, \anchor{fea_engine.batched_kernels.SparsePatternCache}, \anchor{fea_engine.batched_kernels.BlockGeometryCache} & no \\
+batched elements & \anchor{fea_engine.elements.nonlinear_solids.Quad4PlaneStressTL}, \anchor{fea_engine.elements.hex_tl.Hex8SolidTL}, \anchor{fea_engine.elements.hex_tl.Hex20SolidTL}, \anchor{fea_engine.elements.nonlinear_solids.Tet10SolidTL} & yes \\
+assembly entry points & \anchor{fea_engine.solver.FESystem} (\code{assemble_internal_force}, \code{assemble_tangent_stiffness}, \code{batch_support_report}) & yes \\
+sparse Newton settings & \anchor{fea_engine.newton_options.NewtonOptions} & no \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:bk-map}
+\caption{Where the concepts of this chapter live in the repository (release \booktag). The last column says whether the chapter's script \texttt{scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:bk-map}
 \end{table}
 
 \section{Limits}\label{sec:bk-limits}
@@ -123,11 +124,13 @@ A nonlinear element is reassembled in every Newton iteration, and a Python loop 
 
 \section*{Exercises}\label{sec:bk-exercises}
 \begin{enumerate}
-\item Repeat \Cref{fig:bk-scaling} for \code{Hex8SolidTL} and compare the speed-up at small sizes with that of the plane-stress element. Why is it smaller?
-\item Run \Cref{lst:bk-newton} with \code{NewtonOptions(sparse_tangent=True, lu_ordering="COLAMD")}. Does the ordering change the time? Do the results change?
-\item Choose \code{chunk_size=1}, \code{7} and \code{192} for the tangent of \Cref{lst:bk-use}. How do the time and the difference to the unchunked result change?
-\item Build a model with one \code{Quad4PlaneStressTL} block and one \code{TrussPlastic2D} block. What does \code{batch\_support\_report} return, and what does \code{last\_assembly\_modes} show after an assembly?
-\item Separate the three effects in \cbkNewtonRatio{}-fold gain of the Newton solve: time the loop assembly, the batched assembly and the two linear solves on the same tangent.
+\item \emph{(Implementation)} Repeat \Cref{fig:bk-scaling} for \code{Hex8SolidTL} and compare the speed-up at small sizes with that of the plane-stress element. Why is it smaller?
+\item \emph{(Implementation)} Run \Cref{lst:bk-newton} with \code{NewtonOptions(sparse_tangent=True, lu_ordering="COLAMD")}. Does the ordering change the time? Do the results change?
+\item \emph{(Implementation)} Choose \code{chunk_size=1}, \code{7} and \code{192} for the tangent of \Cref{lst:bk-use}. How do the time and the difference to the unchunked result change?
+\item \emph{(Implementation)} Build a model with one \code{Quad4PlaneStressTL} block and one \code{TrussPlastic2D} block. What does \code{batch\_support\_report} return, and what does \code{last\_assembly\_modes} show after an assembly?
+\item \emph{(Implementation)} Separate the three effects in \cbkNewtonRatio{}-fold gain of the Newton solve: time the loop assembly, the batched assembly and the two linear solves on the same tangent.
+\item \emph{(Derivation)} Show that batched assembly of $E$ elements with $d$ degrees of freedom each stores $Ed^2$ tangent entries, and that processing the elements in chunks of $c$ reduces the peak working memory to the order of $cd^2$ plus the sparse result.
+\item \emph{(Interpretation)} The loop is the default and the batched path is opt-in. Give one reason for and one against reversing this, using the speed-ups and agreements reported in this chapter.
 \end{enumerate}
 
 \chapterrefs

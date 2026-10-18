@@ -1,0 +1,56 @@
+\chapter{Notation and glossary}\label{ch:notation}
+
+\section{Notation}\label{sec:not}
+
+Symbols are used as below in every chapter unless the chapter says otherwise. Bold upper case is a matrix, bold lower case a vector.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.2\linewidth} X@{}}
+\toprule
+Symbol & Meaning \\
+\midrule
+$\bm K,\ \bm M,\ \bm C$ & stiffness, mass and damping matrices of the full-order model \\
+$\bm u,\ \bm v,\ \bm a$ & displacement, velocity and acceleration vectors; $\bm f$ is the external load \\
+$\bm f_{int}(\bm u)$, $\bm K_t$ & internal force and tangent stiffness of a nonlinear model \\
+$\bm V,\ \bm U$ & reduction basis (columns span the reduced space); $\bm U$ is used for the primal basis in contact chapters \\
+$\bm q,\ \bm u_r$ & reduced coordinates, $\bm u\approx\bm V\bm q$ \\
+$\bm A_r,\ \bm M_r,\ \bm B_r$ & reduced matrices: $\bm V^T\bm K\bm V$, $\bm V^T\bm M\bm V$, reduced constraint matrix \\
+$\bm B,\ \bm c$ & gap map and offset of the contact constraints, $\bm B\bm u\ge\bm c$ \\
+$\bm\lambda,\ \bm U_\lambda$ & contact forces (Lagrange multipliers), $\bm\lambda\ge\bm 0$; basis for the contact forces \\
+$\omega,\ f,\ \zeta,\ \eta$ & circular frequency, frequency in hertz, damping ratio, loss factor \\
+$\bm\Lambda$ & diagonal matrix of squared natural frequencies $\omega_i^2$ \\
+$n,\ r,\ p$ & number of unknowns of the full model; size of the reduced model; primal basis size (also polynomial or perturbation order where stated) \\
+$\sigma_j$ & singular values (snapshot matrix) or, in Chapter~\ref{ch:bt}, Hankel singular values \\
+$\bm G,\ \bm w$ & ECSW training matrix and element weights \\
+$\mathcal A_k$ & active set of contact constraints at iteration $k$ \\
+$h,\ \Delta t$ & mesh size; time step \\
+\bottomrule
+\end{tabularx}
+\caption{Notation.}\label{tab:notation}
+\end{table}
+
+\section{Glossary}\label{sec:gloss}
+
+\begin{description}
+\item[Active set] The set of contact constraints that are closed (zero gap, positive force) in a solution.
+\item[Affine decomposition] A parameter-dependent matrix written as a sum of fixed matrices with scalar parameter-dependent coefficients, so that projection is done once offline.
+\item[BDF2] The second-order backward-difference time integrator used for contact dynamics.
+\item[Break-even] The number of queries at which the offline cost of a reduced model is repaid by the saving per query.
+\item[CMS] Component mode synthesis: reduction of substructures with physical interface unknowns (Craig--Bampton and relatives).
+\item[ECSW] Energy-conserving sampling and weighting: a weighted sum over a few elements that reproduces the reduced internal force.
+\item[Held-out] Data (parameters, states) not used to build the reduced model and used only to test it.
+\item[Hyper-reduction] Approximating the nonlinear reduced force from a small part of the model, so that its cost no longer scales with the full mesh.
+\item[ICE] Implicit condensation and expansion: fitting the nonlinear modal force of a geometrically nonlinear structure by a polynomial.
+\item[Inf--sup condition] A rank condition on the reduced constraints (here: full row rank of $\bm B_r$) that makes the reduced saddle-point problem well posed.
+\item[LCP] Linear complementarity problem, the small problem solved for the contact forces in each reduced step.
+\item[Loewner pencil] A matrix pair built from frequency-response samples whose generalised eigenvalues estimate the poles.
+\item[NMF] Non-negative matrix factorisation, used for a basis of contact forces that stays non-negative.
+\item[NNM] Nonlinear normal mode; its amplitude--frequency curve is the backbone.
+\item[POD] Proper orthogonal decomposition: the basis of dominant singular vectors of a snapshot matrix.
+\item[PSD] Power spectral density of a random load.
+\item[RID] Reduced integration domain: a small part of the mesh on which the equations are written in hybrid hyper-reduction.
+\item[Snapshot] A full-order solution (displacement, multipliers, state) saved to build a reduced model.
+\item[SOAR] Second-order Arnoldi: moment matching that stays in the second-order form of structural dynamics.
+\item[Validation, verification] See the reading guide: verification checks that the equations are solved correctly; validation compares the model with experiments (none in this book).
+\end{description}

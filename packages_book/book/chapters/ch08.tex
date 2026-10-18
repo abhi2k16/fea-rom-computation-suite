@@ -1,7 +1,8 @@
 \chapter{Projection-based reduction: POD, Galerkin and affine sweeps}\label{ch:pod}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-A reduced-order model replaces a system with thousands of unknowns by one with a handful, and is worth building only when the same system has to be solved many times. This chapter builds the simplest such model, the one the rest of Part~III refines: collect solutions (snapshots), extract a basis from them by the singular value decomposition (POD), and project the equations onto it (Galerkin). When the stiffness depends on parameters through a sum of fixed matrices, the projection is done once and every new parameter costs a small dense solve. The chapter measures what this buys and what it does not: how fast the singular values fall, how the error of the reduced solution follows the projection error, whether the choice of snapshots and of the inner product matters, and where the offline cost is repaid.
+A reduced-order model replaces a system with thousands of unknowns by one with a handful, and is worth building only when the same system has to be solved many times. This chapter builds the simplest such model, the one the rest of Part~III refines: collect solutions (snapshots), extract a basis from them by the singular value decomposition (POD), and project the equations onto it (Galerkin). When the stiffness depends on parameters through a sum of fixed matrices, the projection is done once and every new parameter costs a small dense solve. The chapter measures what this buys and what it does not: how fast the singular values fall, how the error of the reduced solution follows the projection error, whether the choice of snapshots and of the inner product matters, and where the offline cost is repaid.\par\smallskip
+\textbf{After this chapter the reader can:} (i) build a POD--Galerkin model with an affine parameter split; (ii) judge it on held-out parameters and not on the training set; (iii) compute the break-even number of queries from its offline and online costs.
 \end{tcolorbox}
 
 \section{The problem}\label{sec:pod-problem}
@@ -85,19 +86,19 @@ freq_hz, _, _ = rom.solve_modal(n_modes=5)
 
 \begin{table}[ht]
 \centering\small
-\begin{tabularx}{\linewidth}{@{}l X@{}}
+\begin{tabularx}{\linewidth}{@{}l X >{\centering\arraybackslash}p{0.11\linewidth}@{}}
 \toprule
-Concept & Code \\
+Concept & Code & Script calls \\
 \midrule
-snapshot SVD, truncation by rank or energy, mass-weighted variant & \anchor{rom_engine.pod.PodBasis} \\
-Galerkin projection of $\bm K,\bm M,\bm f$; static and modal solves & \anchor{rom_engine.galerkin.GalerkinROM} \\
-affine sum $\sum_q\theta_q\bm K_q$, offline projection, online assembly & \anchor{rom_engine.affine.AffineDecomposition} \\
-optimal Latin hypercube design & \anchor{rom_engine.sampling.optimal_lhs} \\
-parametric mode sensitivities (used for mode-tracking in parameter studies) & \anchor{rom_engine.parametric_modes.mode_sensitivities} \\
-worked examples & \path{rom_engine/examples/gallery/rom_01_pod_basis.py}, \path{rom_02_galerkin_parametric_rom.py} \\
+snapshot SVD, truncation by rank or energy, mass-weighted variant & \anchor{rom_engine.pod.PodBasis} & yes \\
+Galerkin projection of $\bm K,\bm M,\bm f$; static and modal solves & \anchor{rom_engine.galerkin.GalerkinROM} & yes \\
+affine sum $\sum_q\theta_q\bm K_q$, offline projection, online assembly & \anchor{rom_engine.affine.AffineDecomposition} & yes \\
+optimal Latin hypercube design & \anchor{rom_engine.sampling.optimal_lhs} & yes \\
+parametric mode sensitivities (used for mode-tracking in parameter studies) & \anchor{rom_engine.parametric_modes.mode_sensitivities} & no \\
+worked examples & \path{rom_engine/examples/gallery/rom_01_pod_basis.py}, \path{rom_02_galerkin_parametric_rom.py} & -- \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:pod-map}
+\caption{Where the concepts of this chapter live in the repository (release \booktag). The last column says whether the chapter's script \texttt{scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:pod-map}
 \end{table}
 
 \section{Verification}\label{sec:pod-verif}
@@ -178,11 +179,13 @@ POD extracts a low-dimensional basis from solutions by the SVD, \cref{eq:pod-ey}
 
 \section*{Exercises}\label{sec:pod-exercises}
 \begin{enumerate}
-\item Reproduce \Cref{fig:pod-pod} with only $(\mu_1,\mu_2)$ varying and the tip load fixed. Where do the singular values drop to rounding level, and why? (Script: \texttt{scripts/ch08\_assets.py}.)
-\item Replace the held-out parameter set by one drawn from $\xi\in[0.1,0.3]$ only. Does a basis trained on the full range still reach the same error?
-\item Use \code{fit(S, energy_threshold=0.9999)} instead of a fixed rank. How many modes does it select, and what is the held-out error? Does the training energy predict the held-out error?
-\item Add a third affine term (a stiffer segment) to \cref{lst:pod-run}. What changes in the offline projection cost and in the online cost?
-\item Use a sparse factorisation (\code{scipy.sparse.linalg.splu}) for the full solves of \Cref{tab:pod-cost} and report the new break-even numbers.
+\item \emph{(Implementation)} Reproduce \Cref{fig:pod-pod} with only $(\mu_1,\mu_2)$ varying and the tip load fixed. Where do the singular values drop to rounding level, and why? (Script: \texttt{scripts/ch08\_assets.py}.)
+\item \emph{(Implementation)} Replace the held-out parameter set by one drawn from $\xi\in[0.1,0.3]$ only. Does a basis trained on the full range still reach the same error?
+\item \emph{(Implementation)} Use \code{fit(S, energy_threshold=0.9999)} instead of a fixed rank. How many modes does it select, and what is the held-out error? Does the training energy predict the held-out error?
+\item \emph{(Implementation)} Add a third affine term (a stiffer segment) to \cref{lst:pod-run}. What changes in the offline projection cost and in the online cost?
+\item \emph{(Implementation)} Use a sparse factorisation (\code{scipy.sparse.linalg.splu}) for the full solves of \Cref{tab:pod-cost} and report the new break-even numbers.
+\item \emph{(Derivation)} For snapshots $\bm S$ with the mass inner product, show that the squared projection error of the snapshot set on the leading $r$ POD modes equals the sum of the discarded squared singular values, $\sum_{j>r}\sigma_j^2$.
+\item \emph{(Interpretation)} In this chapter the held-out error follows the projection error. Describe a situation in which the Galerkin model would be much worse than its projection error, and what that would signal.
 \end{enumerate}
 
 \chapterrefs

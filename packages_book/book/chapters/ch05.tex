@@ -1,7 +1,8 @@
 \chapter{Material and geometric nonlinearity}\label{ch:nonlin}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-Linear analysis assumes small displacements and a linear material. This chapter removes both assumptions in the total-Lagrangian setting of \fea{}. It states the Newton iteration that every nonlinear driver shares, derives the internal force and the tangent of a truss and of a continuum element, adds hyperelasticity and $J_2$ plasticity with history variables, and compares the four ways to follow a response: load control, displacement control, arc length and Koiter--Newton. Each statement about the code is followed by the check that supports it: rotation invariance, agreement of the tangents with finite differences, the von Mises snap-through truss against its closed form, and a plastic load cycle against the hand solution.
+Linear analysis assumes small displacements and a linear material. This chapter removes both assumptions in the total-Lagrangian setting of \fea{}. It states the Newton iteration that every nonlinear driver shares, derives the internal force and the tangent of a truss and of a continuum element, adds hyperelasticity and $J_2$ plasticity with history variables, and compares the four ways to follow a response: load control, displacement control, arc length and Koiter--Newton. Each statement about the code is followed by the check that supports it: rotation invariance, agreement of the tangents with finite differences, the von Mises snap-through truss against its closed form, and a plastic load cycle against the hand solution.\par\smallskip
+\textbf{After this chapter the reader can:} (i) state the Newton iteration shared by all nonlinear drivers; (ii) verify an element's force and tangent by rotation invariance and finite differences; (iii) choose among load control, displacement control, arc length and Koiter--Newton for a response with a limit point; (iv) check a plastic load cycle against a hand solution.
 \end{tcolorbox}
 
 \section{Why a nonlinear solver is different}\label{sec:nl-why}
@@ -162,18 +163,18 @@ Run on the truss, \Cref{lst:nl-opts} gives an apex deflection of $\cnlLCdelta$ m
 
 \begin{table}[ht]
 \centering\small
-\begin{tabularx}{\linewidth}{@{}l X@{}}
+\begin{tabularx}{\linewidth}{@{}l X >{\centering\arraybackslash}p{0.11\linewidth}@{}}
 \toprule
-Concept & Code \\
+Concept & Code & Script calls \\
 \midrule
-total-Lagrangian truss, plane-stress quad, hex, quadratic tetrahedron & \anchor{fea_engine.elements.trusses.TrussTL2D}, \anchor{fea_engine.elements.nonlinear_solids.Quad4PlaneStressTL}, \anchor{fea_engine.elements.hex_tl.Hex8SolidTL}, \anchor{fea_engine.elements.nonlinear_solids.Tet10SolidTL} \\
-corotational beam & \anchor{fea_engine.elements.beams.Beam2DCorotational} \\
-hyperelastic tetrahedron & \anchor{fea_engine.elements.nonlinear_solids.Tet4NeoHookean} \\
-plastic bar and continuum, with state & \anchor{fea_engine.elements.trusses.TrussPlastic2D}, \anchor{fea_engine.elements.nonlinear_solids.Hex8PlasticJ2} \\
-shared Newton settings & \anchor{fea_engine.newton_options.NewtonOptions} \\
+total-Lagrangian truss, plane-stress quad, hex, quadratic tetrahedron & \anchor{fea_engine.elements.trusses.TrussTL2D}, \anchor{fea_engine.elements.nonlinear_solids.Quad4PlaneStressTL}, \anchor{fea_engine.elements.hex_tl.Hex8SolidTL}, \anchor{fea_engine.elements.nonlinear_solids.Tet10SolidTL} & yes \\
+corotational beam & \anchor{fea_engine.elements.beams.Beam2DCorotational} & yes \\
+hyperelastic tetrahedron & \anchor{fea_engine.elements.nonlinear_solids.Tet4NeoHookean} & no \\
+plastic bar and continuum, with state & \anchor{fea_engine.elements.trusses.TrussPlastic2D}, \anchor{fea_engine.elements.nonlinear_solids.Hex8PlasticJ2} & part \\
+shared Newton settings & \anchor{fea_engine.newton_options.NewtonOptions} & yes \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:nl-map}
+\caption{Where the concepts of this chapter live in the repository (release \booktag). The last column says whether the chapter's script \texttt{scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:nl-map}
 \end{table}
 
 \begin{limitsbox}
@@ -193,11 +194,12 @@ Nonlinear equilibrium \eqref{eq:nl-residual} is solved by Newton's method with t
 
 \section*{Exercises}\label{sec:nl-exercises}
 \begin{enumerate}
-\item Rotate the element of \Cref{fig:nl-obj} about its own centre instead of the origin. Does the total-Lagrangian force stay at rounding? Does the linear force change?
-\item Make the truss flatter ($h_0=0.05$ m). Compute $P_{max}$ from \eqref{eq:nl-vm} and check with arc length. Does load control at $1.1P_{max}$ still fail?
-\item Change the load cycle of \Cref{lst:nl-plast} to $0\to1.8\sigma_y\to-1.8\sigma_y\to1.8\sigma_y$ and find the strain at which the third branch yields. With isotropic hardening, does the yield stress keep growing at each reversal?
-\item In \Cref{tab:nl-tangent} replace the finite-difference step $10^{-6}$ by $10^{-4}$ and $10^{-8}$ and explain the change of the worst difference (truncation against rounding).
-\item Use \code{Tet4NeoHookean} for a block under uniaxial stretch and compare its finite-difference tangent with the autograd option of Appendix~\ref{ch:diff}.
+\item \emph{(Implementation)} Rotate the element of \Cref{fig:nl-obj} about its own centre instead of the origin. Does the total-Lagrangian force stay at rounding? Does the linear force change?
+\item \emph{(Implementation)} Make the truss flatter ($h_0=0.05$ m). Compute $P_{max}$ from \eqref{eq:nl-vm} and check with arc length. Does load control at $1.1P_{max}$ still fail?
+\item \emph{(Implementation)} Change the load cycle of \Cref{lst:nl-plast} to $0\to1.8\sigma_y\to-1.8\sigma_y\to1.8\sigma_y$ and find the strain at which the third branch yields. With isotropic hardening, does the yield stress keep growing at each reversal?
+\item \emph{(Interpretation)} In \Cref{tab:nl-tangent} replace the finite-difference step $10^{-6}$ by $10^{-4}$ and $10^{-8}$ and explain the change of the worst difference (truncation against rounding).
+\item \emph{(Implementation)} Use \code{Tet4NeoHookean} for a block under uniaxial stretch and compare its finite-difference tangent with the autograd option of Appendix~\ref{ch:diff}.
+\item \emph{(Derivation)} Starting from the Green--Lagrange strain $E=(L^2-L_0^2)/(2L_0^2)$ of a two-node truss, show that the tangent stiffness is the sum of a material part and a part proportional to the axial force (the geometric stiffness).
 \end{enumerate}
 
 \chapterrefs

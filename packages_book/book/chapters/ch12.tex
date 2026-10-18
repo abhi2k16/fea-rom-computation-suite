@@ -78,23 +78,23 @@ X, U_red, lam = model.simulate_contact(force, B, c, h, n_steps)
 
 \begin{table}[ht]
 \centering\small
-\begin{tabularx}{\linewidth}{@{}l X@{}}
+\begin{tabularx}{\linewidth}{@{}l X >{\centering\arraybackslash}p{0.11\linewidth}@{}}
 \toprule
-Concept & Code \\
+Concept & Code & Script calls \\
 \midrule
-Loewner pencil, frequencies, damping, mode shapes & \anchor{rom_engine.loewner.LoewnerROM} \\
-polynomial (ICE) modal force model & \anchor{rom_engine.nonlinear_rom.PolynomialModalROM} \\
-RBF surrogate (multi-fidelity) & \anchor{rom_engine.nonlinear_rom.MultiFidelitySurrogate} \\
-training-load generation & \anchor{rom_engine.nonlinear_rom.AppliedLoadStrategy} \\
-harmonic balance, backbone continuation & \anchor{rom_engine.nnm.HarmonicBalanceSystem}, \anchor{rom_engine.nnm.solve_nnm_backbone} \\
-pseudo-arclength backbone & \anchor{rom_engine.nnm.solve_nnm_backbone_arclength} \\
-SPD operator inference, contact dynamics & \anchor{rom_engine.operator_inference.infer_contact_operators} \\
-quadratic manifold, modal derivatives (not tested here) & \anchor{rom_engine.quadratic_manifold.QuadraticManifold}, \anchor{rom_engine.modal_derivatives.static_modal_derivatives} \\
-intrusive nonlinear Galerkin ROM (not tested here) & \anchor{rom_engine.intrusive_nonlinear_rom.IntrusiveNonlinearROM} \\
-worked example & \path{rom_engine/examples/gallery/rom_05_nonlinear_modal_rom.py} \\
+Loewner pencil, frequencies, damping, mode shapes & \anchor{rom_engine.loewner.LoewnerROM} & yes \\
+polynomial (ICE) modal force model & \anchor{rom_engine.nonlinear_rom.PolynomialModalROM} & yes \\
+RBF surrogate (multi-fidelity) & \anchor{rom_engine.nonlinear_rom.MultiFidelitySurrogate} & yes \\
+training-load generation & \anchor{rom_engine.nonlinear_rom.AppliedLoadStrategy} & yes \\
+harmonic balance, backbone continuation & \anchor{rom_engine.nnm.HarmonicBalanceSystem}, \anchor{rom_engine.nnm.solve_nnm_backbone} & yes \\
+pseudo-arclength backbone & \anchor{rom_engine.nnm.solve_nnm_backbone_arclength} & yes \\
+SPD operator inference, contact dynamics & \anchor{rom_engine.operator_inference.infer_contact_operators} & yes \\
+quadratic manifold, modal derivatives (not tested here) & \anchor{rom_engine.quadratic_manifold.QuadraticManifold}, \anchor{rom_engine.modal_derivatives.static_modal_derivatives} & no \\
+intrusive nonlinear Galerkin ROM (not tested here) & \anchor{rom_engine.intrusive_nonlinear_rom.IntrusiveNonlinearROM} & no \\
+worked example & \path{rom_engine/examples/gallery/rom_05_nonlinear_modal_rom.py} & -- \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:ni-map}
+\caption{Where the concepts of this chapter live in the repository (release \booktag). The last column says whether the chapter's script \texttt{scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:ni-map}
 \end{table}
 
 \paragraph{A remark on neural models.}

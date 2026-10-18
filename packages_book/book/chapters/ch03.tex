@@ -1,7 +1,8 @@
 \chapter{Linear continua and structural elements}\label{ch:elem}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-Everything in the later chapters is built from element matrices, so this chapter starts at the root: how a weak form becomes a sparse stiffness matrix and a mass matrix, and which families of elements \fea{} provides for scalar fields, plane and solid continua, beams, plates and shells. It does not re-derive shape functions. It concentrates on the places where an element can be wrong while looking plausible: locking, integration rules, and the choice of mass matrix. Each is followed by a test with an independent reference: patch tests on distorted meshes, pure bending, a slender cantilever with a nearly incompressible material, beam frequencies against closed forms, and a plate against the shell that must reproduce it.
+Everything in the later chapters is built from element matrices, so this chapter starts at the root: how a weak form becomes a sparse stiffness matrix and a mass matrix, and which families of elements \fea{} provides for scalar fields, plane and solid continua, beams, plates and shells. It does not re-derive shape functions. It concentrates on the places where an element can be wrong while looking plausible: locking, integration rules, and the choice of mass matrix. Each is followed by a test with an independent reference: patch tests on distorted meshes, pure bending, a slender cantilever with a nearly incompressible material, beam frequencies against closed forms, and a plate against the shell that must reproduce it.\par\smallskip
+\textbf{After this chapter the reader can:} (i) say how a weak form becomes a stiffness and a mass matrix; (ii) recognise locking and a wrong integration rule from a test with an independent reference; (iii) choose between a consistent and a lumped mass matrix and state the frequency error of each.
 \end{tcolorbox}
 
 \section{From the weak form to an element matrix}\label{sec:el-weak}
@@ -92,19 +93,19 @@ The Euler--Bernoulli element is exact for an end load: one element reproduces th
 
 \begin{table}[ht]
 \centering\small
-\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.44\linewidth} X@{}}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.44\linewidth} X >{\centering\arraybackslash}p{0.11\linewidth}@{}}
 \toprule
-Concept & Code \\
+Concept & Code & Script calls \\
 \midrule
-scalar element, weak form, mass & \anchor{fea_engine.elements.scalar.Quad4Laplace} \\
-plane and solid elements & \anchor{fea_engine.elements.solids.Quad4PlaneStress}, \anchor{fea_engine.elements.solids.Quad8PlaneStress}, \anchor{fea_engine.elements.solids.Tri3PlaneStress}, \anchor{fea_engine.elements.solids.Tri6PlaneStress}, \anchor{fea_engine.elements.solids.Hex8Solid3D}, \anchor{fea_engine.elements.solids.Hex20Solid3D}, \anchor{fea_engine.elements.solids.Tet4Solid3D}, \anchor{fea_engine.elements.solids.Tet10Solid3D} \\
-B-bar hexahedron & \anchor{fea_engine.elements.solids.Hex8SolidBbar} \\
-beams & \anchor{fea_engine.elements.beams.Beam2DEulerBernoulli}, \anchor{fea_engine.elements.beams.Beam2DReissner}, \anchor{fea_engine.elements.beams3d.Beam3DEulerBernoulli} \\
-plate, shell & \anchor{fea_engine.elements.plates.Quad4MindlinPlate}, \anchor{fea_engine.elements.shells.Shell4MITC} \\
-convergence studies & \anchor{fea_engine.convergence.run_study}, \anchor{fea_engine.convergence.observed_order} \\
+scalar element, weak form, mass & \anchor{fea_engine.elements.scalar.Quad4Laplace} & yes \\
+plane and solid elements & \anchor{fea_engine.elements.solids.Quad4PlaneStress}, \anchor{fea_engine.elements.solids.Quad8PlaneStress}, \anchor{fea_engine.elements.solids.Tri3PlaneStress}, \anchor{fea_engine.elements.solids.Tri6PlaneStress}, \anchor{fea_engine.elements.solids.Hex8Solid3D}, \anchor{fea_engine.elements.solids.Hex20Solid3D}, \anchor{fea_engine.elements.solids.Tet4Solid3D}, \anchor{fea_engine.elements.solids.Tet10Solid3D} & yes \\
+B-bar hexahedron & \anchor{fea_engine.elements.solids.Hex8SolidBbar} & yes \\
+beams & \anchor{fea_engine.elements.beams.Beam2DEulerBernoulli}, \anchor{fea_engine.elements.beams.Beam2DReissner}, \anchor{fea_engine.elements.beams3d.Beam3DEulerBernoulli} & yes \\
+plate, shell & \anchor{fea_engine.elements.plates.Quad4MindlinPlate}, \anchor{fea_engine.elements.shells.Shell4MITC} & yes \\
+convergence studies & \anchor{fea_engine.convergence.run_study}, \anchor{fea_engine.convergence.observed_order} & yes \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:el-map}
+\caption{Where the concepts of this chapter live in the repository (release \booktag). The last column says whether the chapter's script \texttt{scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:el-map}
 \end{table}
 
 \begin{limitsbox}
@@ -124,11 +125,12 @@ Every element is $\int\bm B^{T}\bm D\bm B$ evaluated by Gauss quadrature, plus a
 
 \section*{Exercises}\label{sec:el-exercises}
 \begin{enumerate}
-\item Repeat \Cref{fig:el-mass} with the average of the consistent and the lumped matrix, $\bm M=\tfrac12(\bm M_c+\bm M_l)$. Does the error of $\lambda_1$ cancel to leading order, and what order does it have?
-\item Run the locking test of \Cref{tab:el-locking} on three meshes, $10\times2\times2$, $20\times4\times4$ and $40\times8\times8$, for the plain and the B-bar hexahedron. Does shear locking go away with refinement, and at what rate?
-\item Use \code{integration='full'} for the plate on a thicker strip ($h/L=0.1$). Is the locking still visible? Compare with the Timoshenko value.
-\item Replace the end load of the cantilever by a distributed load. Is one Euler--Bernoulli element still exact? Why not?
-\item Distort the patch-test mesh more strongly (move the interior nodes by half an element). Does any element in \Cref{tab:el-patch} fail?
+\item \emph{(Implementation)} Repeat \Cref{fig:el-mass} with the average of the consistent and the lumped matrix, $\bm M=\tfrac12(\bm M_c+\bm M_l)$. Does the error of $\lambda_1$ cancel to leading order, and what order does it have?
+\item \emph{(Implementation)} Run the locking test of \Cref{tab:el-locking} on three meshes, $10\times2\times2$, $20\times4\times4$ and $40\times8\times8$, for the plain and the B-bar hexahedron. Does shear locking go away with refinement, and at what rate?
+\item \emph{(Implementation)} Use \code{integration='full'} for the plate on a thicker strip ($h/L=0.1$). Is the locking still visible? Compare with the Timoshenko value.
+\item \emph{(Interpretation)} Replace the end load of the cantilever by a distributed load. Is one Euler--Bernoulli element still exact? Why not?
+\item \emph{(Implementation)} Distort the patch-test mesh more strongly (move the interior nodes by half an element). Does any element in \Cref{tab:el-patch} fail?
+\item \emph{(Derivation)} For a fixed--free bar of one two-node element, find the lowest eigenvalue with the consistent mass matrix $\tfrac{\rho AL}{6}\left[\begin{smallmatrix}2&1\\1&2\end{smallmatrix}\right]$ and with the lumped matrix, and show that their errors against the exact $(\pi/2)^2EA/(\rho AL^2)$ are about $+21.6\,\%$ and $-18.9\,\%$.
 \end{enumerate}
 
 \chapterrefs

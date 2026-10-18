@@ -1,7 +1,8 @@
 \chapter{Dynamics: modal, transient, harmonic and random response}\label{ch:dyn}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-The reduced-order models of Part~III reduce the dynamic problem, and the contact chapter extends it, so this chapter states the problem and the five ways \fea{} solves it: the eigenproblem for natural frequencies, implicit Newmark integration, explicit central differences, modal superposition, and frequency-domain response (harmonic and random). For each method it gives the equation, the algorithm, what the code does, and a test whose reference is exact for the discrete model or independent of the solver. The tests show the second-order accuracy of Newmark and its period error, the sharp stability limit of the explicit method, the effect of keeping few modes, and the agreement of the direct frequency-response solve with a modal sum.
+The reduced-order models of Part~III reduce the dynamic problem, and the contact chapter extends it, so this chapter states the problem and the five ways \fea{} solves it: the eigenproblem for natural frequencies, implicit Newmark integration, explicit central differences, modal superposition, and frequency-domain response (harmonic and random). For each method it gives the equation, the algorithm, what the code does, and a test whose reference is exact for the discrete model or independent of the solver. The tests show the second-order accuracy of Newmark and its period error, the sharp stability limit of the explicit method, the effect of keeping few modes, and the agreement of the direct frequency-response solve with a modal sum.\par\smallskip
+\textbf{After this chapter the reader can:} (i) choose among the five dynamic solvers for a given problem; (ii) compute and verify the critical time step of the explicit method; (iii) judge a modal truncation or a frequency-response result against an independent reference.
 \end{tcolorbox}
 
 \section{The semi-discrete problem}\label{sec:dy-problem}
@@ -126,16 +127,16 @@ method & cost per step & use when \\
 
 \begin{table}[ht]
 \centering\small
-\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.42\linewidth} X@{}}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.42\linewidth} X >{\centering\arraybackslash}p{0.11\linewidth}@{}}
 \toprule
-Concept & Code \\
+Concept & Code & Script calls \\
 \midrule
-eigenproblem, implicit and explicit integration, modal superposition, harmonic and random response & \anchor{fea_engine.solver.FESystem} (\code{solve_modal}, \code{solve_transient_implicit}, \code{solve_transient_explicit}, \code{critical_timestep}, \code{solve_modal_superposition}, \code{solve_harmonic}, \code{solve_random_vibration}) \\
-loads & \anchor{fea_engine.loads.TimeHistoryLoad}, \anchor{fea_engine.loads.LoadPattern} \\
-damping & \anchor{fea_engine.damping.RayleighDamping}, \anchor{fea_engine.damping.ModalDamping} \\
+eigenproblem, implicit and explicit integration, modal superposition, harmonic and random response & \anchor{fea_engine.solver.FESystem} (\code{solve_modal}, \code{solve_transient_implicit}, \code{solve_transient_explicit}, \code{critical_timestep}, \code{solve_modal_superposition}, \code{solve_harmonic}, \code{solve_random_vibration}) & yes \\
+loads & \anchor{fea_engine.loads.TimeHistoryLoad}, \anchor{fea_engine.loads.LoadPattern} & yes \\
+damping & \anchor{fea_engine.damping.RayleighDamping}, \anchor{fea_engine.damping.ModalDamping} & part \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:dy-map}
+\caption{Where the concepts of this chapter live in the repository (release \booktag). The last column says whether the chapter's script \texttt{scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:dy-map}
 \end{table}
 
 \begin{limitsbox}
@@ -156,11 +157,12 @@ Linear dynamics reduces to \eqref{eq:dy-eom}. Newmark's average-acceleration rul
 
 \section*{Exercises}\label{sec:dy-exercises}
 \begin{enumerate}
-\item Repeat \Cref{fig:dy-newmark} for $\beta=\tfrac14,\gamma=0.6$ (if supported) or for the explicit method at $\Delta t=0.5\Delta t_c$. Which has the larger period error?
-\item In \Cref{tab:dy-stab}, replace the lumped mass by the consistent mass in the explicit integrator (diagonal fast path off) and find the threshold again. Does it agree with \code{critical_timestep()}?
-\item Add the static correction (the response of the residual flexibility $\bm K^{-1}-\sum_{i\le m}\bm\phi_i\bm\phi_i^T/\omega_i^2$ to the load) to the one-mode result of \Cref{sec:dy-modsup}. How close does the peak come to \cdyPeakAll{}?
-\item Move the receptance output of \Cref{fig:dy-harm} from the tip to the mid-span of the beam. Which peaks appear and which disappear, and why?
-\item Use the sweep of \Cref{sec:dy-freq} to estimate $\zeta$ from the half-power bandwidth of the first peak and compare with the 1\% used.
+\item \emph{(Implementation)} Repeat \Cref{fig:dy-newmark} for $\beta=\tfrac14,\gamma=0.6$ (if supported) or for the explicit method at $\Delta t=0.5\Delta t_c$. Which has the larger period error?
+\item \emph{(Implementation)} In \Cref{tab:dy-stab}, replace the lumped mass by the consistent mass in the explicit integrator (diagonal fast path off) and find the threshold again. Does it agree with \code{critical_timestep()}?
+\item \emph{(Implementation)} Add the static correction (the response of the residual flexibility $\bm K^{-1}-\sum_{i\le m}\bm\phi_i\bm\phi_i^T/\omega_i^2$ to the load) to the one-mode result of \Cref{sec:dy-modsup}. How close does the peak come to \cdyPeakAll{}?
+\item \emph{(Interpretation)} Move the receptance output of \Cref{fig:dy-harm} from the tip to the mid-span of the beam. Which peaks appear and which disappear, and why?
+\item \emph{(Implementation)} Use the sweep of \Cref{sec:dy-freq} to estimate $\zeta$ from the half-power bandwidth of the first peak and compare with the 1\% used.
+\item \emph{(Derivation)} Show that central differences applied to $\ddot x+\omega^2x=0$ are stable if and only if $\omega\Delta t\le2$, and hence that $\Delta t_c=2/\omega_{\max}$.
 \end{enumerate}
 
 \chapterrefs

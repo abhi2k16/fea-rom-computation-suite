@@ -1,7 +1,8 @@
 \chapter{Substructuring and component reduction}\label{ch:cms}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-The reductions of Chapters~\ref{ch:pod} to~\ref{ch:freq} act on a whole model at once. An assembly is different: it is built from parts that may be meshed, owned and reduced separately, and that must be joined, replaced or reused. Component mode synthesis reduces each part on its own while keeping the degrees of freedom on the interface physical, so that the reduced parts couple like finite elements. This chapter derives static (Guyan) condensation and the Craig--Bampton method, states what free-interface reduction and interface reduction change, and describes the component-wise POD of non-matching nonlinear parts tied by a mortar operator. It then measures each: the error of coupled halves of a beam against the full model, Guyan at equal size, the effect of reducing the interface of a membrane, what free-interface models do and do not carry, and component POD with a reused basis. The substructuring sense of ``partitioning'' used in this chapter is the one deferred from Chapter~\ref{ch:mesh}.
+The reductions of Chapters~\ref{ch:pod} to~\ref{ch:freq} act on a whole model at once. An assembly is different: it is built from parts that may be meshed, owned and reduced separately, and that must be joined, replaced or reused. Component mode synthesis reduces each part on its own while keeping the degrees of freedom on the interface physical, so that the reduced parts couple like finite elements. This chapter derives static (Guyan) condensation and the Craig--Bampton method, states what free-interface reduction and interface reduction change, and describes the component-wise POD of non-matching nonlinear parts tied by a mortar operator. It then measures each: the error of coupled halves of a beam against the full model, Guyan at equal size, the effect of reducing the interface of a membrane, what free-interface models do and do not carry, and component POD with a reused basis. The substructuring sense of ``partitioning'' used in this chapter is the one deferred from Chapter~\ref{ch:mesh}.\par\smallskip
+\textbf{After this chapter the reader can:} (i) build Guyan and Craig--Bampton models and compare them at equal size; (ii) assemble substructures through their interface unknowns and judge the result by the frequencies of the assembly; (iii) say what free-interface reduction and interface reduction change.
 \end{tcolorbox}
 
 \section{The problem}\label{sec:cm-problem}
@@ -68,25 +69,25 @@ g = guyan(K, M, master_dofs)                       # static condensation of one 
 
 \begin{table}[ht]
 \centering\small
-\begin{tabularx}{\linewidth}{@{}l X@{}}
+\begin{tabularx}{\linewidth}{@{}l X >{\centering\arraybackslash}p{0.11\linewidth}@{}}
 \toprule
-Concept & Code \\
+Concept & Code & Script calls \\
 \midrule
-static (Guyan) condensation & \anchor{rom_engine.cms.guyan} \\
-Craig--Bampton substructure and coupling & \anchor{rom_engine.cms.craig_bampton}, \anchor{rom_engine.cms.couple} \\
-free-interface reduction (Rubin, MacNeal) & \anchor{rom_engine.cms.free_interface_cms} \\
-interface reduction by characteristic constraint modes & \anchor{rom_engine.cms.reduce_interface} \\
-interface modes from other mode sets & \anchor{rom_engine.interface_reduction.gram_schmidt_interface_modes} \\
-interface-reduced Craig--Bampton & \anchor{rom_engine.interface_reduction.interface_reduced_craig_bampton} \\
-frequency error metric & \anchor{rom_engine.interface_reduction.natural_frequency_errors} \\
-MAC metric & \anchor{rom_engine.interface_reduction.mac_diagonal} \\
-component basis from snapshots & \anchor{rom_engine.component_pod.ComponentBasis} \\
-mortar-tied reduced assembly & \anchor{rom_engine.component_pod.ReducedAssembly} \\
-mortar tie operator (in \fea{}) & \anchor{fea_engine.mortar.MortarTie2D} \\
-worked experiment & \path{paper/experiments/e3_cms.py} \\
+static (Guyan) condensation & \anchor{rom_engine.cms.guyan} & yes \\
+Craig--Bampton substructure and coupling & \anchor{rom_engine.cms.craig_bampton}, \anchor{rom_engine.cms.couple} & yes \\
+free-interface reduction (Rubin, MacNeal) & \anchor{rom_engine.cms.free_interface_cms} & yes \\
+interface reduction by characteristic constraint modes & \anchor{rom_engine.cms.reduce_interface} & yes \\
+interface modes from other mode sets & \anchor{rom_engine.interface_reduction.gram_schmidt_interface_modes} & yes \\
+interface-reduced Craig--Bampton & \anchor{rom_engine.interface_reduction.interface_reduced_craig_bampton} & yes \\
+frequency error metric & \anchor{rom_engine.interface_reduction.natural_frequency_errors} & yes \\
+MAC metric & \anchor{rom_engine.interface_reduction.mac_diagonal} & yes \\
+component basis from snapshots & \anchor{rom_engine.component_pod.ComponentBasis} & yes \\
+mortar-tied reduced assembly & \anchor{rom_engine.component_pod.ReducedAssembly} & yes \\
+mortar tie operator (in \fea{}) & \anchor{fea_engine.mortar.MortarTie2D} & yes \\
+worked experiment & \path{paper/experiments/e3_cms.py} & -- \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (release \booktag). The dual Craig--Bampton, joint-interface-mode and Fourier interface bases of \code{interface_reduction.py} are not tested here.}\label{tab:cm-map}
+\caption{Where the concepts of this chapter live in the repository (release \booktag). The dual Craig--Bampton, joint-interface-mode and Fourier interface bases of \code{interface_reduction.py The last column says whether the chapter's script \texttt{scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.} are not tested here.}\label{tab:cm-map}
 \end{table}
 
 \section{Verification}\label{sec:cm-verif}
@@ -163,11 +164,12 @@ Reducing the parts of an assembly while keeping the interface physical allows th
 
 \section*{Exercises}\label{sec:cm-exercises}
 \begin{enumerate}
-\item Split the beam of \Cref{lst:cm-run} into three parts with two interfaces. Does the monotone convergence in $n_m$ still hold, and what is the size of the global interface?
-\item Repeat \Cref{fig:cm-iface} (right) for the first $40$ frequencies instead of $15$. How many interface coordinates are redundant now?
-\item Compute the static response of the chain of \Cref{tab:cm-free} to a force at the middle node, not at the end. Which models are still exact?
-\item Replace the cubic term of the component membranes by $8u^3$. How does the error of \Cref{tab:cm-comp} change at rank $12$, and does Newton still converge?
-\item Time the reduced Newton solve of \Cref{tab:cm-comp} against the full tied solve. Where does the time go, given that the forces are evaluated on the full meshes? (Test file: \texttt{rom\_engine/tests/test\_component\_pod.py}.)
+\item \emph{(Implementation)} Split the beam of \Cref{lst:cm-run} into three parts with two interfaces. Does the monotone convergence in $n_m$ still hold, and what is the size of the global interface?
+\item \emph{(Implementation)} Repeat \Cref{fig:cm-iface} (right) for the first $40$ frequencies instead of $15$. How many interface coordinates are redundant now?
+\item \emph{(Interpretation)} Compute the static response of the chain of \Cref{tab:cm-free} to a force at the middle node, not at the end. Which models are still exact?
+\item \emph{(Implementation)} Replace the cubic term of the component membranes by $8u^3$. How does the error of \Cref{tab:cm-comp} change at rank $12$, and does Newton still converge?
+\item \emph{(Implementation)} Time the reduced Newton solve of \Cref{tab:cm-comp} against the full tied solve. Where does the time go, given that the forces are evaluated on the full meshes? (Test file: \texttt{rom\_engine/tests/test\_component\_pod.py}.)
+\item \emph{(Derivation)} Show that if all fixed-interface modes are kept, the Craig--Bampton transformation $\left[\begin{smallmatrix}\bm I&\bm 0\\\bm\Psi&\bm\Phi\end{smallmatrix}\right]$ is invertible, and hence that the coupled model is exact.
 \end{enumerate}
 
 \chapterrefs

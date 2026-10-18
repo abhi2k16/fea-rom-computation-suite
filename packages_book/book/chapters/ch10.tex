@@ -1,7 +1,8 @@
 \chapter{Frequency-domain ROMs, greedy training and certified bounds}\label{ch:freq}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-In the frequency domain the parameter is the excitation frequency, and the matrix to invert, $\bm A(\omega)=-\omega^2\bm M+i\omega\bm C+\bm K$, is nearly singular at every resonance. That makes the problem different from the static parametric sweep of Chapter~\ref{ch:pod} in three ways, and the chapter takes them in turn. Where should the expensive full-order solves be spent when the response has sharp peaks (greedy training)? How can the error of a reduced model be assessed without solving the full model (indicators and a certified bound)? And what does a reduced model give for a random load described by a power spectral density? Each is measured against the full-order frequency solver of \fea{}, and the certified bound, the one rigorous error statement in the package, is tested for what it costs in conservatism.
+In the frequency domain the parameter is the excitation frequency, and the matrix to invert, $\bm A(\omega)=-\omega^2\bm M+i\omega\bm C+\bm K$, is nearly singular at every resonance. That makes the problem different from the static parametric sweep of Chapter~\ref{ch:pod} in three ways, and the chapter takes them in turn. Where should the expensive full-order solves be spent when the response has sharp peaks (greedy training)? How can the error of a reduced model be assessed without solving the full model (indicators and a certified bound)? And what does a reduced model give for a random load described by a power spectral density? Each is measured against the full-order frequency solver of \fea{}, and the certified bound, the one rigorous error statement in the package, is tested for what it costs in conservatism.\par\smallskip
+\textbf{After this chapter the reader can:} (i) train a frequency-domain model by greedy selection of frequencies; (ii) distinguish a cheap error indicator from a certified bound and say what each tells; (iii) compute the response to a random load from its power spectral density with a reduced model.
 \end{tcolorbox}
 
 \section{The problem}\label{sec:fr-problem}
@@ -75,21 +76,21 @@ S_out, rms = psd_response(rom, freqs, np.ones_like(freqs), F_full[free], tip)
 
 \begin{table}[ht]
 \centering\small
-\begin{tabularx}{\linewidth}{@{}l X@{}}
+\begin{tabularx}{\linewidth}{@{}l X >{\centering\arraybackslash}p{0.11\linewidth}@{}}
 \toprule
-Concept & Code \\
+Concept & Code & Script calls \\
 \midrule
-reduced frequency-domain model, residual norm, hierarchical indicator & \anchor{rom_engine.frequency.FrequencyROM} \\
-POD of complex FRF snapshots & \anchor{rom_engine.frequency.build_pod_basis_from_frf_snapshots} \\
-weak-greedy selection of frequencies & \anchor{rom_engine.greedy.greedy_train_frequency_basis} \\
-Lipschitz lower bound on $\sigma_{\min}$ and certified error bound & \anchor{rom_engine.scm.SingularValueLowerBound}, \anchor{rom_engine.scm.certified_error_bound} \\
-successive constraint method (LP), with its own \code{certified_error_bound} & \anchor{rom_engine.scm_lp.LPSingularValueLowerBound} \\
-PSD response and RMS & \anchor{rom_engine.random_vibration.psd_response} \\
-band-limited Gaussian time history (not tested here) & \anchor{rom_engine.random_vibration.band_limited_gaussian_time_history} \\
-worked examples & \path{rom_engine/examples/gallery/rom_03_greedy_frequency_training.py} \\
+reduced frequency-domain model, residual norm, hierarchical indicator & \anchor{rom_engine.frequency.FrequencyROM} & yes \\
+POD of complex FRF snapshots & \anchor{rom_engine.frequency.build_pod_basis_from_frf_snapshots} & yes \\
+weak-greedy selection of frequencies & \anchor{rom_engine.greedy.greedy_train_frequency_basis} & yes \\
+Lipschitz lower bound on $\sigma_{\min}$ and certified error bound & \anchor{rom_engine.scm.SingularValueLowerBound}, \anchor{rom_engine.scm.certified_error_bound} & yes \\
+successive constraint method (LP), with its own \code{certified_error_bound} & \anchor{rom_engine.scm_lp.LPSingularValueLowerBound} & yes \\
+PSD response and RMS & \anchor{rom_engine.random_vibration.psd_response} & yes \\
+band-limited Gaussian time history (not tested here) & \anchor{rom_engine.random_vibration.band_limited_gaussian_time_history} & no \\
+worked examples & \path{rom_engine/examples/gallery/rom_03_greedy_frequency_training.py} & -- \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (release \booktag).}\label{tab:fr-map}
+\caption{Where the concepts of this chapter live in the repository (release \booktag). The last column says whether the chapter's script \texttt{scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:fr-map}
 \end{table}
 
 \section{Verification}\label{sec:fr-verif}
@@ -184,11 +185,13 @@ In the frequency domain the same projection machinery works with $\omega$ as the
 
 \section*{Exercises}\label{sec:fr-exercises}
 \begin{enumerate}
-\item Repeat \Cref{tab:fr-greedy} with the third resonance inside the training band's seed set (for example with \code{n_seed=4}). Does the maximum error of the greedy basis drop below that of the uniform one?
-\item Run the certified bound on a model with $4$ elements instead of $20$ (so that $\|\bm K\|_2$ is much smaller). How many references does the Lipschitz construction need now, and what is the median overestimate?
-\item Replace the Rayleigh damping by an explicit non-proportional $\bm C$ (a single dashpot at the tip) and rebuild \cref{lst:fr-run} with the three-term decomposition. Is the greedy basis still accurate at $5$ columns?
-\item Double the number of frequencies in the PSD grid. Does the RMS agreement between the reduced and full models change, and does the full-order RMS?
-\item Time \code{residual_norm} against \code{hierarchical_error_indicator} for a basis of $10$ and of $40$ columns on a model of $2000$ unknowns. Which is cheaper, and by how much? (Test file: \texttt{rom\_engine/tests/test\_frequency.py}.)
+\item \emph{(Implementation)} Repeat \Cref{tab:fr-greedy} with the third resonance inside the training band's seed set (for example with \code{n_seed=4}). Does the maximum error of the greedy basis drop below that of the uniform one?
+\item \emph{(Implementation)} Run the certified bound on a model with $4$ elements instead of $20$ (so that $\|\bm K\|_2$ is much smaller). How many references does the Lipschitz construction need now, and what is the median overestimate?
+\item \emph{(Implementation)} Replace the Rayleigh damping by an explicit non-proportional $\bm C$ (a single dashpot at the tip) and rebuild \cref{lst:fr-run} with the three-term decomposition. Is the greedy basis still accurate at $5$ columns?
+\item \emph{(Implementation)} Double the number of frequencies in the PSD grid. Does the RMS agreement between the reduced and full models change, and does the full-order RMS?
+\item \emph{(Implementation)} Time \code{residual_norm} against \code{hierarchical_error_indicator} for a basis of $10$ and of $40$ columns on a model of $2000$ unknowns. Which is cheaper, and by how much? (Test file: \texttt{rom\_engine/tests/test\_frequency.py}.)
+\item \emph{(Derivation)} Let $\bm A(\omega)\bm x=\bm f$ and let $\bm x_r=\bm V\bm y$ be a reduced approximation with residual $\bm r=\bm f-\bm A\bm x_r$. Show that $\|\bm x-\bm x_r\|\le\|\bm r\|/\sigma_{\min}(\bm A(\omega))$, and say why the bound is large near a resonance.
+\item \emph{(Interpretation)} The certified bound is nearly vacuous for the model of this chapter. State what a user may legitimately conclude from it, and what from the cheap indicator.
 \end{enumerate}
 
 \chapterrefs
