@@ -19,3 +19,21 @@ Label `ch:verif`. Macro prefixes `cvf` (verification/reproduction numbers) and `
 - `CLAIMS.md` E1: "about 260-270x" on the sandbox; `paper/results/e1_rom_speedup.json`: 361.2x (3.646 s vs 10.09 ms) on the author's 12-CPU machine, commit 33cde35.
 - 254x: occurs in no file of the repository or paper (grep). Proposal: do not quote it; Chapter 14 quotes the book's own regenerated ratio, plus 221.8x (README) and 361x (paper run) each with its stated source, and says all three use a dense baseline (Chapter 8).
 - Release tag: first tag created, `release-fea1.0.1-rom0.2.0` at commit f87baf3 (annotated, local; not pushed).
+
+## Register of verification and reproduction reports (updated)
+Reports are in the user's folders (under `Physical_ML/ROM_formulations`); the drivers are not in the repository. Numbers are quoted as "report" numbers, from runs made during development, not repeated with the tagged release.
+
+| # | Study (paper) | Report | Status |
+|---|---|---|---|
+| 1 | MFS-NLROM, He et al. 2023 | `Multi_Fidelity_NL_Structural_ROM/MFS_NLROM_Reproduction_Report.md` | planned (paper table row) |
+| 2 | Hybrid ROM, Yang et al. 2019 | `NonLin-HyROM/NonLin-HyROM_Reproduction_and_Validation.md` | planned |
+| 3 | ICE, Hollkamp et al. 2008 | `ICE-ROM/ICE_ROM_reproduction_results.md` | planned |
+| 4 | Loewner / FSI, Liu et al. 2026 | `ROM_FluidStructur_Modal_Ident/ROM_reproduction_validation_report.md` | planned |
+| 5 | FD-PINN, Liang et al. 2024 | `FD-PINN_dynamics/FD-PINN Reproduction*.md` (copy in `paper/reproductions`) | planned |
+| 6 | Hybrid hyper-reduced contact, Fauque et al. 2018 (1D rope, 3D pellet-cladding) | `contact-hybrid-rom/REPORT_COMBINED.md` | added now |
+| 7 | Assembly MOR with contact and geometric nonlinearity, Nikiema et al. 2026 (2D, 3D pipeline) | `MOR_struct_contact_geomNL/REPORT.md` | added now |
+| 8 | Projection-based MOR for contact, Balajewicz et al. 2016 | `projection_MOR_contact/REPORT.md` | added now |
+| 9 | FRINO neural operator, Yang et al. 2025 | `FE_ROM_Neural_Op/FRINO_reproduction_results.md` | added now (companion: `FRINO_deep_analysis.md`) |
+| 10 | Nonlinear rods, POD/SIM | `POD_ROM_Nonlinear_Rods/validation/` (scripts, README, no report) | excluded (no report) |
+
+No report: `Efficient_ROM_AC` (PDF only).

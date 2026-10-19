@@ -2424,6 +2424,10 @@ INPUT /usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm10.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/lm/rm-lmbx9.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/lm/lmmib10.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/lm/lmbsy10.tfm
+INPUT ./chapters/ch14.bbl
+INPUT chapters/ch14.bbl
+INPUT ./chapters/ch14.bbl
+INPUT chapters/ch14.bbl
 INPUT ./chapters/appA.tex
 INPUT ./chapters/appA.tex
 INPUT ./chapters/appA.tex
@@ -2569,4 +2573,5 @@ INPUT /usr/share/texmf/fonts/type1/public/lm/lmtt12.pfb
 INPUT /usr/share/texmf/fonts/type1/public/lm/lmtt8.pfb
 INPUT /usr/share/texmf/fonts/type1/public/lm/lmtt9.pfb
 INPUT /usr/share/texmf/fonts/type1/public/lm/lmtti10.pfb
+INPUT /usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb
 INPUT /usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb

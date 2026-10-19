@@ -1,0 +1,76 @@
+\begin{thebibliography}{9}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[He et~al.(2023)He, Yang, Li, Pang, Kan, and Song]{he2023mfsnlrom}
+Xiwang He, Liangliang Yang, Kunpeng Li, Yong Pang, Ziyun Kan, and Xueguan Song.
+\newblock A novel geometric nonlinear reduced order modeling method using
+  multi-fidelity surrogate for real-time structural analysis.
+\newblock \emph{Structural and Multidisciplinary Optimization}, 66\penalty0
+  (11):\penalty0 233, 2023.
+\newblock \doi{10.1007/s00158-023-03689-4}.
+
+\bibitem[Yang et~al.(2019)Yang, Liang, Rong, and Sun]{yang2019hybrid}
+Chen Yang, Ke~Liang, Yufei Rong, and Qin Sun.
+\newblock A hybrid reduced-order modeling technique for nonlinear structural
+  dynamic simulation.
+\newblock \emph{Aerospace Science and Technology}, 84:\penalty0 724--733, 2019.
+
+\bibitem[Hollkamp and Gordon(2008)]{hollkamp2008ice}
+J.~J. Hollkamp and R.~W. Gordon.
+\newblock Reduced-order models for nonlinear response prediction: Implicit
+  condensation and expansion.
+\newblock \emph{Journal of Sound and Vibration}, 318\penalty0 (4--5):\penalty0
+  1139--1153, 2008.
+\newblock \doi{10.1016/j.jsv.2008.04.035}.
+
+\bibitem[Liu and Li(2026)]{liu2026fsi}
+Jia Liu and Sheng Li.
+\newblock A reduced-order model for modal parameter identification of
+  fluid--structure interaction systems based on vibration responses.
+\newblock \emph{Journal of Vibration Engineering \& Technologies}, 14:\penalty0
+  335, 2026.
+\newblock \doi{10.1007/s42417-026-02560-2}.
+
+\bibitem[Liang et~al.(2024)Liang, Liu, Fu, and Ma]{liang2024fdpinn}
+Ruihua Liang, Weifeng Liu, Yuguang Fu, and Meng Ma.
+\newblock Physics-informed deep learning for structural dynamics under moving
+  load.
+\newblock \emph{International Journal of Mechanical Sciences}, 284:\penalty0
+  109766, 2024.
+
+\bibitem[Fauqu{\'e} et~al.(2018)Fauqu{\'e}, Rami{\`e}re, and
+  Ryckelynck]{fauque2018hybrid}
+Jules Fauqu{\'e}, Isabelle Rami{\`e}re, and David Ryckelynck.
+\newblock Hybrid hyper-reduced modeling for contact mechanics problems.
+\newblock \emph{International Journal for Numerical Methods in Engineering},
+  115\penalty0 (1):\penalty0 117--139, 2018.
+
+\bibitem[Nikiema et~al.(2026)Nikiema, Denis, Matzke, Gonzalez, Van Der~Veen,
+  and Mencik]{nikiema2026assembly}
+P.~Nikiema, V.~Denis, F.~Matzke, S.~Gonzalez, S.~Van Der~Veen, and J.-M.
+  Mencik.
+\newblock Model order reduction for structural assembly simulations with
+  contact and geometric nonlinearities.
+\newblock \emph{Finite Elements in Analysis and Design}, 260:\penalty0 104605,
+  2026.
+
+\bibitem[Balajewicz et~al.(2016)Balajewicz, Amsallem, and
+  Farhat]{balajewicz2016contact}
+Maciej Balajewicz, David Amsallem, and Charbel Farhat.
+\newblock Projection-based model reduction for contact problems.
+\newblock \emph{International Journal for Numerical Methods in Engineering},
+  106\penalty0 (8):\penalty0 644--663, 2016.
+
+\bibitem[Yang et~al.(2025)Yang, Luo, Yang, Nan, Chen, and Sun]{yang2025frino}
+Lai~Hao Yang, Xu~Liang Luo, Zhi~Bo Yang, Chang~Feng Nan, Xue~Feng Chen, and
+  Yu~Sun.
+\newblock {FE} reduced-order model-informed neural operator for structural
+  dynamic response prediction.
+\newblock \emph{Neural Networks}, 188:\penalty0 107437, 2025.
+\newblock \doi{10.1016/j.neunet.2025.107437}.
+
+\end{thebibliography}
