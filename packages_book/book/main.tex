@@ -19,8 +19,9 @@ Each chapter ends its technical part with a \emph{Verification} section. Three w
 
 Every number in a Verification section should be read with five things in mind, which the text states next to it: the model and its loading; the solver settings; the reference value; the definition of the error; and the release and machine. All numbers in this draft were produced in a sandbox with two processors and are single runs; timings vary by tens of per cent between runs at the small sizes used and are given to show orders of magnitude, not as benchmarks. They are to be regenerated from the scripts of Appendix~\ref{ch:map} on the machine of the release before publication.
 
-Reduced-order models carry extra conditions, set out in Appendix~\ref{ch:conv}: a speed-up refers to the online solve unless the text says otherwise, offline and online costs are separate, errors are reported on held-out parameters, and the benchmark model is small, so a speed-up at this size does not predict one at a production size. Where a method or a piece of code is listed but not run in this book, the code-map table of the chapter says so in its last column, and the Limits box of the chapter lists what was not tested. Appendix~\ref{ch:notation} gives the notation and a glossary.
+Reduced-order models carry extra conditions, set out in Appendix~\ref{ch:conv}: a speed-up refers to the online solve unless the text says otherwise, offline and online costs are separate, errors are reported on held-out parameters, and the benchmark model is small, so a speed-up at this size does not predict one at a production size. Where a method or a piece of code is listed but not run in this book, the code-map table of the chapter says so in its last column, and the Limits box of the chapter lists what was not tested. The notation is listed after the abbreviations, and Appendix~\ref{ch:gloss} is a glossary.
 \include{chapters/abbrev}
+\include{chapters/notation}
 \tableofcontents
 \listoffigures
 \listoftables

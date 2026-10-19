@@ -29,8 +29,8 @@
 \newlabel{sec:df-adjoint}{{A.2.3}{163}{Differentiating through a converged solve}{subsection.A.2.3}{}}
 \newlabel{sec:df-adjoint@cref}{{[subsubappendix][3][2147483647,1,2]A.2.3}{[1][163][]163}}
 \citation{bai2019deq}
-\@writefile{lof}{\contentsline {figure}{\numberline {A.1}{\ignorespaces Gradient of a loss through a converged corrected solve. The forward pass is the ordinary NumPy Newton solve; only its result and the final tangent are kept. The backward pass is one linear solve with the transposed tangent and one backward pass through the correction alone.\relax }}{164}{figure.caption.277}\protected@file@percent }
-\newlabel{fig:df-adjoint}{{A.1}{164}{Gradient of a loss through a converged corrected solve. The forward pass is the ordinary NumPy Newton solve; only its result and the final tangent are kept. The backward pass is one linear solve with the transposed tangent and one backward pass through the correction alone.\relax }{figure.caption.277}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {A.1}{\ignorespaces Gradient of a loss through a converged corrected solve. The forward pass is the ordinary NumPy Newton solve; only its result and the final tangent are kept. The backward pass is one linear solve with the transposed tangent and one backward pass through the correction alone.\relax }}{164}{figure.caption.278}\protected@file@percent }
+\newlabel{fig:df-adjoint}{{A.1}{164}{Gradient of a loss through a converged corrected solve. The forward pass is the ordinary NumPy Newton solve; only its result and the final tangent are kept. The backward pass is one linear solve with the transposed tangent and one backward pass through the correction alone.\relax }{figure.caption.278}{}}
 \newlabel{fig:df-adjoint@cref}{{[figure][1][2147483647,1]A.1}{[1][164][]164}}
 \newlabel{eq:df-impl}{{A.3}{164}{Differentiating through a converged solve}{equation.A.3}{}}
 \newlabel{eq:df-impl@cref}{{[equation][3][2147483647,1]A.3}{[1][163][]164}}
@@ -50,8 +50,8 @@
 \@writefile{toc}{\contentsline {section}{\numberline {A.3}Implementation}{165}{section.A.3}\protected@file@percent }
 \newlabel{sec:df-impl}{{A.3}{165}{Implementation}{section.A.3}{}}
 \newlabel{sec:df-impl@cref}{{[subappendix][3][2147483647,1]A.3}{[1][165][]165}}
-\@writefile{lot}{\contentsline {table}{\numberline {A.1}{\ignorespaces Where the concepts of this appendix live in the repository (tag \texttt  {release-fea1.0.1-rom0.2.0}). ``Script calls'' says whether \texttt  {appA\_assets.py} calls the code; the others need PyTorch.\relax }}{166}{table.caption.278}\protected@file@percent }
-\newlabel{tab:df-map}{{A.1}{166}{Where the concepts of this appendix live in the repository (tag \booktag ). ``Script calls'' says whether \texttt {appA\_assets.py} calls the code; the others need PyTorch.\relax }{table.caption.278}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {A.1}{\ignorespaces Where the concepts of this appendix live in the repository (tag \texttt  {release-fea1.0.1-rom0.2.0}). ``Script calls'' says whether \texttt  {appA\_assets.py} calls the code; the others need PyTorch.\relax }}{166}{table.caption.279}\protected@file@percent }
+\newlabel{tab:df-map}{{A.1}{166}{Where the concepts of this appendix live in the repository (tag \booktag ). ``Script calls'' says whether \texttt {appA\_assets.py} calls the code; the others need PyTorch.\relax }{table.caption.279}{}}
 \newlabel{tab:df-map@cref}{{[table][1][2147483647,1]A.1}{[1][166][]166}}
 \newlabel{lst:df-run}{{A.1}{166}{Newton solve of a corrected two-bar truss and the adjoint gradient of a loss through it, checked by a central difference (NumPy only)}{lstlisting.A.1}{}}
 \newlabel{lst:df-run@cref}{{[listing][1][2147483647,1]A.1}{[1][166][]166}}
@@ -59,21 +59,21 @@
 \@writefile{toc}{\contentsline {section}{\numberline {A.4}Verification}{167}{section.A.4}\protected@file@percent }
 \newlabel{sec:df-verif}{{A.4}{167}{Verification}{section.A.4}{}}
 \newlabel{sec:df-verif@cref}{{[subappendix][4][2147483647,1]A.4}{[1][167][]167}}
-\@writefile{toc}{\contentsline {paragraph}{What was run for this book.}{167}{section*.279}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {A.2}{\ignorespaces Torch-free checks of this appendix. The tetrahedron has unit edges, $E=1$, $\nu =0.3$ and a random displacement of size $0.15$. The truss is the one of \Cref  {lst:df-run}.\relax }}{167}{table.caption.280}\protected@file@percent }
-\newlabel{tab:df-numpy}{{A.2}{167}{Torch-free checks of this appendix. The tetrahedron has unit edges, $E=1$, $\nu =0.3$ and a random displacement of size $0.15$. The truss is the one of \Cref {lst:df-run}.\relax }{table.caption.280}{}}
+\@writefile{toc}{\contentsline {paragraph}{What was run for this book.}{167}{section*.280}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {A.2}{\ignorespaces Torch-free checks of this appendix. The tetrahedron has unit edges, $E=1$, $\nu =0.3$ and a random displacement of size $0.15$. The truss is the one of \Cref  {lst:df-run}.\relax }}{167}{table.caption.281}\protected@file@percent }
+\newlabel{tab:df-numpy}{{A.2}{167}{Torch-free checks of this appendix. The tetrahedron has unit edges, $E=1$, $\nu =0.3$ and a random displacement of size $0.15$. The truss is the one of \Cref {lst:df-run}.\relax }{table.caption.281}{}}
 \newlabel{tab:df-numpy@cref}{{[table][2][2147483647,1]A.2}{[1][167][]167}}
-\@writefile{lof}{\contentsline {figure}{\numberline {A.2}{\ignorespaces (a) Relative error of the central-difference tangent of \texttt  {Tet4NeoHookean} against the step, with the complex-step tangent as reference; the minimum is $1.6\times 10^{-11}$\xspace  {} near the step $3.2\times 10^{-6}$\xspace  {}. (b) Residual norm of the corrected Newton solve of the two-bar truss with and without the Jacobian of the correction in the tangent; the floor near $10^{-9}$\nobreakspace  {}N is rounding. (c) Relative difference between the adjoint gradient and a central difference of the whole solve against the step used in the difference; the rise at small steps is the convergence tolerance of Newton, the rise at large steps is the truncation of the difference. Generated by \texttt  {scripts/appA\_assets.py}.\relax }}{168}{figure.caption.281}\protected@file@percent }
-\newlabel{fig:df-checks}{{A.2}{168}{(a) Relative error of the central-difference tangent of \texttt {Tet4NeoHookean} against the step, with the complex-step tangent as reference; the minimum is \adaFdBest {} near the step \adaFdBestH {}. (b) Residual norm of the corrected Newton solve of the two-bar truss with and without the Jacobian of the correction in the tangent; the floor near $10^{-9}$~N is rounding. (c) Relative difference between the adjoint gradient and a central difference of the whole solve against the step used in the difference; the rise at small steps is the convergence tolerance of Newton, the rise at large steps is the truncation of the difference. Generated by \texttt {scripts/appA\_assets.py}.\relax }{figure.caption.281}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {A.2}{\ignorespaces (a) Relative error of the central-difference tangent of \texttt  {Tet4NeoHookean} against the step, with the complex-step tangent as reference; the minimum is $1.6\times 10^{-11}$\xspace  {} near the step $3.2\times 10^{-6}$\xspace  {}. (b) Residual norm of the corrected Newton solve of the two-bar truss with and without the Jacobian of the correction in the tangent; the floor near $10^{-9}$\nobreakspace  {}N is rounding. (c) Relative difference between the adjoint gradient and a central difference of the whole solve against the step used in the difference; the rise at small steps is the convergence tolerance of Newton, the rise at large steps is the truncation of the difference. Generated by \texttt  {scripts/appA\_assets.py}.\relax }}{168}{figure.caption.282}\protected@file@percent }
+\newlabel{fig:df-checks}{{A.2}{168}{(a) Relative error of the central-difference tangent of \texttt {Tet4NeoHookean} against the step, with the complex-step tangent as reference; the minimum is \adaFdBest {} near the step \adaFdBestH {}. (b) Residual norm of the corrected Newton solve of the two-bar truss with and without the Jacobian of the correction in the tangent; the floor near $10^{-9}$~N is rounding. (c) Relative difference between the adjoint gradient and a central difference of the whole solve against the step used in the difference; the rise at small steps is the convergence tolerance of Newton, the rise at large steps is the truncation of the difference. Generated by \texttt {scripts/appA\_assets.py}.\relax }{figure.caption.282}{}}
 \newlabel{fig:df-checks@cref}{{[figure][2][2147483647,1]A.2}{[1][167][]168}}
-\@writefile{toc}{\contentsline {paragraph}{What was not run, and what the tests assert.}{168}{section*.282}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {A.3}{\ignorespaces Tolerances of the PyTorch-dependent tests of the tangents. These tests were not run for this book; they run on a machine with PyTorch installed.\relax }}{168}{table.caption.283}\protected@file@percent }
-\newlabel{tab:df-torch}{{A.3}{168}{Tolerances of the PyTorch-dependent tests of the tangents. These tests were not run for this book; they run on a machine with PyTorch installed.\relax }{table.caption.283}{}}
+\@writefile{toc}{\contentsline {paragraph}{What was not run, and what the tests assert.}{168}{section*.283}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {A.3}{\ignorespaces Tolerances of the PyTorch-dependent tests of the tangents. These tests were not run for this book; they run on a machine with PyTorch installed.\relax }}{168}{table.caption.284}\protected@file@percent }
+\newlabel{tab:df-torch}{{A.3}{168}{Tolerances of the PyTorch-dependent tests of the tangents. These tests were not run for this book; they run on a machine with PyTorch installed.\relax }{table.caption.284}{}}
 \newlabel{tab:df-torch@cref}{{[table][3][2147483647,1]A.3}{[1][168][]168}}
 \@writefile{toc}{\contentsline {section}{\numberline {A.5}Summary}{169}{section.A.5}\protected@file@percent }
 \newlabel{sec:df-summary}{{A.5}{169}{Summary}{section.A.5}{}}
 \newlabel{sec:df-summary@cref}{{[subappendix][5][2147483647,1]A.5}{[1][169][]169}}
-\newlabel{sec:df-exercises}{{A.5}{169}{Exercises}{section*.284}{}}
+\newlabel{sec:df-exercises}{{A.5}{169}{Exercises}{section*.285}{}}
 \newlabel{sec:df-exercises@cref}{{[subappendix][5][2147483647,1]A.5}{[1][169][]169}}
 \bibstyle{unsrtnat}
 \bibdata{refs}
@@ -82,7 +82,7 @@
 \bibcite{saverio2026endtoend}{{3}{2026}{{Saverio et~al.}}{{Saverio, Bucci, Farro, Content, and Sipp}}}
 \bibcite{paszke2019pytorch}{{4}{2019}{{Paszke et~al.}}{{Paszke, Gross, Massa, et~al.}}}
 \bibcite{bai2019deq}{{5}{2019}{{Bai et~al.}}{{Bai, Kolter, and Koltun}}}
-\@writefile{toc}{\contentsline {section}{References}{170}{section*.285}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{170}{section*.286}\protected@file@percent }
 \@setckpt{chapters/appA}{
 \setcounter{page}{171}
 \setcounter{equation}{5}
@@ -102,8 +102,8 @@
 \setcounter{figure}{2}
 \setcounter{table}{3}
 \setcounter{parentequation}{0}
-\setcounter{LT@tables}{1}
-\setcounter{LT@chunks}{1}
+\setcounter{LT@tables}{2}
+\setcounter{LT@chunks}{3}
 \setcounter{caption@flags}{0}
 \setcounter{continuedfloat}{0}
 \setcounter{subfigure}{0}
@@ -120,7 +120,7 @@
 \setcounter{NAT@ctr}{5}
 \setcounter{Item}{99}
 \setcounter{Hfootnote}{0}
-\setcounter{bookmark@seq@number}{181}
+\setcounter{bookmark@seq@number}{182}
 \setcounter{proposition}{0}
 \setcounter{definition}{0}
 \setcounter{example}{0}

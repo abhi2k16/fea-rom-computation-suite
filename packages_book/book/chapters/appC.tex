@@ -1,52 +1,8 @@
-\chapter{Notation and glossary}\label{ch:notation}
+\chapter{Glossary}\label{ch:gloss}
 
-\section{Notation}\label{sec:not}
+\label{sec:gloss}
 
-Symbols are used as below in every chapter unless the chapter says otherwise. Bold upper case is a matrix, bold lower case a vector.
-
-\begin{table}[ht]
-\centering\small
-\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.2\linewidth} X@{}}
-\toprule
-Symbol & Meaning \\
-\midrule
-$\bm K,\ \bm M,\ \bm C$ & stiffness, mass and damping matrices of the full-order model \\
-$\bm u,\ \bm v,\ \bm a$ & displacement, velocity and acceleration vectors; $\bm f$ is the external load \\
-$\bm f_{int}(\bm u)$, $\bm K_t$ & internal force and tangent stiffness of a nonlinear model \\
-$\bm V,\ \bm U$ & reduction basis (columns span the reduced space); $\bm U$ is used for the primal basis in contact chapters \\
-$\bm q,\ \bm u_r$ & reduced coordinates, $\bm u\approx\bm V\bm q$ \\
-$\bm A_r,\ \bm M_r,\ \bm B_r$ & reduced matrices: $\bm V^T\bm K\bm V$, $\bm V^T\bm M\bm V$, reduced constraint matrix \\
-$\bm B,\ \bm c$ & gap map and offset of the contact constraints, $\bm B\bm u\ge\bm c$ \\
-$\bm\lambda,\ \bm U_\lambda$ & contact forces (Lagrange multipliers), $\bm\lambda\ge\bm 0$; basis for the contact forces \\
-$\omega,\ f,\ \zeta,\ \eta$ & circular frequency, frequency in hertz, damping ratio, loss factor \\
-$\bm\Lambda$ & diagonal matrix of squared natural frequencies $\omega_i^2$ \\
-$n,\ r,\ p$ & number of unknowns of the full model; size of the reduced model; primal basis size (also polynomial or perturbation order where stated) \\
-$\sigma_j$ & singular values (snapshot matrix) or, in Chapter~\ref{ch:bt}, Hankel singular values \\
-$\bm G,\ \bm w$ & ECSW training matrix and element weights \\
-$\mathcal A_k$ & active set of contact constraints at iteration $k$ \\
-$h,\ \Delta t$ & mesh size; time step \\
-$\bm F,\ \bm E,\ \bm S$ & deformation gradient, Green--Lagrange strain and second Piola--Kirchhoff stress of the total-Lagrangian formulation (Chapter~\ref{ch:nonlin}); $\bm F_{ext}$ is the external load, and the context says which is meant \\
-$E,\ \nu,\ \mu,\ \kappa$ & Young's modulus, Poisson's ratio, shear modulus, bulk modulus \\
-$\bm R(\bm u)$ & residual of the equilibrium equations, $\bm R=\bm F_{ext}-\bm f_{int}(\bm u)$ \\
-$\bm g,\ \bm g(\bm u)$ & gap (distance to the obstacle) in the contact chapters; $\bm g=\partial L/\partial\bm u$ in Appendix~\ref{ch:diff} \\
-$c_p$ & positive scale of the complementarity function of the contact problem (Chapter~\ref{ch:contact}) \\
-$\bm f_\theta,\ \bm\theta$ & trainable additive correction and its parameters (Appendix~\ref{ch:diff}) \\
-$\bm K_{\mathrm{eff}}$ & tangent of the corrected problem, $\bm K_T+\partial\bm f_\theta/\partial\bm u$ (Appendix~\ref{ch:diff}) \\
-$\bm\lambda$ (Appendix~\ref{ch:diff}) & adjoint vector, $\bm K_{\mathrm{eff}}^T\bm\lambda=-\bm g$ (not the contact force of the same symbol) \\
-$\bm H(s),\ \bm H(\mathrm i\omega)$ & transfer function of a linear system and its frequency response (Chapters~\ref{ch:bt},~\ref{ch:freq},~\ref{ch:nonint}) \\
-$\bm W_c,\ \bm W_o$ & controllability and observability Gramians (Chapter~\ref{ch:bt}) \\
-$\bm\rho,\ \beta_{\mathrm{LB}}$ & residual of a reduced solution; lower bound of the smallest singular value of the system matrix used in the certified error bound (Chapter~\ref{ch:freq}) \\
-$\varepsilon,\ \mathrm{tol}$ & tolerance (of a truncation, a fit or a convergence test; the chapter says which) \\
-$\mathcal R,\ \mathcal E,\ \mathcal P$ & required, selected and passive sets of elements in ECSW (Chapter~\ref{ch:hyper}) \\
-$\bm N$ & Cholesky factor of a mass matrix, $\bm M=\bm N\bm N^T$ (Appendix~\ref{ch:diff}) \\
-\bottomrule
-\end{tabularx}
-\caption{Notation.}\label{tab:notation}
-\end{table}
-
-\section{Glossary}\label{sec:gloss}
-
-The entries below cover the terms that the chapters and appendices use, in alphabetical order. Each entry gives the meaning in which the term is used in this book and, where useful, the chapter in which it is developed. Abbreviations are spelled out in the table at the front; notation is in \Cref{tab:notation}.
+The entries below cover the terms that the chapters and appendices use, in alphabetical order. Each entry gives the meaning in which the term is used in this book and, where useful, the chapter in which it is developed. Abbreviations and notation are listed at the front of the book.
 
 \begin{description}\small
 \item[Active set] The set of contact constraints that are closed (zero gap, positive force) in a solution (Chapter~\ref{ch:contact}).
