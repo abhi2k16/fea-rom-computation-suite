@@ -1,0 +1,16 @@
+\begin{tikzpicture}[font=\sffamily\scriptsize]
+% forward row
+\node[cmFE,text width=2.5cm] (th) {parameters $\bm\theta$\\of the correction $\bm f_\theta$};
+\node[cmFE,right=10mm of th,text width=3.6cm] (nw) {Newton solve of\\$\bm F_{ext}-\bm F_{int}(\bm u)-\bm f_\theta(\bm u)=\bm 0$\\(plain NumPy, no graph kept)};
+\node[cmFE,right=10mm of nw,text width=2.2cm] (us) {converged state $\bm u^\ast$\\and $\bm K_{\!eff}$};
+\node[cmPLAIN,right=10mm of us,text width=2.2cm] (L) {loss $L(\bm u^\ast)$\\(torch)};
+\draw[cmFlow] (th)--(nw); \draw[cmFlow] (nw)--(us); \draw[cmFlow] (us)--(L);
+% backward row
+\node[cmROM,below=14mm of us,text width=3.4cm] (adj) {one adjoint solve\\$\bm K_{\!eff}^T\bm\lambda=-\partial L/\partial\bm u^\ast$};
+\node[cmROM,below=14mm of nw,text width=3.4cm] (vjp) {product $\bm\lambda^T\,\partial\bm f_\theta/\partial\bm\theta$\\(one backward pass through $\bm f_\theta$ only)};
+\node[cmCERT,below=14mm of th,text width=2.5cm] (g) {$\mathrm dL/\mathrm d\bm\theta$};
+\draw[cmFb] (L.south) |- (adj.east);
+\draw[cmFb] (adj)--(vjp); \draw[cmFb] (vjp)--(g);
+\draw[cmFb] (us)--(adj);
+\node[cmDASH,below=6mm of vjp,text width=6.5cm] (nt) {not stored: the Newton iterates. The cost of the backward pass does not depend on the number of iterations};
+\end{tikzpicture}

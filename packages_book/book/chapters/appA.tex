@@ -1,2 +1,223 @@
 \chapter{Differentiable assembly and autograd tangents}\label{ch:diff}
-\stubchapter{Appendix A}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this appendix}]
+Several places in the book need a derivative of a function that is only available as code: the tangent stiffness of an element whose force routine is known but whose consistent tangent is intricate (Chapters~\ref{ch:elem} and~\ref{ch:nonlin}), and the gradient of a quantity of interest with respect to the parameters of a model that is solved by Newton's method. This appendix describes the optional PyTorch layer of the two packages that supplies both. It has three parts: exact element tangents by automatic differentiation, used as an independent check of the tangents that the elements compute by other means; a trainable additive correction of the nonlinear static residual with an explicit and an implicit way to calibrate it; and a reduced-coordinate counterpart of the correction in \rom{}. Everything that does not need PyTorch is run in this book; what does is quoted from the tests and says so.
+\textbf{After this appendix the reader can:} (i) say what a tangent computed by automatic differentiation is exact for, and what a central difference loses; (ii) write the residual, the Newton tangent and the gradient for a corrected static problem; (iii) differentiate through a converged Newton solve with one adjoint solve instead of unrolling the iteration; (iv) choose between explicit and implicit calibration; (v) read the verification of this layer for what was run and what was not.
+\end{tcolorbox}
+
+\section{Three uses of a derivative}\label{sec:df-uses}
+
+The force routine of an element, $\bm f_e(\bm u_e)$, is usually the first thing written, because it follows from the virtual work of a strain energy. The tangent $\bm K_e=\partial\bm f_e/\partial\bm u_e$ then has to be consistent with it, or Newton's method loses its quadratic rate. Three situations call for a derivative that the force routine does not give for free.
+
+\emph{An element tangent.} For the compressible neo-Hookean tetrahedron, \anchor{fea_engine.elements.nonlinear_solids.Tet4NeoHookean} computes the tangent by central differences of its closed-form force; for the shell with a committed state, \anchor{fea_engine.elements.shells.Shell4MITCCorotational} uses the complex-step derivative~\cite{squire1998complex}. A third method that is exact and independent of both is a check on the force law and on the tangent at once.
+
+\emph{A gradient through a solve.} If the load, a material parameter or a correction term is to be fitted so that a displacement matches a measurement, one needs $\mathrm dL/\mathrm d\bm\theta$ for a loss $L$ of the converged state $\bm u^\ast(\bm\theta)$. Differentiating the Newton iteration step by step is possible but stores every iterate and ties the cost to the iteration count~\cite{griewank2008evaluating}.
+
+\emph{A trainable correction.} The residual of a model can be completed by a term with free parameters, $\bm f_\theta$, which is then fitted to reference data. This is the setting of the method of Saverio and co-authors~\cite{saverio2026endtoend}, who correct a turbulence model of a flow solver inside the solve; the packages carry the same construction over to the residual of a nonlinear structure.
+
+The layer is optional. PyTorch~\cite{paszke2019pytorch} is imported inside a guard, importing the modules never needs it, and every function that does need it raises an error that says so. The mathematical content of the correction (the corrected Newton solve, the adjoint formula, the metric identity) is written against a plain \code{value()}/\code{jacobian()} protocol and runs on NumPy alone; that is what lets this appendix run it.
+
+\section{Mathematical structure}\label{sec:df-math}
+
+\subsection{Tangents: three ways to a derivative}\label{sec:df-tangent}
+
+Let $\bm f:\mathbb R^n\to\mathbb R^n$ be the force of an element and $\bm e_j$ the $j$th unit vector. A central difference, $(\bm f(\bm u+h\bm e_j)-\bm f(\bm u-h\bm e_j))/2h$, has a truncation error of order $h^2$ and a rounding error of order $\varepsilon_{\mathrm{mach}}/h$, so that its error is smallest near $h\sim\varepsilon_{\mathrm{mach}}^{1/3}\approx6\times10^{-6}$ and cannot be made smaller by choosing $h$ well; the constant in front depends on the third derivative of $\bm f$ and on its size. The complex-step formula, $\mathrm{Im}\,\bm f(\bm u+\mathrm i h\bm e_j)/h$, has no subtraction and can use $h=10^{-30}$, but it needs the force routine to be analytic in its arguments and to be written for complex numbers. Reverse-mode automatic differentiation records the operations of one evaluation of $\bm f$ and returns a row of $\bm K$ per backward pass, $\partial f_i/\partial\bm u$, to rounding error, with no step size and for any routine written with differentiable operations. A full $n\times n$ element tangent therefore costs $n$ backward passes after one forward pass; for many elements of the same type the passes can be batched over the elements (\anchor{fea_engine.autograd_tangent.tet4_neo_hookean_tangent_autograd_batched}).
+
+An exact derivative of a force that is the gradient of a scalar energy is symmetric to rounding. For the neo-Hookean tetrahedron the autograd tangent is deliberately not symmetrised, so that an asymmetry would be visible as a defect. The shell with a committed state is different: its force is not the gradient of a potential, so its true Jacobian is asymmetric, the package returns the symmetrised matrix by convention, and the check below compares symmetrised matrices.
+
+\subsection{A trainable additive correction}\label{sec:df-corr}
+
+The static residual of the package is $\bm R(\bm u)=\bm F_{ext}-\bm F_{int}(\bm u)$. The correction enters as a further internal force, with free parameters $\bm\theta$,
+\begin{equation}\label{eq:df-res}
+\bm R_\theta(\bm u)=\bm F_{ext}-\bm F_{int}(\bm u)-\bm f_\theta(\bm u)=\bm 0 .
+\end{equation}
+The sign is the one of the package, in which the internal force carries the minus sign; the source writes the same term with the opposite sign because its operator is the negative of ours. Newton's method on \eqref{eq:df-res} uses the tangent
+\begin{equation}\label{eq:df-keff}
+\bm K_{\mathrm{eff}}(\bm u)=\bm K_T(\bm u)+\frac{\partial\bm f_\theta}{\partial\bm u},
+\end{equation}
+because $-\mathrm d\bm R_\theta/\mathrm d\bm u$ has two sign changes. If the Jacobian of the correction is dropped from \eqref{eq:df-keff}, the iteration still converges to the same root when it converges, but no longer quadratically.
+
+A correction object has to supply \code{value(u)}, \code{jacobian(u)} and a \code{scope} (\texttt{local} if each component depends only on its own dof, \texttt{nonlocal} otherwise). A trainable one also supplies \code{torch\_value(u)} and \code{parameters()}. The package contains a constant offset per free dof (\anchor{fea_engine.differentiable.ScalarFieldCorrection}, with a zero Jacobian) and a small network applied to each dof's own value (\anchor{fea_engine.differentiable.MLPCorrection}, a multilayer perceptron with tanh units, hence a diagonal Jacobian).
+
+\subsection{Differentiating through a converged solve}\label{sec:df-adjoint}
+
+Let $\bm u^\ast(\bm\theta)$ solve $\bm G(\bm u,\bm\theta)\equiv\bm R_\theta(\bm u)=\bm 0$ and let $L(\bm u^\ast)$ be a scalar loss with $\bm g=\partial L/\partial\bm u^\ast$. Since $\partial\bm G/\partial\bm u=-\bm K_{\mathrm{eff}}$ and $\bm\theta$ enters only through $\bm f_\theta$, so that $\partial\bm G/\partial\bm\theta=-\partial\bm f_\theta/\partial\bm\theta$, the implicit function theorem gives
+\begin{equation}\label{eq:df-impl}
+\frac{\mathrm d\bm u^\ast}{\mathrm d\bm\theta}=-\bm K_{\mathrm{eff}}^{-1}\frac{\partial\bm f_\theta}{\partial\bm\theta},\qquad
+\frac{\mathrm dL}{\mathrm d\bm\theta}=\bm g^T\frac{\mathrm d\bm u^\ast}{\mathrm d\bm\theta}=\bm\lambda^T\frac{\partial\bm f_\theta}{\partial\bm\theta},\qquad \bm K_{\mathrm{eff}}^T\bm\lambda=-\bm g .
+\end{equation}
+The last system is the adjoint system. It has one right-hand side whatever the number of parameters, and its matrix is the converged tangent $\bm K_{\mathrm{eff}}$ that the last Newton iteration has already assembled. The transpose matters, because $\partial\bm f_\theta/\partial\bm u$ need not be symmetric. The same idea is used for equilibrium layers in machine learning~\cite{bai2019deq}. \Cref{fig:df-adjoint} shows the data flow.
+
+\tikzfigure[0.98\linewidth]{appA_adjoint}{Gradient of a loss through a converged corrected solve. The forward pass is the ordinary NumPy Newton solve; only its result and the final tangent are kept. The backward pass is one linear solve with the transposed tangent and one backward pass through the correction alone.}{fig:df-adjoint}
+
+\begin{algbox}{Corrected Newton solve and its gradient}
+\begin{pseudo}
+\Require model, load $\bm F_{ext}$, correction $\bm f_\theta$ with parameters $\bm\theta$, tolerance $\varepsilon$, loss $L$
+\State $\bm u\gets\bm 0$
+\Repeat \Comment{forward pass: plain NumPy, no graph}
+  \State $\bm R\gets\bm F_{ext}-\bm F_{int}(\bm u)-\bm f_\theta(\bm u)$;\ \ $\bm K_{\mathrm{eff}}\gets\bm K_T(\bm u)+\partial\bm f_\theta/\partial\bm u$
+  \If{$\|\bm R\|<\varepsilon\max(\|\bm F_{ext}\|,\text{tiny})$} \textbf{stop} \EndIf
+  \State $\bm u\gets\bm u+\bm K_{\mathrm{eff}}^{-1}\bm R$
+\Until{converged, else raise an error}
+\State $\bm g\gets\partial L/\partial\bm u$ \Comment{backward pass}
+\State solve $\bm K_{\mathrm{eff}}^T\bm\lambda=-\bm g$ once
+\State $\mathrm dL/\mathrm d\bm\theta\gets$ gradient of $\bm\lambda^T\bm f_\theta(\bm u^\ast;\bm\theta)$ with respect to $\bm\theta$, $\bm u^\ast$ held fixed
+\Ensure $\bm u^\ast$ and $\mathrm dL/\mathrm d\bm\theta$
+\end{pseudo}
+\begin{algdet}
+\item[Cost] Forward: the Newton solve, with no memory for the iterates. Backward: one factorisation or solve with $\bm K_{\mathrm{eff}}^T$ and one backward pass through $\bm f_\theta$ for the cost of a single evaluation of it.
+\item[Fails when] Newton does not converge (the layer raises an error: a gradient through a non-converged state is not defined); $\bm K_{\mathrm{eff}}$ is singular at the solution (a limit point); the solver has features that the plain Newton driver of this layer does not (line search, extra convergence tests, mixed formulations: it has none of them).
+\item[Code] \anchor{fea_engine.differentiable.solve_nonlinear_static_corrected}, \anchor{fea_engine.differentiable.adjoint_gradient}, \anchor{fea_engine.differentiable.implicit_correction_solve}.
+\item[Verified in] \Cref{tab:df-numpy}, \Cref{fig:df-checks}.
+\end{algdet}
+\end{algbox}
+
+\subsection{Explicit calibration}\label{sec:df-explicit}
+
+If a full reference state $\bm w_m$ is known (a finer solution, a full-field measurement, or a snapshot of a high-fidelity model), the correction can be fitted without any solve. Since $\bm F_{int}(\bm w_m)$ does not depend on $\bm\theta$, it is evaluated once and held constant, and one minimises
+\begin{equation}\label{eq:df-explicit}
+\min_{\bm\theta}\ \big\|\bm F_{ext}-\bm F_{int}(\bm w_m)-\bm f_\theta(\bm w_m)\big\|^2 ,
+\end{equation}
+by an optimiser (\anchor{fea_engine.differentiable.calibrate_correction_explicit}). Only $\bm f_\theta$ is differentiated, so each step costs one forward and one backward pass through the correction. For the constant offset the minimum is attained at $\bm\theta=\bm F_{ext}-\bm F_{int}(\bm w_m)$ with a zero loss, which is the closed form that the test of the function recovers. The explicit route fits the residual at the reference, not the displacement that the corrected model then produces; the implicit route fits the displacement, and is the one to use when only a few degrees of freedom were measured. The explicit route is the one to try first.
+
+\subsection{Metric-consistent steps for a spatial field}\label{sec:df-metric}
+
+When the parameters are a field, one value per node or element, the Euclidean metric of an optimiser treats a node of a fine region and a node of a coarse region alike, although they stand for different amounts of the field. With the mass submatrix of the field's degrees of freedom, $\bm M=\bm N\bm N^T$ (Cholesky), the package trains $\tilde{\bm\theta}=\bm N^{-1}\bm\theta$ instead of $\bm\theta$. Since $\mathrm dL/\mathrm d\tilde{\bm\theta}=\bm N^T\,\mathrm dL/\mathrm d\bm\theta$, a Euclidean step of size $\eta$ in $\tilde{\bm\theta}$ is
+\begin{equation}\label{eq:df-metric}
+\bm\theta^{+}=\bm N(\tilde{\bm\theta}-\eta\bm N^T\nabla_{\bm\theta}L)=\bm\theta-\eta\,\bm M\,\nabla_{\bm\theta}L,
+\end{equation}
+a step preconditioned by the mass matrix, with no change to the optimiser (\anchor{fea_engine.differentiable.MetricScaledField}, \anchor{fea_engine.differentiable.mass_cholesky_factor}). The identity \eqref{eq:df-metric} is exact; whether the resulting step is the better one for a given field is a matter of the problem and is not tested here. Take a lumped mass of cell sizes $0.01$ on one half of a line and $0.1$ on the other: the step through \eqref{eq:df-metric} is \adaMeshRatio{} times larger in the coarse half for the same gradient, while the plain step is the same in both.
+
+\subsection{The same construction for a reduced model}\label{sec:df-rom}
+
+A reduced model with a polynomial modal force satisfies $\bm F_{ext}-\bm\Lambda\bm q-\bm F_{nl}(\bm q)=\bm 0$ (Chapter~\ref{ch:nonint}). \rom{} inserts the correction in the same way, $\bm F_{ext}-\bm\Lambda\bm q-\bm F_{nl}(\bm q)-\bm f_\theta(\bm q)=\bm 0$, and has \anchor{rom_engine.differentiable_correction.reduced_residual} (NumPy only), a per-mode offset (\anchor{rom_engine.differentiable_correction.ScalarModalCorrection}) and the explicit calibration of \eqref{eq:df-explicit} at a known reference equilibrium (\anchor{rom_engine.differentiable_correction.calibrate_reduced_correction_explicit}). The module is deliberately independent of \fea{}: \fea{} is a test and example dependency of \rom{}, never a library dependency. What is not built is the implicit layer at the reduced level, which would be needed to calibrate against a few sensor degrees of freedom; the design note in the package says so, and it names a genuine sparse-measurement problem as the trigger for building it.
+
+\section{Implementation}\label{sec:df-impl}
+
+\Cref{tab:df-map} lists where each concept lives. The listing below runs without PyTorch: it builds a two-bar truss, attaches a linear correction $\bm f_\theta(\bm u)=\theta\bm A\bm u$ with a hand-coded Jacobian, solves, and compares the adjoint gradient of $L=\bm w^T\bm u$ with a central difference of the whole solve. The calls that need PyTorch have the same shape: \code{implicit\_correction\_solve(fes, mat, corr)} returns the converged free-dof vector as a tensor that can be used in any loss, and \code{loss.backward()} then fills the gradient of \code{corr.parameters()} through the backward pass above.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l X >{\centering\arraybackslash}p{0.11\linewidth}@{}}
+\toprule
+Concept & Code & Script calls \\
+\midrule
+neo-Hookean tetrahedron tangent by autograd & \anchor{fea_engine.autograd_tangent.tet4_neo_hookean_tangent_autograd}, option \texttt{method="autograd"} of \anchor{fea_engine.elements.nonlinear_solids.Tet4NeoHookean} & no \\
+quadratic tetrahedron, shell and beam tangents & \anchor{fea_engine.autograd_tangent.tet10_solid_tl_tangent_autograd}, \anchor{fea_engine.autograd_tangent.shell4_mitc_corotational_committed_tangent_autograd}, \anchor{fea_engine.autograd_tangent.beam2d_reissner_tangent_autograd} & no \\
+corrected residual, tangent and Newton driver & \anchor{fea_engine.differentiable.corrected_residual}, \anchor{fea_engine.differentiable.corrected_tangent}, \anchor{fea_engine.differentiable.solve_nonlinear_static_corrected} & part \\
+adjoint gradient and implicit layer & \anchor{fea_engine.differentiable.adjoint_gradient}, \anchor{fea_engine.differentiable.implicit_correction_solve} & part \\
+explicit calibration and trainable corrections & \anchor{fea_engine.differentiable.calibrate_correction_explicit}, \anchor{fea_engine.differentiable.ScalarFieldCorrection}, \anchor{fea_engine.differentiable.MLPCorrection} & no \\
+metric-consistent field & \anchor{fea_engine.differentiable.MetricScaledField} & part \\
+reduced-model correction & \anchor{rom_engine.differentiable_correction.calibrate_reduced_correction_explicit} & no \\
+\bottomrule
+\end{tabularx}
+\caption{Where the concepts of this appendix live in the repository (tag \booktag). ``Script calls'' says whether \texttt{appA\_assets.py} calls the code; the others need PyTorch.}\label{tab:df-map}
+\end{table}
+
+\begin{lstlisting}[caption={Newton solve of a corrected two-bar truss and the adjoint gradient of a loss through it, checked by a central difference (NumPy only).},label={lst:df-run}]
+import numpy as np
+from fea_engine import elements as elmod
+from fea_engine.mesh import Mesh
+from fea_engine.solver import FESystem
+from fea_engine.differentiable import AdditiveCorrection, _newton_equilibrium, adjoint_gradient
+
+nodes = np.array([[-1.0, 0.0], [0.0, 0.6], [1.0, 0.0]])
+fes = FESystem(Mesh(nodes=nodes, elements=np.array([[0, 1], [1, 2]]), dim=2), elmod.TrussTL2D())
+fes.fix_dofs([0, 2], [0, 1]); fes.add_nodal_force([1], 1, -2.0e3)
+mat = (210e9, 2e-4)                                        # (E, A)
+
+class Linear(AdditiveCorrection):                          # f_theta(u) = theta * A u
+    def __init__(self, theta, A): self.theta, self.A = theta, A
+    def value(self, u): return self.theta * (self.A @ u)
+    def jacobian(self, u): return self.theta * self.A
+    def dvalue_dtheta(self, u): return self.A @ u
+
+A = np.array([[0.8, -0.4], [0.3, 1.1]]); w = np.array([1.3, -0.7])      # loss L = w . u
+def solve(theta):
+    c = Linear(theta, A)
+    _, u, K_eff, _, ok, _ = _newton_equilibrium(fes, mat, c, fes.F.copy(), tol=1e-10)
+    return u, K_eff, c
+
+u, K_eff, c = solve(1e5)
+g_adj = adjoint_gradient(K_eff, w, lambda lam: np.array([lam @ c.dvalue_dtheta(u)]))[0]
+e = 1e-3 * 1e5
+g_fd = (w @ solve(1e5 + e)[0] - w @ solve(1e5 - e)[0]) / (2 * e)
+\end{lstlisting}
+
+The two gradients agree to \adaTwoErrMid{} at a relative step of $10^{-3}$. Two points of the listing are worth noting. The Newton driver behind it is deliberately narrower than the one of Chapter~\ref{ch:nonlin}: it has no line search, no step or energy test, and no mixed-formulation state; with \code{correction=None} it reproduces the plain Newton path of that chapter (the package tests this bit for bit on a case where plain Newton converges outright). And the Jacobian that a correction reports matters only for the rate of convergence, not for the root, which is why a correction with a poorly known Jacobian is still usable.
+
+\section{Verification}\label{sec:df-verif}
+
+\paragraph{What was run for this book.} The checks below need no PyTorch and were run by \texttt{scripts/appA\_assets.py} on the machine of the other chapters. Of the 39 tests in the six test files that concern this layer, 13 run without PyTorch and pass; the other 26 are skipped by their own guard in the sandbox of this book and are not counted as evidence here.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l X X@{}}
+\toprule
+Check & Result & Reference \\
+\midrule
+Tangent of \texttt{Tet4NeoHookean} by central difference, best step & error \adaFdBest{} at the step \adaFdBestH{}; default step $10^{-6}$: \adaFdDefault; $h=10^{-1}$: \adaFdAtLarge; $h=10^{-12}$: \adaFdAtSmall & complex-step derivative of the same force (asymmetry of the reference \adaCsAsym) \\
+Newton with a correction, $\theta$ of \adaTheta & residual below $10^{-10}\|\bm F_{ext}\|$ after \adaItFull{} iterations with the Jacobian of the correction, \adaItLazy{} with a zero Jacobian & the same problem, same root \\
+Adjoint gradient through the solve, one dof & best agreement \adaOneMinErr{} over relative steps $10^{-8}$ to $10^{-1}$ & central difference of the whole solve \\
+Adjoint gradient through the solve, two dofs, full coupling & best agreement \adaTwoMinErr{} & the same \\
+Metric identity, $n=3$ to $50$ & largest difference of the two steps, relative: \adaMetricErr{} & algebra of \eqref{eq:df-metric} \\
+\bottomrule
+\end{tabularx}
+\caption{Torch-free checks of this appendix. The tetrahedron has unit edges, $E=1$, $\nu=0.3$ and a random displacement of size $0.15$. The truss is the one of \Cref{lst:df-run}.}\label{tab:df-numpy}
+\end{table}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=1.0\linewidth]{figures/appA_checks.pdf}
+\caption{(a) Relative error of the central-difference tangent of \texttt{Tet4NeoHookean} against the step, with the complex-step tangent as reference; the minimum is \adaFdBest{} near the step \adaFdBestH{}. (b) Residual norm of the corrected Newton solve of the two-bar truss with and without the Jacobian of the correction in the tangent; the floor near $10^{-9}$~N is rounding. (c) Relative difference between the adjoint gradient and a central difference of the whole solve against the step used in the difference; the rise at small steps is the convergence tolerance of Newton, the rise at large steps is the truncation of the difference. Generated by \texttt{scripts/appA\_assets.py}.}\label{fig:df-checks}
+\end{figure}
+
+Three points follow from \Cref{tab:df-numpy}. The central difference is a competent tangent at the package's default step: for this element it is accurate to $10^{-10}$, far better than the $10^{-5}$ that the test of the autograd option asks of it. What an exact derivative removes is the dependence on $h$, which is steep on both sides of the optimum (\adaFdAtSmall{} at $10^{-12}$ and \adaFdAtLarge{} at $10^{-1}$), not an error at the default; it also removes the need to tune $h$ for an element whose force is steeper. The Jacobian of the correction buys the quadratic rate: with it the residual falls from $2\times10^{3}$~N to below the tolerance in \adaItFull{} iterations, without it the iteration is linear (each iteration reduces the residual by a constant factor of about six here) and takes \adaItLazy. And the adjoint gradient is not compared with an exact derivative but with another approximation; the agreement is limited by that difference, and the figure shows the limit from both sides.
+
+\paragraph{What was not run, and what the tests assert.} The tests that need PyTorch compare the autograd tangents with the other methods at tolerances, listed in \Cref{tab:df-torch}. The tolerances are what the tests assert; the measured errors are not available in this book. One number often quoted for this layer, $1.25\times10^{-16}$ relative, is not an autograd-against-complex-step result: the source comment records it as the agreement of a plain-NumPy transcription of the shell's force formulas with the production force of \texttt{Shell4MITCCorotational}, a check that needs no PyTorch and that was made before the PyTorch version was written. It supports the derivation, not the autograd tangent.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l X l@{}}
+\toprule
+Element & Autograd tangent compared with & Tolerance asserted \\
+\midrule
+\texttt{Tet4NeoHookean} & central difference of the force & $10^{-5}$ relative \\
+\texttt{Tet10SolidTL} & analytic tangent; complex-step tangent & $10^{-8}$ relative \\
+\texttt{Shell4MITCCorotational}, committed state & complex-step tangent (both symmetrised) & $10^{-6}$ relative \\
+\texttt{Beam2DReissner} & analytic tangent (force and tangent) & $10^{-10}$ relative \\
+batched \texttt{Tet4NeoHookean} & the same element in a Python loop & $10^{-10}$ relative \\
+\bottomrule
+\end{tabularx}
+\caption{Tolerances of the PyTorch-dependent tests of the tangents. These tests were not run for this book; they run on a machine with PyTorch installed.}\label{tab:df-torch}
+\end{table}
+
+\begin{limitsbox}
+\begin{itemize}
+\item \textbf{Optional and partly unrun here.} Everything that needs PyTorch (autograd tangents, trainable corrections, the implicit layer, explicit calibration loops) was not run for this book; 26 of 39 tests are skipped in its sandbox. The mathematical core was run on NumPy only.
+\item \textbf{Narrow Newton driver.} The corrected solve has no line search, no step or energy tests and no mixed-formulation state, and it raises an error when it does not converge. A problem that needs the robustness features of Chapter~\ref{ch:nonlin} cannot be calibrated implicitly.
+\item \textbf{Static, plain residual.} The correction is attached to the nonlinear static residual only: not to dynamics, contact or constraints.
+\item \textbf{Dense linear algebra.} The adjoint solve and the Jacobian of a correction are dense; a correction with one parameter per node of a large mesh is outside what the layer was built for, and the metric-scaled field densifies the mass submatrix.
+\item \textbf{Not a method comparison.} No claim is made here that a trained correction improves a model, that implicit calibration beats explicit calibration on a structural problem, or that an autograd tangent is faster than the existing ones.
+\item \textbf{Reduced level incomplete.} The implicit layer for the reduced model is not built; only the explicit calibration is.
+\end{itemize}
+\end{limitsbox}
+
+\section{Summary}\label{sec:df-summary}
+
+Automatic differentiation gives an element tangent without a step size, and the packages use it as an independent third method next to central differences and the complex step; for the neo-Hookean tetrahedron the existing central difference is already accurate to about $10^{-10}$ at its default step, so the value of the check is independence and the absence of tuning, not a repair. A trainable additive correction of the static residual needs the Jacobian of the correction in the Newton tangent for the quadratic rate, and the gradient of a loss through the converged state needs one adjoint solve with the transposed tangent, whatever the number of Newton iterations and of parameters. The explicit calibration against a known reference state is the cheaper and lower-risk route. The mathematical core is verified here without PyTorch; the autograd tangents are verified by tests that this book did not run.
+
+\section*{Exercises}\label{sec:df-exercises}
+
+\begin{enumerate}
+\item \emph{(Derivation)} Show that the optimal step of a central difference is of order $\varepsilon_{\mathrm{mach}}^{1/3}$ and that the best error is of order $\varepsilon_{\mathrm{mach}}^{2/3}$, up to the size of the third derivative. Compare with the minimum of \Cref{fig:df-checks}(a).
+\item \emph{(Derivation)} Derive \eqref{eq:df-impl} again for a residual that depends on the parameters also through $\bm F_{int}$, say through a stiffness parameter, and say what changes in the adjoint system and in the product with $\partial\bm G/\partial\bm\theta$.
+\item \emph{(Derivation)} Show that for the constant offset the explicit minimum of \eqref{eq:df-explicit} is $\bm F_{ext}-\bm F_{int}(\bm w_m)$ and that $\bm w_m$ is then a root of the corrected residual.
+\item \emph{(Implementation)} Use \code{Tet4NeoHookean} for a block under uniaxial stretch and compare its tangent with \code{method="fd"} and, where PyTorch is installed, \code{method="autograd"}, for several stretches. Report the difference against the complex-step tangent, as in \Cref{fig:df-checks}(a).
+\item \emph{(Implementation)} Replace the linear correction of \Cref{lst:df-run} by $f_\theta(\bm u)=\theta\,\bm u^{3}$ (componentwise), supply its Jacobian and derivative with respect to $\theta$, and repeat the comparison of the adjoint gradient with a central difference.
+\item \emph{(Implementation)} Time the corrected Newton solve with the exact Jacobian of the correction and with a zero Jacobian on a larger truss. At what size of the model does the extra assembly of the Jacobian stop mattering?
+\item \emph{(Interpretation)} A correction is calibrated explicitly, with a small loss in \eqref{eq:df-explicit}, and then used in a solve whose displacement is still wrong. Give two reasons, using the difference between fitting a residual at a reference and fitting the displacement that the corrected model produces.
+\item \emph{(Interpretation)} The shell with a committed state has an asymmetric true Jacobian. What does that say about reading a symmetric tangent as ``the Hessian of an energy'' for this element, and which of the checks of this appendix would show it?
+\end{enumerate}
+
+\chapterrefs

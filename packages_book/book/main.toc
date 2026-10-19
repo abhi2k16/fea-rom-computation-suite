@@ -292,18 +292,32 @@
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-16}
 \contentsline {chapter}{\numberline {A}Differentiable assembly and autograd tangents}{157}{appendix.A}%
+\contentsline {section}{\numberline {A.1}Three uses of a derivative}{157}{section.A.1}%
+\contentsline {section}{\numberline {A.2}Mathematical structure}{158}{section.A.2}%
+\contentsline {subsection}{\numberline {A.2.1}Tangents: three ways to a derivative}{158}{subsection.A.2.1}%
+\contentsline {subsection}{\numberline {A.2.2}A trainable additive correction}{158}{subsection.A.2.2}%
+\contentsline {subsection}{\numberline {A.2.3}Differentiating through a converged solve}{158}{subsection.A.2.3}%
+\contentsline {subsection}{\numberline {A.2.4}Explicit calibration}{160}{subsection.A.2.4}%
+\contentsline {subsection}{\numberline {A.2.5}Metric-consistent steps for a spatial field}{160}{subsection.A.2.5}%
+\contentsline {subsection}{\numberline {A.2.6}The same construction for a reduced model}{160}{subsection.A.2.6}%
+\contentsline {section}{\numberline {A.3}Implementation}{160}{section.A.3}%
+\contentsline {section}{\numberline {A.4}Verification}{162}{section.A.4}%
+\contentsline {paragraph}{What was run for this book.}{162}{section*.269}%
+\contentsline {paragraph}{What was not run, and what the tests assert.}{163}{section*.272}%
+\contentsline {section}{\numberline {A.5}Summary}{164}{section.A.5}%
+\contentsline {section}{References}{165}{section*.275}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-17}
-\contentsline {chapter}{\numberline {B}Verification conventions and tolerances}{158}{appendix.B}%
-\contentsline {section}{\numberline {B.1}A template for a convergence study}{158}{section.B.1}%
-\contentsline {section}{\numberline {B.2}Tolerances used in the book}{158}{section.B.2}%
-\contentsline {section}{\numberline {B.3}What a reported ROM number states}{158}{section.B.3}%
+\contentsline {chapter}{\numberline {B}Verification conventions and tolerances}{166}{appendix.B}%
+\contentsline {section}{\numberline {B.1}A template for a convergence study}{166}{section.B.1}%
+\contentsline {section}{\numberline {B.2}Tolerances used in the book}{166}{section.B.2}%
+\contentsline {section}{\numberline {B.3}What a reported ROM number states}{166}{section.B.3}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-18}
-\contentsline {chapter}{\numberline {C}Notation and glossary}{160}{appendix.C}%
-\contentsline {section}{\numberline {C.1}Notation}{160}{section.C.1}%
-\contentsline {section}{\numberline {C.2}Glossary}{160}{section.C.2}%
+\contentsline {chapter}{\numberline {C}Notation and glossary}{168}{appendix.C}%
+\contentsline {section}{\numberline {C.1}Notation}{168}{section.C.1}%
+\contentsline {section}{\numberline {C.2}Glossary}{168}{section.C.2}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-19}
-\contentsline {chapter}{\numberline {D}Chapters, scripts and package tests}{162}{appendix.D}%
+\contentsline {chapter}{\numberline {D}Chapters, scripts and package tests}{170}{appendix.D}%
 \gdef \the@ipfilectr {}
