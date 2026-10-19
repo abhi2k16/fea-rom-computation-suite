@@ -37,7 +37,7 @@ The sign is the one of the package, in which the internal force carries the minu
 \end{equation}
 because $-\mathrm d\bm R_\theta/\mathrm d\bm u$ has two sign changes. If the Jacobian of the correction is dropped from \eqref{eq:df-keff}, the iteration still converges to the same root when it converges, but no longer quadratically.
 
-A correction object has to supply \code{value(u)}, \code{jacobian(u)} and a \code{scope} (\texttt{local} if each component depends only on its own dof, \texttt{nonlocal} otherwise). A trainable one also supplies \code{torch\_value(u)} and \code{parameters()}. The package contains a constant offset per free dof (\anchor{fea_engine.differentiable.ScalarFieldCorrection}, with a zero Jacobian) and a small network applied to each dof's own value (\anchor{fea_engine.differentiable.MLPCorrection}, a multilayer perceptron with tanh units, hence a diagonal Jacobian).
+A correction object has to supply \code{value(u)}, \code{jacobian(u)} and a \code{scope} (\texttt{local} if each component depends only on its own dof, \texttt{nonlocal} otherwise). A trainable one also supplies \code{torch_value(u)} and \code{parameters()}. The package contains a constant offset per free dof (\anchor{fea_engine.differentiable.ScalarFieldCorrection}, with a zero Jacobian) and a small network applied to each dof's own value (\anchor{fea_engine.differentiable.MLPCorrection}, a multilayer perceptron with tanh units, hence a diagonal Jacobian).
 
 \subsection{Differentiating through a converged solve}\label{sec:df-adjoint}
 
@@ -94,7 +94,7 @@ A reduced model with a polynomial modal force satisfies $\bm F_{ext}-\bm\Lambda\
 
 \section{Implementation}\label{sec:df-impl}
 
-\Cref{tab:df-map} lists where each concept lives. The listing below runs without PyTorch: it builds a two-bar truss, attaches a linear correction $\bm f_\theta(\bm u)=\theta\bm A\bm u$ with a hand-coded Jacobian, solves, and compares the adjoint gradient of $L=\bm w^T\bm u$ with a central difference of the whole solve. The calls that need PyTorch have the same shape: \code{implicit\_correction\_solve(fes, mat, corr)} returns the converged free-dof vector as a tensor that can be used in any loss, and \code{loss.backward()} then fills the gradient of \code{corr.parameters()} through the backward pass above.
+\Cref{tab:df-map} lists where each concept lives. The listing below runs without PyTorch: it builds a two-bar truss, attaches a linear correction $\bm f_\theta(\bm u)=\theta\bm A\bm u$ with a hand-coded Jacobian, solves, and compares the adjoint gradient of $L=\bm w^T\bm u$ with a central difference of the whole solve. The calls that need PyTorch have the same shape: \code{implicit_correction_solve(fes, mat, corr)} returns the converged free-dof vector as a tensor that can be used in any loss, and \code{loss.backward()} then fills the gradient of \code{corr.parameters()} through the backward pass above.
 
 \begin{table}[ht]
 \centering\small

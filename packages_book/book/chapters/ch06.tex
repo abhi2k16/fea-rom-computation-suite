@@ -2,7 +2,7 @@
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
 A nonlinear element has no stored matrix: its force and tangent are recomputed from the current displacement in every Newton iteration, so assembly is paid for again and again. The default implementation does this one element at a time in Python, and for small elements most of the time goes into the interpreter. This chapter explains the opt-in batched path of \fea{}, which computes all elements of a block with array operations, keeps the tangent sparse and lets the Newton drivers use a sparse factorisation. It shows what the batched path computes, how its caches and memory limit work, how the code reports a block that cannot be batched, and then measures the gain and the agreement with the loop on four element families. The loop stays the default and the reference: every batched result is compared with it.\par\smallskip
-\textbf{After this chapter the reader can:} (i) decide when the batched assembly path pays off; (ii) check a batched result against the loop that is its reference; (iii) read the support report for a block that cannot be batched; (iv) set the chunk size to bound memory.
+\textbf{After this chapter the reader can:} (i) decide when the batched assembly path pays off; (ii) check a batched result against the loop that is its reference; (iii) read the support report for a block that cannot be batched; (iv) set the chunk size to bound memory; (v) say what the optional PyTorch backend replaces, what it leaves alone, and at which sizes it pays off.
 \end{tcolorbox}
 
 \section{Where the time goes}\label{sec:bk-time}
@@ -69,7 +69,7 @@ print(fes.last_assembly_modes)      # {'q': 'batched'}
 
 A block that cannot be batched stays on the loop, and the report gives the reason. For example, the plastic bar of Chapter~\ref{ch:nonlin} is reported as not batchable (\emph{\cbkReasonPlastic}), because its history variables are updated per element and per step. Path-dependent blocks, contact elements added one by one, and springs stay on the loop; a model with several blocks is assembled block by block, each by the route it supports.
 
-The Newton drivers take the sparse path with \code{sparse\_tangent=True} (or the same field of \code{NewtonOptions}). The tangent is then a CSR matrix, the free block is sliced out, and it is factored with SuperLU; the dense tangent is never formed.
+The Newton drivers take the sparse path with \code{sparse_tangent=True} (or the same field of \code{NewtonOptions}). The tangent is then a CSR matrix, the free block is sliced out, and it is factored with SuperLU; the dense tangent is never formed.
 
 \begin{lstlisting}[caption={A load-controlled Newton solve with batched assembly and a sparse tangent.},label={lst:bk-newton}]
 fes.batched = True
@@ -108,9 +108,71 @@ A fast kernel is useless unless it is the same kernel. Every comparison below re
 \caption{Wall time of the same load-controlled Newton solve with the default path and with batched assembly and a sparse tangent.}\label{fig:bk-newton}
 \end{figure}
 
+\section{The optional PyTorch backend}\label{sec:bk-torch}
+
+\paragraph{Purpose.} The batched path of this chapter runs on the CPU with NumPy. A second, optional backend repeats three pieces of work with PyTorch~\cite{paszke2019pytorch}: the linear solve of an assembled static system, the recovery of stresses from a displacement field, and the batched element kernels of the four families above. There are two reasons for it. The first is hardware: PyTorch tensors can live on a graphics processor, and its CPU routines use a thread pool. The second is differentiation: the kernels are written once, against an array namespace, so that the same algebra can be differentiated (Appendix~\ref{ch:diff}). It is not a replacement of the NumPy and SciPy path, which remains the default and, as everywhere in this chapter, the reference against which every torch result is compared.
+
+\paragraph{How it is patched in.} \Cref{fig:bk-torch} shows the design. Nothing in the default path is changed. A torch route is chosen by two explicit arguments, \code{backend="torch"} and \code{device="cpu"} or \code{"cuda"}, on the call that supports it (the \code{solve} of a reduced linear system, \code{stress} and \code{strain}, or a separate function such as \code{assemble_internal_force_torch}); a call without them runs the old code. The routes live in separate modules, \code{torch_sparse_solver}, \code{batched_kernels_torch} and the torch branch of the recovery module, and PyTorch is imported only when one of them is called, so a machine without it never sees an error unless it asks for a torch route. Every route takes NumPy arrays and returns NumPy arrays: the matrix and the load are converted to tensors on the chosen device, the work is done in double precision, and the result is copied back. The conversion of the sparse matrix is a change of container and not a re-ordering, since the three arrays of the compressed sparse row format are used as they are. What is not touched is the assembly of $\bm K$ and $\bm F$, which stays in NumPy, and the Newton drivers, which call the NumPy assembly; a nonlinear analysis therefore does not run on the GPU through this backend, and the torch assembly is meant for sweeps, for differentiation and for large single evaluations. A block the torch route cannot handle (contact elements, springs, linear constraints, path-dependent state, an element class without a torch kernel) is refused with \code{NotImplementedError}, and conjugate gradients on a matrix with a non-positive diagonal raises \code{ValueError}: the route does not drop parts of the model silently.
+
+\tikzfigure[0.98\linewidth]{ch06_torch}{How the PyTorch backend is patched in. A call with \texttt{backend="torch"} leaves the default NumPy and SciPy route untouched and takes a separate path of three stages: conversion to tensors on the chosen device, computation in double precision, and conversion back to NumPy. Assembly and the Newton drivers do not change, and what the route cannot do is refused.}{fig:bk-torch}
+
+\paragraph{The three routes.} For the linear solve there are two methods. The dense method forms $\bm K$ as a dense tensor and calls \code{torch.linalg.solve}; it accepts any matrix but needs $8n^2$ bytes, so $66\,048$ free degrees of freedom would need about 35~GB, and it serves as an independent reference and for small systems. The sparse method is a preconditioned conjugate gradient iteration on a sparse tensor (the algorithm below), which needs a symmetric positive definite matrix and cheaply checks only that the diagonal is positive; with \code{method="auto"} the reduced system picks the dense method below 2\,000 free degrees of freedom and conjugate gradients above. Stress recovery uses a small set of array operations that are written once for NumPy and torch and requires the batched path (\code{vectorized=True}); it does not support coefficients that depend on position. The element kernels \code{tl_internal_force} and \code{tl_tangent} are written once for an array namespace \code{xp}, using only operations with the same meaning in NumPy and torch (\code{einsum}, \code{stack}, \code{reshape}), so the torch version differs from the NumPy version only in which module is passed.
+
+\begin{algbox}{Jacobi-preconditioned conjugate gradients on a sparse tensor}
+\begin{pseudo}
+\Require SPD matrix $\bm K$ in compressed sparse row form, load $\bm f$, tolerance $\varepsilon$, iteration limit
+\State move \texttt{indptr}, \texttt{indices}, \texttt{data} and $\bm f$ to the device as a sparse CSR tensor and a vector; $\bm d\gets\mathrm{diag}(\bm K)$
+\State $\bm x\gets\bm 0$;\ $\bm r\gets\bm f$;\ $\bm z\gets\bm r/\bm d$;\ $\bm p\gets\bm z$;\ $\rho\gets\bm r^T\bm z$
+\For{$k=1,2,\dots$}
+  \State $\bm q\gets\bm K\bm p$;\ $\alpha\gets\rho/(\bm p^T\bm q)$;\ $\bm x\gets\bm x+\alpha\bm p$;\ $\bm r\gets\bm r-\alpha\bm q$
+  \If{$\|\bm r\|/\|\bm f\|<\varepsilon$} \textbf{stop} \EndIf
+  \State $\bm z\gets\bm r/\bm d$;\ $\rho'\gets\bm r^T\bm z$;\ $\bm p\gets\bm z+(\rho'/\rho)\bm p$;\ $\rho\gets\rho'$
+\EndFor
+\Ensure $\bm x$ copied back to NumPy, with the iteration count and a flag that says whether the tolerance was met
+\end{pseudo}
+\begin{algdet}
+\item[Cost] One sparse matrix--vector product, two inner products and three vector updates per iteration, all on the device; no factorisation. With a diagonal preconditioner the iteration count grows as the mesh is refined.
+\item[Fails when] $\bm K$ is not symmetric positive definite (the iteration can stall or give a wrong answer without an error, except for a non-positive diagonal); the tolerance is not met within the limit (the system-level function then raises an error, the low-level function returns the flag).
+\item[Code] \anchor{fea_engine.torch_sparse_solver.torch_sparse_cg_solve}, \anchor{fea_engine.torch_sparse_solver.torch_dense_solve}.
+\item[Verified in] \Cref{tab:bk-torch-solve}, \Cref{fig:bk-torch-data}.
+\end{algdet}
+\end{algbox}
+
+\paragraph{Automatic choice.} A system built with \code{backend="auto"} decides at solve time. It goes to the torch conjugate-gradient route only if the free block is symmetric positive definite and has more than \bktAutoThr{} free degrees of freedom, and otherwise uses SciPy; a matrix that is not positive definite is never sent to conjugate gradients, whatever its size. The threshold is a rule of thumb and not the result of a benchmark, and the data below suggest why it is a conservative one. The test for positive definiteness is a dense Cholesky factorisation of the free block, so for a large system the check itself needs $8n^2$ bytes. For the plates of this section, with \bktAutoSmallN{} and \bktAutoBigN{} free degrees of freedom, the rule chooses SciPy, and with the threshold lowered to 1\,000 the smaller plate goes to torch; an indefinite diagonal matrix goes to SciPy even with a threshold of 1. These three decisions were run for this book and need no PyTorch.
+
+\paragraph{What was run here, and what was not.} PyTorch is not installed where this book is built, so no CPU or CUDA timing below was measured for it. The numbers come from the records of the author's machine: Windows, \bktCores{} cores, an NVIDIA \bktGpu, PyTorch \bktTorch{} built for CUDA \bktCuda. The solve and recovery records and the kernel record were written by two different runs of the package's experiment scripts (commits 33cde35 and 4e4b750), which is the reason the kernel timing is a separate table. What was run here is the algebra: the kernels \code{tl_internal_force} and \code{tl_tangent}, called with \code{xp=numpy}, reproduce the batched kernels of the element on \bktShadowNe{} \code{Hex8SolidTL} elements to \bktShadowForce{} (force) and \bktShadowTangent{} (tangent), relative to the largest entry. What the torch route adds to this is the conversion and the device, and the records say how large the difference between the two routes is.
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch06_torch_solve}
+\caption{Linear solve of the free-dof system of a Quad4 plane-stress plate (clamped at one end, tip load): SciPy (default) against PyTorch, on the CPU and on the GPU, by conjugate gradients (Jacobi preconditioner, relative tolerance $10^{-10}$) and by the dense method (not run above $12\,000$ degrees of freedom). Each time is the minimum of three runs and includes the conversion to tensors and back. The last column is the largest relative difference to the SciPy solution. Records of the author's machine (\bktGpu), not measured for this book.}\label{tab:bk-torch-solve}
+\end{table}
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch06_torch_other}
+\caption{(a) Stress recovery of the same plates, in milliseconds. (b) Element kernels of \bktKernNe{} \texttt{Hex8SolidTL} elements, in milliseconds, including the copies of the inputs to the device and of the result back, because the NumPy-in, NumPy-out wrapper makes them. The last column is the largest relative difference to the NumPy result. Records of the author's machine (\bktGpu), not measured for this book.}\label{tab:bk-torch-other}
+\end{table}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=1.0\linewidth]{figures/ch06_torch.pdf}
+\caption{Data of \Cref{tab:bk-torch-solve} and \Cref{tab:bk-torch-other}(a). (a) Time of the solve against the number of free degrees of freedom. (b) Time of the stress recovery against the number of elements. Drawn by \texttt{scripts/ch06\_torch\_assets.py} from the records of the author's machine.}\label{fig:bk-torch-data}
+\end{figure}
+
+\paragraph{Reading the tables.} The torch routes agree with the default ones: conjugate gradients to at most \bktCgDiffMax{} (set by the tolerance of the iteration), the dense method to \bktDenseDiffMax, the recovered stresses to \bktStrDiffMax{} and the kernels to the $10^{-16}$ level. The gain is another matter, and it depends on the size and on the operation.
+\begin{itemize}
+\item \emph{Small systems lose.} At \bktFirstDof{} free degrees of freedom SciPy takes 7 ms, and conjugate gradients on the CPU take \bktSolveSmallCpu{} times as long and on the GPU \bktSolveSmallCuda{} times as long. The solve starts from a SciPy matrix, so each call includes building the tensors and the sparse container, and on the GPU the transfer and the launch of many small operations; the iteration itself is short.
+\item \emph{The crossover lies in the tens of thousands of degrees of freedom.} At $16\,640$ the CPU route is \bktSolveMidCpu{} times faster than SciPy, while the GPU route is still slower (SciPy time divided by GPU time: \bktSolveMidCuda). At \bktLastDof{} the GPU route is \bktSolveBigCuda{} times faster, and the CPU route is again slightly slower (ratio \bktSolveBigCpu). The advantage that appears is modest, and it is against a sparse direct solver that factors once and is hard to beat on a two-dimensional plate; a Jacobi preconditioner makes the iteration count grow with the mesh, which works against conjugate gradients on finer meshes.
+\item \emph{The dense method is a reference, not a route.} At \bktDenseDof{} free degrees of freedom it is \bktDenseSlow{} times slower than SciPy on the CPU and \bktDenseSlowCuda{} times on the GPU. This GPU is a consumer card, and consumer cards run double precision at a small fraction of their single-precision rate; the records say nothing about a data-centre card, and the package runs everything in double precision.
+\item \emph{Recovery gains earlier and more.} Stress recovery is independent from element to element, so it parallelises without iteration: the torch route takes \bktStrSmall{} times the NumPy time on the smallest plate, but is \bktStrBigCpu{} times faster on the CPU and \bktStrBigCuda{} times on the GPU on the largest.
+\item \emph{A GPU is not always better than the CPU threads.} For the kernels the force is \bktKfCpu{} and \bktKfCuda{} times faster than NumPy on the CPU and the GPU, and the tangent \bktKtCpu{} and \bktKtCuda{} times: the tangent returns a $24\times24$ matrix per element, and because the wrapper copies the result back, much of the time on the GPU is likely to be spent on transfer. This is an interpretation of the numbers and was not isolated by a measurement.
+\end{itemize}
+These records are single sets on one machine, with the minimum of three runs, and a consumer GPU; they show where the overheads sit and the order of magnitude of the gain, not what another machine will do. The advice that follows is the one the package gives in its own rule: keep SciPy for the sizes of the earlier chapters, try the torch route when the free block has tens of thousands of degrees of freedom and is positive definite, and use the recovery and kernel routes when many elements are processed at once.
+
 \section{Related pieces}\label{sec:bk-related}
 
-The same idea appears in other places of the packages; this chapter does not benchmark them, and the figures for them are in the repository documentation. Many contact pairs can be handled in one call with \code{ContactSet2D} and \code{ContactSet3D} (a KD-tree finds the candidate pairs). Hyper-reduction needs the response of selected elements for many snapshots: \code{fes.element_forces}, \code{element_tangents} and their \code{_local} variants provide it, and \rom{} runs its training matrix and the energy-conserving sampling and weighting (ECSW) fit without a Python loop over elements and snapshots (Chapter~\ref{ch:hyper}); \rom{} does not import \fea{}, so these hooks take plain callables. Homogeneous linear constraints can be removed with \code{fes.eliminate_constraints()}, and \code{fea_engine.batched_kernels_torch} provides the same kernels in PyTorch for CPU or GPU.
+The same idea appears in other places of the packages; this chapter does not benchmark them, and the figures for them are in the repository documentation. Many contact pairs can be handled in one call with \code{ContactSet2D} and \code{ContactSet3D} (a KD-tree finds the candidate pairs). Hyper-reduction needs the response of selected elements for many snapshots: \code{fes.element_forces}, \code{element_tangents} and their \code{_local} variants provide it, and \rom{} runs its training matrix and the energy-conserving sampling and weighting (ECSW) fit without a Python loop over elements and snapshots (Chapter~\ref{ch:hyper}); \rom{} does not import \fea{}, so these hooks take plain callables. Homogeneous linear constraints can be removed with \code{fes.eliminate_constraints()}, and the optional PyTorch backend of \Cref{sec:bk-torch} provides the linear solve, the stress recovery and these kernels for CPU or GPU.
 
 \begin{table}[ht]
 \centering\small
@@ -119,6 +181,7 @@ The same idea appears in other places of the packages; this chapter does not ben
 Concept & Code & Script calls \\
 \midrule
 batch protocol, chunking, geometry and pattern caches & \anchor{fea_engine.batched_kernels.chunk_slices}, \anchor{fea_engine.batched_kernels.SparsePatternCache}, \anchor{fea_engine.batched_kernels.BlockGeometryCache} & no \\
+optional PyTorch backend: solve, recovery, kernels & \anchor{fea_engine.torch_sparse_solver.torch_sparse_cg_solve}, \anchor{fea_engine.batched_kernels_torch.tl_internal_force}, \anchor{fea_engine.backend_dispatch.select_backend} & part \\
 batched elements & \anchor{fea_engine.elements.nonlinear_solids.Quad4PlaneStressTL}, \anchor{fea_engine.elements.hex_tl.Hex8SolidTL}, \anchor{fea_engine.elements.hex_tl.Hex20SolidTL}, \anchor{fea_engine.elements.nonlinear_solids.Tet10SolidTL} & yes \\
 assembly entry points & \anchor{fea_engine.solver.FESystem} (\code{assemble_internal_force}, \code{assemble_tangent_stiffness}, \code{batch_support_report}) & yes \\
 sparse Newton settings & \anchor{fea_engine.newton_options.NewtonOptions} & no \\
@@ -138,22 +201,26 @@ sparse Newton settings & \anchor{fea_engine.newton_options.NewtonOptions} & no \
 \item \textbf{Memory estimates} are estimates of the dominant arrays, not peak resident memory (\Cref{tab:bk-chunk}).
 \item \textbf{Optional modes} \code{reuse_factorization=True} (modified Newton) needs fewer assemblies and more iterations and can diverge, and \code{lu_ordering} is problem dependent; both stay off unless requested.
 \item \textbf{Not tested here:} meshes of $10^5$ elements, batched friction, and updating contact pairs during a solve.
+\item \textbf{The PyTorch timings are not mine.} The CPU and CUDA figures of \Cref{sec:bk-torch} come from the records of one machine with a consumer GPU, written by two runs at two commits; they were not reproduced for this book. The Newton drivers do not use the torch backend, the dense method needs $8n^2$ bytes, and the test for positive definiteness behind \code{backend="auto"} is a dense Cholesky factorisation.
 \end{itemize}
 \end{limitsbox}
 
 \section{Summary}\label{sec:bk-summary}
 
-A nonlinear element is reassembled in every Newton iteration, and a Python loop over elements makes that expensive. The batched path computes all elements of a block at once, caches the reference geometry and the sparse pattern, limits its memory by chunking, and reports the blocks it cannot handle. On four element families it agreed with the loop to \cbkAgreeWorst{} and was between \cbkKFHexTwenty{} and \cbkKFQuad{} times faster for the force kernel in this study; a full Newton solve of a plate was \cbkNewtonRatio{} times faster, with the solution unchanged to \cbkNewtonDiff. The loop stays the default and the reference.
+A nonlinear element is reassembled in every Newton iteration, and a Python loop over elements makes that expensive. The batched path computes all elements of a block at once, caches the reference geometry and the sparse pattern, limits its memory by chunking, and reports the blocks it cannot handle. On four element families it agreed with the loop to \cbkAgreeWorst{} and was between \cbkKFHexTwenty{} and \cbkKFQuad{} times faster for the force kernel in this study; a full Newton solve of a plate was \cbkNewtonRatio{} times faster, with the solution unchanged to \cbkNewtonDiff. The optional PyTorch backend gives the same results to rounding for the solve, the stress recovery and the kernels, but on the records of one machine it pays off only for systems of tens of thousands of degrees of freedom, and for recovery and kernels of a few thousand elements or more. The loop stays the default and the reference.
 
 \section*{Exercises}\label{sec:bk-exercises}
 \begin{enumerate}
 \item \emph{(Implementation)} Repeat \Cref{fig:bk-scaling} for \code{Hex8SolidTL} and compare the speed-up at small sizes with that of the plane-stress element. Why is it smaller?
 \item \emph{(Implementation)} Run \Cref{lst:bk-newton} with \code{NewtonOptions(sparse_tangent=True, lu_ordering="COLAMD")}. Does the ordering change the time? Do the results change?
 \item \emph{(Implementation)} Choose \code{chunk_size=1}, \code{7} and \code{192} for the tangent of \Cref{lst:bk-use}. How do the time and the difference to the unchunked result change?
-\item \emph{(Implementation)} Build a model with one \code{Quad4PlaneStressTL} block and one \code{TrussPlastic2D} block. What does \code{batch\_support\_report} return, and what does \code{last\_assembly\_modes} show after an assembly?
+\item \emph{(Implementation)} Build a model with one \code{Quad4PlaneStressTL} block and one \code{TrussPlastic2D} block. What does \code{batch_support_report} return, and what does \code{last_assembly_modes} show after an assembly?
 \item \emph{(Implementation)} Separate the three effects in \cbkNewtonRatio{}-fold gain of the Newton solve: time the loop assembly, the batched assembly and the two linear solves on the same tangent.
 \item \emph{(Derivation)} Show that batched assembly of $E$ elements with $d$ degrees of freedom each stores $Ed^2$ tangent entries, and that processing the elements in chunks of $c$ reduces the peak working memory to the order of $cd^2$ plus the sparse result.
 \item \emph{(Interpretation)} The loop is the default and the batched path is opt-in. Give one reason for and one against reversing this, using the speed-ups and agreements reported in this chapter.
+\item \emph{(Implementation)} Run \texttt{paper/experiments/e6\_torch\_backend.py} on a machine with PyTorch, and with a GPU if you have one. At which number of free degrees of freedom do conjugate gradients on the CPU and on the GPU overtake SciPy on your machine, and does the dense method ever win?
+\item \emph{(Derivation)} Show that the dense method needs $8n^2$ bytes in double precision and compute the memory for the largest plate of \Cref{tab:bk-torch-solve}. How many nonzero entries does the sparse container hold if each row has about 18 entries, and what is the ratio?
+\item \emph{(Interpretation)} The recovery of \Cref{tab:bk-torch-other} gains more than the solve. Give two reasons, one from the structure of the two computations and one from the cost of moving data, and say which measurement would separate them.
 \end{enumerate}
 
 \chapterrefs
