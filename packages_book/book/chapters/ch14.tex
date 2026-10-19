@@ -20,7 +20,7 @@ Two rules apply to every level. The first is that the reference must not come fr
 \begin{table}[tbp]
 \centering\footnotesize
 \setlength{\tabcolsep}{4pt}
-\caption{Headline checks from Chapters~\ref{ch:elem} to~\ref{ch:hyper}. ``Level'' refers to \Cref{fig:vf-pyramid}. An error without a unit is a relative error.}\label{tab:vf-map}
+\caption{Headline checks from Chapters~\ref{ch:elem} to~\ref{ch:hyper}. ``Level'' refers to \Cref{fig:vf-pyramid}. An error without a unit is a relative error. BDF2: second-order backward-difference formula; KKT: Karush--Kuhn--Tucker; SVD: singular value decomposition; NMF: non-negative matrix factorisation.}\label{tab:vf-map}
 \begin{tabularx}{\linewidth}{@{}l c >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{2.0cm}@{}}
 \toprule
 Ch. & Level & Check and reference & Result & Where \\
@@ -61,7 +61,7 @@ The figures of this section are redrawn by \texttt{scripts/ch14\_assets.py} from
 \begin{table}[tbp]
 \centering\footnotesize
 \setlength{\tabcolsep}{3pt}
-\caption{Outcomes of the reproduction studies. Numbers marked ``pub.'' are the publication's, the others are from the reproduction reports.}\label{tab:vf-repro}
+\caption{Outcomes of the reproduction studies. Numbers marked ``pub.'' are the publication's, the others are from the reproduction reports. DEIM: discrete empirical interpolation method; UDEIM: unsymmetric DEIM; ECSW: energy-conserving sampling and weighting; MAC: modal assurance criterion; PINN: physics-informed neural network.}\label{tab:vf-repro}
 \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{2.35cm} >{\raggedright\arraybackslash}p{2.4cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{2.35cm}@{}}
 \toprule
 Study & Case & Main quantitative result & Outcome \\
@@ -147,7 +147,7 @@ The 3D pellet--cladding problem (about 7\,000 free dofs) is reproduced only afte
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=1.0\linewidth]{figures/ch14_hyb.pdf}
-\caption{Greedy loop for the rope problem of \citet{fauque2018hybrid}, best run. (a), (b) Error of the hybrid (HR) and projection-based (PB) reduced models against the iteration (displacement mean \cvfHybDispMean{}, maximum \cvfHybDispMax{}; contact force on the reduced domain \cvfHybForceMean{} mean, reconstructed force \cvfHybForceRecon{} mean at the end). (c) Size of the reduced problem. Redrawn by \texttt{scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.}\label{fig:vf-hyb}
+\caption{Greedy loop for the rope problem of \citet{fauque2018hybrid}, best run. (a), (b) Error of the hybrid (HR, hyper-reduced) and projection-based (PB) reduced models against the iteration (displacement mean \cvfHybDispMean{}, maximum \cvfHybDispMax{}; contact force on the reduced domain \cvfHybForceMean{} mean, reconstructed force \cvfHybForceRecon{} mean at the end). (c) Size of the reduced problem. Redrawn by \texttt{scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.}\label{fig:vf-hyb}
 \end{figure}
 
 \subsection{Assembly reduction with contact and geometric nonlinearity}\label{sec:vf-asm}
@@ -263,6 +263,35 @@ The offline cost on the small mesh is \cplSOff~ms, of which \cplSOffSnap~ms are 
 \subsection{The speed-up discrepancy}\label{sec:vf-speed}
 Three different speed-ups of the two-region beam example have been quoted for this stack: $221.8$ in the README and the user guide (a 500-point sweep, $1653.23$~ms against $7.45$~ms, no machine stated), $361$ in the measurements supplied with the article (the same beam, $242$ dofs, $3.646$~s against $10.1$~ms, minimum over repeats of the whole sweep, on the author's 12-core machine, commit 33cde35), and $254$ in an earlier manuscript. A search of the repository and of the article finds $254$ nowhere, and this book does not quote it. The example script of the repository was run \cplRdRuns{} times in the sandbox of this book: the full-order sweep of $500$ queries (stiffness re-assembly and a dense solve) takes about \cplRdFomMs~ms and the reduced one about \cplRdRomMs~ms, and the ratio is between \cplRdMin{} and \cplRdMax{} (median \cplRdMed). The README value lies inside that range, and so would any figure within about fifteen per cent of it: the reduced sweep takes only about ten milliseconds, so a change of one millisecond moves the ratio by ten per cent. The measurements of the article differ for a second reason as well, because they take the minimum over repeats and not a single pass. The three numbers are therefore not in conflict and none is a property of the code: each is a ratio of two timings on one machine under one timing rule, with a dense full-order baseline (\Cref{ch:pod}), and the book quotes only the ratio it generated, together with its range.
 
-\stubchapter{Section 14.5: limits, summary and exercises}
+\section{Limits of this chapter}\label{sec:vf-limits}
+
+\begin{limitsbox}
+\begin{itemize}
+\item \textbf{One author, one machine.} The reproductions were written and run by the author of the packages. They are evidence that the packages can rebuild a method from its description; they are not independent confirmation, and the choices left open by a publication were filled by the same person who wrote the code.
+\item \textbf{The reports were not re-run at the tag.} The figures are redrawn from saved outputs of the study folders, and the numbers in the captions are computed from them and compared with the written reports. The studies themselves (\texttt{--rerun}) were not repeated at \booktag{} for this book, and their drivers live outside the repository.
+\item \textbf{Small models.} Most studies use meshes of a few hundred to a few tens of thousands of degrees of freedom, and reported speed-ups are against full-order solvers that differ from the publications'. No statement about large industrial models follows.
+\item \textbf{Single runs.} Timings are single measurements and vary by tens of percent; neural-network studies use one seed per configuration. Differences inside that noise are not findings.
+\item \textbf{The pipeline is a plate with two materials.} It tests one parameter pair, one basis size chosen on a validation set, and loads inside and outside the trained span (the latter sets an error floor of about $1.7\times10^{-4}$). It does not test geometry or topology changes, nonlinearity, or a hyper-reduced recovery, and the package's affine decomposition accepts dense components only.
+\item \textbf{The residual indicator is not a bound.} In the pipeline it ranks queries but can be off in either direction, and local errors can exceed the global one.
+\item \textbf{Open items.} The fluid-structure study has no redrawn figure, the network trainings need PyTorch and a GPU that this book's build did not have, and the modal frequencies quoted for the first reproduction (79/218/427/706~Hz in the publication) are not all retained in the saved data.
+\end{itemize}
+\end{limitsbox}
+
+\section{Summary}\label{sec:vf-summary}
+
+Evidence for a numerical claim comes at six levels, from a unit test to an integrated run, and each level answers a different question; a higher level does not replace a lower one. The component checks of Chapters~\ref{ch:elem} to~\ref{ch:hyper} establish that the parts do what the mathematics says on cases with a known answer. The reproductions show that nine published studies could be rebuilt from the packages, with their outcomes recorded as they came, including the failures: dynamic accuracy of statically trained ROMs, contact forces hidden behind good displacements, and DEIM-type hyper-reduction wrong a short distance from its training states. The integrated pipeline shows the whole path from mesh to held-out loads, reported by the convention of Appendix~\ref{ch:conv}, with offline, online, lift and recovery cost separated; stress recovery, not the reduced solve, dominates the workflow, so a speed-up of the solve alone is not a speed-up of the answer. The three quoted speed-ups of the example beam are single timings under different rules and none is a property of the code.
+
+\section*{Exercises}\label{sec:vf-exercises}
+
+\begin{enumerate}
+\item \emph{(Derivation)} The break-even number of queries is the offline cost divided by the saving per query, lift included. Derive it, and show that if recovery costs the same in the full-order and the reduced workflow, the workflow speed-up is smaller than the speed-up of the solve alone and tends to $1$ as recovery dominates.
+\item \emph{(Derivation)} A reduced model has a maximum error of $10^{-4}$ on training loads and a floor of $1.7\times10^{-4}$ for a load outside their span. Explain, with the decomposition of the load into a component in the span and one orthogonal to it, why increasing $r$ cannot lower the floor.
+\item \emph{(Implementation)} Run \texttt{scripts/ch14\_pipeline.py} with a different validation set and a different candidate list of $r$. Report the chosen $r$ and the errors by the convention of Appendix~\ref{ch:conv}.
+\item \emph{(Implementation)} Replace the dense affine components of the pipeline by sparse ones. Find where \code{AffineDecomposition} refuses them, and give the smallest change that would accept them.
+\item \emph{(Implementation)} Add a recovery of stress at 20 elements only and measure the workflow speed-up again. State what changes in the break-even number.
+\item \emph{(Interpretation)} The ICE ROM of Section~\ref{sec:vf-ice} fits the static modal force with $R^2=0.9998$ and still fails under random loading. Which level of Figure~\ref{fig:vf-pyramid} would have caught this, and what test would you add at the level below it?
+\item \emph{(Interpretation)} A reproduction matches a published error to two digits. List three reasons this may not confirm the method, using the open inputs recorded in Section~\ref{sec:vf-asm}.
+\item \emph{(Interpretation)} Read the speed-up discrepancy of Section~\ref{sec:vf-speed}. Specify a timing protocol (repeats, statistic, machine report) under which a single number could be quoted, and say what it would still not show.
+\end{enumerate}
 
 \chapterrefs
