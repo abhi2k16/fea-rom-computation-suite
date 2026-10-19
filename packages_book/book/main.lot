@@ -95,19 +95,21 @@
 \addvspace {10\p@ }
 \contentsline {table}{\numberline {14.1}{\ignorespaces Headline checks from Chapters\nobreakspace {}\ref {ch:elem} to\nobreakspace {}\ref {ch:hyper}. ``Level'' refers to \Cref {fig:vf-pyramid}. An error without a unit is a relative error.\relax }}{141}{table.caption.247}%
 \contentsline {table}{\numberline {14.2}{\ignorespaces Outcomes of the reproduction studies. Numbers marked ``pub.'' are the publication's, the others are from the reproduction reports.\relax }}{143}{table.caption.248}%
+\contentsline {table}{\numberline {14.3}{\ignorespaces Held-out errors at $r=16\xspace $ (largest over the 40 queries of each test set). The two local quantities in the lower rows are relative to the load scale.\relax }}{152}{table.caption.260}%
+\contentsline {table}{\numberline {14.4}{\ignorespaces Cost of the pipeline by the convention of Appendix\nobreakspace {}\ref {ch:conv}: offline, online, lift and recovery separately, two full-order baselines, and the break-even number of queries (offline cost divided by the saving per query, the lift included). Machine: Linux 6.8.0-138-generic, 2 CPUs, NumPy 2.2.6\xspace . Single runs; times vary by tens of percent between runs.\relax }}{153}{table.caption.263}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-16}
 \addvspace {10\p@ }
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-17}
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {B.1}{\ignorespaces Tolerances and thresholds.\relax }}{154}{table.caption.258}%
+\contentsline {table}{\numberline {B.1}{\ignorespaces Tolerances and thresholds.\relax }}{157}{table.caption.266}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-18}
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {C.1}{\ignorespaces Notation.\relax }}{155}{table.caption.259}%
+\contentsline {table}{\numberline {C.1}{\ignorespaces Notation.\relax }}{158}{table.caption.267}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-19}
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {D.1}{\ignorespaces Chapter, generating script and package tests.\relax }}{157}{table.D.1}%
+\contentsline {table}{\numberline {D.1}{\ignorespaces Chapter, generating script and package tests.\relax }}{160}{table.D.1}%
 \gdef \the@ipfilectr {}

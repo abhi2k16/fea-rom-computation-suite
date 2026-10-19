@@ -280,22 +280,28 @@
 \contentsline {subsection}{\numberline {14.3.8}Projection-based reduction of contact}{148}{subsection.14.3.8}%
 \contentsline {subsection}{\numberline {14.3.9}A neural operator informed by a ROM}{148}{subsection.14.3.9}%
 \contentsline {subsection}{\numberline {14.3.10}What the reproductions show}{150}{subsection.14.3.10}%
-\contentsline {section}{References}{150}{section*.257}%
+\contentsline {section}{\numberline {14.4}An integrated parametric pipeline}{150}{section.14.4}%
+\contentsline {paragraph}{The model.}{150}{section*.257}%
+\contentsline {paragraph}{Training, validation, tests.}{151}{section*.259}%
+\contentsline {paragraph}{What the errors say.}{152}{section*.262}%
+\contentsline {paragraph}{Cost.}{153}{section*.264}%
+\contentsline {subsection}{\numberline {14.4.1}The speed-up discrepancy}{153}{subsection.14.4.1}%
+\contentsline {section}{References}{154}{section*.265}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-16}
-\contentsline {chapter}{\numberline {A}Differentiable assembly and autograd tangents}{152}{appendix.A}%
+\contentsline {chapter}{\numberline {A}Differentiable assembly and autograd tangents}{155}{appendix.A}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-17}
-\contentsline {chapter}{\numberline {B}Verification conventions and tolerances}{153}{appendix.B}%
-\contentsline {section}{\numberline {B.1}A template for a convergence study}{153}{section.B.1}%
-\contentsline {section}{\numberline {B.2}Tolerances used in the book}{153}{section.B.2}%
-\contentsline {section}{\numberline {B.3}What a reported ROM number states}{153}{section.B.3}%
+\contentsline {chapter}{\numberline {B}Verification conventions and tolerances}{156}{appendix.B}%
+\contentsline {section}{\numberline {B.1}A template for a convergence study}{156}{section.B.1}%
+\contentsline {section}{\numberline {B.2}Tolerances used in the book}{156}{section.B.2}%
+\contentsline {section}{\numberline {B.3}What a reported ROM number states}{156}{section.B.3}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-18}
-\contentsline {chapter}{\numberline {C}Notation and glossary}{155}{appendix.C}%
-\contentsline {section}{\numberline {C.1}Notation}{155}{section.C.1}%
-\contentsline {section}{\numberline {C.2}Glossary}{155}{section.C.2}%
+\contentsline {chapter}{\numberline {C}Notation and glossary}{158}{appendix.C}%
+\contentsline {section}{\numberline {C.1}Notation}{158}{section.C.1}%
+\contentsline {section}{\numberline {C.2}Glossary}{158}{section.C.2}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-19}
-\contentsline {chapter}{\numberline {D}Chapters, scripts and package tests}{157}{appendix.D}%
+\contentsline {chapter}{\numberline {D}Chapters, scripts and package tests}{160}{appendix.D}%
 \gdef \the@ipfilectr {}

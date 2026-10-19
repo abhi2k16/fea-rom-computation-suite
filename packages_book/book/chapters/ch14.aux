@@ -111,6 +111,31 @@
 \@writefile{lof}{\contentsline {figure}{\numberline {14.9}{\ignorespaces Neural operator of \citet  {yang2025frino}: mean relative error for single tones at low and high frequency, multi-frequency loads and random loads, for three training sets. Dashed lines are the publication's values. With 40 tones the multi-frequency and random errors are 0.443\xspace  {} and 0.691\xspace  . Redrawn by \texttt  {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }}{149}{figure.caption.256}\protected@file@percent }
 \newlabel{fig:vf-frino}{{14.9}{149}{Neural operator of \citet {yang2025frino}: mean relative error for single tones at low and high frequency, multi-frequency loads and random loads, for three training sets. Dashed lines are the publication's values. With 40 tones the multi-frequency and random errors are \cvfFrinoMulti {} and \cvfFrinoRandom . Redrawn by \texttt {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }{figure.caption.256}{}}
 \newlabel{fig:vf-frino@cref}{{[figure][9][14]14.9}{[1][149][]149}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.10}What the reproductions show}{150}{subsection.14.3.10}\protected@file@percent }
+\newlabel{sec:vf-repro-summary}{{14.3.10}{150}{What the reproductions show}{subsection.14.3.10}{}}
+\newlabel{sec:vf-repro-summary@cref}{{[subsection][10][14,3]14.3.10}{[1][149][]150}}
+\@writefile{toc}{\contentsline {section}{\numberline {14.4}An integrated parametric pipeline}{150}{section.14.4}\protected@file@percent }
+\newlabel{sec:vf-pipeline}{{14.4}{150}{An integrated parametric pipeline}{section.14.4}{}}
+\newlabel{sec:vf-pipeline@cref}{{[section][4][14]14.4}{[1][150][]150}}
+\@writefile{toc}{\contentsline {paragraph}{The model.}{150}{section*.257}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {14.10}{\ignorespaces The integrated pipeline. Blue: \texttt  {fea\_engine}{}; violet: \texttt  {rom\_engine}{}; grey: data; green: checks. The basis size is chosen on a validation set of the training kind; the two test sets are used once, at the end.\relax }}{151}{figure.caption.258}\protected@file@percent }
+\newlabel{fig:vf-workflow}{{14.10}{151}{The integrated pipeline. Blue: \fea {}; violet: \rom {}; grey: data; green: checks. The basis size is chosen on a validation set of the training kind; the two test sets are used once, at the end.\relax }{figure.caption.258}{}}
+\newlabel{fig:vf-workflow@cref}{{[figure][10][14]14.10}{[1][150][]151}}
+\@writefile{toc}{\contentsline {paragraph}{Training, validation, tests.}{151}{section*.259}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {14.3}{\ignorespaces Held-out errors at $r=16\xspace  $ (largest over the 40 queries of each test set). The two local quantities in the lower rows are relative to the load scale.\relax }}{152}{table.caption.260}\protected@file@percent }
+\newlabel{tab:vf-pl-err}{{14.3}{152}{Held-out errors at $r=\cplSR $ (largest over the 40 queries of each test set). The two local quantities in the lower rows are relative to the load scale.\relax }{table.caption.260}{}}
+\newlabel{tab:vf-pl-err@cref}{{[table][3][14]14.3}{[1][152][]152}}
+\@writefile{lof}{\contentsline {figure}{\numberline {14.11}{\ignorespaces (a) Largest error against the basis size $r$ on the validation set and the two test sets (small mesh): the full state, and for set\nobreakspace  {}B also the peak stress; the horizontal line is the tolerance and the vertical line the chosen $r$. (b) Online residual indicator against the true error of the full state for the 80 test queries. (c) Time per query on the small mesh.\relax }}{152}{figure.caption.261}\protected@file@percent }
+\newlabel{fig:vf-pipeline}{{14.11}{152}{(a) Largest error against the basis size $r$ on the validation set and the two test sets (small mesh): the full state, and for set~B also the peak stress; the horizontal line is the tolerance and the vertical line the chosen $r$. (b) Online residual indicator against the true error of the full state for the 80 test queries. (c) Time per query on the small mesh.\relax }{figure.caption.261}{}}
+\newlabel{fig:vf-pipeline@cref}{{[figure][11][14]14.11}{[1][152][]152}}
+\@writefile{toc}{\contentsline {paragraph}{What the errors say.}{152}{section*.262}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {14.4}{\ignorespaces Cost of the pipeline by the convention of Appendix\nobreakspace  {}\ref  {ch:conv}: offline, online, lift and recovery separately, two full-order baselines, and the break-even number of queries (offline cost divided by the saving per query, the lift included). Machine: Linux 6.8.0-138-generic, 2 CPUs, NumPy 2.2.6\xspace  . Single runs; times vary by tens of percent between runs.\relax }}{153}{table.caption.263}\protected@file@percent }
+\newlabel{tab:vf-pipeline}{{14.4}{153}{Cost of the pipeline by the convention of Appendix~\ref {ch:conv}: offline, online, lift and recovery separately, two full-order baselines, and the break-even number of queries (offline cost divided by the saving per query, the lift included). Machine: \cplMachine . Single runs; times vary by tens of percent between runs.\relax }{table.caption.263}{}}
+\newlabel{tab:vf-pipeline@cref}{{[table][4][14]14.4}{[1][153][]153}}
+\@writefile{toc}{\contentsline {paragraph}{Cost.}{153}{section*.264}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {14.4.1}The speed-up discrepancy}{153}{subsection.14.4.1}\protected@file@percent }
+\newlabel{sec:vf-speed}{{14.4.1}{153}{The speed-up discrepancy}{subsection.14.4.1}{}}
+\newlabel{sec:vf-speed@cref}{{[subsection][1][14,4]14.4.1}{[1][153][]153}}
 \bibstyle{unsrtnat}
 \bibdata{refs}
 \bibcite{he2023mfsnlrom}{{1}{2023}{{He et~al.}}{{He, Yang, Li, Pang, Kan, and Song}}}
@@ -122,12 +147,9 @@
 \bibcite{nikiema2026assembly}{{7}{2026}{{Nikiema et~al.}}{{Nikiema, Denis, Matzke, Gonzalez, Van Der~Veen, and Mencik}}}
 \bibcite{balajewicz2016contact}{{8}{2016}{{Balajewicz et~al.}}{{Balajewicz, Amsallem, and Farhat}}}
 \bibcite{yang2025frino}{{9}{2025}{{Yang et~al.}}{{Yang, Luo, Yang, Nan, Chen, and Sun}}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.10}What the reproductions show}{150}{subsection.14.3.10}\protected@file@percent }
-\newlabel{sec:vf-repro-summary}{{14.3.10}{150}{What the reproductions show}{subsection.14.3.10}{}}
-\newlabel{sec:vf-repro-summary@cref}{{[subsection][10][14,3]14.3.10}{[1][149][]150}}
-\@writefile{toc}{\contentsline {section}{References}{150}{section*.257}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{154}{section*.265}\protected@file@percent }
 \@setckpt{chapters/ch14}{
-\setcounter{page}{152}
+\setcounter{page}{155}
 \setcounter{equation}{0}
 \setcounter{enumi}{6}
 \setcounter{enumii}{0}
@@ -137,23 +159,23 @@
 \setcounter{mpfootnote}{0}
 \setcounter{part}{4}
 \setcounter{chapter}{14}
-\setcounter{section}{3}
-\setcounter{subsection}{10}
+\setcounter{section}{4}
+\setcounter{subsection}{1}
 \setcounter{subsubsection}{0}
 \setcounter{paragraph}{0}
 \setcounter{subparagraph}{0}
-\setcounter{figure}{9}
-\setcounter{table}{2}
+\setcounter{figure}{11}
+\setcounter{table}{4}
 \setcounter{parentequation}{0}
 \setcounter{LT@tables}{1}
 \setcounter{LT@chunks}{1}
-\setcounter{caption@flags}{0}
+\setcounter{caption@flags}{2}
 \setcounter{continuedfloat}{0}
 \setcounter{subfigure}{0}
 \setcounter{subtable}{0}
 \setcounter{tcbbreakpart}{1}
 \setcounter{tcblayer}{0}
-\setcounter{tcolorbox@number}{67}
+\setcounter{tcolorbox@number}{68}
 \setcounter{tcbrastercolumn}{1}
 \setcounter{tcbrasterrow}{1}
 \setcounter{tcbrasternum}{1}
@@ -163,13 +185,13 @@
 \setcounter{NAT@ctr}{9}
 \setcounter{Item}{80}
 \setcounter{Hfootnote}{0}
-\setcounter{bookmark@seq@number}{163}
+\setcounter{bookmark@seq@number}{165}
 \setcounter{proposition}{0}
 \setcounter{definition}{0}
 \setcounter{example}{0}
 \setcounter{remark}{0}
-\setcounter{tcb@cnt@algbox}{0}
-\setcounter{algline}{12}
+\setcounter{tcb@cnt@algbox}{1}
+\setcounter{algline}{14}
 \setcounter{lstlisting}{0}
 \setcounter{section@level}{2}
 }
