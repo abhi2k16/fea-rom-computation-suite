@@ -101,8 +101,8 @@
 \gdef \the@ipfilectr {@-16}
 \addvspace {10\p@ }
 \contentsline {table}{\numberline {A.1}{\ignorespaces Where the concepts of this appendix live in the repository (tag \texttt {release-fea1.0.1-rom0.2.0}). ``Script calls'' says whether \texttt {appA\_assets.py} calls the code; the others need PyTorch.\relax }}{161}{table.caption.268}%
-\contentsline {table}{\numberline {A.2}{\ignorespaces Torch-free checks of this appendix. The tetrahedron has unit edges, $E=1$, $\nu =0.3$ and a random displacement of size $0.15$. The truss is the one of \Cref {lst:df-run}.\relax }}{163}{table.caption.270}%
-\contentsline {table}{\numberline {A.3}{\ignorespaces Tolerances of the PyTorch-dependent tests of the tangents. These tests were not run for this book; they run on a machine with PyTorch installed.\relax }}{164}{table.caption.273}%
+\contentsline {table}{\numberline {A.2}{\ignorespaces Torch-free checks of this appendix. The tetrahedron has unit edges, $E=1$, $\nu =0.3$ and a random displacement of size $0.15$. The truss is the one of \Cref {lst:df-run}.\relax }}{162}{table.caption.270}%
+\contentsline {table}{\numberline {A.3}{\ignorespaces Tolerances of the PyTorch-dependent tests of the tangents. These tests were not run for this book; they run on a machine with PyTorch installed.\relax }}{163}{table.caption.273}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-17}
 \addvspace {10\p@ }
