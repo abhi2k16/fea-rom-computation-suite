@@ -23,8 +23,8 @@
 \contentsline {subsection}{\numberline {4.13}Chapter 13: Hyper-reduction and contact reduced-order models}{12}{subsection.4.13}%
 \contentsline {subsection}{\numberline {4.14}Chapter 14: Verification, reproduction studies and a parametric pipeline}{12}{subsection.4.14}%
 \contentsline {subsection}{\numberline {4.15}Chapter A: Differentiable assembly and autograd tangents (optional)}{13}{subsection.4.15}%
-\contentsline {section}{\numberline {5}Citation system, evidence policy and exclusions}{13}{section.5}%
-\contentsline {subsection}{\numberline {5.1}Two kinds of reference}{13}{subsection.5.1}%
+\contentsline {section}{\numberline {5}Citation system, evidence policy and exclusions}{14}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Two kinds of reference}{14}{subsection.5.1}%
 \contentsline {subsection}{\numberline {5.2}Evidence policy}{14}{subsection.5.2}%
 \contentsline {subsection}{\numberline {5.3}What is not written}{14}{subsection.5.3}%
 \contentsline {subsection}{\numberline {5.4}Inventory of items still to produce}{14}{subsection.5.4}%
@@ -34,5 +34,5 @@
 \contentsline {subsection}{\numberline {6.3}Risks}{15}{subsection.6.3}%
 \contentsline {subsection}{\numberline {6.4}Decisions taken}{15}{subsection.6.4}%
 \contentsline {subsection}{\numberline {6.5}Blueprint review: items adopted}{15}{subsection.6.5}%
-\contentsline {subsection}{\numberline {6.6}Presentation upgrade: abbreviations, algorithms, figures}{16}{subsection.6.6}%
-\contentsline {subsection}{\numberline {6.7}Progress}{17}{subsection.6.7}%
+\contentsline {subsection}{\numberline {6.6}Presentation upgrade: abbreviations, algorithms, figures}{17}{subsection.6.6}%
+\contentsline {subsection}{\numberline {6.7}Progress}{18}{subsection.6.7}%
