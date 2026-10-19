@@ -326,5 +326,5 @@
 \contentsline {section}{\numberline {C.2}Glossary}{173}{section.C.2}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-19}
-\contentsline {chapter}{\numberline {D}Chapters, scripts and package tests}{175}{appendix.D}%
+\contentsline {chapter}{\numberline {D}Chapters, scripts and package tests}{180}{appendix.D}%
 \gdef \the@ipfilectr {}
