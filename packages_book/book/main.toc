@@ -272,30 +272,30 @@
 \contentsline {section}{\numberline {14.3}Reproduction of published studies}{140}{section.14.3}%
 \contentsline {subsection}{\numberline {14.3.1}Multi-fidelity-surrogate nonlinear ROM}{142}{subsection.14.3.1}%
 \contentsline {subsection}{\numberline {14.3.2}Hybrid modal ROM}{142}{subsection.14.3.2}%
-\contentsline {subsection}{\numberline {14.3.3}Implicit condensation and expansion}{144}{subsection.14.3.3}%
-\contentsline {subsection}{\numberline {14.3.4}Matrix-free modal identification}{144}{subsection.14.3.4}%
-\contentsline {subsection}{\numberline {14.3.5}Frequency-domain PINN for a moving load}{144}{subsection.14.3.5}%
-\contentsline {subsection}{\numberline {14.3.6}Hybrid hyper-reduction for contact}{145}{subsection.14.3.6}%
-\contentsline {subsection}{\numberline {14.3.7}Assembly reduction with contact and geometric nonlinearity}{145}{subsection.14.3.7}%
-\contentsline {subsection}{\numberline {14.3.8}Projection-based reduction of contact}{146}{subsection.14.3.8}%
-\contentsline {subsection}{\numberline {14.3.9}A neural operator informed by a ROM}{146}{subsection.14.3.9}%
-\contentsline {subsection}{\numberline {14.3.10}What the reproductions show}{146}{subsection.14.3.10}%
-\contentsline {section}{References}{147}{section*.249}%
+\contentsline {subsection}{\numberline {14.3.3}Implicit condensation and expansion}{145}{subsection.14.3.3}%
+\contentsline {subsection}{\numberline {14.3.4}Matrix-free modal identification}{145}{subsection.14.3.4}%
+\contentsline {subsection}{\numberline {14.3.5}Frequency-domain PINN for a moving load}{146}{subsection.14.3.5}%
+\contentsline {subsection}{\numberline {14.3.6}Hybrid hyper-reduction for contact}{146}{subsection.14.3.6}%
+\contentsline {subsection}{\numberline {14.3.7}Assembly reduction with contact and geometric nonlinearity}{147}{subsection.14.3.7}%
+\contentsline {subsection}{\numberline {14.3.8}Projection-based reduction of contact}{148}{subsection.14.3.8}%
+\contentsline {subsection}{\numberline {14.3.9}A neural operator informed by a ROM}{148}{subsection.14.3.9}%
+\contentsline {subsection}{\numberline {14.3.10}What the reproductions show}{150}{subsection.14.3.10}%
+\contentsline {section}{References}{150}{section*.257}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-16}
-\contentsline {chapter}{\numberline {A}Differentiable assembly and autograd tangents}{148}{appendix.A}%
+\contentsline {chapter}{\numberline {A}Differentiable assembly and autograd tangents}{152}{appendix.A}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-17}
-\contentsline {chapter}{\numberline {B}Verification conventions and tolerances}{149}{appendix.B}%
-\contentsline {section}{\numberline {B.1}A template for a convergence study}{149}{section.B.1}%
-\contentsline {section}{\numberline {B.2}Tolerances used in the book}{149}{section.B.2}%
-\contentsline {section}{\numberline {B.3}What a reported ROM number states}{149}{section.B.3}%
+\contentsline {chapter}{\numberline {B}Verification conventions and tolerances}{153}{appendix.B}%
+\contentsline {section}{\numberline {B.1}A template for a convergence study}{153}{section.B.1}%
+\contentsline {section}{\numberline {B.2}Tolerances used in the book}{153}{section.B.2}%
+\contentsline {section}{\numberline {B.3}What a reported ROM number states}{153}{section.B.3}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-18}
-\contentsline {chapter}{\numberline {C}Notation and glossary}{151}{appendix.C}%
-\contentsline {section}{\numberline {C.1}Notation}{151}{section.C.1}%
-\contentsline {section}{\numberline {C.2}Glossary}{151}{section.C.2}%
+\contentsline {chapter}{\numberline {C}Notation and glossary}{155}{appendix.C}%
+\contentsline {section}{\numberline {C.1}Notation}{155}{section.C.1}%
+\contentsline {section}{\numberline {C.2}Glossary}{155}{section.C.2}%
 \gdef \the@ipfilectr {}
 \gdef \the@ipfilectr {@-19}
-\contentsline {chapter}{\numberline {D}Chapters, scripts and package tests}{153}{appendix.D}%
+\contentsline {chapter}{\numberline {D}Chapters, scripts and package tests}{157}{appendix.D}%
 \gdef \the@ipfilectr {}

@@ -33,6 +33,8 @@
 \citation{balajewicz2016contact}
 \citation{yang2025frino}
 \citation{he2023mfsnlrom}
+\citation{he2023mfsnlrom}
+\citation{he2023mfsnlrom}
 \citation{yang2019hybrid}
 \@writefile{toc}{\contentsline {subsection}{\numberline {14.3.1}Multi-fidelity-surrogate nonlinear ROM}{142}{subsection.14.3.1}\protected@file@percent }
 \newlabel{sec:vf-mfs}{{14.3.1}{142}{Multi-fidelity-surrogate nonlinear ROM}{subsection.14.3.1}{}}
@@ -43,37 +45,72 @@
 \@writefile{lot}{\contentsline {table}{\numberline {14.2}{\ignorespaces Outcomes of the reproduction studies. Numbers marked ``pub.'' are the publication's, the others are from the reproduction reports.\relax }}{143}{table.caption.248}\protected@file@percent }
 \newlabel{tab:vf-repro}{{14.2}{143}{Outcomes of the reproduction studies. Numbers marked ``pub.'' are the publication's, the others are from the reproduction reports.\relax }{table.caption.248}{}}
 \newlabel{tab:vf-repro@cref}{{[table][2][14]14.2}{[1][142][]143}}
+\citation{yang2019hybrid}
+\citation{yang2019hybrid}
+\citation{hollkamp2008ice}
+\@writefile{lof}{\contentsline {figure}{\numberline {14.2}{\ignorespaces Flat beam of \citet  {he2023mfsnlrom}. (a) Centre displacement over $\pm 2000$\nobreakspace  {}Pa: nonlinear FE, multi-fidelity surrogate and ICE ($R^2=1.0000\xspace  $ and $1.0000\xspace  $ against FE). (b) Free decay of the first modal coordinate ($R^2=0.9971\xspace  $ for case a and $0.9899\xspace  $ for case b). (c) Backbone by harmonic balance against FE free vibration; largest frequency error $0.96\,\%\xspace  $ over a hardening of $21.9\,\%\xspace  $ above the linear frequency. One surrogate evaluation takes $5.0\times 10^{-5}$\xspace  {}\nobreakspace  {}s against 0.84\xspace  {}\nobreakspace  {}s for FE, a ratio of $1.7\times 10^{4}$\xspace  . Redrawn by \texttt  {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }}{144}{figure.caption.249}\protected@file@percent }
+\newlabel{fig:vf-mfs}{{14.2}{144}{Flat beam of \citet {he2023mfsnlrom}. (a) Centre displacement over $\pm 2000$~Pa: nonlinear FE, multi-fidelity surrogate and ICE ($R^2=\cvfMfsRtwoMfs $ and $\cvfMfsRtwoIce $ against FE). (b) Free decay of the first modal coordinate ($R^2=\cvfMfsDecayA $ for case a and $\cvfMfsDecayB $ for case b). (c) Backbone by harmonic balance against FE free vibration; largest frequency error $\cvfMfsBackErr $ over a hardening of $\cvfMfsHardening $ above the linear frequency. One surrogate evaluation takes \cvfMfsTmfs {}~s against \cvfMfsTfe {}~s for FE, a ratio of \cvfMfsSpeed . Redrawn by \texttt {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }{figure.caption.249}{}}
+\newlabel{fig:vf-mfs@cref}{{[figure][2][14]14.2}{[1][142][]144}}
+\@writefile{lof}{\contentsline {figure}{\numberline {14.3}{\ignorespaces Free-vibration check of the hybrid ROM of \citet  {yang2019hybrid}: frequency relative to the linear one, full-order model against ROM. (a) Cylindrical panel: the ROM follows the softening and hardening, with a largest frequency error of 0.087\,\%\xspace  . (b) Plate with a hole: the ROM hardens about 4.9\xspace  {} times too much at the largest amplitude. Redrawn by \texttt  {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }}{144}{figure.caption.250}\protected@file@percent }
+\newlabel{fig:vf-hyrom}{{14.3}{144}{Free-vibration check of the hybrid ROM of \citet {yang2019hybrid}: frequency relative to the linear one, full-order model against ROM. (a) Cylindrical panel: the ROM follows the softening and hardening, with a largest frequency error of \cvfHyPanelBack . (b) Plate with a hole: the ROM hardens about \cvfHyPlateRatio {} times too much at the largest amplitude. Redrawn by \texttt {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }{figure.caption.250}{}}
+\newlabel{fig:vf-hyrom@cref}{{[figure][3][14]14.3}{[1][144][]144}}
+\citation{hollkamp2008ice}
 \citation{hollkamp2008ice}
 \citation{liu2026fsi}
+\@writefile{lof}{\contentsline {figure}{\numberline {14.4}{\ignorespaces One-mode ICE ROM against the full-order model for the flat beam of \citet  {hollkamp2008ice}: displacement at $x=4$\nobreakspace  {}in over the first $0.2$\nobreakspace  {}s and its power spectral density, at the low level (RMS error 19.5\,\%\xspace  ) and the high level (RMS error 136\,\%\xspace  ). Redrawn by \texttt  {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }}{145}{figure.caption.251}\protected@file@percent }
+\newlabel{fig:vf-ice}{{14.4}{145}{One-mode ICE ROM against the full-order model for the flat beam of \citet {hollkamp2008ice}: displacement at $x=4$~in over the first $0.2$~s and its power spectral density, at the low level (RMS error \cvfIceLowRms ) and the high level (RMS error \cvfIceHighRms ). Redrawn by \texttt {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }{figure.caption.251}{}}
+\newlabel{fig:vf-ice@cref}{{[figure][4][14]14.4}{[1][145][]145}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.3}Implicit condensation and expansion}{145}{subsection.14.3.3}\protected@file@percent }
+\newlabel{sec:vf-ice}{{14.3.3}{145}{Implicit condensation and expansion}{subsection.14.3.3}{}}
+\newlabel{sec:vf-ice@cref}{{[subsection][3][14,3]14.3.3}{[1][144][]145}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.4}Matrix-free modal identification}{145}{subsection.14.3.4}\protected@file@percent }
+\newlabel{sec:vf-fsi}{{14.3.4}{145}{Matrix-free modal identification}{subsection.14.3.4}{}}
+\newlabel{sec:vf-fsi@cref}{{[subsection][4][14,3]14.3.4}{[1][145][]145}}
 \citation{liang2024fdpinn}
-\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.3}Implicit condensation and expansion}{144}{subsection.14.3.3}\protected@file@percent }
-\newlabel{sec:vf-ice}{{14.3.3}{144}{Implicit condensation and expansion}{subsection.14.3.3}{}}
-\newlabel{sec:vf-ice@cref}{{[subsection][3][14,3]14.3.3}{[1][144][]144}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.4}Matrix-free modal identification}{144}{subsection.14.3.4}\protected@file@percent }
-\newlabel{sec:vf-fsi}{{14.3.4}{144}{Matrix-free modal identification}{subsection.14.3.4}{}}
-\newlabel{sec:vf-fsi@cref}{{[subsection][4][14,3]14.3.4}{[1][144][]144}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.5}Frequency-domain PINN for a moving load}{144}{subsection.14.3.5}\protected@file@percent }
-\newlabel{sec:vf-fdpinn}{{14.3.5}{144}{Frequency-domain PINN for a moving load}{subsection.14.3.5}{}}
-\newlabel{sec:vf-fdpinn@cref}{{[subsection][5][14,3]14.3.5}{[1][144][]144}}
+\citation{liang2024fdpinn}
+\citation{liang2024fdpinn}
+\citation{fauque2018hybrid}
+\@writefile{lof}{\contentsline {figure}{\numberline {14.5}{\ignorespaces Moving-load beam of \citet  {liang2024fdpinn}. (a) Normalised error of the band-limited field against the band width, full-order sweep; the cost of the 5\nobreakspace  {}Hz band is $3.8\times 10^{-5}$\xspace  , $5.6\times 10^{-6}$\xspace  {} and $4.0\times 10^{-6}$\xspace  {} for the three cases. (b) The same error from frequency-domain ROMs of size $r$; with ten modes they agree with the full-order value to within 0.05\,\%\xspace  . Redrawn by \texttt  {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }}{146}{figure.caption.252}\protected@file@percent }
+\newlabel{fig:vf-fdpinn}{{14.5}{146}{Moving-load beam of \citet {liang2024fdpinn}. (a) Normalised error of the band-limited field against the band width, full-order sweep; the cost of the 5~Hz band is \cvfFdBandOne , \cvfFdBandTwo {} and \cvfFdBandThree {} for the three cases. (b) The same error from frequency-domain ROMs of size $r$; with ten modes they agree with the full-order value to within \cvfFdTen . Redrawn by \texttt {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }{figure.caption.252}{}}
+\newlabel{fig:vf-fdpinn@cref}{{[figure][5][14]14.5}{[1][146][]146}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.5}Frequency-domain PINN for a moving load}{146}{subsection.14.3.5}\protected@file@percent }
+\newlabel{sec:vf-fdpinn}{{14.3.5}{146}{Frequency-domain PINN for a moving load}{subsection.14.3.5}{}}
+\newlabel{sec:vf-fdpinn@cref}{{[subsection][5][14,3]14.3.5}{[1][146][]146}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.6}Hybrid hyper-reduction for contact}{146}{subsection.14.3.6}\protected@file@percent }
+\newlabel{sec:vf-hyb}{{14.3.6}{146}{Hybrid hyper-reduction for contact}{subsection.14.3.6}{}}
+\newlabel{sec:vf-hyb@cref}{{[subsection][6][14,3]14.3.6}{[1][146][]146}}
+\citation{fauque2018hybrid}
 \citation{fauque2018hybrid}
 \citation{nikiema2026assembly}
-\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.6}Hybrid hyper-reduction for contact}{145}{subsection.14.3.6}\protected@file@percent }
-\newlabel{sec:vf-hyb}{{14.3.6}{145}{Hybrid hyper-reduction for contact}{subsection.14.3.6}{}}
-\newlabel{sec:vf-hyb@cref}{{[subsection][6][14,3]14.3.6}{[1][145][]145}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.7}Assembly reduction with contact and geometric nonlinearity}{145}{subsection.14.3.7}\protected@file@percent }
-\newlabel{sec:vf-asm}{{14.3.7}{145}{Assembly reduction with contact and geometric nonlinearity}{subsection.14.3.7}{}}
-\newlabel{sec:vf-asm@cref}{{[subsection][7][14,3]14.3.7}{[1][145][]145}}
+\@writefile{lof}{\contentsline {figure}{\numberline {14.6}{\ignorespaces Greedy loop for the rope problem of \citet  {fauque2018hybrid}, best run. (a), (b) Error of the hybrid (HR) and projection-based (PB) reduced models against the iteration (displacement mean 0.011\,\%\xspace  {}, maximum 0.084\,\%\xspace  {}; contact force on the reduced domain 0.45\,\%\xspace  {} mean, reconstructed force 10\,\%\xspace  {} mean at the end). (c) Size of the reduced problem. Redrawn by \texttt  {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }}{147}{figure.caption.253}\protected@file@percent }
+\newlabel{fig:vf-hyb}{{14.6}{147}{Greedy loop for the rope problem of \citet {fauque2018hybrid}, best run. (a), (b) Error of the hybrid (HR) and projection-based (PB) reduced models against the iteration (displacement mean \cvfHybDispMean {}, maximum \cvfHybDispMax {}; contact force on the reduced domain \cvfHybForceMean {} mean, reconstructed force \cvfHybForceRecon {} mean at the end). (c) Size of the reduced problem. Redrawn by \texttt {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }{figure.caption.253}{}}
+\newlabel{fig:vf-hyb@cref}{{[figure][6][14]14.6}{[1][147][]147}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.7}Assembly reduction with contact and geometric nonlinearity}{147}{subsection.14.3.7}\protected@file@percent }
+\newlabel{sec:vf-asm}{{14.3.7}{147}{Assembly reduction with contact and geometric nonlinearity}{subsection.14.3.7}{}}
+\newlabel{sec:vf-asm@cref}{{[subsection][7][14,3]14.3.7}{[1][147][]147}}
+\citation{nikiema2026assembly}
+\citation{nikiema2026assembly}
+\citation{balajewicz2016contact}
+\citation{balajewicz2016contact}
 \citation{balajewicz2016contact}
 \citation{yang2025frino}
-\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.8}Projection-based reduction of contact}{146}{subsection.14.3.8}\protected@file@percent }
-\newlabel{sec:vf-bal}{{14.3.8}{146}{Projection-based reduction of contact}{subsection.14.3.8}{}}
-\newlabel{sec:vf-bal@cref}{{[subsection][8][14,3]14.3.8}{[1][146][]146}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.9}A neural operator informed by a ROM}{146}{subsection.14.3.9}\protected@file@percent }
-\newlabel{sec:vf-frino}{{14.3.9}{146}{A neural operator informed by a ROM}{subsection.14.3.9}{}}
-\newlabel{sec:vf-frino@cref}{{[subsection][9][14,3]14.3.9}{[1][146][]146}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.10}What the reproductions show}{146}{subsection.14.3.10}\protected@file@percent }
-\newlabel{sec:vf-repro-summary}{{14.3.10}{146}{What the reproductions show}{subsection.14.3.10}{}}
-\newlabel{sec:vf-repro-summary@cref}{{[subsection][10][14,3]14.3.10}{[1][146][]146}}
+\@writefile{lof}{\contentsline {figure}{\numberline {14.7}{\ignorespaces 2D assembly of \citet  {nikiema2026assembly}, plain Newton. (a) Error of the last increment for the four reduced models at three tolerances; crosses mark runs that did not converge (DEIM and UDEIM at $\varepsilon =10^{-6}$). (b) Converged runs: error against the number of elements evaluated per iteration. POD error at $\varepsilon =10^{-5}$: 0.94\,\%\xspace  . Redrawn by \texttt  {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }}{148}{figure.caption.254}\protected@file@percent }
+\newlabel{fig:vf-asm}{{14.7}{148}{2D assembly of \citet {nikiema2026assembly}, plain Newton. (a) Error of the last increment for the four reduced models at three tolerances; crosses mark runs that did not converge (DEIM and UDEIM at $\varepsilon =10^{-6}$). (b) Converged runs: error against the number of elements evaluated per iteration. POD error at $\varepsilon =10^{-5}$: \cvfAsmPodErr . Redrawn by \texttt {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }{figure.caption.254}{}}
+\newlabel{fig:vf-asm@cref}{{[figure][7][14]14.7}{[1][148][]148}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.8}Projection-based reduction of contact}{148}{subsection.14.3.8}\protected@file@percent }
+\newlabel{sec:vf-bal}{{14.3.8}{148}{Projection-based reduction of contact}{subsection.14.3.8}{}}
+\newlabel{sec:vf-bal@cref}{{[subsection][8][14,3]14.3.8}{[1][148][]148}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.9}A neural operator informed by a ROM}{148}{subsection.14.3.9}\protected@file@percent }
+\newlabel{sec:vf-frino}{{14.3.9}{148}{A neural operator informed by a ROM}{subsection.14.3.9}{}}
+\newlabel{sec:vf-frino@cref}{{[subsection][9][14,3]14.3.9}{[1][148][]148}}
+\citation{yang2025frino}
+\citation{yang2025frino}
+\@writefile{lof}{\contentsline {figure}{\numberline {14.8}{\ignorespaces Dynamic obstacle problem of \citet  {balajewicz2016contact} (1\,521 dofs). (a) Maximum error against the greedy iteration for the three indicator weightings and the true-error oracle (a reduction of 288\xspace  {} for $\alpha =(1,0,0)$). (b), (c) Response at a test parameter: the NMF dual basis follows the full-order model (error 0.083\,\%\xspace  ), the SVD dual basis does not (error 307\,\%\xspace  ). Measured speed-up 14.7\xspace  . Redrawn by \texttt  {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }}{149}{figure.caption.255}\protected@file@percent }
+\newlabel{fig:vf-bal}{{14.8}{149}{Dynamic obstacle problem of \citet {balajewicz2016contact} (1\,521 dofs). (a) Maximum error against the greedy iteration for the three indicator weightings and the true-error oracle (a reduction of \cvfBalRed {} for $\alpha =(1,0,0)$). (b), (c) Response at a test parameter: the NMF dual basis follows the full-order model (error \cvfBalNmf ), the SVD dual basis does not (error \cvfBalSvd ). Measured speed-up \cvfBalSpeed . Redrawn by \texttt {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }{figure.caption.255}{}}
+\newlabel{fig:vf-bal@cref}{{[figure][8][14]14.8}{[1][148][]149}}
+\@writefile{lof}{\contentsline {figure}{\numberline {14.9}{\ignorespaces Neural operator of \citet  {yang2025frino}: mean relative error for single tones at low and high frequency, multi-frequency loads and random loads, for three training sets. Dashed lines are the publication's values. With 40 tones the multi-frequency and random errors are 0.443\xspace  {} and 0.691\xspace  . Redrawn by \texttt  {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }}{149}{figure.caption.256}\protected@file@percent }
+\newlabel{fig:vf-frino}{{14.9}{149}{Neural operator of \citet {yang2025frino}: mean relative error for single tones at low and high frequency, multi-frequency loads and random loads, for three training sets. Dashed lines are the publication's values. With 40 tones the multi-frequency and random errors are \cvfFrinoMulti {} and \cvfFrinoRandom . Redrawn by \texttt {scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.\relax }{figure.caption.256}{}}
+\newlabel{fig:vf-frino@cref}{{[figure][9][14]14.9}{[1][149][]149}}
 \bibstyle{unsrtnat}
 \bibdata{refs}
 \bibcite{he2023mfsnlrom}{{1}{2023}{{He et~al.}}{{He, Yang, Li, Pang, Kan, and Song}}}
@@ -85,9 +122,12 @@
 \bibcite{nikiema2026assembly}{{7}{2026}{{Nikiema et~al.}}{{Nikiema, Denis, Matzke, Gonzalez, Van Der~Veen, and Mencik}}}
 \bibcite{balajewicz2016contact}{{8}{2016}{{Balajewicz et~al.}}{{Balajewicz, Amsallem, and Farhat}}}
 \bibcite{yang2025frino}{{9}{2025}{{Yang et~al.}}{{Yang, Luo, Yang, Nan, Chen, and Sun}}}
-\@writefile{toc}{\contentsline {section}{References}{147}{section*.249}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.10}What the reproductions show}{150}{subsection.14.3.10}\protected@file@percent }
+\newlabel{sec:vf-repro-summary}{{14.3.10}{150}{What the reproductions show}{subsection.14.3.10}{}}
+\newlabel{sec:vf-repro-summary@cref}{{[subsection][10][14,3]14.3.10}{[1][149][]150}}
+\@writefile{toc}{\contentsline {section}{References}{150}{section*.257}\protected@file@percent }
 \@setckpt{chapters/ch14}{
-\setcounter{page}{148}
+\setcounter{page}{152}
 \setcounter{equation}{0}
 \setcounter{enumi}{6}
 \setcounter{enumii}{0}
@@ -102,12 +142,12 @@
 \setcounter{subsubsection}{0}
 \setcounter{paragraph}{0}
 \setcounter{subparagraph}{0}
-\setcounter{figure}{1}
+\setcounter{figure}{9}
 \setcounter{table}{2}
 \setcounter{parentequation}{0}
 \setcounter{LT@tables}{1}
 \setcounter{LT@chunks}{1}
-\setcounter{caption@flags}{2}
+\setcounter{caption@flags}{0}
 \setcounter{continuedfloat}{0}
 \setcounter{subfigure}{0}
 \setcounter{subtable}{0}
