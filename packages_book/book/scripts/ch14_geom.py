@@ -135,5 +135,27 @@ def frino():
     save(fig, "ch14_geom_frino.pdf")
 
 
+def rope():
+    x = np.linspace(0, 1, 100)
+    fig, ax = plt.subplots(1, 2, figsize=(8.6, 2.8), gridspec_kw={"width_ratios": [1.7, 1]})
+    a = ax[0]
+    for m2, c in ((-0.05, BLUE), (0.17, VIOLET), (0.5, GREEN)):
+        d = 0.2 * (np.sin(np.pi * x) - np.sin(3 * np.pi * x)) + 0.5 - m2 * (x - 0.5)
+        a.plot(x, d, color=c, lw=1.3, label=f"obstacle $d$, $\\mu_2={m2}$")
+    a.plot(x, 0 * x, "o", color=GREY, ms=1.8)
+    a.plot([0, 1], [0, 0], color="k", lw=0.6); a.plot([0, 0, 1, 1], [0, 0.2, 0.2, 0], "k", lw=0)
+    for xx in np.linspace(0.04, 0.96, 16):
+        a.annotate("", (xx, 0.02), (xx, 0.12), arrowprops=dict(arrowstyle="->", color=ORANGE, lw=0.8))
+    a.text(0.5, 0.135, "load $f$ (towards the obstacle)", ha="center", color=ORANGE, fontsize=8)
+    a.set(xlim=(0, 1), ylim=(-0.05, 1.2), xlabel="$x$", ylabel="$u$, $d$"); a.legend(fontsize=7, loc="upper center", ncol=3)
+    a.set_title("(a) rope (100 nodes, $u(0)=u(1)=0$) and the parametric obstacle", fontsize=8.5)
+    b = ax[1]
+    for m1, c in ((0.05, BLUE), (0.15, VIOLET), (0.25, GREEN)):
+        b.plot([0, 0.5, 0.5, 1], [m1, m1, 0.15, 0.15], color=c, lw=1.3, label=f"$\\mu_1={m1}$")
+    b.set(xlabel="$x$", ylabel="$\\nu(x,\\mu_1)$", ylim=(0, 0.3)); b.legend(fontsize=7)
+    b.set_title("(b) stiffness coefficient", fontsize=8.5)
+    save(fig, "ch14_geom_rope.pdf")
+
+
 if __name__ == "__main__":
-    mfs(); hyrom_panel(); ice(); fdpinn(); frino()
+    mfs(); hyrom_panel(); ice(); fdpinn(); frino(); rope()

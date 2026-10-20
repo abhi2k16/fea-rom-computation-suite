@@ -96,3 +96,5 @@ Excluded: nonlinear rods POD/SIM (no report), `Efficient_ROM_AC` (PDF only).
 
 ## Speed-up discrepancy (carried over)
 README: 221.8x; `CLAIMS.md` E1: about 260-270x; `paper/results/e1_rom_speedup.json`: 361.2x (author's 12-CPU machine, commit 33cde35); 254x appears nowhere. Chapter 14 quotes the book's regenerated ratio plus 221.8x and 361x, each with its source. Release tag `release-fea1.0.1-rom0.2.0` at f87baf3 (local, not pushed).
+
+- Group C done (hyb, bal, asm written and built; book 298 pages). Remaining: revise 14.1-14.3 and 14.13-14.14, Appendix D/README.
