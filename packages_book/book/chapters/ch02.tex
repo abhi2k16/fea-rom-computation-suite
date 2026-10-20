@@ -75,7 +75,7 @@ The one property that the mesh must have for any element is a positive Jacobian 
 
 \section{Generators}\label{sec:me-gen}
 
-\Cref{tab:me-gen} lists the generators that are used in this book and checks each one. For a mesh with straight element edges the sum of the element areas (or volumes) must equal the area of the domain; for a domain with a circular boundary the elements approximate the arc by a polygon, and the sum is lower than the exact area by an amount that must go to zero as the arc is refined. The generators are \anchor{fea_engine.mesh.rectangle_mesh}, \anchor{fea_engine.mesh.rectangle_with_hole_mesh_quarter} (a quarter of a plate with a hole, for symmetry boundary conditions), \anchor{fea_engine.mesh.hole_in_rectangle_mesh} (a hole anywhere in the rectangle, built from four quadrant blocks welded along shared edges), \anchor{fea_engine.mesh.notch_in_rectangle_mesh}, \anchor{fea_engine.mesh.fillet_in_rectangle_mesh}, and for three dimensions \anchor{fea_engine.mesh.extrude_mesh} (a quadrilateral mesh stacked into hexahedra), \anchor{fea_engine.mesh.box_mesh} and \anchor{fea_engine.mesh.box_with_hole_mesh}. \Cref{fig:me-meshes} shows four of them.
+\Cref{tab:me-gen} lists the generators that are used in this book and checks each one. For a mesh with straight element edges the sum of the element areas (or volumes) must equal the area of the domain; for a domain with a circular boundary the elements approximate the arc by a polygon, and the sum is lower than the exact area by an amount that must go to zero as the arc is refined. The generators are \anchor{fea_engine.mesh.rectangle_mesh}, \anchor{fea_engine.mesh.rectangle_with_hole_mesh_quarter} (a quarter of a plate with a hole, for symmetry boundary conditions), \anchor{fea_engine.mesh.hole_in_rectangle_mesh} (a hole anywhere in the rectangle, built from four quadrant blocks welded along shared edges), \anchor{fea_engine.mesh.notch_in_rectangle_mesh}, \anchor{fea_engine.mesh.fillet_in_rectangle_mesh}, and for three dimensions \anchor{fea_engine.mesh.extrude_mesh} (a quadrilateral mesh stacked into hexahedra), \anchor{fea_engine.mesh.box_mesh} and \anchor{fea_engine.mesh.box_with_hole_mesh}. \Cref{fig:me-gallery} shows the two-dimensional generators and \Cref{fig:me-gallery3d} the three-dimensional ones.
 
 \begin{table}[ht]
 \centering\small
@@ -85,11 +85,23 @@ The one property that the mesh must have for any element is a positive Jacobian 
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/ch02_meshes.pdf}
-\caption{Four generated meshes: a hole off the centre of a rectangle with grading to a growth ratio (top left), a notch, a fillet, and a quarter plate with a hole. Produced by \texttt{scripts/ch02\_assets.py}.}\label{fig:me-meshes}
+\includegraphics[width=\linewidth]{figures/ch02_gallery2d.pdf}
+\caption{The two-dimensional generators of Table~\ref{tab:me-gen} and the line mesh, each drawn from the \code{Mesh} the function returns (node and element counts below each panel). The graded hole mesh uses a target growth ratio of 1.2, and the full plate with a hole is the quarter plate mirrored across both axes by \code{mirror_mesh}. Drawn by \texttt{scripts/ch02\_figs.py} (matplotlib).}\label{fig:me-gallery}
 \end{figure}
 
-All \cmeGenNRows{} meshes of \Cref{tab:me-gen} have positive Jacobians. The straight-edged rectangle, notch and box reproduce their area or volume to rounding. The circular boundaries lose area to the polygon: \cmeHoleErr{} for the quarter plate with hole ($R=0.3$, 16 elements round the quarter), \cmeHoleOffErr{} for the off-centre hole in the larger plate and \cmeFilletErr{} for the fillet. The through-hole box, which uses fewer elements round the hole, loses \cmeBoxHoleErr. That this is the arc and not a defect of the generator is shown by refining it: for the quarter plate the error falls from \cmeArcErrCoarse{} to \cmeArcErrFine{} when the number of elements around the quarter circle goes from 8 to 64, with observed order \cmeArcOrder, the expected second order for a polygonal arc.
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/ch02_gallery3d.pdf}
+\caption{Three-dimensional meshes: a box, a box with a through hole, and the fillet mesh extruded in two layers by \code{extrude_mesh}. Rendered with PyVista (\code{to_pyvista}, off-screen) by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-gallery3d}
+\end{figure}
+
+All \cmeGenNRows{} meshes of \Cref{tab:me-gen} have positive Jacobians. The straight-edged rectangle, notch and box reproduce their area or volume to rounding. The circular boundaries lose area to the polygon: \cmeHoleErr{} for the quarter plate with hole ($R=0.3$, 16 elements round the quarter), \cmeHoleOffErr{} for the off-centre hole in the larger plate and \cmeFilletErr{} for the fillet. The through-hole box, which uses fewer elements round the hole, loses \cmeBoxHoleErr. That this is the arc and not a defect of the generator is shown by refining it: for the quarter plate the error falls from \cmeArcErrCoarse{} to \cmeArcErrFine{} when the number of elements around the quarter circle goes from 8 to 64, with observed order \cmeArcOrder, the expected second order for a polygonal arc. The same test for the other two curved generators is \Cref{fig:me-arc}: the area error of the off-centre hole falls with order \cmeArcOrdHoleOff{} and that of the fillet with order \cmeArcOrdFillet, both from 8 to 64 elements around the arc. The quarter plate has a slightly higher fitted order (\cmeArcOrdQuarter{} over 8 to 64) with a less regular curve, because its radial grading changes the shape of the elements next to the hole as the number of angular divisions grows.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.6\linewidth]{figures/ch02_arc.pdf}
+\caption{Relative error of the mesh area against the number of elements around the circular arc, for the three generators that have one, with the orders of the fit over 8 to 64 elements and a slope of $-2$ for reference. Drawn by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-arc}
+\end{figure}
 
 \section{Grading}\label{sec:me-grading}
 
@@ -117,12 +129,44 @@ Near a hole, a notch or a fillet the stress changes quickly, and the mesh should
 \end{algdet}
 \end{algbox}
 
-\Cref{fig:me-grading} (left) shows the realised ratio against $p$ and (right) the partition chosen for a target of 1.2: $p=\cmeGradeForTarget$, with realised ratio \cmeGradeRealTarget. For the targets 1.1, 1.2, 1.3, 1.5 and 2.0 the realised ratio is within 0.1\% below the target and never above it (\cmeGradeWorstOver{}\% at the worst). The hole mesh of \Cref{fig:me-meshes} (top left) uses this rule through \anchor{fea_engine.mesh.hole_in_rectangle_mesh_graded}; the ratio of the largest to the smallest element area in it is \cmeGradedSizeRatio.
+\Cref{fig:me-grading} (left) shows the realised ratio against $p$ and (right) the partition chosen for a target of 1.2: $p=\cmeGradeForTarget$, with realised ratio \cmeGradeRealTarget. For the targets 1.1, 1.2, 1.3, 1.5 and 2.0 the realised ratio is within 0.1\% below the target and never above it (\cmeGradeWorstOver{}\% at the worst). The graded hole mesh of \Cref{fig:me-gallery} uses this rule through \anchor{fea_engine.mesh.hole_in_rectangle_mesh_graded}; the ratio of the largest to the smallest element area in it is \cmeGradedSizeRatio.
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch02_grading.pdf}
 \caption{Left: the largest ratio of adjacent element sizes of a 20-element power-law partition against the exponent. Right: the partition for a target growth ratio of 1.2, against a uniform one.}\label{fig:me-grading}
+\end{figure}
+
+\paragraph{The exponent in closed form.} With $x_i=L(i/n)^p$ the element sizes are $h_i\propto i^p-(i-1)^p$, and for $p>1$ the ratio of adjacent sizes is largest for the first pair, $h_2/h_1=2^p-1$, whatever $n$ is. The exponent that gives a target ratio $\rho^\ast$ is therefore $p=\log_2(1+\rho^\ast)$, and the bisection of the algorithm above returns it to within its tolerance: the largest difference between the two over $n=6,12,20$ and the targets 1.1, 1.2, 1.5 and 2.0 is \cmeGradeClosedDiff. \Cref{fig:me-plan}a shows the exponent against the target and why $n$ does not appear in it, and \Cref{fig:me-plan}b the partitions of a 12-element hole ring for five targets.
+
+\paragraph{What the target does to a two-dimensional mesh.} \Cref{fig:me-grade-meshes} grades the off-centre hole with $n_r=12$ rings for three targets. The smallest element size falls from \cmeGmUniHmin{} (uniform exponent) to \cmeGmAHmin, \cmeGmBHmin{} and \cmeGmCHmin{} for the targets 1.1, 1.2 and 1.5, and the ratio of the largest to the smallest element size rises from \cmeGmUniSize{} to \cmeGmASize, \cmeGmBSize{} and \cmeGmCSize. The ratio of the sizes of neighbouring elements across the whole mesh, which \code{check_grading} computes from element areas, is larger than the one-dimensional target: \cmeGmUniNb{} for the uniform exponent, \cmeGmANb, \cmeGmBNb{} and \cmeGmCNb{} for the three targets. The measure covers the whole mesh, including the transition between the ring around the hole and the straight blocks that extend it to the boundary, and the target controls only the growth along one partition (see the limits at the end of the chapter).
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/ch02_grade_meshes.pdf}
+\caption{A rectangle $3\times2$ with a hole of radius $0.3$ at $(1.2,0.9)$, 12 rings and 24 divisions round the half circle: uniform exponent against three target growth ratios (\code{hole_in_rectangle_mesh_graded}), coloured by element size $\sqrt{A}$. Titles give the smallest size and the ratio of the largest to the smallest size. Drawn by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-grade-meshes}
+\end{figure}
+
+\paragraph{Declaring features.} The feature classes and \code{plan()} turn a list of features into one exponent per feature. \Cref{tab:me-plan} gives the plan for a hole (12 rings), a fillet (8), a notch (6) and an edge bias, for a far-field size of 0.3 and a growth ratio of 1.2: every feature with a ring count gets the same exponent \cmeGradeForTarget{} (about $\log_2 2.2$) and a realised ratio just under 1.2, and the edge bias, whose size is fixed by its first element, is left uniform. With a growth ratio of 1.8 instead, \code{plan()} issues \cmePlanWarnHigh{} warning (the target is beyond the 1.5 at which \fea{} warns), and with 1.2 it issues \cmePlanWarnLow.
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch02_plan}
+\caption{\code{plan()} for four features at a far-field size of 0.3 and a growth ratio of 1.2: ring count $n$, the feature's smallest size $h_{\min}$, the exponent returned by \code{grade_for} and the largest ratio of adjacent sizes it realises.}\label{tab:me-plan}
+\end{table}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/ch02_plan.pdf}
+\caption{(a) Exponent returned by \code{grade_for_growth_ratio} against the target growth ratio for $n=6$, $12$ and $20$ (the curves coincide: the exponent does not depend on $n$); the dotted lines mark the target 1.2 used in this book and the warning threshold 1.5. (b) The partitions of a 12-element ring for uniform spacing and five targets. Drawn by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-plan}
+\end{figure}
+
+\paragraph{What grading buys.} The purpose of grading is accuracy at the place where the field changes quickly. \Cref{fig:me-payoff} uses a quarter plate $2\times1$ with a hole of radius $0.3$ under a uniform tension imposed by a prescribed end displacement, plane stress and symmetry on the two axes. The quantity is the stress concentration factor $K_t$, the nodal stress $\sigma_{xx}$ at the top of the hole divided by the nominal stress (the end reaction over the plate height), for meshes with $n_r$ rings and $2n_r$ angular divisions and three radial laws. The reference value, $K_t=\cmePayRef$, is the run with $n_r=40$ and $p=2$ (\cmePayRefEl{} elements) and is not independent: it is a refinement of the same family, and the $n_r=32$ value differs from it by $0.1\,\%$, which sets the resolution of the comparison. With 512 elements the error of $K_t$ is \cmePayUErr\,\% for the uniform spacing, \cmePayRErr\,\% for the ratio-limited exponent of target 1.2 and \cmePayPErr\,\% for $p=2$. At 2048 elements they are \cmePayUErrFine, \cmePayRErrFine{} and \cmePayPErrFine\,\%. So, for the same number of elements, the stronger grading is more accurate here, and the ratio-limited exponent sits between the two: the cap on the growth ratio costs some accuracy near the hole and buys a smoother transition ($p=2$ has the largest neighbour ratio of the three, 1.88 against 1.25 for the uniform mesh and 1.34 for the ratio-limited one, on the meshes of the figure with $n_r=8$). One geometry, one load and one nodal-stress measure were used; the numbers should not be read as general.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/ch02_payoff.pdf}
+\caption{Quarter plate with a hole under tension. The three left panels show the meshes for $n_r=8$ with the radial law and the largest ratio of neighbouring element sizes; the right panel shows the error of the stress concentration factor $K_t$ against the number of elements, relative to the finest run. Drawn by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-payoff}
 \end{figure}
 
 \paragraph{Features and the dispatcher.} The module \code{grading} also provides a small declarative vocabulary, \code{Hole}, \code{Fillet}, \code{EdgeBias} and \code{Notch}, and \code{plan()} combines a list of features into a grading plan, warning if a growth ratio is beyond what is usually acceptable. The module is pure sizing-function mathematics and knows nothing about elements; that knowledge is kept in one other place, the dispatcher \anchor{fea_engine.build_mesh.build_mesh}, which knows which elements carry rotational bending degrees of freedom and gives them only a mesh whose local frames are consistent (\Cref{sec:me-dispatch}).
@@ -133,7 +177,14 @@ A \code{MultiBlockMesh} holds blocks of different topologies over one node array
 
 \paragraph{A patch test across the interface.} A rectangle $2\times1$ is built from a $4\times4$ block of quadrilaterals ($x<1$) and a triangulated block ($x>1$, each cell split into two triangles), with the interior nodes displaced randomly by up to 20\% of the cell size. The two blocks share \cmeMBShared{} nodes on the line $x=1$, and the mesh has \cmeMBQuads{} quadrilaterals and \cmeMBTris{} triangles. The boundary nodes are given a linear displacement field; a correct mixed mesh must reproduce it exactly at the interior nodes. The largest nodal error is \cmeMBErr{} relative to the largest displacement, which is rounding. This tests that the elements of the two blocks assemble into one consistent system through the shared nodes; it does not test the \emph{stress} continuity across the interface.
 
-\tikzfigure[0.85\linewidth]{ch02_multiblock}{A multi-block mesh: a quadrilateral and a triangle block over one shared node array. The interface nodes (red) belong to both blocks.}{fig:me-multiblock}
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/ch02_multiblock.pdf}
+\caption{Multi-block meshes of a $2\times1$ rectangle: quadrilaterals (blue) left and triangles (orange) right, interior nodes moved at random. (a) Vertical interface; the red nodes belong to both blocks. (b) Slanted interface. (c) The same mesh with the interface nodes duplicated in the triangle block, so that the blocks are no longer connected (green squares are the copies, drawn slightly displaced). The patch error of a linear field is printed above each panel. Drawn from \code{MultiBlockMesh} objects by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-multiblock}
+\end{figure}
+
+\paragraph{A slanted interface, and a missing one.} \Cref{fig:me-multiblock}b moves the interface nodes sideways in proportion to $y$, so that the line is inclined and the adjacent elements are distorted; the error stays at rounding, \cmeMBSlantErr{}, as for the vertical interface (\cmeMBVertErr{}). The interface is a set of node numbers and not a line, so its direction does not matter. \Cref{fig:me-multiblock}c shows what happens when the nodes are not shared: the blocks are then two separate bodies that touch at the interface without exchanging force, each with a traction-free edge there, and the same patch test gives an error of \cmeMBDupErr{} of the largest displacement. The mesh looks identical to a viewer; only the connectivity differs, which is why the interface is checked by a numerical test and not by eye.
+
 
 \section{Exchange formats}\label{sec:me-io}
 
@@ -236,9 +287,9 @@ A mesh is nodes and connectivity with a positive-Jacobian guarantee. The structu
 
 \section*{Exercises}\label{sec:me-exercises}
 \begin{enumerate}
-\item \emph{(Implementation)} Repeat the arc test of \Cref{sec:me-gen} for \code{hole_in_rectangle_mesh} and for the fillet. Is the observed order again 2?
+\item \emph{(Implementation)} Repeat the arc test of \Cref{fig:me-arc} with the number of radial rings of the quarter plate doubled with the angular divisions. Does its fitted order move towards 2?
 \item \emph{(Implementation)} Choose a target growth ratio of 1.05 and $n=10$ for \code{grade_for_growth_ratio}. What exponent comes out, and is the ratio realised below the target?
-\item \emph{(Implementation)} Make the interface of \Cref{sec:me-multi} slanted instead of vertical and run the patch test again. Does the error stay at rounding?
+\item \emph{(Implementation)} Shear the interface of \Cref{sec:me-multi} more strongly, until an element becomes inverted, and run the patch test on the last valid mesh and with \code{check_quality}. What changes first?
 \item \emph{(Implementation)} Apply a pure-shear patch test (not only a linear field with a symmetric gradient) to the mixed mesh and check the recovered stress on both sides of the interface.
 \item \emph{(Interpretation)} Round-trip a \code{MultiBlockMesh} through \code{write_mesh} and \code{read_mesh}. Which information survives, and which does not (see the notes on field data in the module)?
 \item\label{ex:me-jac} \emph{(Derivation)} Show that the Jacobian determinant of a bilinear quadrilateral is a linear function of the natural coordinates, and that it is positive everywhere in the element if and only if it is positive at the four corners.

@@ -45,3 +45,4 @@ Current: 14 pages-ish, 6 figures (2 TikZ, 3 matplotlib, 1 import), 3 tables. Tar
 
 ## Status
 - Step 1 done (2.1-2.3): `scripts/ch02_figs.py step1` writes ch02_anatomy, ch02_elements, ch02_quality, tables ch02_elements/ch02_quality, numbers_ch02_figs.tex. One reference (sec:me-viz) is pending until Step 3. Book 304 pages.
+- Step 2 done (2.4-2.6): `ch02_figs.py step2` writes gallery2d, gallery3d (PyVista), arc, grade_meshes, plan, payoff, multiblock + table ch02_plan. Chapter 2 is about 15 pages now; book 307 pages. Pending: sec:me-viz.

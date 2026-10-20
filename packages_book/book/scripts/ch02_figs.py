@@ -336,7 +336,300 @@ def fig_quality():
     print("quality:", {f: (round(data[f]['dmin'].min(), 2), data[f]['err']) for f in levels}, "first inversion", first)
 
 
-STEPS = {"step1": [fig_anatomy, fig_elements, fig_quality]}
+# ---------------------------------------------------------------------------------------------- Sec. 2.4 generators
+def _fill2d(ax, m, fc="#eaf1f8", ec="0.35", lw=0.4, vals=None, cmap="viridis", clim=None):
+    polys = [m.nodes[e] for e in m.elements]
+    pc = PolyCollection(polys, facecolors=fc if vals is None else None, edgecolors=ec, linewidths=lw,
+                        array=vals, cmap=cmap)
+    if clim is not None and vals is not None:
+        pc.set_clim(*clim)
+    ax.add_collection(pc)
+    lo, hi = m.nodes.min(0), m.nodes.max(0); pad = 0.04 * (hi - lo).max()
+    ax.set_xlim(lo[0] - pad, hi[0] + pad); ax.set_ylim(lo[1] - pad, hi[1] + pad)
+    ax.set_aspect("equal"); ax.axis("off")
+    return pc
+
+
+def _gen_cases():
+    R = 0.3
+    return dict(
+        rect=M.rectangle_mesh(2.0, 1.0, 12, 6),
+        quarter=M.rectangle_with_hole_mesh_quarter(2.0, 1.0, R, 8, 16),
+        holeoff=M.hole_in_rectangle_mesh(3.0, 2.0, (1.2, 0.9), R, 6, 16),
+        graded=M.hole_in_rectangle_mesh_graded(3.0, 2.0, (1.2, 0.9), R, 6, 16, h_far=0.3, growth_ratio=1.2),
+        notch=M.notch_in_rectangle_mesh(2.0, 1.0, "top", 0.8, 1.2, 0.6, 8, 4, 8, 6, 6),
+        fillet=M.fillet_in_rectangle_mesh(2.0, 1.0, (2.0, 1.0), R, 10, 6, 6),
+        full=M.mirror_mesh(M.rectangle_with_hole_mesh_quarter(1.5, 1.0, R, 6, 12), mirror_x=True, mirror_y=True),
+        line=M.line_mesh(2.0, 6))
+
+
+def fig_gallery2d():
+    c = _gen_cases()
+    items = [("rect", "rectangle_mesh"), ("quarter", "rectangle_with_hole_\nmesh_quarter"),
+             ("holeoff", "hole_in_rectangle_mesh"), ("graded", "hole_in_rectangle_\nmesh_graded (ratio 1.2)"),
+             ("notch", "notch_in_rectangle_mesh"), ("fillet", "fillet_in_rectangle_mesh"),
+             ("full", "mirror_mesh of the\nquarter plate"), ("line", "line_mesh")]
+    fig, axs = plt.subplots(2, 4, figsize=(7.6, 4.2))
+    for ax, (k, t) in zip(axs.ravel(), items):
+        m = c[k]
+        if k == "line":
+            x = m.nodes[:, 0]
+            for a, b in m.elements:
+                ax.plot([x[a], x[b]], [0, 0], color=BLUE, lw=3, solid_capstyle="butt")
+            ax.plot(x, 0 * x, "o", ms=5, mfc="white", mec=ORANGE)
+            ax.set_xlim(-0.2, 2.2); ax.set_ylim(-1, 1); ax.axis("off")
+        else:
+            _fill2d(ax, m)
+        ax.set_title(t, fontsize=6.5, family="monospace")
+        n = f"{len(m.nodes)} nodes, {len(m.elements)} el."
+        ax.text(0.5, -0.04, n, transform=ax.transAxes, ha="center", va="top", fontsize=6.5, color="0.3")
+    fig.tight_layout(h_pad=1.6)
+    fig.savefig(os.path.join(FIG, "ch02_gallery2d.pdf"), bbox_inches="tight"); plt.close(fig)
+
+
+def _render(grid_mesh, color="#cfe0f1", edge="#333333", view=(1.0, -1.1, 0.8), window=(520, 380), highlight=None,
+            scalars=None, clim=None, cmap="viridis"):
+    import pyvista as pv
+    from fea_engine.visualization import to_pyvista
+    pv.OFF_SCREEN = True
+    g = to_pyvista(grid_mesh)
+    pl = pv.Plotter(off_screen=True, window_size=window)
+    pl.set_background("white")
+    if scalars is not None:
+        g.cell_data["h"] = scalars
+        pl.add_mesh(g, scalars="h", cmap=cmap, clim=clim, show_edges=True, edge_color=edge, line_width=0.8,
+                    show_scalar_bar=False)
+    else:
+        pl.add_mesh(g, color=color, show_edges=True, edge_color=edge, line_width=1.0)
+    pl.camera_position = [tuple(np.array(g.center) + np.array(view) * g.length * 1.15), g.center, (0, 0, 1)]
+    img = pl.screenshot(return_img=True)
+    pl.close()
+    return img
+
+
+def fig_gallery3d():
+    R = 0.3
+    meshes = [("box_mesh", M.box_mesh(2.0, 1.0, 0.5, 8, 4, 2)),
+              ("box_with_hole_mesh", M.box_with_hole_mesh(2.0, 1.0, R, 0.5, 6, 12, 2)),
+              ("extrude_mesh of the fillet", M.extrude_mesh(M.fillet_in_rectangle_mesh(2.0, 1.0, (2.0, 1.0), R, 10, 6, 6), 0.5, 2))]
+    fig, axs = plt.subplots(1, 3, figsize=(7.6, 2.5))
+    for ax, (t, m) in zip(axs, meshes):
+        ax.imshow(_render(m)); ax.axis("off")
+        ax.set_title(f"{t}\n{len(m.nodes)} nodes, {len(m.elements)} hex8", fontsize=6.8, family="monospace")
+    fig.tight_layout(w_pad=0.5)
+    fig.savefig(os.path.join(FIG, "ch02_gallery3d.pdf"), bbox_inches="tight", dpi=200); plt.close(fig)
+
+
+def _area(m):
+    X = m.nodes[m.elements]; x, y = X[:, :, 0], X[:, :, 1]
+    return float(0.5 * np.abs(np.sum(x * np.roll(y, -1, 1) - np.roll(x, -1, 1) * y, axis=1)).sum())
+
+
+def fig_arc():
+    R = 0.3
+    nth = np.array([4, 8, 16, 32, 64])
+    cases = {
+        "quarter plate with hole": (lambda k: M.rectangle_with_hole_mesh_quarter(2.0, 1.0, R, 8, k), 2.0 - np.pi * R ** 2 / 4),
+        "hole off centre": (lambda k: M.hole_in_rectangle_mesh(3.0, 2.0, (1.2, 0.9), R, 6, k), 6.0 - np.pi * R ** 2),
+        "fillet": (lambda k: M.fillet_in_rectangle_mesh(2.0, 1.0, (2.0, 1.0), R, 10, 6, 6, ntheta=k), 2.0 - R ** 2 * (1 - np.pi / 4)),
+    }
+    fig, ax = plt.subplots(figsize=(3.6, 2.8))
+    orders = {}
+    for (lab, (f, ex)), col, mk in zip(cases.items(), [BLUE, ORANGE, GREEN], "osd"):
+        err = np.array([abs(_area(f(int(k))) / ex - 1) for k in nth])
+        o = -np.polyfit(np.log(nth[1:]), np.log(err[1:]), 1)[0]
+        orders[lab] = (o, err)
+        ax.loglog(nth, err, mk + "-", color=col, ms=4, label=f"{lab} (order {o:.2f})")
+    ax.loglog(nth, 0.5 * orders["hole off centre"][1][1] * (nth / nth[1]) ** -2.0, ":", color="0.4", label="slope $-2$")
+    ax.set_xlabel("elements around the arc", fontsize=8); ax.set_ylabel("relative area error", fontsize=8)
+    ax.legend(fontsize=6, frameon=False); ax.tick_params(labelsize=7); ax.grid(alpha=0.25, which="both")
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch02_arc.pdf")); plt.close(fig)
+    num("cmeArcOrdHoleOff", f"{orders['hole off centre'][0]:.2f}")
+    num("cmeArcOrdFillet", f"{orders['fillet'][0]:.2f}")
+    num("cmeArcOrdQuarter", f"{orders['quarter plate with hole'][0]:.2f}")
+    print("arc orders", {k: round(v[0], 2) for k, v in orders.items()})
+
+
+# ---------------------------------------------------------------------------------------------- Sec. 2.5 grading
+def _sizes(m):
+    X = m.nodes[m.elements]; x, y = X[:, :, 0], X[:, :, 1]
+    return np.sqrt(0.5 * np.abs(np.sum(x * np.roll(y, -1, 1) - np.roll(x, -1, 1) * y, axis=1)))
+
+
+def fig_grade_meshes():
+    from fea_engine import grading as G
+    R = 0.3
+    cases = [("uniform ($p=1$)", M.hole_in_rectangle_mesh(3.0, 2.0, (1.2, 0.9), R, 12, 24, grade_p=1.0, extend_grade=1.0))]
+    for gr in (1.1, 1.2, 1.5):
+        cases.append((f"target ratio {gr}", M.hole_in_rectangle_mesh_graded(3.0, 2.0, (1.2, 0.9), R, 12, 24, h_far=0.3, growth_ratio=gr)))
+    hmax = max(_sizes(m).max() for _, m in cases); hmin = min(_sizes(m).min() for _, m in cases)
+    fig, axs = plt.subplots(1, 4, figsize=(7.6, 2.2))
+    rows = []
+    for ax, (t, m) in zip(axs, cases):
+        sz = _sizes(m)
+        pc = _fill2d(ax, m, vals=sz, cmap="viridis_r", clim=(hmin, hmax), lw=0.3)
+        nb = m.check_grading(verbose=False)
+        ax.set_title(f"{t}\n$h_{{\\min}}={sz.min():.3f}$, max/min {sz.max() / sz.min():.1f}", fontsize=7)
+        rows.append((t, nb, sz.max() / sz.min(), sz.min()))
+    cb = fig.colorbar(pc, ax=axs, location="right", fraction=0.02, pad=0.01); cb.set_label(r"element size $\sqrt{A}$", fontsize=7)
+    cb.ax.tick_params(labelsize=6)
+    fig.savefig(os.path.join(FIG, "ch02_grade_meshes.pdf"), bbox_inches="tight"); plt.close(fig)
+    num("cmeGmUniNb", f"{rows[0][1]:.2f}"); num("cmeGmUniSize", f"{rows[0][2]:.1f}")
+    for k, (name, r) in zip(("A", "B", "C"), zip(("1.1", "1.2", "1.5"), rows[1:])):
+        num(f"cmeGm{k}Nb", f"{r[1]:.2f}"); num(f"cmeGm{k}Size", f"{r[2]:.1f}"); num(f"cmeGm{k}Hmin", f"{r[3]:.3f}")
+    num("cmeGmUniHmin", f"{rows[0][3]:.3f}")
+    print("grade meshes", rows)
+
+
+def fig_plan():
+    from fea_engine import grading as G
+    feats = [G.Hole(center=(1.2, 0.9), radius=0.3, n_ring=12),
+             G.Fillet(corner=(2.0, 1.0), radius=0.3, n_ring=8),
+             G.Notch(path=[(0.8, 1.0), (1.2, 1.0)], depth=0.6, n_ring=6),
+             G.EdgeBias(axis=0, dense_at="start", h_first=0.02, growth_ratio=1.2)]
+    P = G.plan(feats, h_far=0.3, growth_ratio=1.2)
+    P2 = G.plan(feats, h_far=0.3, growth_ratio=1.8)
+    rows = []
+    for f in feats:
+        p = P.grade_for(f); n = getattr(f, "n_ring", 20)
+        real = G.growth_ratio_of_partition(G.graded_partition(0.0, 1.0, n, p, getattr(f, "dense_at", "start")))
+        rows.append((type(f).__name__, n, f.h_min, p, real))
+    with open(os.path.join(TAB, "ch02_plan.tex"), "w") as fh:
+        fh.write("% generated by scripts/ch02_figs.py\n\\begin{tabular}{@{}l r r r r@{}}\n\\toprule\nFeature & $n$ & $h_{\\min}$ & exponent $p$ & realised ratio \\\\\n\\midrule\n")
+        for nme, n, h, p, r in rows:
+            fh.write(f"\\texttt{{{nme}}} & {n} & {h:.3f} & {p:.2f} & {r:.3f} \\\\\n")
+        fh.write("\\bottomrule\n\\end{tabular}\n")
+    closed = max(abs(G.grade_for_growth_ratio(n_, t_) - np.log2(1 + t_)) for n_ in (6, 12, 20) for t_ in (1.1, 1.2, 1.5, 2.0))
+    num("cmeGradeClosedDiff", sci(closed)); print("closed-form p = log2(1+rho) max diff", closed)
+    num("cmePlanWarnLow", str(len(P.warnings))); num("cmePlanWarnHigh", str(len(P2.warnings)))
+    fig, axs = plt.subplots(1, 2, figsize=(7.4, 2.7), gridspec_kw={"width_ratios": [1, 1.15]})
+    ax = axs[0]
+    tg = np.linspace(1.05, 2.0, 40)
+    for n, col in zip((6, 12, 20), (GREEN, BLUE, ORANGE)):
+        ax.plot(tg, [G.grade_for_growth_ratio(n, t) for t in tg], color=col, label=f"$n={n}$")
+    ax.axvline(1.2, color="0.6", ls=":", lw=0.8); ax.axvline(1.5, color=RED, ls=":", lw=0.8)
+    ax.text(1.51, 1.1, "warning\nthreshold", fontsize=6, color=RED)
+    ax.set_xlabel("target growth ratio", fontsize=8); ax.set_ylabel("exponent $p$ returned", fontsize=8)
+    ax.legend(fontsize=7, frameon=False); ax.grid(alpha=0.25); ax.tick_params(labelsize=7); ax.set_title("(a)", fontsize=8)
+    ax = axs[1]
+    n = 12; y = 0
+    for lab, p in [("uniform", 1.0)] + [(f"target {t}", G.grade_for_growth_ratio(n, t)) for t in (1.1, 1.2, 1.5, 2.0)]:
+        x = G.graded_partition(0.0, 1.0, n, p)
+        ax.plot(x, np.full_like(x, y), "|", ms=10, color=BLUE)
+        ax.text(1.03, y, f"{lab}, $p={p:.2f}$", fontsize=6.5, va="center"); y -= 1
+    ax.set_xlim(-0.03, 1.5); ax.set_ylim(y + 0.2, 0.8); ax.axis("off"); ax.set_title("(b) the 12-element partition of a hole ring", fontsize=8)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch02_plan.pdf")); plt.close(fig)
+    print("plan rows", rows, "warnings", len(P.warnings), len(P2.warnings))
+
+
+def _Kt(nr, nth, p, a=2.0, b=1.0, R=0.3):
+    m = M.rectangle_with_hole_mesh_quarter(a, b, R, nr, nth, p)
+    s = FESystem(m, Quad4PlaneStress()); s.assemble_stiffness(D_plane_stress(Material(E=1.0, nu=0.3, rho=1.0)), thickness=1.0)
+    s.fix_dofs(m.select_nodes(x=0.0), [0]); s.fix_dofs(m.select_nodes(y=0.0), [1])
+    s.fix_dofs(m.select_nodes(x=a), [0], value=0.01)
+    U = s.solve_static()
+    st = np.asarray(s.stress(U)).reshape(-1, 3)
+    i = m.select_nodes(x=0.0, y=R)[0]
+    rx = np.asarray(s.reactions(U)).reshape(-1, 2)[m.select_nodes(x=a), 0].sum()
+    return st[i, 0] / (rx / b), len(m.elements), m
+
+
+def fig_payoff():
+    from fea_engine import grading as G
+    nrs = [4, 8, 12, 16, 24, 32]
+    ref, nref, _ = _Kt(40, 80, 2.0)
+    fig, axs = plt.subplots(1, 4, figsize=(7.6, 2.5), gridspec_kw={"width_ratios": [1, 1, 1, 1.35]})
+    strat = [("uniform ($p=1$)", lambda n: 1.0, "0.45"), ("ratio-limited (target 1.2)", lambda n: G.grade_for_growth_ratio(n, 1.2), BLUE),
+             ("$p=2$", lambda n: 2.0, ORANGE)]
+    curves = {}
+    for lab, pf, col in strat:
+        e = []
+        for n in nrs:
+            k, ne, _ = _Kt(n, 2 * n, pf(n)); e.append((ne, abs(k / ref - 1), k))
+        curves[lab] = (e, col)
+    for ax, (lab, pf, col) in zip(axs[:3], strat):
+        m = M.rectangle_with_hole_mesh_quarter(2.0, 1.0, 0.3, 8, 16, pf(8))
+        _fill2d(ax, m, lw=0.3)
+        ax.set_title(f"{lab}\n{m.check_grading(verbose=False):.2f} max neighbour ratio, $n_r=8$", fontsize=6.5)
+    ax = axs[3]
+    for lab, (e, col) in curves.items():
+        ax.loglog([x[0] for x in e], [x[1] for x in e], "o-", ms=3.5, color=col, label=lab)
+    ax.set_xlabel("elements", fontsize=7.5); ax.set_ylabel(r"error of $K_t$ at the hole", fontsize=7.5)
+    ax.legend(fontsize=5.8, frameon=False); ax.grid(alpha=0.25, which="both"); ax.tick_params(labelsize=6.5)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch02_payoff.pdf"), bbox_inches="tight"); plt.close(fig)
+    num("cmePayRef", f"{ref:.3f}"); num("cmePayRefEl", str(nref))
+    for k, (lab, (e, col)) in zip(("U", "R", "P"), curves.items()):
+        num(f"cmePay{k}Err", f"{100 * e[3][1]:.1f}"); num(f"cmePay{k}El", str(e[3][0]))   # nr=16
+        num(f"cmePay{k}ErrFine", f"{100 * e[-1][1]:.1f}")
+    print("payoff ref", ref, {lab: [(x[0], round(x[2], 4)) for x in e] for lab, (e, c) in curves.items()})
+
+
+# ---------------------------------------------------------------------------------------------- Sec. 2.6 multi-element
+def _mb(shear=0.0, duplicate=False, nx=8, ny=4, Lx=2.0, Ly=1.0, seed=2):
+    xs, ys = np.linspace(0, Lx, nx + 1), np.linspace(0, Ly, ny + 1)
+    nodes = np.array([[x, y] for y in ys for x in xs])
+    jj = np.arange(len(nodes)) // (nx + 1); ii = np.arange(len(nodes)) % (nx + 1)
+    rng = np.random.default_rng(seed)
+    interior = [j * (nx + 1) + i for j in range(1, ny) for i in range(1, nx) if i != nx // 2]
+    nodes[interior] += rng.uniform(-0.2, 0.2, (len(interior), 2)) * np.array([Lx / nx, Ly / ny])
+    nodes[ii == nx // 2, 0] += shear * (nodes[ii == nx // 2, 1] - Ly / 2)
+    quads, tris = [], []
+    for j in range(ny):
+        for i in range(nx):
+            n0, n1, n2, n3 = j * (nx + 1) + i, j * (nx + 1) + i + 1, (j + 1) * (nx + 1) + i + 1, (j + 1) * (nx + 1) + i
+            if i < nx // 2:
+                quads.append([n0, n1, n2, n3])
+            else:
+                tris.append([n0, n2, n3]); tris.append([n0, n1, n2])
+    quads, tris = np.array(quads), np.array(tris)
+    shared = np.array(sorted(set(quads.ravel()) & set(tris.ravel())))
+    if duplicate:
+        mp = {int(n): len(nodes) + k for k, n in enumerate(shared)}
+        nodes = np.vstack([nodes, nodes[shared]])
+        tris = np.vectorize(lambda n: mp.get(int(n), int(n)))(tris)
+    return M.MultiBlockMesh(nodes=nodes, blocks={"quad4": quads, "tri3": tris}, dim=2), shared, Lx, Ly
+
+
+def _mb_patch(mb, Lx, Ly):
+    elems = {"quad4": Quad4PlaneStress(), "tri3": Tri3PlaneStress()}
+    D = D_plane_stress(Material(E=2.1e5, nu=0.3, rho=1.0))
+    s = FESystem(mb, elems); s.assemble_stiffness({"quad4": D, "tri3": D}, thickness=1.0)
+    G_ = np.array([[1e-3, 2e-4], [3e-4, -5e-4]]); bv = np.array([1e-3, -2e-3])
+    X = mb.nodes; exact = X @ G_.T + bv
+    on_b = np.where((X[:, 0] < 1e-9) | (X[:, 0] > Lx - 1e-9) | (X[:, 1] < 1e-9) | (X[:, 1] > Ly - 1e-9))[0]
+    for n in on_b:
+        for d in range(2):
+            s.fix_dofs([int(n)], [d], value=float(exact[n, d]))
+    U = np.asarray(s.solve_static()).reshape(-1, 2)
+    err = np.abs(U - exact).max() / np.abs(exact).max()
+    return err, U - exact
+
+
+def fig_multiblock():
+    variants = [("(a) vertical interface, shared nodes", dict()), ("(b) slanted interface, shared nodes", dict(shear=0.25)),
+                ("(c) interface nodes duplicated (not shared)", dict(duplicate=True))]
+    fig, axs = plt.subplots(1, 3, figsize=(7.6, 2.3))
+    errs = []
+    for ax, (t, kw) in zip(axs, variants):
+        mb, shared, Lx, Ly = _mb(**kw)
+        ok = mb.check_quality({"quad4": Quad4PlaneStress(), "tri3": Tri3PlaneStress()}, verbose=False)
+        err, d = _mb_patch(mb, Lx, Ly); errs.append(err)
+        for name, col in (("quad4", "#cfe0f1"), ("tri3", "#fbe2c4")):
+            for e in mb.blocks[name]:
+                ax.add_patch(Polygon(mb.nodes[e], closed=True, fc=col, ec="0.35", lw=0.5))
+        ax.plot(mb.nodes[shared, 0], mb.nodes[shared, 1], "o", ms=4, color=RED, zorder=3)
+        if kw.get("duplicate"):
+            n0 = len(mb.nodes) - len(shared)
+            ax.plot(mb.nodes[n0:, 0] + 0.03, mb.nodes[n0:, 1], "s", ms=3, color=GREEN, zorder=3)
+        ax.set_xlim(-0.05, Lx + 0.05); ax.set_ylim(-0.05, Ly + 0.05); ax.set_aspect("equal"); ax.axis("off")
+        ax.set_title(f"{t}\npatch error {err:.1e}", fontsize=6.8)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch02_multiblock.pdf"), bbox_inches="tight"); plt.close(fig)
+    num("cmeMBVertErr", sci(errs[0])); num("cmeMBSlantErr", sci(errs[1])); num("cmeMBDupErr", f"{errs[2]:.2f}")
+    print("multiblock errs", errs)
+
+
+STEPS = {"step1": [fig_anatomy, fig_elements, fig_quality],
+         "step2": [fig_gallery2d, fig_gallery3d, fig_arc, fig_grade_meshes, fig_plan, fig_payoff, fig_multiblock]}
 
 
 def main():
