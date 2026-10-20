@@ -96,21 +96,11 @@ Study & Case & Main quantitative result & Outcome \\
 \input{chapters/ch14_mfs}
 \input{chapters/ch14_hyrom}
 \input{chapters/ch14_ice}
+\input{chapters/ch14_fsi}
+\input{chapters/ch14_fdpinn}
+\input{chapters/ch14_frino}
 
-\section{Identification, learned models, contact and assemblies}\label{sec:vf-rest}
-
-\subsection{Matrix-free modal identification}\label{sec:vf-fsi}
-\citet{liu2026fsi} identify frequencies, damping and mode shapes of a fluid-loaded plate with a Loewner pencil. The ANSYS and boundary-element model of the publication was not available, so a truth model was built with \fea{} (a Mindlin plate with frequency-dependent fluid mass from the Rayleigh integral); in air its frequencies lie within $-0.3$ to $+7.2\,\%$ of the published table, in water within $-1.1$ to $-9.3\,\%$. Against \emph{this} model the identification recovers all nine modes in each of four excitation--measurement configurations, with frequency errors of at most $6.5\times10^{-6}\,\%$ in air and $0.19\,\%$ in water and damping errors within $4.5\,\%$ in water. Mode shapes have a modal assurance criterion of at least $0.999$ for seven of nine modes and at least $0.95$ for all, and $0.9999$ for all on a denser grid. Damping is much more fragile than frequency under noise: errors above $10\,\%$ occur below about 60~dB signal-to-noise ratio, where the default screening thresholds, tuned on clean data, accept few modes. The outcome is therefore the method against the author's own truth model, not against the publication's data (\Cref{ch:nonint}).
-
-\subsection{Frequency-domain PINN for a moving load}\label{sec:vf-fdpinn}
-\citet{liang2024fdpinn} replace the time-domain moving-load equation of a simply supported beam by one ordinary differential equation per frequency and train a physics-informed network on the smooth, peaked spectrum. The network training is outside the two packages (it uses PyTorch). The packages supply the reference fields (an \fea{} Newmark and a modal-superposition solution), a moving-load class, and the frequency-domain ROM for the band-truncation study. For the three cases of the publication and three of its appendix, the analytical, Newmark and modal-superposition solutions agree to about $10^{-7}$ in normalised mean-square error or better. The cost of keeping only the spectrum below 5~Hz is $3.8\times10^{-5}$, $5.6\times10^{-6}$ and $4.0\times10^{-6}$ for the three cases, which is about 80\,\%, 8\,\% and 6\,\% of the errors the publication reports for its network; the \rom{} frequency-domain ROM reproduces the sweep with ten modes to better than $0.1\,\%$. The inverse problem matches the publication at its $10^4$-iteration budget (accuracy $100.0$, $98.9$ and $94.6\,\%$ against $99.6$, $95.8$ and $94.4\,\%$), but the forward problem is not reproduced: for the third case the field error is $2.4\times10^{-3}$ against $7.0\times10^{-5}$, a factor of 34. The runs used one seed, 5\,000 collocation points, single precision and at most 16\,000 iterations against 20\,000 points and up to $4\times10^{5}$ iterations; most of the inverse field error is the $EI$ bias (an exact solve at the biased $EI$ already gives 80--85\,\% of it), and the other explanations were not isolated.
-
-
-\begin{figure}[tbp]
-\centering
-\includegraphics[width=0.9\linewidth]{figures/ch14_fdpinn.pdf}
-\caption{Moving-load beam of \citet{liang2024fdpinn}. (a) Normalised error of the band-limited field against the band width, full-order sweep; the cost of the 5~Hz band is \cvfFdBandOne, \cvfFdBandTwo{} and \cvfFdBandThree{} for the three cases. (b) The same error from frequency-domain ROMs of size $r$; with ten modes they agree with the full-order value to within \cvfFdTen. Redrawn by \texttt{scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.}\label{fig:vf-fdpinn}
-\end{figure}
+\section{Contact and assemblies}\label{sec:vf-rest}
 
 \subsection{Hybrid hyper-reduction for contact}\label{sec:vf-hyb}
 \citet{fauque2018hybrid} reduce contact problems with a reduced integration domain and a hybrid primal--dual basis (Chapter~\ref{ch:hyper}). The rope obstacle problem was rebuilt with the new module \anchor{rom_engine.contact_rid}. The best greedy run reaches a displacement error of $0.011\,\%$ (mean) and $0.084\,\%$ (maximum) against the publication's $0.004\,\%$ and $0.077\,\%$; an earlier gap of about 100$\times$ was traced to the size of the reduced integration domain, not to the solver, the snapshots or the load sign. The speed-up is not reproduced: $0.6$--$1\times$ at 100 nodes against $8.5\times$, because a 72-unknown complementarity problem dominates the 1.9~ms full solve. Reconstructed contact forces have an error of $8$--$10\,\%$ against $1.3\,\%$, and the report documents what the publication does not state. Two numerical failure modes of the reduced system, not discussed in the publication, were found: a singular reduced matrix when every node of the domain is a potential contact, and an indefinite complementarity matrix.
@@ -144,16 +134,6 @@ The report then builds a generalised 3D pipeline (total-Lagrangian Hex8 and Hex2
 \centering
 \includegraphics[width=1.0\linewidth]{figures/ch14_bal.pdf}
 \caption{Dynamic obstacle problem of \citet{balajewicz2016contact} (1\,521 dofs). (a) Maximum error against the greedy iteration for the three indicator weightings and the true-error oracle (a reduction of \cvfBalRed{} for $\alpha=(1,0,0)$). (b), (c) Response at a test parameter: the NMF dual basis follows the full-order model (error \cvfBalNmf), the SVD dual basis does not (error \cvfBalSvd). Measured speed-up \cvfBalSpeed. Redrawn by \texttt{scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.}\label{fig:vf-bal}
-\end{figure}
-
-\subsection{A neural operator informed by a ROM}\label{sec:vf-frino}
-\citet{yang2025frino} constrain a Fourier neural operator by the residual of a three-mode POD ROM of a 4239-dof Hex20 cantilever. Single-frequency responses reproduce: $1.5\times10^{-2}$ mean error at 5--20~Hz against $1.8\times10^{-2}$, and $8.5\times10^{-2}$ at 95--110~Hz against $0.3$ (the publication's value equals the error of not learning the forced response). Generalisation to multi-frequency and random loads does not reproduce with a plausible training set: $0.443$ and $0.691$ with 40 tones against $0.17$ and $0.098$; with 200 waveforms the best case is $0.128$ and $0.447$. The trained network is not the linear operator the physics requires (a superposition defect of $0.63$; relative error $0.0695$ at the trained amplitude and $0.976$ at ten times that amplitude). The physics term adds little: a data-only network is $3\,\%$ worse at low and $21\,\%$ worse at high frequency, inside seed noise. The publication's ``two orders of magnitude'' over a PINN holds only against a first-attempt PINN ($38\times$); tuned PINNs are $2.7$ to $11\times$ less accurate. For this linear problem the exact frequency-domain solution costs $18.1$~ms, the same order as the network's inference ($11$~ms), so its $139$~s of training is never repaid against it. The setup choices that the publication leaves open are listed in the report; the study uses one seed per configuration and a 3~GB GPU in single precision.
-
-
-\begin{figure}[tbp]
-\centering
-\includegraphics[width=0.7\linewidth]{figures/ch14_frino.pdf}
-\caption{Neural operator of \citet{yang2025frino}: mean relative error for single tones at low and high frequency, multi-frequency loads and random loads, for three training sets. Dashed lines are the publication's values. With 40 tones the multi-frequency and random errors are \cvfFrinoMulti{} and \cvfFrinoRandom. Redrawn by \texttt{scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.}\label{fig:vf-frino}
 \end{figure}
 
 \subsection{What the reproductions show}\label{sec:vf-repro-summary}

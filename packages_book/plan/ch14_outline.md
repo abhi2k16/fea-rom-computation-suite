@@ -63,7 +63,8 @@ Concept: POD, DEIM, UDEIM, ECSW and domain partitioning for assemblies with cont
 
 ## Status
 - Outline approved. Group A (14.4-14.6) written: `chapters/ch14_mfs.tex`, `ch14_hyrom.tex`, `ch14_ice.tex` (included from `ch14.tex`); geometry figures by `scripts/ch14_geom.py`; report plots copied to `figures/ch14r/`. Build: 233 pages, 0 errors. Group A is about 29 pages (planned 17); trimming possible.
-- Groups B and C still sit as one-paragraph subsections under the temporary section 14.7.
+- Group B (14.7-14.9) written: `chapters/ch14_fsi.tex`, `ch14_fdpinn.tex`, `ch14_frino.tex`; geometry figures for FD-PINN and FRINO in `scripts/ch14_geom.py`. Build: 264 pages, 0 errors. Group B is about 30 pages (planned 15).
+- Group C still sits as one-paragraph subsections under the temporary section 14.10.
 
 ## Step plan after approval
 1. **Group A** (14.4-14.6) with infrastructure: new `ch14_assets.py` functions, shared figure/table macros, template check. Confirm.

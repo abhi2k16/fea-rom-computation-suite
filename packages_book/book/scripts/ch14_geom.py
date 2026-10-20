@@ -98,5 +98,42 @@ def ice():
     save(fig, "ch14_geom_ice.pdf")
 
 
+def fdpinn():
+    fig, ax = plt.subplots(1, 2, figsize=(8.6, 2.7), gridspec_kw={"width_ratios": [1.6, 1]})
+    a = ax[0]; L = 20.0
+    a.plot([0, L], [0, 0], color=BLUE, lw=5, solid_capstyle="butt")
+    for x in (0, L):
+        a.add_patch(Polygon([(x, -0.2), (x - 0.5, -1.1), (x + 0.5, -1.1)], closed=True, fc="white", ec="k"))
+    a.annotate("", (6, 0.2), (6, 2.0), arrowprops=dict(arrowstyle="->", color=ORANGE, lw=1.6)); a.text(6, 2.2, "$p=12$ kN at $x=vt$", ha="center", color=ORANGE, fontsize=8)
+    a.annotate("", (9.5, 1.3), (6.5, 1.3), arrowprops=dict(arrowstyle="<-", color=ORANGE)); a.text(8.0, 1.6, "$v$", color=ORANGE, ha="center", fontsize=8)
+    a.plot([L / 2], [0], "s", color=RED, ms=7); a.text(L / 2, -1.9, "sensor at $L/2$ (inverse problem)", ha="center", color=RED, fontsize=8)
+    a.annotate("", (0, -2.9), (L, -2.9), arrowprops=dict(arrowstyle="<->")); a.text(L / 2, -3.7, "$L=20$ m, $EI=2.4\\times10^9$ N m$^2$, $m=3000$ kg/m, damping ratio 0.025", ha="center", fontsize=8)
+    a.set(xlim=(-2, 22), ylim=(-4.3, 3.2)); a.set_aspect("equal"); a.axis("off"); a.set_title("(a) simply supported beam under a moving load", fontsize=8.5)
+    b = ax[1]; b.set(xlim=(0, 1), ylim=(0, 1)); b.add_patch(plt.Rectangle((0, 0), 1, 1, fc="#eef2fb", ec=BLUE))
+    rng = np.random.default_rng(1); b.plot(rng.random(70), rng.random(70), ".", color=GREY, ms=3)
+    b.set(xlabel="$x/L$", ylabel="$\\omega$ (band 0--5 Hz)"); b.set_xticks([0, 1]); b.set_yticks([0, 1]); b.set_yticklabels(["0", "$\\omega_{\\max}$"])
+    b.set_title("(b) network domain $(x,\\omega)$, collocation points", fontsize=8.5)
+    save(fig, "ch14_geom_fdpinn.pdf")
+
+
+def frino():
+    fig = plt.figure(figsize=(7.6, 3.4)); ax = fig.add_subplot(111, projection="3d")
+    L, W, T = 60.0, 15.0, 1.5; nx, ny, nz = 14, 8, 2
+    xs, ys, zs = np.linspace(0, L, nx + 1), np.linspace(0, W, ny + 1), np.linspace(0, T, nz + 1)
+    for z in zs:
+        for y in ys: ax.plot([0, L], [y, y], [z, z], color=GREY, lw=0.4)
+        for x in xs: ax.plot([x, x], [0, W], [z, z], color=GREY, lw=0.4)
+    for x in xs:
+        for y in (0, W): ax.plot([x, x], [y, y], [0, T], color=GREY, lw=0.4)
+    for y in ys:
+        for x in (0, L): ax.plot([x, x], [y, y], [0, T], color=GREY, lw=0.4)
+    yy, zz = np.meshgrid(ys, zs); ax.plot_surface(np.zeros_like(yy), yy, zz, color=BLUE, alpha=0.5)
+    ax.quiver(L, W / 2, T, 0, 0, 5, color=ORANGE, lw=2, arrow_length_ratio=0.4); ax.text(L, W / 2, T + 7, "point load (transverse)", color=ORANGE, fontsize=8, ha="center")
+    ax.text(0, W / 2, -5, "clamped end", color=BLUE, fontsize=8)
+    ax.set(xlabel="x (mm)", ylabel="y (mm)"); ax.set_zticks([]); ax.set_yticks([0, 15]); ax.set_box_aspect((4, 1, 0.6)); ax.view_init(22, -62)
+    ax.set_title("Cantilever $60\\times15\\times1.5$ mm, $14\\times8\\times2$ Hex20: 4239 dofs", fontsize=8.5)
+    save(fig, "ch14_geom_frino.pdf")
+
+
 if __name__ == "__main__":
-    mfs(); hyrom_panel(); ice()
+    mfs(); hyrom_panel(); ice(); fdpinn(); frino()
