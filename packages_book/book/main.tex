@@ -10,9 +10,11 @@
 
 \begin{document}
 \includepdf[pages=1,pagecommand={\thispagestyle{empty}}]{figures/cover.pdf}
+\includepdf[pages=1,pagecommand={\thispagestyle{empty}}]{figures/back.pdf}
 \frontmatter
 \maketitle
 \include{chapters/copyright}
+\include{chapters/about_author}
 \include{chapters/preface}
 \chapter*{Reading guide}
 This book explains how the two packages of the companion repository, \fea{} and \rom{}, are built, and checks that they do what is claimed for them. It is meant to be read with the repository open. This guide says how the two fit together, how a chapter is laid out, and what the marks in the text mean.
@@ -78,5 +80,4 @@ Reduced-order models come with a few extra conventions, set out in Appendix~\ref
 \include{chapters/appD}
 
 \backmatter
-\include{chapters/about_author}
 \end{document}
