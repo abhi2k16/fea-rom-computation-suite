@@ -61,6 +61,10 @@ Concept: POD primal basis, NMF dual basis, greedy sampling with a solve-free ind
 ### 14.12 Assembly MOR (`MOR_struct_contact_geomNL`)
 Concept: POD, DEIM, UDEIM, ECSW and domain partitioning for assemblies with contact and geometric nonlinearity. Maths: total-Lagrangian SVK element, node-to-segment penalty, Newton, mode criterion (Eq. 24), DEIM / UDEIM / ECSW formulas, DP condensation. Geometry: 2-D top-hat strip on flat strip (324 Quad4, 800 DOF), figures geometry and mesh; 3-D scaled butt joint (480 Hex20, 12,087 DOF). Results: element validation, FOM with stated data (contact too early), 28-case sensitivity, two candidates, mode counts, ROM study (Tables 6.1, 6.2), DP, Hex8 locking, preload independence and spring-connector fix, 3-D ROM accuracy and speed-ups, DEIM-NL variant (marked as own addition). Sections 11.3-14 to be re-read when written.
 
+## Status
+- Outline approved. Group A (14.4-14.6) written: `chapters/ch14_mfs.tex`, `ch14_hyrom.tex`, `ch14_ice.tex` (included from `ch14.tex`); geometry figures by `scripts/ch14_geom.py`; report plots copied to `figures/ch14r/`. Build: 233 pages, 0 errors. Group A is about 29 pages (planned 17); trimming possible.
+- Groups B and C still sit as one-paragraph subsections under the temporary section 14.7.
+
 ## Step plan after approval
 1. **Group A** (14.4-14.6) with infrastructure: new `ch14_assets.py` functions, shared figure/table macros, template check. Confirm.
 2. **Group B** (14.7-14.9). Confirm.
