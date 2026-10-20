@@ -45,3 +45,5 @@ Note: this changes style, not provenance. The book's own text on authorship (one
 ## Status
 - Pilot done: front matter, Ch. 1, Ch. 2 frame (opening box, algorithm blocks, Limits, Summary). Book 311 pages, clean build. Backups of the originals in /tmp only (git diff is the record).
 - Ch. 3-7 done (same changes as the pilot: opening box, 11 algorithm blocks folded into prose, Limits merged, light edits). Book 310 pages, clean build.
+- Script mentions ("Drawn by scripts/...") removed from all chapters, captions and tables; kept only in Appendix D and the README.
+- Ch. 8 done as the trial for the Kleppmann items: story opening (1), naive loop first (3), runnable listing with real output (4, trial), sidenotes (5), prose summary (9), running beam example (2, trial). Book 309 pages. Items 2 and 4 await approval before Ch. 9-13.

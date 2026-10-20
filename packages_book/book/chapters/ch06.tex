@@ -75,7 +75,7 @@ lf, U = nls.solve_nonlinear_static(fes, mat, n_steps=6, tol=1e-9, max_iter=40,
 
 \section{Verification}\label{sec:bk-verif}
 
-A fast kernel is useless unless it is the same kernel. Every comparison below reports the agreement with the loop next to the speed-up, and all numbers come from \texttt{scripts/ch06\_assets.py} (which reuses the family benchmarks of \texttt{paper/experiments/e10\_batched\_kernels.py}) run on \machine{}: the reference route is timed once, the batched route is the minimum of three runs after a warm-up, and the caches are warm, as they are in a Newton loop.
+A fast kernel is useless unless it is the same kernel. Every comparison below reports the agreement with the loop next to the speed-up, and all numbers were measured (reusing the family benchmarks of \texttt{paper/experiments/e10\_batched\_kernels.py}) on \machine{}: the reference route is timed once, the batched route is the minimum of three runs after a warm-up, and the caches are warm, as they are in a Newton loop.
 
 \paragraph{Four element families.}
 \Cref{tab:bk-families} compares the loop and the batched route on one block of each family at a random displacement state. The largest relative difference of force and tangent is \cbkAgreeWorst. The gain is largest for the 4-node plane-stress element (\cbkKFQuad$\times$ for the kernel force) and smaller for the elements that do more arithmetic per element: \cbkKFHexEight$\times$ for the 8-node hexahedron, and \cbkKFHexTwenty$\times$ for the 20-node hexahedron. The quadratic tetrahedron is in between for the force (\cbkKFTet$\times$) and shows a larger gain for the tangent (\cbkKTTet$\times$). The four blocks differ in size, so the ratios compare how well each batches, not the cost of one element type against another.
@@ -92,7 +92,7 @@ A fast kernel is useless unless it is the same kernel. Every comparison below re
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch06_scaling.pdf}
-\caption{Internal-force assembly of a \code{Quad4PlaneStressTL} plate: time of the loop and the batched route (left) and their ratio (right). Produced by \texttt{scripts/ch06\_assets.py}.}\label{fig:bk-scaling}
+\caption{Internal-force assembly of a \code{Quad4PlaneStressTL} plate: time of the loop and the batched route (left) and their ratio (right).}\label{fig:bk-scaling}
 \end{figure}
 
 \paragraph{A whole Newton solve.}
@@ -149,7 +149,7 @@ Each iteration is one sparse matrix--vector product, two inner products and thre
 \begin{figure}[ht]
 \centering
 \includegraphics[width=1.0\linewidth]{figures/ch06_torch.pdf}
-\caption{Data of \Cref{tab:bk-torch-solve} and \Cref{tab:bk-torch-other}(a). (a) Time of the solve against the number of free degrees of freedom. (b) Time of the stress recovery against the number of elements. Drawn by \texttt{scripts/ch06\_torch\_assets.py} from the records of the author's machine.}\label{fig:bk-torch-data}
+\caption{Data of \Cref{tab:bk-torch-solve} and \Cref{tab:bk-torch-other}(a). (a) Time of the solve against the number of free degrees of freedom. (b) Time of the stress recovery against the number of elements. Data from the records of the author's machine.}\label{fig:bk-torch-data}
 \end{figure}
 
 \paragraph{Reading the tables.} The torch routes agree with the default ones: conjugate gradients to at most \bktCgDiffMax{} (set by the tolerance of the iteration), the dense method to \bktDenseDiffMax, the recovered stresses to \bktStrDiffMax{} and the kernels to the $10^{-16}$ level. The gain is another matter, and it depends on the size and on the operation.
@@ -179,7 +179,7 @@ assembly entry points & \anchor{fea_engine.solver.FESystem} (\code{assemble_inte
 sparse Newton settings & \anchor{fea_engine.newton_options.NewtonOptions} & no \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (tag \booktag). The last column says whether the chapter's script \texttt{scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:bk-map}
+\caption{Where the concepts of this chapter live in the repository (tag \booktag). The last column says whether this chapter's own checks call, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:bk-map}
 \end{table}
 
 \section{Limits}\label{sec:bk-limits}

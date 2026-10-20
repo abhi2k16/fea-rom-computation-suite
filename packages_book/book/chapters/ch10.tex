@@ -1,11 +1,13 @@
 \chapter{Frequency-domain ROMs, greedy training and certified bounds}\label{ch:freq}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-In the frequency domain the parameter is the excitation frequency, and the matrix to invert, $\bm A(\omega)=-\omega^2\bm M+i\omega\bm C+\bm K$, is nearly singular at every resonance. That makes the problem different from the static parametric sweep of Chapter~\ref{ch:pod} in three ways, and the chapter takes them in turn. Where should the expensive full-order solves be spent when the response has sharp peaks (greedy training)? How can the error of a reduced model be assessed without solving the full model (indicators and a certified bound)? And what does a reduced model give for a random load described by a power spectral density? Each is measured against the full-order frequency solver of \fea{}, and the certified bound, the one rigorous error statement in the package, is tested for what it costs in conservatism.\par\smallskip
-\textbf{After this chapter the reader can:} (i) train a frequency-domain model by greedy selection of frequencies; (ii) distinguish a cheap error indicator from a certified bound and say what each tells; (iii) compute the response to a random load from its power spectral density with a reduced model.
+Sweep a damped beam over frequency and the response is flat for long stretches and then jumps at each resonance. A reduced model needs full-order snapshots, each one an expensive solve, and the question is where to take them: evenly spaced, or where the response is hardest. We build the frequency-domain machinery step by step. The matrix $\bm A(\omega)=-\omega^2\bm M+i\omega\bm C+\bm K$ is nearly singular at every resonance, so a greedy loop is used to choose frequencies; an error indicator or a certified bound is used to decide how far to trust the result without solving the full model; and the reduced model is used for a random load described by a power spectral density. Everything is measured against the full-order frequency solver of \fea{}, and the certified bound, the one rigorous error statement in the package, is tested for how conservative it is.\par\smallskip
+After it you should be able to train a frequency-domain model by greedy selection, tell a cheap indicator from a certified bound, and compute a random-load response from a reduced model.
 \end{tcolorbox}
 
 \section{The problem}\label{sec:fr-problem}
+
+Suppose we have a budget of five full-order solves to build a reduced model of a cantilever over a band that contains three resonances. The obvious plan is to spread the five evenly over the band. It is a fair baseline, but the beam does not care about even spacing: its response changes fast near resonances and slowly between them, so evenly spaced snapshots may miss exactly the places that matter. This chapter asks whether the loop can choose better, and how we would know. The beam of the example script is the running example.
 
 For harmonic excitation $\bm f(t)=\bm F\,e^{i\omega t}$ the steady response of $\bm M\ddot{\bm x}+\bm C\dot{\bm x}+\bm K\bm x=\bm f$ is $\bm x(\omega)e^{i\omega t}$ with
 \begin{equation}\label{eq:fr-fom}
@@ -28,8 +30,16 @@ and for general damping $\bm A=-\omega^2\bm M+i\omega\bm C+\bm K$ has three. \an
 \paragraph{Which basis.}
 A modal basis (the lowest undamped modes) does not depend on the load; it represents the response only as well as the load excites the retained modes and the discarded modes' static flexibility is small. A basis from the POD of FRF snapshots (full-order solves at selected frequencies, complex-valued) is built from the actual response to this load. Both are Galerkin projections, so the quality is the quality of the subspace.
 
+\begin{sidenote}{Snapshot and column}
+A snapshot is one full-order solution, here the complex response at one frequency. The basis is the POD of the snapshots, and each of its columns is a complex vector. Counting columns is the fair way to compare bases of equal size, but the modal columns are real, so a complex column carries twice the numbers.
+\end{sidenote}
+
 \paragraph{Greedy training.}
 The expensive part is the full-order solves that produce the snapshots. A weak-greedy loop starts from a few seed frequencies, builds a reduced model, evaluates a cheap error \emph{indicator} at every candidate frequency in a fine pool, solves the full model at the candidate where the indicator is largest, and repeats. Two indicators are available: the residual norm $\|\bm F-\bm A(\omega)\bm V\bm q\|$, evaluated in $O(Qnr)$ per frequency, and the hierarchical indicator $\|\bm x_r(\omega)-\bm x_{r'}(\omega)\|$, the disagreement of the current reduced model with the previous one. Neither is a bound. The first is a residual, the second assumes that the error keeps shrinking as snapshots are added.
+
+\begin{sidenote}{Indicator and bound}
+An indicator ranks frequencies by how bad the reduced model probably is, and is used to choose where to look next. A certified bound is a number that the true error cannot exceed. The first is cheap and says nothing about size; the second is rigorous and may be so loose that it says little.
+\end{sidenote}
 
 \paragraph{A certified bound.}
 For any $\bm x_r$, $\bm A(\bm x-\bm x_r)=\bm F-\bm A\bm x_r=:\bm\rho$, so
@@ -50,13 +60,9 @@ For a stationary random load with a fixed spatial pattern $\bm F_0$ and input sp
 \State $\sigma\gets\big(\sum_i\tfrac12(S_{\mathrm{out},i}+S_{\mathrm{out},i+1})\,\Delta f_i\big)^{1/2}$ \Comment{trapezoidal rule}
 \Ensure $S_{\mathrm{out}}(f)$ and RMS $\sigma$
 \end{pseudo}
-\begin{algdet}
-\item[Cost] $m$ small solves; the full-order model would need $m$ full solves.
-\item[Fails when] the grid is too coarse to resolve the resonance peaks (lightly damped modes need several points per half-power width); the load is not a single fixed pattern.
-\item[Code] \anchor{rom_engine.random_vibration.psd_response}.
-\item[Verified in] \Cref{tab:fr-psd}.
-\end{algdet}
 \end{algbox}
+
+The cost is $m$ small solves, where the full-order model would need $m$ full ones. The grid has to resolve the peaks, with several points per half-power width for lightly damped modes, and the load has to be a single fixed spatial pattern. The code is \anchor{rom_engine.random_vibration.psd_response}; \Cref{tab:fr-psd} is the check.
 
 \begin{algbox}{Certified error bound at a frequency}
 \begin{pseudo}
@@ -66,13 +72,9 @@ For a stationary random load with a fixed spatial pattern $\bm F_0$ and input sp
 \If{$\beta_{\mathrm{LB}}>0$} $\Delta\gets\|\bm\rho\|/\beta_{\mathrm{LB}}$ \Else{} $\Delta\gets+\infty$ \EndIf
 \Ensure $\|\bm x(\omega)-\bm x_r(\omega)\|\le\Delta$
 \end{pseudo}
-\begin{algdet}
-\item[Cost] online: one residual (a full-size product) plus $O(J\,Q)$; offline: $J$ exact smallest singular values of full-size matrices.
-\item[Fails when] $\beta_{\mathrm{LB}}\le0$ near a resonance (the bound is $+\infty$, correct but useless); the references are too sparse for the affine terms to move far from them.
-\item[Code] \anchor{rom_engine.scm.SingularValueLowerBound}, \anchor{rom_engine.scm_lp.LPSingularValueLowerBound}, \anchor{rom_engine.scm.certified_error_bound}.
-\item[Verified in] \Cref{fig:fr-bound} (lower bounds and bound against the true error).
-\end{algdet}
 \end{algbox}
+
+Online the cost is one full-size residual and $O(J\,Q)$ work; offline it is $J$ exact smallest singular values of full-size matrices. Near a resonance the lower bound can fall to zero or below, and the certified bound is then $+\infty$, which is correct and useless; the references can also be too sparse for the affine terms to move far from them. The code is \anchor{rom_engine.scm.SingularValueLowerBound}, \anchor{rom_engine.scm_lp.LPSingularValueLowerBound} and \anchor{rom_engine.scm.certified_error_bound}; \Cref{fig:fr-bound} compares the bound with the true error.
 
 \tikzfigure[0.9\linewidth]{ch10_bound}{The certified bound. The residual is computed online at full size; the lower bound on $\sigma_{\min}$ is built offline from a few exact values.}{fig:fr-boundidea}
 
@@ -84,16 +86,12 @@ For a stationary random load with a fixed spatial pattern $\bm F_0$ and input sp
   \State indicator $I(\omega)$ for every unused $\omega\in\Omega$ \Comment{residual norm in round 1, then hierarchical}
   \State $\omega^\ast\gets\arg\max I$;\ full-order solve at $\omega^\ast$;\ add the snapshot;\ rebuild $\bm V$
 \Until{column budget reached or $\max I<\mathrm{tol}$}
-\State optional: build $\beta_{\mathrm{LB}}$ and report $\|\bm\rho\|/\beta_{\mathrm{LB}}$ where finite; otherwise validate on held-out frequencies near resonances
+\State optional: build $\beta_{\mathrm{LB}}$ and report $\|\bm\rho\|/\beta_{\mathrm{LB}}$ where finite; otherwise validate on frequencies near the resonances that were not used in training
 \Ensure basis $\bm V$, list of selected $\omega^\ast$ (for audit)
 \end{pseudo}
-\begin{algdet}
-\item[Cost] offline: one full-order solve per selected frequency plus $O(Qnr)$ per candidate and round; online: one small complex solve per query.
-\item[Fails when] the indicator is small away from a resonance that was never sampled (neither indicator is a bound); the candidate pool does not contain the peak.
-\item[Code] \anchor{rom_engine.greedy.greedy_train_frequency_basis}, \anchor{rom_engine.frequency.build_pod_basis_from_frf_snapshots}.
-\item[Verified in] \Cref{fig:fr-greedy}, \Cref{fig:fr-ind}, \Cref{tab:fr-greedy}.
-\end{algdet}
 \end{algbox}
+
+Offline the cost is one full-order solve per selected frequency plus $O(Qnr)$ per candidate and round; online it is one small complex solve per query. The loop goes wrong when the indicator is small away from a resonance that was never sampled, because neither indicator is a bound, and when the candidate pool does not contain the peak. The code is \anchor{rom_engine.greedy.greedy_train_frequency_basis} and \anchor{rom_engine.frequency.build_pod_basis_from_frf_snapshots}; \Cref{fig:fr-greedy}, \Cref{fig:fr-ind} and \Cref{tab:fr-greedy} are the checks.
 
 \tikzfigure[0.98\linewidth]{ch10_greedy}{The greedy loop in the frequency domain. Full-order solves happen only at the frequencies chosen by the indicator.}{fig:fr-greedyidea}
 
@@ -120,6 +118,47 @@ freqs = np.linspace(8.4, 1676.0, 6000)                  # Hz
 S_out, rms = psd_response(rom, freqs, np.ones_like(freqs), F_full[free], tip)
 \end{lstlisting}
 
+\paragraph{Try it.} \Cref{lst:fr-try} spends the same five-column budget twice on the beam of the example script: evenly spaced snapshots first, then greedy selection. Both models are tested on $60$ frequencies scattered by $5\%$ around the first three resonances.
+
+\begin{lstlisting}[caption={Five evenly spaced snapshots against five greedily chosen ones (run from \texttt{rom\_engine/examples}).},label={lst:fr-try}]
+import numpy as np
+from scipy.linalg import eigh
+from greedy_frequency_training import build_damped_cantilever
+from rom_engine import FrequencyROM, build_pod_basis_from_frf_snapshots, greedy_train_frequency_basis
+
+sysobj, alpha, beta = build_damped_cantilever(n=20)
+free, n_dof = sysobj.free_dofs, sysobj.n_dof
+K, M, C = (a[np.ix_(free, free)] for a in (sysobj.K, sysobj.M, sysobj.C))
+w1 = np.sqrt(eigh(K, M, eigvals_only=True)[0])
+F = np.zeros(n_dof); F[n_dof - 2] = 1000.0
+band = np.linspace(0.1, 20.0, 400) * w1
+
+# naive: five snapshots at evenly spaced frequencies
+uni = build_pod_basis_from_frf_snapshots(np.linspace(band[0], band[-1], 5), M, K, F[free],
+                                         C=C, n_modes=5)
+# greedy: five columns, the loop chooses where to solve
+gre, history = greedy_train_frequency_basis(band, M, K, F[free], rayleigh=(alpha, beta),
+                                            n_seed=3, tol=1e-12, max_modes=5)
+print("greedy chose", [round(float(om / w1), 2) for om, _, _ in history], "x omega_1")
+
+rng = np.random.default_rng(0)                   # 5% scatter around three resonances
+test = np.concatenate([w * (1 + 0.05 * rng.standard_normal(20))
+                       for w in np.sqrt(eigh(K, M, eigvals_only=True)[:3])])
+for name, b in (("uniform", uni), ("greedy", gre)):
+    rom = FrequencyROM.from_MCK(M, K, b.V, rayleigh=(alpha, beta))
+    err = [np.linalg.norm(rom.frequency_response([w], F[free])[0] - sysobj.solve_harmonic(w, F)[free])
+           / np.linalg.norm(sysobj.solve_harmonic(w, F)[free]) for w in test]
+    print(f"{name:8s} 5 columns: median error {np.median(err):.1e}, max {np.max(err):.1e}")
+\end{lstlisting}
+
+\begin{lstlisting}[numbers=none,language={},keywordstyle={},commentstyle={},frame=single,aboveskip=2pt]
+greedy chose [1.0, 7.18] x omega_1
+uniform  5 columns: median error 1.6e-05, max 1.3e-04
+greedy   5 columns: median error 3.0e-06, max 4.2e-04
+\end{lstlisting}
+
+The loop picks the first resonance and a frequency near the second without being told where they are, and its median error is five times lower than the uniform basis. Its maximum error is three times \emph{higher}. So greedy is not simply better, and the reason is the subject of the next section: the worst frequency sits at a resonance neither basis has seen.
+
 \begin{table}[ht]
 \centering\small
 \begin{tabularx}{\linewidth}{@{}l X >{\centering\arraybackslash}p{0.11\linewidth}@{}}
@@ -136,12 +175,12 @@ band-limited Gaussian time history (not tested here) & \anchor{rom_engine.random
 worked examples & \path{rom_engine/examples/gallery/rom_03_greedy_frequency_training.py} & -- \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (tag \booktag). The last column says whether the chapter's script \texttt{scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:fr-map}
+\caption{Where the concepts of this chapter live in the repository (tag \booktag). The last column says whether this chapter's own checks call, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:fr-map}
 \end{table}
 
 \section{Verification}\label{sec:fr-verif}
 
-All numbers are from \texttt{scripts/ch10\_assets.py}, run on \machine{}. Errors are relative, $\|\bm x_r-\bm x\|/\|\bm x\|$ against \code{solve_harmonic}. Two held-out sets are used: \cfrNTestNear{} frequencies scattered by $5\%$ around each of the first three resonances (the set of the package example), and \cfrNTestBand{} frequencies drawn uniformly over the band.
+All numbers were measured on \machine{}. Errors are relative, $\|\bm x_r-\bm x\|/\|\bm x\|$ against \code{solve_harmonic}. Two test sets, none of them used for training, are used: \cfrNTestNear{} frequencies scattered by $5\%$ around each of the first three resonances (the set of the package example), and \cfrNTestBand{} frequencies drawn uniformly over the band.
 
 \subsection{Greedy against uniform against modal training}
 
@@ -150,7 +189,7 @@ All numbers are from \texttt{scripts/ch10\_assets.py}, run on \machine{}. Errors
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.98\linewidth]{figures/ch10_greedy.pdf}
-\caption{Left: the full-order tip response and the two frequencies chosen by the greedy loop for a $5$-column basis (shaded). Right: maximum held-out error near the resonances against the number of basis columns for the three bases.}\label{fig:fr-greedy}
+\caption{Left: the full-order tip response and the two frequencies chosen by the greedy loop for a $5$-column basis (shaded). Right: maximum error on the test set near the resonances against the number of basis columns for the three bases.}\label{fig:fr-greedy}
 \end{figure}
 
 \begin{table}[ht]
@@ -166,10 +205,10 @@ uniform & \cfrUniformMedFive & \cfrUniformNearFive & \cfrUniformBandFive & \cfrU
 modal & \cfrModalMedFive & \cfrModalNearFive & \cfrModalBandFive & \cfrModalMedEight & \cfrModalNearEight & \cfrModalBandEight \\
 \bottomrule
 \end{tabular}
-\caption{Held-out relative error of the three bases. ``median'' and ``max (near)'' are over the \cfrNTestNear{} frequencies near the resonances, ``max (band)'' over the \cfrNTestBand{} band-wide frequencies.}\label{tab:fr-greedy}
+\caption{Relative error of the three bases on frequencies not used for training. ``median'' and ``max (near)'' are over the \cfrNTestNear{} frequencies near the resonances, ``max (band)'' over the \cfrNTestBand{} band-wide frequencies.}\label{tab:fr-greedy}
 \end{table}
 
-The result does not support a general claim that greedy is better. At $5$ columns the greedy basis has a median error five times lower than the uniform one (\cfrGreedyMedFive{} against \cfrUniformMedFive{}) but a maximum error three times higher (\cfrGreedyNearFive{} against \cfrUniformNearFive{}); over the seven sizes tested ($3$ to $10$ columns) greedy has the lower median at \cfrGreedyWinsMed{} of \cfrRankCount{} and the lower maximum at \cfrGreedyWinsNear{} of \cfrRankCount{}. At $5$ columns the maximum of both bases sits at the third resonance (checked: the largest error is at $17.5\,\omega_1$ for each), which neither training covers, and it is the same peak in both held-out sets, which is why the near-resonance and band-wide maxima nearly coincide. Greedy selection puts the snapshots where the indicator is largest at the time, which is good for the resonances it finds and says nothing about the one it has not yet found. Both snapshot bases are far better than the modal one: at $5$ columns the modal basis has a maximum error of \cfrModalNearFive{}, since it ignores the load pattern, and greedy has the lower maximum at \cfrGreedyWinsModal{} of \cfrRankCount{} sizes. One caution: the snapshot bases are complex, so a ``column'' is a complex vector; the modal columns are real. This comparison is at equal column count, not at equal number of real degrees of freedom or equal offline cost (modal needs one eigensolve and no frequency solves).
+The result does not support a general claim that greedy is better. At $5$ columns the greedy basis has a median error five times lower than the uniform one (\cfrGreedyMedFive{} against \cfrUniformMedFive{}) but a maximum error three times higher (\cfrGreedyNearFive{} against \cfrUniformNearFive{}); over the seven sizes tested ($3$ to $10$ columns) greedy has the lower median at \cfrGreedyWinsMed{} of \cfrRankCount{} and the lower maximum at \cfrGreedyWinsNear{} of \cfrRankCount{}. At $5$ columns the maximum of both bases sits at the third resonance (checked: the largest error is at $17.5\,\omega_1$ for each), which neither training covers, and it is the same peak in both test sets, which is why the near-resonance and band-wide maxima nearly coincide. Greedy selection puts the snapshots where the indicator is largest at the time, which is good for the resonances it finds and says nothing about the one it has not yet found. Both snapshot bases are far better than the modal one: at $5$ columns the modal basis has a maximum error of \cfrModalNearFive{}, since it ignores the load pattern, and greedy has the lower maximum at \cfrGreedyWinsModal{} of \cfrRankCount{} sizes. One caution: the snapshot bases are complex, so a ``column'' is a complex vector; the modal columns are real. This comparison is at equal column count, not at equal number of real degrees of freedom or equal offline cost (modal needs one eigensolve and no frequency solves).
 
 \paragraph{Cost and local accuracy of the greedy $5$-column model.} The offline cost is the greedy training (full-order solves at the selected frequencies, basis construction) at \cfrTimeGreedyMs~ms plus the projection of the operator terms, below $0.1$~ms. At \cfrNFree{} unknowns one reduced solve takes \cfrTimeOnUs~$\mu$s and the lift to the full state \cfrTimeRecUs~$\mu$s, against \cfrTimeFullUs~$\mu$s for \fea{}'s harmonic solve and \cfrTimeDenseUs~$\mu$s for a plain dense solve of $\bm A(\omega)$. The speed-up of the reduced solve is a factor \cfrSpeedOnline{} against \fea{}'s solver, \cfrSpeedLift{} when the lift is included, and \cfrSpeedDense{} against the dense solve. These ratios exclude the offline cost. Including it, a sweep of \cfrWorkflowQ{} frequencies is \emph{not} faster than \cfrWorkflowQ{} full solves (a factor \cfrWorkflowSpeed), and the break-even is about \cfrBreakEven{} frequencies: at this size a frequency sweep is cheap enough that the full-order model is the better choice unless many more frequencies, or many load cases with the same basis, are needed. For a local quantity, the peak tip amplitude near each of the first three resonances (on a grid of $0.25\,\%$ steps in frequency) is reproduced to \cfrPeakAmpOne{}, \cfrPeakAmpTwo{} and \cfrPeakAmpThree{} relative error, and the frequency of the peak falls on the same grid point as the full model's in all three; this is much smaller than the largest error of the state over the near-resonance test set, \cfrPeakGlobal{}, which is taken over frequencies that are not at the peaks. Here the global state error is the more pessimistic of the two.
 
@@ -217,19 +256,20 @@ The input is a flat PSD ($S_{\mathrm{in}}=1$) from $0.1\omega_1$ to $20\omega_1$
 
 \begin{limitsbox}
 \begin{itemize}
-\item \textbf{One model, one load, one band.} A \cfrNFree{}-unknown cantilever with one tip load and light Rayleigh damping; rankings among the bases may differ for other structures, for non-proportional damping, and for several loads.
-\item \textbf{Greedy is not uniformly better.} It found the first two resonances and gave a lower median error at \cfrGreedyWinsMed{} of \cfrRankCount{} sizes, but a higher maximum error at four of the seven sizes; at $5$ columns the maximum is set by an unvisited resonance.
-\item \textbf{Indicators are rankings.} The residual norm ranks well here; the hierarchical indicator overestimates the current error by up to a factor of about \cfrHierOverMax{}. Neither is a bound.
-\item \textbf{The certified bound is nearly vacuous on this model.} It is rigorous when finite, but finite at a handful of frequencies, never near a resonance, and at least three orders of magnitude above the true error where it exists. The simple Lipschitz construction does not improve with more references because $\|\bm K\|_2$ is large; a model with a well-conditioned $\bm K$ (a coarser mesh, a scaled problem) was not tried.
-\item \textbf{No cost advantage for the bound at this size}; at large $n$ it was not measured.
-\item \textbf{Random vibration needs a resolved grid} (\Cref{sec:fr-verif}); the RMS check says little about resonances above the first, and the formula was not checked against an independent closed form.
-\item \textbf{Not tested:} the time-domain signal generator, the hierarchical indicator with a richer comparison model, an explicit non-proportional damping matrix, and models above \cfrNFree{} unknowns.
+\item \textbf{One model, one load, one band.} A \cfrNFree{}-unknown cantilever with one tip load and light Rayleigh damping. Rankings among the bases may differ for other structures, for non-proportional damping and for several loads.
+\item \textbf{Greedy is not uniformly better.} It found the first two resonances and gave a lower median error at \cfrGreedyWinsMed{} of \cfrRankCount{} sizes, but a higher maximum error at four of the seven; at $5$ columns the maximum is set by an unvisited resonance.
+\item \textbf{Indicators rank, they do not measure.} The residual norm ranks well here; the hierarchical indicator overestimates the current error by up to a factor of about \cfrHierOverMax{}.
+\item \textbf{The certified bound is nearly vacuous on this model.} It is rigorous when finite, but it is finite at a handful of frequencies, never near a resonance, and at least three orders of magnitude above the true error where it exists. The Lipschitz construction does not improve with more references because $\|\bm K\|_2$ is large; a better-conditioned $\bm K$ was not tried, and the cost advantage of the bound at large $n$ was not measured.
+\item \textbf{Random vibration needs a resolved grid} (\Cref{sec:fr-verif}). The RMS check says little about resonances above the first, and the formula was not checked against an independent closed form.
 \end{itemize}
+Not tested: the time-domain signal generator, the hierarchical indicator with a richer comparison model, an explicit non-proportional damping matrix, and models above \cfrNFree{} unknowns.
 \end{limitsbox}
 
 \section{Summary}\label{sec:fr-summary}
 
-In the frequency domain the same projection machinery works with $\omega$ as the parameter, \eqref{eq:fr-affine}, and the questions are where to solve and how far to trust. A snapshot basis is far more accurate than a modal one at equal column count; the greedy loop finds the resonances but is not uniformly better than a uniform grid, and its maximum error is set by whichever resonance it has not visited. The residual norm is a good ranking signal for where to add the next snapshot. The certified bound \eqref{eq:fr-bound} is the one rigorous statement, and on this model it is finite at few frequencies and loose where it exists, so a held-out test near the resonances remains the working check. For a random load, the reduced transfer function gives the RMS to $10^{-10}$ once the basis represents the first resonance, provided the frequency grid resolves the peaks.
+We started with five full-order solves and the question of where to place them. In the frequency domain the projection machinery of Chapter~\ref{ch:pod} applies with $\omega$ as the parameter, \eqref{eq:fr-affine}, and a snapshot basis is far more accurate than a modal one of the same size. The greedy loop finds the resonances unaided, but it is not uniformly better than an even grid: its median error is lower and its worst error is set by whichever resonance it has not yet visited. The residual norm is a good signal for where to add the next snapshot.
+
+How far to trust the result is less settled. The certified bound \eqref{eq:fr-bound} is the one rigorous statement, and on this model it is finite at few frequencies and loose where it exists, so a test near the resonances, on frequencies not used for training, remains the working check. For a random load the reduced transfer function gives the RMS to $10^{-10}$ once the basis represents the first resonance and the frequency grid resolves the peaks. The next chapter leaves the frequency domain and reduces a structure by cutting it into components.
 
 \section*{Exercises}\label{sec:fr-exercises}
 \begin{enumerate}

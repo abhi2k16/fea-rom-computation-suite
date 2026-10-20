@@ -110,7 +110,7 @@ ECSW tolerance $\tau$ & 0.5 & 0.003\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14_asm.pdf}
-\caption{2D assembly of \citet{nikiema2026assembly}, plain Newton. (a) Error of the last increment for the four reduced models at three tolerances; crosses mark runs that did not converge (DEIM and UDEIM at $\varepsilon=10^{-6}$). (b) Converged runs: error against the number of elements evaluated per iteration. POD error at $\varepsilon=10^{-5}$: \cvfAsmPodErr. Redrawn by \texttt{scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.}\label{fig:vf-asm}
+\caption{2D assembly of \citet{nikiema2026assembly}, plain Newton. (a) Error of the last increment for the four reduced models at three tolerances; crosses mark runs that did not converge (DEIM and UDEIM at $\varepsilon=10^{-6}$). (b) Converged runs: error against the number of elements evaluated per iteration. POD error at $\varepsilon=10^{-5}$: \cvfAsmPodErr.}\label{fig:vf-asm}
 \end{figure}
 
 \emph{Domain partitioning.} With the package's indicator at threshold 0.1 the reduced model reproduces the full model to $0.29\,\%$, but 147 to 243 of the 324 elements stay nonlinear, so the speed-up is at most $2.8$ (\Cref{fig:vf-as-dp}, \Cref{fig:vf-as-dptr}). A scan of the number of modes is in \Cref{fig:vf-as-scan}.

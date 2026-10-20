@@ -116,7 +116,7 @@ Case & 2.5 Hz & 5 Hz (publication) & 10 Hz & 20 Hz & Publication's FD-PINN MSE\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/ch14_fdpinn.pdf}
-\caption{Moving-load beam of \citet{liang2024fdpinn}. (a) Normalised error of the band-limited field against the band width, full-order sweep; the cost of the 5~Hz band is \cvfFdBandOne, \cvfFdBandTwo{} and \cvfFdBandThree{} for the three cases. (b) The same error from frequency-domain ROMs of size $r$; with ten modes they agree with the full-order value to within \cvfFdTen. Redrawn by \texttt{scripts/ch14\_assets.py} from the saved outputs of the study; the study itself was not re-run for this book.}\label{fig:vf-fdpinn}
+\caption{Moving-load beam of \citet{liang2024fdpinn}. (a) Normalised error of the band-limited field against the band width, full-order sweep; the cost of the 5~Hz band is \cvfFdBandOne, \cvfFdBandTwo{} and \cvfFdBandThree{} for the three cases. (b) The same error from frequency-domain ROMs of size $r$; with ten modes they agree with the full-order value to within \cvfFdTen.}\label{fig:vf-fdpinn}
 \end{figure}
 
 For the comparison with the publication this matters as follows. In Case 1 the band alone accounts for $3.8\times10^{-5}$ of the publication's $4.7\times10^{-5}$ (about $80\,\%$), so its Case 1 result is close to the best any 0--5~Hz method can do; in Cases 2 and 3 the band accounts for only about $8\,\%$ and $6\,\%$ of its error, and the rest is network error, which is where this reproduction falls short.

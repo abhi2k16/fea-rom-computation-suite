@@ -51,7 +51,7 @@ The test uses an initial velocity equal to the first mode shape, $\bm v_0=\bm\ph
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.55\linewidth]{figures/ch04_newmark.pdf}
-\caption{Newmark average acceleration: error against the exact solution of the discrete model (first mode of the 20-element cantilever, three periods) against the time step, with the observed order. Produced by \texttt{scripts/ch04\_assets.py}.}\label{fig:dy-newmark}
+\caption{Newmark average acceleration: error against the exact solution of the discrete model (first mode of the 20-element cantilever, three periods) against the time step, with the observed order.}\label{fig:dy-newmark}
 \end{figure}
 
 \section{Explicit integration and the critical step}\label{sec:dy-explicit}
@@ -174,7 +174,7 @@ loads & \anchor{fea_engine.loads.TimeHistoryLoad}, \anchor{fea_engine.loads.Load
 damping & \anchor{fea_engine.damping.RayleighDamping}, \anchor{fea_engine.damping.ModalDamping} & part \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (tag \booktag). The last column says whether the chapter's script \texttt{scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:dy-map}
+\caption{Where the concepts of this chapter live in the repository (tag \booktag). The last column says whether this chapter's own checks call, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:dy-map}
 \end{table}
 
 \begin{limitsbox}

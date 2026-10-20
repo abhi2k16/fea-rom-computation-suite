@@ -54,6 +54,8 @@
 % boxes
 \tcbset{boxsep=3pt,left=5pt,right=5pt,top=3pt,bottom=3pt,fonttitle=\bfseries\small,fontupper=\small,breakable}
 \newtcolorbox[auto counter,number within=chapter]{algbox}[2][]{colback=gray!4,colframe=gray!55,unbreakable,title={Algorithm \thetcbcounter: #2},#1}
+% short side remark (a definition or a detour) that should not interrupt the main line
+\newtcolorbox{sidenote}[1]{enhanced,breakable,colback=blue!3,colframe=blue!45!black,boxrule=0pt,leftrule=2.2pt,sharp corners,left=7pt,right=6pt,top=3pt,bottom=3pt,fonttitle=\sffamily\bfseries\small,coltitle=blue!45!black,title={#1},attach title to upper={\ \ },before upper={\small}}
 \newtcolorbox{limitsbox}[1][Limits, as measured]{colback=orange!5,colframe=orange!60!black,title={#1}}
 \newtcolorbox{codebox}[1]{colback=blue!3,colframe=blue!40!black,title={#1}}
 

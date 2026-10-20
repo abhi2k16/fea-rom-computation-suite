@@ -22,7 +22,7 @@ All the experiments of this chapter use one problem that is small enough to insp
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.92\linewidth]{figures/ch07_obstacle.pdf}
-\caption{The model problem on a $40\times40$ mesh ($\ctcObsN$ unknowns). Left: displacement with the contact set outlined; right: contact force $\bm\lambda$, which is zero outside the contact set. The solver finds $\ctcObsActive$ active constraints in $\ctcObsIt$ iterations. Produced by \texttt{scripts/ch07\_assets.py}.}\label{fig:ct-obstacle}
+\caption{The model problem on a $40\times40$ mesh ($\ctcObsN$ unknowns). Left: displacement with the contact set outlined; right: contact force $\bm\lambda$, which is zero outside the contact set. The solver finds $\ctcObsActive$ active constraints in $\ctcObsIt$ iterations.}\label{fig:ct-obstacle}
 \end{figure}
 
 For this solution the contact conditions \eqref{eq:ct-kkt} hold to rounding: the smallest gap is \ctcObsGapMin, the smallest contact force is \ctcObsLamMin, and the largest product $\lambda_i g_i$ is \ctcObsComp.
@@ -183,12 +183,12 @@ scalar membrane element & \anchor{fea_engine.elements.scalar.Quad4Laplace} & yes
 penalty contact elements (the contrast of \Cref{sec:ct-penalty}) & \anchor{fea_engine.elements.contact.GapContactPenalty} & no \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (tag \booktag). The last column says whether the chapter's script \texttt{scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:ct-map}
+\caption{Where the concepts of this chapter live in the repository (tag \booktag). The last column says whether this chapter's own checks call, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:ct-map}
 \end{table}
 
 \section{Verification of the static solvers}\label{sec:ct-verif-static}
 
-A contact solver can return a plausible picture and still be wrong, so the checks are of three kinds: the contact conditions themselves, agreement with independent solvers, and behaviour as the problem grows. All numbers in this section come from \texttt{scripts/ch07\_assets.py}, run on \machine{}; times are single runs and no test asserts them.
+A contact solver can return a plausible picture and still be wrong, so the checks are of three kinds: the contact conditions themselves, agreement with independent solvers, and behaviour as the problem grows. All numbers in this section were measured on \machine{}; times are single runs and no test asserts them.
 
 \paragraph{The contact conditions.}
 The first check needs no reference solution. For the solution of \Cref{fig:ct-obstacle} the three inequalities and the complementarity product are evaluated directly from the returned $\bm u$ and $\bm\lambda$ (\Cref{sec:ct-problem}); all hold to rounding. The solver applies the same test before it reports success, with a tolerance scaled by the largest displacement and the largest multiplier, so that a converged active set that violates the conditions is reported as a failure with \code{reason="kkt"}.
@@ -346,7 +346,7 @@ Frictionless contact is the problem \eqref{eq:ct-kkt}, a convex quadratic progra
 \item \emph{(Implementation)} Repeat the experiment of \Cref{fig:ct-penalty} on a mesh twice as fine. Does the penetration at a fixed $k_p/\overline{K_{ii}}$ change? Explain with the scaling of $\overline{K_{ii}}$ with the mesh.
 \item \emph{(Implementation)} Replace $\bm B=\bm I$ by $\bm B=\begin{bmatrix}\bm I&\bm 0\end{bmatrix}+\epsilon\bm S$ with a random sparse $\bm S$, so that \texttt{reduced} is no longer applicable. Which reason does \texttt{reduced} report, and does \texttt{saddle} still match the dense solution? (Test: \texttt{fea\_engine/tests/test\_contact\_solvers\_sparse.py}.)
 \item \emph{(Derivation)} Derive \eqref{eq:ct-bdf2} from the two BDF2 formulas given above, and check the first-step matrix $\bm M/h^2+\bm K$ the same way.
-\item \emph{(Interpretation)} \Cref{tab:ct-impact} lists four time steps. Add $\Delta t=0.0005$ and decide whether the largest BDF2 energy keeps approaching the limit near $0.7\%$. Then test the explanation of the text by recording the energy change across each contact step (script: \texttt{scripts/ch07\_assets.py}, function \texttt{bar\_impact}; test: \texttt{fea\_engine/tests/test\_contact\_dynamics\_bdf2.py}).
+\item \emph{(Interpretation)} \Cref{tab:ct-impact} lists four time steps. Add $\Delta t=0.0005$ and decide whether the largest BDF2 energy keeps approaching the limit near $0.7\%$. Then test the explanation of the text by recording the energy change across each contact step (the existing test is \texttt{fea\_engine/tests/test\_contact\_dynamics\_bdf2.py}).
 \end{enumerate}
 
 \chapterrefs

@@ -12,7 +12,7 @@ A \anchor{fea_engine.mesh.Mesh} holds an array of node coordinates of shape $(n_
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{figures/ch02_anatomy.pdf}
-\caption{A $4\times3$ rectangle mesh from \texttt{rectangle\_mesh}: (a) node numbers (blue) and element numbers (orange); (b) the node sets \code{root}, \code{tip} and \code{top}, selected by coordinates with \code{select_nodes}, with their sizes (\cmeAnRoot, \cmeAnTip{} and \cmeAnTop{} of \cmeAnNodes{} nodes); (c) the two arrays that are the whole mesh, read from the object. Drawn by \texttt{scripts/ch02\_figs.py} (matplotlib).}\label{fig:me-anatomy}
+\caption{A $4\times3$ rectangle mesh from \texttt{rectangle\_mesh}: (a) node numbers (blue) and element numbers (orange); (b) the node sets \code{root}, \code{tip} and \code{top}, selected by coordinates with \code{select_nodes}, with their sizes (\cmeAnRoot, \cmeAnTip{} and \cmeAnTop{} of \cmeAnNodes{} nodes); (c) the two arrays that are the whole mesh, read from the object.}\label{fig:me-anatomy}
 \end{figure}
 
 \Cref{fig:me-anatomy} shows what the object contains. The mesh has \cmeAnNodes{} nodes and \cmeAnElems{} elements. Node numbers run up each column in turn, and each connectivity row lists the four nodes of one element counter-clockwise from the lower left; the second array is the only place where elements are tied to nodes, so renumbering the nodes means rewriting both arrays together. A node set is a name and an array of node numbers: \code{select_nodes(x=0.0, name="root")} finds the nodes on the line $x=0$ by coordinates and stores them under that name, so an analysis can refer to the root or the tip without a node number in its text. The same call with a \code{(lo, hi)} pair selects a segment, and with several coordinates their intersection.
@@ -24,7 +24,7 @@ A mesh does not know its element formulation, but the connectivity rows only mea
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{figures/ch02_elements.pdf}
-\caption{The reference elements of the package, drawn at their natural coordinates with the node numbers of the connectivity row; blue: corner nodes, orange: mid-edge nodes. The coordinates of the mid-edge nodes are taken from the element classes (\code{Quad8PlaneStress}, \code{Hex20Solid3D}, \code{Tet10Solid3D}) and from the edge lists of the triangle, so a mistake in the node order of a class would show here. Drawn by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-elements}
+\caption{The reference elements of the package, drawn at their natural coordinates with the node numbers of the connectivity row; blue: corner nodes, orange: mid-edge nodes. The coordinates of the mid-edge nodes are taken from the element classes (\code{Quad8PlaneStress}, \code{Hex20Solid3D}, \code{Tet10Solid3D}) and from the edge lists of the triangle, so a mistake in the node order of a class would show here.}\label{fig:me-elements}
 \end{figure}
 
 \Cref{tab:me-elements} states what each element has and checks the ordering. The check is the defining property of a nodal shape function: $N_i(\bm\xi_j)=\delta_{ij}$, shape function $i$ is one at node $i$ and zero at every other node. If a class listed its nodes in another order than the coordinates of \Cref{fig:me-elements}, the matrix $N_i(\bm\xi_j)$ would not be the identity. For all eight element types it is the identity to rounding, and the shape functions sum to one at the centroid to \cmeElMaxPU. The test shows that the picture and the code agree; it does not test the element's stiffness, which Chapter~\ref{ch:elem} does.
@@ -58,7 +58,7 @@ The check costs $n_e\,n_g$ small determinants. Nothing else in the package perfo
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{figures/ch02_quality.pdf}
-\caption{Mesh quality of a $14\times8$ quadrilateral mesh whose interior nodes are moved at random by a fraction of the cell size. (a), (b) The smallest Gauss-point $\det\bm J$ of each element relative to its value for the undistorted cell, for 15\% and 45\% perturbation. (c) $\det\bm J$ at the four Gauss points of a convex element and of a re-entrant one (green: positive, red: negative). (d), (e) Histograms of the aspect ratio and the smallest interior angle for four perturbation levels. (f) The smallest $\det\bm J$ of the whole mesh against the perturbation. Drawn by \texttt{scripts/ch02\_figs.py} (matplotlib).}\label{fig:me-quality}
+\caption{Mesh quality of a $14\times8$ quadrilateral mesh whose interior nodes are moved at random by a fraction of the cell size. (a), (b) The smallest Gauss-point $\det\bm J$ of each element relative to its value for the undistorted cell, for 15\% and 45\% perturbation. (c) $\det\bm J$ at the four Gauss points of a convex element and of a re-entrant one (green: positive, red: negative). (d), (e) Histograms of the aspect ratio and the smallest interior angle for four perturbation levels. (f) The smallest $\det\bm J$ of the whole mesh against the perturbation.}\label{fig:me-quality}
 \end{figure}
 
 \paragraph{Distortion, and what it costs.} \Cref{tab:me-quality} follows one mesh through four perturbation levels. As the nodes move, the smallest determinant falls from 1 to \cmeQMinDetHi{} of its nominal value at 45\%, the ratio of the extremes grows, the worst aspect ratio goes from 1.1 to 3.8 and the smallest angle from $90^\circ$ to $18^\circ$; the first element with a non-positive determinant appears when the perturbation reaches about \cmeQFirstBad\% of the cell size for this seed. The last column is the patch test of Chapter~\ref{ch:elem}: a linear displacement field is imposed on the boundary and the interior nodes must reproduce it. The error is at rounding (at most \cmeQPatchMax) at every level, for every mesh whose determinants are positive. So distortion alone does not break the quadrilateral on the patch test: it is exact on any positive-Jacobian mesh for a linear field. What distortion reduces is accuracy for fields that are \emph{not} linear, which this check does not measure, and which is the reason to keep aspect ratio and angles under control as well as the sign of $\det\bm J$.
@@ -82,13 +82,13 @@ The check costs $n_e\,n_g$ small determinants. Nothing else in the package perfo
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{figures/ch02_gallery2d.pdf}
-\caption{The two-dimensional generators of Table~\ref{tab:me-gen} and the line mesh, each drawn from the \code{Mesh} the function returns (node and element counts below each panel). The graded hole mesh uses a target growth ratio of 1.2, and the full plate with a hole is the quarter plate mirrored across both axes by \code{mirror_mesh}. Drawn by \texttt{scripts/ch02\_figs.py} (matplotlib).}\label{fig:me-gallery}
+\caption{The two-dimensional generators of Table~\ref{tab:me-gen} and the line mesh, each drawn from the \code{Mesh} the function returns (node and element counts below each panel). The graded hole mesh uses a target growth ratio of 1.2, and the full plate with a hole is the quarter plate mirrored across both axes by \code{mirror_mesh}.}\label{fig:me-gallery}
 \end{figure}
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{figures/ch02_gallery3d.pdf}
-\caption{Three-dimensional meshes: a box, a box with a through hole, and the fillet mesh extruded in two layers by \code{extrude_mesh}. Rendered with PyVista (\code{to_pyvista}, off-screen) by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-gallery3d}
+\caption{Three-dimensional meshes: a box, a box with a through hole, and the fillet mesh extruded in two layers by \code{extrude_mesh}. Rendered with PyVista (\code{to_pyvista}, off-screen).}\label{fig:me-gallery3d}
 \end{figure}
 
 All \cmeGenNRows{} meshes of \Cref{tab:me-gen} have positive Jacobians. The straight-edged rectangle, notch and box reproduce their area or volume to rounding. The circular boundaries lose area to the polygon: \cmeHoleErr{} for the quarter plate with hole ($R=0.3$, 16 elements round the quarter), \cmeHoleOffErr{} for the off-centre hole in the larger plate and \cmeFilletErr{} for the fillet. The through-hole box, which uses fewer elements round the hole, loses \cmeBoxHoleErr. That this is the arc and not a defect of the generator is shown by refining it: for the quarter plate the error falls from \cmeArcErrCoarse{} to \cmeArcErrFine{} when the number of elements around the quarter circle goes from 8 to 64, with observed order \cmeArcOrder, the expected second order for a polygonal arc. The same test for the other two curved generators is \Cref{fig:me-arc}: the area error of the off-centre hole falls with order \cmeArcOrdHoleOff{} and that of the fillet with order \cmeArcOrdFillet, both from 8 to 64 elements around the arc. The quarter plate has a slightly higher fitted order (\cmeArcOrdQuarter{} over 8 to 64) with a less regular curve, because its radial grading changes the shape of the elements next to the hole as the number of angular divisions grows.
@@ -96,7 +96,7 @@ All \cmeGenNRows{} meshes of \Cref{tab:me-gen} have positive Jacobians. The stra
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.6\linewidth]{figures/ch02_arc.pdf}
-\caption{Relative error of the mesh area against the number of elements around the circular arc, for the three generators that have one, with the orders of the fit over 8 to 64 elements and a slope of $-2$ for reference. Drawn by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-arc}
+\caption{Relative error of the mesh area against the number of elements around the circular arc, for the three generators that have one, with the orders of the fit over 8 to 64 elements and a slope of $-2$ for reference.}\label{fig:me-arc}
 \end{figure}
 
 \section{Grading}\label{sec:me-grading}
@@ -136,7 +136,7 @@ The bisection needs about $\log_2((p_{hi}-p_{lo})/\mathrm{tol})$ evaluations of 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{figures/ch02_grade_meshes.pdf}
-\caption{A rectangle $3\times2$ with a hole of radius $0.3$ at $(1.2,1.0)$, 12 rings and 24 divisions round the half circle: uniform exponent against three target growth ratios (\code{hole_in_rectangle_mesh_graded}), coloured by element size $\sqrt{A}$. Titles give the smallest size and the ratio of the largest to the smallest size. Drawn by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-grade-meshes}
+\caption{A rectangle $3\times2$ with a hole of radius $0.3$ at $(1.2,1.0)$, 12 rings and 24 divisions round the half circle: uniform exponent against three target growth ratios (\code{hole_in_rectangle_mesh_graded}), coloured by element size $\sqrt{A}$. Titles give the smallest size and the ratio of the largest to the smallest size.}\label{fig:me-grade-meshes}
 \end{figure}
 
 \paragraph{Declaring features.} The feature classes and \code{plan()} turn a list of features into one exponent per feature. \Cref{tab:me-plan} gives the plan for a hole (12 rings), a fillet (8), a notch (6) and an edge bias, for a far-field size of 0.3 and a growth ratio of 1.2: every feature with a ring count gets the same exponent \cmeGradeForTarget{} (about $\log_2 2.2$) and a realised ratio just under 1.2, and the edge bias, whose size is fixed by its first element, is left uniform. With a growth ratio of 1.8 instead, \code{plan()} issues \cmePlanWarnHigh{} warning (the target is beyond the 1.5 at which \fea{} warns), and with 1.2 it issues \cmePlanWarnLow.
@@ -150,7 +150,7 @@ The bisection needs about $\log_2((p_{hi}-p_{lo})/\mathrm{tol})$ evaluations of 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{figures/ch02_plan.pdf}
-\caption{(a) Exponent returned by \code{grade_for_growth_ratio} against the target growth ratio for $n=6$, $12$ and $20$ (the curves coincide: the exponent does not depend on $n$); the dotted lines mark the target 1.2 used in this book and the warning threshold 1.5. (b) The partitions of a 12-element ring for uniform spacing and five targets. Drawn by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-plan}
+\caption{(a) Exponent returned by \code{grade_for_growth_ratio} against the target growth ratio for $n=6$, $12$ and $20$ (the curves coincide: the exponent does not depend on $n$); the dotted lines mark the target 1.2 used in this book and the warning threshold 1.5. (b) The partitions of a 12-element ring for uniform spacing and five targets.}\label{fig:me-plan}
 \end{figure}
 
 \paragraph{What grading buys.} The purpose of grading is accuracy at the place where the field changes quickly. \Cref{fig:me-payoff} uses a quarter plate $2\times1$ with a hole of radius $0.3$ under a uniform tension imposed by a prescribed end displacement, plane stress and symmetry on the two axes. The quantity is the stress concentration factor $K_t$, the nodal stress $\sigma_{xx}$ at the top of the hole divided by the nominal stress (the end reaction over the plate height), for meshes with $n_r$ rings and $2n_r$ angular divisions and three radial laws. The reference value, $K_t=\cmePayRef$, is the run with $n_r=40$ and $p=2$ (\cmePayRefEl{} elements) and is not independent: it is a refinement of the same family, and the $n_r=32$ value differs from it by $0.1\,\%$, which sets the resolution of the comparison. With 512 elements the error of $K_t$ is \cmePayUErr\,\% for the uniform spacing, \cmePayRErr\,\% for the ratio-limited exponent of target 1.2 and \cmePayPErr\,\% for $p=2$. At 2048 elements they are \cmePayUErrFine, \cmePayRErrFine{} and \cmePayPErrFine\,\%. So, for the same number of elements, the stronger grading is more accurate here, and the ratio-limited exponent sits between the two: the cap on the growth ratio costs some accuracy near the hole and buys a smoother transition ($p=2$ has the largest neighbour ratio of the three, 1.88 against 1.25 for the uniform mesh and 1.34 for the ratio-limited one, on the meshes of the figure with $n_r=8$). One geometry, one load and one nodal-stress measure were used; the numbers should not be read as general.
@@ -158,7 +158,7 @@ The bisection needs about $\log_2((p_{hi}-p_{lo})/\mathrm{tol})$ evaluations of 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{figures/ch02_payoff.pdf}
-\caption{Quarter plate with a hole under tension. The three left panels show the meshes for $n_r=8$ with the radial law and the largest ratio of neighbouring element sizes; the right panel shows the error of the stress concentration factor $K_t$ against the number of elements, relative to the finest run. Drawn by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-payoff}
+\caption{Quarter plate with a hole under tension. The three left panels show the meshes for $n_r=8$ with the radial law and the largest ratio of neighbouring element sizes; the right panel shows the error of the stress concentration factor $K_t$ against the number of elements, relative to the finest run.}\label{fig:me-payoff}
 \end{figure}
 
 \paragraph{Features and the dispatcher.} The module \code{grading} also provides a small declarative vocabulary, \code{Hole}, \code{Fillet}, \code{EdgeBias} and \code{Notch}, and \code{plan()} combines a list of features into a grading plan, warning if a growth ratio is beyond what is usually acceptable. The module is pure sizing-function mathematics and knows nothing about elements; that knowledge is kept in one other place, the dispatcher \anchor{fea_engine.build_mesh.build_mesh}, which knows which elements carry rotational bending degrees of freedom and gives them only a mesh whose local frames are consistent (\Cref{sec:me-dispatch}).
@@ -172,7 +172,7 @@ A \code{MultiBlockMesh} holds blocks of different topologies over one node array
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{figures/ch02_multiblock.pdf}
-\caption{Multi-block meshes of a $2\times1$ rectangle: quadrilaterals (blue) left and triangles (orange) right, interior nodes moved at random. (a) Vertical interface; the red nodes belong to both blocks. (b) Slanted interface. (c) The same mesh with the interface nodes duplicated in the triangle block, so that the blocks are no longer connected (green squares are the copies, drawn slightly displaced). The patch error of a linear field is printed above each panel. Drawn from \code{MultiBlockMesh} objects by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-multiblock}
+\caption{Multi-block meshes of a $2\times1$ rectangle: quadrilaterals (blue) left and triangles (orange) right, interior nodes moved at random. (a) Vertical interface; the red nodes belong to both blocks. (b) Slanted interface. (c) The same mesh with the interface nodes duplicated in the triangle block, so that the blocks are no longer connected (green squares are the copies, drawn slightly displaced). The patch error of a linear field is printed above each panel. Drawn from \code{MultiBlockMesh} objects.}\label{fig:me-multiblock}
 \end{figure}
 
 \paragraph{A slanted interface, and a missing one.} \Cref{fig:me-multiblock}b moves the interface nodes sideways in proportion to $y$, so that the line is inclined and the adjacent elements are distorted; the error stays at rounding, \cmeMBSlantErr{}, as for the vertical interface (\cmeMBVertErr{}). The interface is a set of node numbers and not a line, so its direction does not matter. \Cref{fig:me-multiblock}c shows what happens when the nodes are not shared: the blocks are then two separate bodies that touch at the interface without exchanging force, each with a traction-free edge there, and the same patch test gives an error of \cmeMBDupErr{} of the largest displacement. The mesh looks identical to a viewer; only the connectivity differs, which is why the interface is checked by a numerical test and not by eye.
@@ -191,7 +191,7 @@ Three functions combine meshes that already exist: \anchor{fea_engine.mesh.mirro
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{figures/ch02_parts.pdf}
-\caption{Building meshes from parts. From the left: the quarter plate (blue) mirrored across both axes (the nodes on the mirror lines, red, are shared); two meshes welded along a matching edge (red: the merged nodes); two meshes welded along an edge with 5 against 3 divisions (blue circles and orange squares are the unmerged nodes of the two sides, the latter drawn slightly displaced); a hole mesh extruded in two layers (PyVista). Node and element counts are read from the meshes. Drawn by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-parts}
+\caption{Building meshes from parts. From the left: the quarter plate (blue) mirrored across both axes (the nodes on the mirror lines, red, are shared); two meshes welded along a matching edge (red: the merged nodes); two meshes welded along an edge with 5 against 3 divisions (blue circles and orange squares are the unmerged nodes of the two sides, the latter drawn slightly displaced); a hole mesh extruded in two layers (PyVista). Node and element counts are read from the meshes.}\label{fig:me-parts}
 \end{figure}
 
 \section{Boundary and node sets}\label{sec:me-sets}
@@ -201,7 +201,7 @@ Boundary conditions and loads are applied to sets of nodes. For a boundary that 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{figures/ch02_sets.pdf}
-\caption{\code{compute_boundary_mask}. (a) The hole mesh with the hole at $(1.2,1.0)$: boundary nodes on the four straight edges (blue) and on the hole (green); there are no others. (b) The same generator with the hole at $(1.2,0.9)$: the red nodes are boundary nodes that are on neither, along the horizontal line through the hole centre. (c) The mask in three dimensions for a box with a hole, boundary nodes in red (PyVista). Drawn by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-sets}
+\caption{\code{compute_boundary_mask}. (a) The hole mesh with the hole at $(1.2,1.0)$: boundary nodes on the four straight edges (blue) and on the hole (green); there are no others. (b) The same generator with the hole at $(1.2,0.9)$: the red nodes are boundary nodes that are on neither, along the horizontal line through the hole centre. (c) The mask in three dimensions for a box with a hole, boundary nodes in red (PyVista).}\label{fig:me-sets}
 \end{figure}
 
 \begin{figure}[ht]
@@ -265,7 +265,7 @@ write_vtu("beam.vtu", fields={"displacement": s.field(U, "displacement")},
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch02_import.pdf}
-\caption{Result for the imported cantilever: nodes of the face $y=0$, displaced by the field magnified \cmiScale{} times (grey: undeformed), coloured by the nodal von Mises stress. Produced by \texttt{scripts/ch02\_import\_assets.py}.}\label{fig:me-import}
+\caption{Result for the imported cantilever: nodes of the face $y=0$, displaced by the field magnified \cmiScale{} times (grey: undeformed), coloured by the nodal von Mises stress.}\label{fig:me-import}
 \end{figure}
 
 \paragraph{Before trusting an imported mesh.} Four checks cost little. First, \code{check_quality} with the element that will be used: an element whose nodes are listed in another order than the formulation expects has a negative Jacobian, as case~5 shows. Second, count the elements that were read against the count in the other program, because a skipped cell type changes the model without a message (case~4). Third, the package has no units: lengths, moduli and loads must be in one consistent system, and the file's units are not read. Fourth, quadratic elements from a format other than Gmsh's or VTU were not checked here (see above), so check them first with a patch test. The package works from meshes: a part designed in a computer-aided design (CAD) system is meshed in a meshing program, and the mesh is imported.
@@ -297,7 +297,7 @@ use here & numbering, gallery, quality, grading, node sets & 3-D gallery, extrus
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{figures/ch02_viz.pdf}
-\caption{The visualisation sub-package on a cantilever of 80 hexahedra: (a) \code{to_pyvista}; (b) \code{plot_field}, von Mises stress; (c) \code{plot_deformed}; (d) \code{slice_field} at mid-span; (e) \code{clip_field}; (f) \code{threshold_field}. Rendered off-screen with PyVista by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-viz}
+\caption{The visualisation sub-package on a cantilever of 80 hexahedra: (a) \code{to_pyvista}; (b) \code{plot_field}, von Mises stress; (c) \code{plot_deformed}; (d) \code{slice_field} at mid-span; (e) \code{clip_field}; (f) \code{threshold_field}. Rendered off-screen with PyVista.}\label{fig:me-viz}
 \end{figure}
 
 \paragraph{Headless use.} Every plotting function takes \code{screenshot="out.png"}, which renders off-screen and saves the image, and \code{set_off_screen(True)} makes the whole session off-screen. VTK still needs an OpenGL context. On a machine without a display, a plotting call fails with a message about the X server connection, and the figures of this book are produced by running the script under a virtual display (\texttt{xvfb-run -a}).
@@ -315,7 +315,7 @@ The generators of this chapter know nothing about elements, and the elements kno
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{figures/ch02_dispatch.pdf}
-\caption{What \code{build_mesh} returns for a $3\times2$ rectangle at a target size of 0.15: a uniform mesh for a plain rectangle (\cmeDispPlainEl{} elements, the same for either element family), a structured graded mesh of \cmeDispHoleEl{} elements for a hole and a Mindlin plate, and a \code{MeshGradingError} for a hole and a plane-stress element (raised: \cmeDispErrRaised). Drawn by calling \code{build_mesh} in \texttt{scripts/ch02\_figs.py}.}\label{fig:me-dispatch}
+\caption{What \code{build_mesh} returns for a $3\times2$ rectangle at a target size of 0.15: a uniform mesh for a plain rectangle (\cmeDispPlainEl{} elements, the same for either element family), a structured graded mesh of \cmeDispHoleEl{} elements for a hole and a Mindlin plate, and a \code{MeshGradingError} for a hole and a plane-stress element (raised: \cmeDispErrRaised). Obtained by calling \code{build_mesh}.}\label{fig:me-dispatch}
 \end{figure}
 
 The set of elements that receive the structured path is an explicit tuple and is not inferred from the number of degrees of freedom, because beams also have rotational degrees of freedom but no local frame that can be misaligned. Adding an element of that kind means adding it to the tuple. The dispatcher thus holds the knowledge of which element needs which mesh in a single place, and \code{grading} stays free of any reference to elements.
@@ -338,7 +338,7 @@ dispatcher with safety gate & \anchor{fea_engine.build_mesh.build_mesh}, \code{R
 exchange & \anchor{fea_engine.mesh_io.read_mesh}, \anchor{fea_engine.mesh_io.write_mesh} & yes \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (tag \booktag). The last column says whether the chapter's scripts (\texttt{scripts/ch02\_assets.py} and \texttt{scripts/ch02\_figs.py}) call, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:me-map}
+\caption{Where the concepts of this chapter live in the repository (tag \booktag). The last column says whether this chapter's own checks call, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:me-map}
 \end{table}
 
 \begin{limitsbox}
