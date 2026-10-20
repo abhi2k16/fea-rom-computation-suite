@@ -1,8 +1,8 @@
 \chapter{Material and geometric nonlinearity}\label{ch:nonlin}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-Linear analysis assumes small displacements and a linear material. This chapter removes both assumptions in the total-Lagrangian setting of \fea{}. It states the Newton iteration that every nonlinear driver shares, derives the internal force and the tangent of a truss and of a continuum element, adds hyperelasticity and $J_2$ plasticity with history variables, and compares the four ways to follow a response: load control, displacement control, arc length and Koiter--Newton. Each statement about the code is followed by the check that supports it: rotation invariance, agreement of the tangents with finite differences, the von Mises snap-through truss against its closed form, and a plastic load cycle against the hand solution.\par\smallskip
-\textbf{After this chapter the reader can:} (i) state the Newton iteration shared by all nonlinear drivers; (ii) verify an element's force and tangent by rotation invariance and finite differences; (iii) choose among load control, displacement control, arc length and Koiter--Newton for a response with a limit point; (iv) check a plastic load cycle against a hand solution.
+Linear analysis assumes small displacements and a linear material; this chapter drops both assumptions, in the total-Lagrangian setting of \fea{}. It states the Newton iteration that every nonlinear driver shares, derives the internal force and tangent of a truss and of a continuum element, adds hyperelasticity and $J_2$ plasticity with history variables, and compares four ways of following a response: load control, displacement control, arc length and Koiter--Newton. Each statement about the code comes with a check: rotation invariance, the tangents against finite differences, the von Mises snap-through truss against its closed form, and a plastic load cycle against the hand solution.\par\smallskip
+After it you should be able to state the Newton iteration the drivers share, verify an element's force and tangent by rotation invariance and finite differences, choose among the four path-following methods for a response with a limit point, and check a plastic load cycle against a hand solution.
 \end{tcolorbox}
 
 \section{Why a nonlinear solver is different}\label{sec:nl-why}
@@ -26,13 +26,9 @@ Two things change. First, the solution has to be found by iteration: Newton's me
 \State commit the history variables once
 \Ensure converged state at $\lambda_{n+1}$
 \end{pseudo}
-\begin{algdet}
-\item[Cost] one assembly and one factorisation per iteration; quadratic convergence only if $\bm K_T$ is the exact derivative of $\bm f_{int}$.
-\item[Fails when] the load is beyond a limit point (use displacement control or arc length); the tangent is inconsistent (slow convergence); the step is too large.
-\item[Code] \anchor{fea_engine.nonlinear_solver.solve_nonlinear_static}, \anchor{fea_engine.newton_options.NewtonOptions}.
-\item[Verified in] \Cref{tab:nl-tangent} (tangent against finite differences), \Cref{fig:nl-vm}.
-\end{algdet}
 \end{algbox}
+
+Each iteration costs one assembly and one factorisation, and convergence is quadratic only if $\bm K_T$ is the exact derivative of $\bm f_{int}$. The iteration fails beyond a limit point (use displacement control or arc length), converges slowly with an inconsistent tangent, and diverges if the step is too large. The code is \anchor{fea_engine.nonlinear_solver.solve_nonlinear_static} with \anchor{fea_engine.newton_options.NewtonOptions}; \Cref{tab:nl-tangent} (tangent against finite differences) and \Cref{fig:nl-vm} are the checks.
 
 \tikzfigure[0.7\linewidth]{ch05_newton}{One Newton iteration on a scalar equilibrium curve (schematic): the tangent at $\bm u^0$ is followed to the load level, and the new iterate is the foot of that line.}{fig:nl-newtonidea}
 
@@ -85,13 +81,9 @@ For the uniaxial bar of \anchor{fea_engine.elements.trusses.TrussPlastic2D} with
 \State \textbf{only} \texttt{commit\_state} after the Newton step has converged stores $(\varepsilon_p,\alpha)$
 \Ensure stress $\sigma$, consistent tangent $E_T$
 \end{pseudo}
-\begin{algdet}
-\item[Cost] a handful of scalar operations per element and iteration; the continuum element does the radial return in deviatoric space.
-\item[Fails when] the state is changed during iterations (a rejected step would leave a wrong history); the tangent is not the consistent one (loss of quadratic convergence).
-\item[Code] \anchor{fea_engine.elements.trusses.TrussPlastic2D}, \anchor{fea_engine.material.PlasticMaterial1D}.
-\item[Verified in] \Cref{fig:nl-plast} (closed-form return map), hand-solved load cycle.
-\end{algdet}
 \end{algbox}
+
+The return map is a handful of scalar operations per element and iteration; the continuum element does the radial return in deviatoric space. It goes wrong if the state is changed during the iterations, because a rejected step would leave a wrong history, or if the tangent is not the consistent one, which loses quadratic convergence. The code is \anchor{fea_engine.elements.trusses.TrussPlastic2D} and \anchor{fea_engine.material.PlasticMaterial1D}; \Cref{fig:nl-plast} compares with the closed-form return map, and the load cycle is solved by hand.
 
 \Cref{fig:nl-plast} drives a bar with $E=200$ GPa, $\sigma_y=250$ MPa and $H=5$ GPa through a load cycle: tension to $1.8\sigma_y$, unloading, and compression into reverse yield. Four properties follow from the return map, and all are visible in the figure and checked against the hand solution. The stress at the peak is \cnlPlPeak$\,\sigma_y$. The first unloading is elastic with slope $\cnlPlUnloadSlope\,E$. The reversed branch leaves the elastic line at a compressive stress of \cnlPlReverseYield$\,\sigma_y$, equal to the hardened yield stress $\cnlPlHardenedYield\,\sigma_y$ reached on the way up: this is isotropic hardening, which has no Bauschinger effect. And the reversed branch continues with the slope $E_T=\cnlPlTangentSlope$ GPa. The whole stress history agrees with the closed form to \cnlPlErr (relative to the peak stress).
 
@@ -180,13 +172,9 @@ lam, U = nls.solve_nonlinear_arc_length(
 \State commit the history variables once
 \Ensure next point $(\bm u_{n+1},\lambda_{n+1})$ on the path
 \end{pseudo}
-\begin{algdet}
-\item[Cost] two linear solves per iteration with the same tangent; a fixed radius, no step adaptation.
-\item[Fails when] $\Delta_L$ is too large (the predictor can jump to another branch or the corrector fail); the wrong root is picked at a sharp turn.
-\item[Code] \anchor{fea_engine.nonlinear_solver.solve_nonlinear_arc_length}.
-\item[Verified in] \Cref{fig:nl-vm} (the von Mises truss against its closed form). Koiter--Newton, in the same module, is not verified in this book.
-\end{algdet}
 \end{algbox}
+
+Arc length takes two linear solves per iteration with the same tangent, at a fixed radius with no step adaptation. A radius $\Delta_L$ that is too large lets the predictor jump to another branch or the corrector fail, and the wrong root can be picked at a sharp turn. The code is \anchor{fea_engine.nonlinear_solver.solve_nonlinear_arc_length}; \Cref{fig:nl-vm} checks the von Mises truss against its closed form. Koiter--Newton, in the same module, is not verified in this book.
 
 \paragraph{Choosing a driver.}
 \Cref{tab:nl-drivers} lists the drivers. Load control is the cheapest and the right default for a response that rises monotonically with the load. Displacement control suits a problem where the displacement of one point is the natural control (an indentation, a snap with one dominant dof). Arc length \citep{riks1979,crisfield1981} needs only a reference load and handles turning points in load and in displacement. Koiter--Newton \citep{liang2014koiternewton} replaces the linear predictor of arc length by a cubic one built from an asymptotic expansion; it is not exercised in this chapter.
@@ -237,11 +225,10 @@ shared Newton settings & \anchor{fea_engine.newton_options.NewtonOptions} & yes 
 \begin{limitsbox}
 \begin{itemize}
 \item \textbf{Hyperelastic tangent.} \code{Tet4NeoHookean} uses a finite-difference tangent by default; it is not the exact derivative, and it costs extra internal-force evaluations.
-\item \textbf{Elastic law of the \code{...TL} elements.} St.~Venant--Kirchhoff is accurate for large rotations with small strains; for large strains the stress--strain behaviour is that of a model that softens in compression, and a hyperelastic law should be used.
-\item \textbf{Small-strain plasticity.} \code{TrussPlastic2D} uses linear (small-displacement) kinematics; it does not combine with the total-Lagrangian truss. Hardening is isotropic and linear; kinematic hardening, rate dependence and finite-strain plasticity are not covered.
-\item \textbf{Tangent test.} \Cref{tab:nl-tangent} is one random state per element: it checks consistency, not correctness of the physics, and not locking or mesh convergence.
-\item \textbf{Path following.} Arc length needs a step length chosen by the user; a step that is too large can jump to another branch. Koiter--Newton is not verified in this chapter.
-\item \textbf{Numbers} come from \machine{}; those that are not timings are deterministic and should reproduce to the digits shown at the pinned release.
+\item \textbf{Elastic law of the \code{...TL} elements.} St.~Venant--Kirchhoff is accurate for large rotations with small strains; for large strains it softens in compression, and a hyperelastic law should be used.
+\item \textbf{Small-strain plasticity.} \code{TrussPlastic2D} uses linear (small-displacement) kinematics and does not combine with the total-Lagrangian truss. Hardening is isotropic and linear; kinematic hardening, rate dependence and finite-strain plasticity are not covered.
+\item \textbf{Tangent test.} \Cref{tab:nl-tangent} is one random state per element: it checks consistency, not the physics, locking or mesh convergence.
+\item \textbf{Path following.} Arc length needs a step length chosen by the user, and a step that is too large can jump to another branch.
 \end{itemize}
 \end{limitsbox}
 

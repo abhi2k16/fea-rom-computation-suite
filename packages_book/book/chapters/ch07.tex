@@ -1,8 +1,8 @@
 \chapter{Exact unilateral contact: sparse active sets and BDF2}\label{ch:contact}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-Contact is the first place where the solver cannot be a single linear solve: the set of points in contact is unknown and has to be found. This chapter enforces frictionless contact \emph{exactly}, with Lagrange multipliers, and does so for models with tens of thousands of unknowns. It shows why a penalty parameter is the wrong tool, derives the primal-dual active-set method as a semismooth Newton iteration, explains the three sparse computation routes of \anchor{fea_engine.contact_solvers.solve_contact_static_sparse} and how the solver reports a route that does not suit the problem, and then adds a second-order time scheme (BDF2) for impact problems. Every claim is followed by the measurement that supports it, and the limits are stated next to the results.\par\smallskip
-\textbf{After this chapter the reader can:} (i) explain why a penalty parameter is the wrong tool for contact; (ii) state the primal-dual active-set method as a semismooth Newton iteration and choose among the three sparse routes; (iii) run an impact with BDF2 and read its energy behaviour.
+Contact is the first place where the solver cannot be a single linear solve, because the set of points in contact is unknown and has to be found. This chapter enforces frictionless contact exactly, with Lagrange multipliers, for models with tens of thousands of unknowns. It shows why a penalty parameter is the wrong tool, derives the primal-dual active-set method as a semismooth Newton iteration, explains the three sparse routes of \anchor{fea_engine.contact_solvers.solve_contact_static_sparse} and how the solver reports a route that does not suit the problem, and then adds a second-order time scheme (BDF2) for impact. Each claim is followed by the measurement that supports it, with the limits stated beside the results.\par\smallskip
+After it you should be able to explain why a penalty parameter is the wrong tool for contact, state the primal-dual active-set method and choose among the sparse routes, and run an impact with BDF2 and read its energy behaviour.
 \end{tcolorbox}
 
 \section{The problem}\label{sec:ct-problem}
@@ -78,13 +78,9 @@ Let $\mathcal A_k$ be the set of constraints assumed active at iteration $k$. Th
 \Until{$\mathcal A_{k+1}=\mathcal A_k$ and the contact conditions hold to the tolerance}
 \Ensure $\bm u$, $\bm\lambda\ge\bm0$, active set
 \end{pseudo}
-\begin{algdet}
-\item[Cost] one sparse factorisation per iteration (free block for \texttt{reduced}, saddle-point matrix for \texttt{saddle}); a warm start from a nearby problem saves iterations.
-\item[Fails when] $\bm K$ is not an M-matrix (no finite-termination guarantee: the solver reports cycling or stalling); the dense \texttt{condensed} route needs about $8(nm+m^2)$ bytes.
-\item[Code] \anchor{fea_engine.contact_solvers.solve_contact_static_sparse}.
-\item[Verified in] \Cref{fig:ct-trace}, \Cref{tab:ct-agree} (agreement with the dense solvers).
-\end{algdet}
 \end{algbox}
+
+Each iteration is one sparse factorisation, of the free block for the \texttt{reduced} route and of the saddle-point matrix for \texttt{saddle}, and a warm start from a nearby problem saves iterations. If $\bm K$ is not an M-matrix there is no finite-termination guarantee, and the solver reports cycling or stalling; the dense \texttt{condensed} route needs about $8(nm+m^2)$ bytes. The code is \anchor{fea_engine.contact_solvers.solve_contact_static_sparse}; \Cref{fig:ct-trace} and \Cref{tab:ct-agree} (agreement with the dense solvers) are the checks.
 
 \tikzfigure[0.98\linewidth]{ch07_complementarity}{Left: the complementarity condition (red) against a penalty law (blue, dashed), which lets the gap become negative. Right: the active-set iteration in four steps.}{fig:ct-idea}
 
@@ -251,13 +247,9 @@ together with the contact conditions at $\bm u_{n+1}$. The first step is a BDF1 
 \State $\bm v_{n+1}\gets(3\bm u_{n+1}-4\bm u_n+\bm u_{n-1})/(2h)$ \Comment{BDF1: $(\bm u_1-\bm u_0)/h$}
 \Ensure $(\bm u_{n+1},\bm v_{n+1},\bm\lambda_{n+1})$ or the failing step with its reason
 \end{pseudo}
-\begin{algdet}
-\item[Cost] one back-substituted contact solve per step; both effective matrices factored once.
-\item[Fails when] a contact solve fails inside a run (\code{info} holds \code{failed_step}, \code{reason}, \code{suggestion}); the energy rises across contact steps (BDF2 is not energy-conserving).
-\item[Code] \anchor{fea_engine.contact_solvers.solve_contact_dynamics}, \anchor{fea_engine.contact_solvers.ContactDynamicsInfo}.
-\item[Verified in] \Cref{tab:ct-order} (second order), \Cref{tab:ct-impact} (impact energy).
-\end{algdet}
 \end{algbox}
+
+A BDF2 step is one back-substituted contact solve, with both effective matrices factored once. If a contact solve fails inside a run, \code{info} holds \code{failed_step}, \code{reason} and \code{suggestion}, and the energy can rise across contact steps because BDF2 does not conserve it. The code is \anchor{fea_engine.contact_solvers.solve_contact_dynamics} and \anchor{fea_engine.contact_solvers.ContactDynamicsInfo}; \Cref{tab:ct-order} (second order) and \Cref{tab:ct-impact} (impact energy) are the checks.
 
 \begin{lstlisting}[caption={Contact time stepping: default scheme and BDF2.},label={lst:ct-dyn}]
 from fea_engine import solve_contact_dynamics
@@ -318,11 +310,10 @@ BDF2 is therefore more accurate on smooth motion and keeps more energy through a
 \begin{limitsbox}
 \begin{itemize}
 \item \textbf{No convergence guarantee in general.} Finite termination of the active-set iteration is proved for M-matrices; for the stiffness matrix of an elastic solid the method may cycle or stall, and the solver reports it (\texttt{cycled}, \texttt{max\_iter}) instead of returning the last iterate.
-\item \textbf{Singular systems.} A \texttt{saddle} system with dependent active rows of $\bm B$, or a $\bm K_{FF}$ that is singular (a body with a rigid-body mode that is not constrained), is reported as \texttt{singular}.
+\item \textbf{Singular systems.} A \texttt{saddle} system with dependent active rows of $\bm B$, or a $\bm K_{FF}$ that is singular (a body with an unconstrained rigid-body mode), is reported as \texttt{singular}.
 \item \textbf{Dense route memory.} The \texttt{condensed} route needs about $8(nm+m^2)$ bytes; it is skipped under \code{fallback=True} when that exceeds \code{max_dense_bytes}, and it was not run at $\ctcAuthN$ unknowns.
-\item \textbf{BDF2 is not contact-stabilised.} Energy rise and force spikes during impact (\Cref{tab:ct-impact}); the rise grows as the step shrinks, up to about $0.7\%$ in the steps tested; no energy result for BDF2 with contact is known to the author.
-\item \textbf{Not covered.} Friction in these solvers, Newmark contact dynamics, impact between two flexible bodies, and meshes with $10^5$ or more constraints.
-\item \textbf{Timings} are single runs; the figures were produced on \machine{} and the large case on the author's machine.
+\item \textbf{BDF2 is not contact-stabilised.} Energy rises and forces spike during impact (\Cref{tab:ct-impact}); the rise grows as the step shrinks, up to about $0.7\%$ in the steps tested, and no energy result for BDF2 with contact is known to the author.
+\item \textbf{Not covered.} Friction in these solvers, Newmark contact dynamics, impact between two flexible bodies, and meshes with $10^5$ or more constraints. Timings are single runs; the large case was run on the author's machine.
 \end{itemize}
 \end{limitsbox}
 

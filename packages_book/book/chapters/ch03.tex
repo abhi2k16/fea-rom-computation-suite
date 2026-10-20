@@ -1,8 +1,8 @@
 \chapter{Linear continua and structural elements}\label{ch:elem}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-Everything in the later chapters is built from element matrices, so this chapter starts at the root: how a weak form becomes a sparse stiffness matrix and a mass matrix, and which families of elements \fea{} provides for scalar fields, plane and solid continua, beams, plates and shells. It does not re-derive shape functions. It concentrates on the places where an element can be wrong while looking plausible: locking, integration rules, and the choice of mass matrix. Each is followed by a test with an independent reference: patch tests on distorted meshes, pure bending, a slender cantilever with a nearly incompressible material, beam frequencies against closed forms, and a plate against the shell that must reproduce it.\par\smallskip
-\textbf{After this chapter the reader can:} (i) say how a weak form becomes a stiffness and a mass matrix; (ii) recognise locking and a wrong integration rule from a test with an independent reference; (iii) choose between a consistent and a lumped mass matrix and state the frequency error of each.
+Everything in the later chapters is built from element matrices, so this chapter starts at the root: how a weak form becomes a sparse stiffness matrix and a mass matrix, and which element families \fea{} offers for scalar fields, plane and solid continua, beams, plates and shells. It does not re-derive shape functions. It looks instead at the places where an element can be wrong while looking plausible: locking, integration rules and the choice of mass matrix. Each is followed by a test against an independent reference: patch tests on distorted meshes, pure bending, a slender cantilever of a nearly incompressible material, beam frequencies against closed forms, and a plate against the shell that must reproduce it.\par\smallskip
+After it you should be able to say how a weak form becomes a stiffness and a mass matrix, recognise locking or a wrong integration rule from a test with an independent reference, and choose between a consistent and a lumped mass matrix, knowing the frequency error of each.
 \end{tcolorbox}
 
 \section{From the weak form to an element matrix}\label{sec:el-weak}
@@ -35,13 +35,9 @@ The integrals are computed by Gauss quadrature on the reference element, with $d
 \EndIf
 \Ensure $\bm K_e$, $\bm M_e$
 \end{pseudo}
-\begin{algdet}
-\item[Cost] $n_g$ evaluations of $O(d^2n_{str})$ each; the rule sets the rank of $\bm K_e$.
-\item[Fails when] the rule is too low (hourglass modes, rank deficiency) or too high for the physics (locking, \Cref{sec:el-locking}); the Jacobian is not positive.
-\item[Code] \anchor{fea_engine.elements.base.Element} (\code{stiffness}, \code{mass}), \code{assemble_lumped_mass}.
-\item[Verified in] \Cref{sec:el-verif} (patch tests, beams), \Cref{fig:el-mass} (mass choices).
-\end{algdet}
 \end{algbox}
+
+The rule evaluates $n_g$ integrands of $O(d^2n_{str})$ each, and it sets the rank of $\bm K_e$. It goes wrong when it is too low (hourglass modes, rank deficiency) or too high for the physics (locking, \Cref{sec:el-locking}), and when the Jacobian is not positive. The code is \anchor{fea_engine.elements.base.Element} (\code{stiffness}, \code{mass}) and \code{assemble_lumped_mass}; the checks are \Cref{sec:el-verif} (patch tests, beams) and \Cref{fig:el-mass} (mass choices).
 
 \paragraph{The mass matrix: consistent or lumped.}
 The same interpolation gives the consistent mass matrix $\bm M_e=\int\rho\bm N^{T}\bm N\,d\Omega$, which is sparse with the pattern of $\bm K$. A lumped mass matrix is diagonal: \fea{} provides element-by-element HRZ lumping (\code{assemble_lumped_mass}), which keeps the total mass of the element. The diagonal form is what the explicit time integration of Chapter~\ref{ch:dyn} needs, since it makes the solve for the accelerations trivial. The choice has a measurable effect on the eigenvalues. For the lowest eigenvalue of the unit-square membrane, $\lambda_1=2\pi^2$ for a clamped edge, \Cref{fig:el-mass} shows that the consistent mass overestimates it and the lumped mass underestimates it, both with the error falling like $h^{\cecMassConsOrder}$ and $h^{\cecMassLumpOrder}$. On the finest mesh the consistent mass is high by \cecMassConsFine{} and the lumped mass is low by \cecMassLumpFine{}. The signs are the usual ones for these two choices, and an average of the two is a classical way to reduce the error; this chapter does not test that.
@@ -140,9 +136,8 @@ convergence studies & \anchor{fea_engine.convergence.run_study}, \anchor{fea_eng
 \item \textbf{Locking is not removed by the patch test.} All elements of \Cref{tab:el-patch} pass it, and the plain 8-node hexahedron still gives \cecLockHexPlainA{} of the beam value. For slender or nearly incompressible problems, choose the element by the tests of \Cref{sec:el-locking}, not by the patch test.
 \item \textbf{B-bar addresses volumetric locking only.} It does not cure shear locking (\Cref{tab:el-locking}), and the 20-node element still showed some volumetric locking at $\nu=0.4999$ on the mesh used.
 \item \textbf{Stress recovery} is not available for every element (for example \code{Hex8SolidBbar}); use \code{at='centroid'} where the error message says so.
-\item \textbf{Approximate plate reference.} The reference of \Cref{tab:el-plate} is a strip of plate rigidity; only differences between the columns are claimed.
+\item \textbf{The plate reference is approximate.} \Cref{tab:el-plate} compares with a strip of plate rigidity, so only differences between its columns are claimed.
 \item \textbf{Not covered:} orthotropic and layered materials, thermal and piezoelectric coupling, shells in large rotation (Chapter~\ref{ch:nonlin} treats the corotational and the director shell only in outline), and meshes of high aspect ratio or strong distortion beyond the patch-test meshes.
-\item \textbf{Sandbox numbers:} generated on \machine{}; they are deterministic and should reproduce to the digits shown.
 \end{itemize}
 \end{limitsbox}
 

@@ -1,8 +1,8 @@
 \chapter{Computational acceleration: vectorised assembly and batched kernels}\label{ch:batch}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-A nonlinear element has no stored matrix: its force and tangent are recomputed from the current displacement in every Newton iteration, so assembly is paid for again and again. The default implementation does this one element at a time in Python, and for small elements most of the time goes into the interpreter. This chapter explains the opt-in batched path of \fea{}, which computes all elements of a block with array operations, keeps the tangent sparse and lets the Newton drivers use a sparse factorisation. It shows what the batched path computes, how its caches and memory limit work, how the code reports a block that cannot be batched, and then measures the gain and the agreement with the loop on four element families. The loop stays the default and the reference: every batched result is compared with it.\par\smallskip
-\textbf{After this chapter the reader can:} (i) decide when the batched assembly path pays off; (ii) check a batched result against the loop that is its reference; (iii) read the support report for a block that cannot be batched; (iv) set the chunk size to bound memory; (v) say what the optional PyTorch backend replaces, what it leaves alone, and at which sizes it pays off.
+A nonlinear element has no stored matrix: its force and tangent are recomputed from the current displacement in every Newton iteration, so assembly is paid for again and again. The default implementation works one element at a time in Python, and for small elements most of the time goes into the interpreter. This chapter describes the opt-in batched path of \fea{}, which computes all elements of a block with array operations, keeps the tangent sparse and lets the Newton drivers use a sparse factorisation. It shows what the batched path computes, how its caches and memory limit work and how the code reports a block that cannot be batched, and then measures the gain and the agreement with the loop on four element families. The loop stays the default and the reference, and every batched result is compared with it.\par\smallskip
+After it you should be able to decide when the batched path pays off, check a batched result against the loop, read the support report for a block that cannot be batched, set the chunk size to bound memory, and say what the optional PyTorch backend replaces, what it leaves alone, and at which sizes it pays off.
 \end{tcolorbox}
 
 \section{Where the time goes}\label{sec:bk-time}
@@ -48,13 +48,9 @@ All elements of one block (one element type with one material) share the referen
 \EndFor
 \Ensure sparse tangent $\bm K_T$ (never an $n\times n$ dense array)
 \end{pseudo}
-\begin{algdet}
-\item[Cost] $O(E\,n_g\,n_{dof}^2)$ arithmetic with no per-element interpreter overhead; working memory $\propto E_c\,n_g\,n_{str}\,n_{dof}$ per chunk.
-\item[Fails when] the element is path-dependent or has no batched kernel (reported by \code{batch_support_report}, and the block stays on the loop); the mesh or Gauss order changes (the cache is rebuilt, compared exactly).
-\item[Code] \code{assemble_tangent_stiffness(..., vectorized=True, sparse=True)}, \code{batch_support_report}.
-\item[Verified in] \Cref{sec:bk-verif}: agreement with the loop and the measured gain on four element families.
-\end{algdet}
 \end{algbox}
+
+The batched assembly costs $O(E\,n_g\,n_{dof}^2)$ arithmetic with no per-element interpreter overhead, and its working memory is proportional to $E_c\,n_g\,n_{str}\,n_{dof}$ per chunk. It does not apply to path-dependent elements or elements without a batched kernel: \code{batch_support_report} says so and the block stays on the loop. If the mesh or the Gauss order changes, the cache is rebuilt and compared exactly. The code is \code{assemble_tangent_stiffness(..., vectorized=True, sparse=True)} and \code{batch_support_report}; \Cref{sec:bk-verif} gives the agreement with the loop and the measured gain on four element families.
 
 \section{Using it}\label{sec:bk-use}
 
@@ -130,13 +126,9 @@ A fast kernel is useless unless it is the same kernel. Every comparison below re
 \EndFor
 \Ensure $\bm x$ copied back to NumPy, with the iteration count and a flag that says whether the tolerance was met
 \end{pseudo}
-\begin{algdet}
-\item[Cost] One sparse matrix--vector product, two inner products and three vector updates per iteration, all on the device; no factorisation. With a diagonal preconditioner the iteration count grows as the mesh is refined.
-\item[Fails when] $\bm K$ is not symmetric positive definite (the iteration can stall or give a wrong answer without an error, except for a non-positive diagonal); the tolerance is not met within the limit (the system-level function then raises an error, the low-level function returns the flag).
-\item[Code] \anchor{fea_engine.torch_sparse_solver.torch_sparse_cg_solve}, \anchor{fea_engine.torch_sparse_solver.torch_dense_solve}.
-\item[Verified in] \Cref{tab:bk-torch-solve}, \Cref{fig:bk-torch-data}.
-\end{algdet}
 \end{algbox}
+
+Each iteration is one sparse matrix--vector product, two inner products and three vector updates, all on the device, with no factorisation; with a diagonal preconditioner the iteration count grows as the mesh is refined. If $\bm K$ is not symmetric positive definite the iteration can stall or return a wrong answer without an error (a non-positive diagonal is the exception), and if the tolerance is not met within the limit the system-level function raises an error while the low-level function returns the flag. The code is \anchor{fea_engine.torch_sparse_solver.torch_sparse_cg_solve} and \anchor{fea_engine.torch_sparse_solver.torch_dense_solve}; \Cref{tab:bk-torch-solve} and \Cref{fig:bk-torch-data} are the checks.
 
 \paragraph{Automatic choice.} A system built with \code{backend="auto"} decides at solve time. It goes to the torch conjugate-gradient route only if the free block is symmetric positive definite and has more than \bktAutoThr{} free degrees of freedom, and otherwise uses SciPy; a matrix that is not positive definite is never sent to conjugate gradients, whatever its size. The threshold is a rule of thumb and not the result of a benchmark, and the data below suggest why it is a conservative one. The test for positive definiteness is a dense Cholesky factorisation of the free block, so for a large system the check itself needs $8n^2$ bytes. For the plates of this section, with \bktAutoSmallN{} and \bktAutoBigN{} free degrees of freedom, the rule chooses SciPy, and with the threshold lowered to 1\,000 the smaller plate goes to torch; an indefinite diagonal matrix goes to SciPy even with a threshold of 1. These three decisions were run for this book and need no PyTorch.
 
@@ -194,14 +186,12 @@ sparse Newton settings & \anchor{fea_engine.newton_options.NewtonOptions} & no \
 
 \begin{limitsbox}
 \begin{itemize}
-\item \textbf{The gain depends on the element.} A batched call removes interpreter overhead; for elements with a lot of arithmetic per element (the hexahedra) the work is compute-bound and the gain is smaller (\Cref{tab:bk-families}). The package's plan reports that for the 8-node hexahedron a batch-of-one call of the same kernel was only about 1.1 times slower for the tangent than the batched call, so most of the 3-D gain comes from the folded kernel, the sparse tangent and the cheaper solve, and not from removing the loop. This chapter did not repeat that measurement.
-\item \textbf{The sparse solve can dominate.} Once assembly is fast, the factorisation is the cost: the plan of the package reports that at around 11\,000 dofs the sparse solve, not the assembly, dominates. This chapter did not measure that size.
-\item \textbf{Not batched:} blocks with path-dependent state, contact elements added one by one, and springs. They stay on the loop, and the report says so per block.
-\item \textbf{Single runs on one machine.} Every time is one run (the minimum of three for the batched route) on \machine{}; the ratios give the direction and the order of magnitude, not a precise figure, and they will differ on another machine.
-\item \textbf{Memory estimates} are estimates of the dominant arrays, not peak resident memory (\Cref{tab:bk-chunk}).
-\item \textbf{Optional modes} \code{reuse_factorization=True} (modified Newton) needs fewer assemblies and more iterations and can diverge, and \code{lu_ordering} is problem dependent; both stay off unless requested.
-\item \textbf{Not tested here:} meshes of $10^5$ elements, batched friction, and updating contact pairs during a solve.
-\item \textbf{The PyTorch timings are not mine.} The CPU and CUDA figures of \Cref{sec:bk-torch} come from the records of one machine with a consumer GPU, written by two runs at two commits; they were not reproduced for this book. The Newton drivers do not use the torch backend, the dense method needs $8n^2$ bytes, and the test for positive definiteness behind \code{backend="auto"} is a dense Cholesky factorisation.
+\item \textbf{The gain depends on the element.} A batched call removes interpreter overhead; for elements with a lot of arithmetic each (the hexahedra) the work is compute-bound and the gain is smaller (\Cref{tab:bk-families}). The package's plan reports that for the 8-node hexahedron a batch-of-one call of the same kernel was only about 1.1 times slower for the tangent than the batched call, so most of the 3-D gain comes from the folded kernel, the sparse tangent and the cheaper solve and not from removing the loop. This chapter did not repeat that measurement.
+\item \textbf{The sparse solve can dominate.} Once assembly is fast, the factorisation is the cost: the plan of the package reports that at around 11\,000 dofs the sparse solve, not the assembly, dominates. We did not measure that size.
+\item \textbf{Not batched, not tested.} Blocks with path-dependent state, contact elements added one by one and springs stay on the loop, and the report says so per block. Meshes of $10^5$ elements, batched friction and updating contact pairs during a solve were not tried.
+\item \textbf{Single runs, estimated memory.} Every time is one run (the minimum of three for the batched route) on \machine{}, so the ratios give a direction and an order of magnitude and will differ on another machine. Memory figures estimate the dominant arrays and are not peak resident memory (\Cref{tab:bk-chunk}).
+\item \textbf{Optional modes.} \code{reuse_factorization=True} (modified Newton) needs fewer assemblies and more iterations and can diverge, and \code{lu_ordering} is problem dependent; both stay off unless requested.
+\item \textbf{The PyTorch timings are not ours.} The CPU and CUDA figures of \Cref{sec:bk-torch} come from the records of one machine with a consumer GPU, written by two runs at two commits, and were not reproduced for this book. The Newton drivers do not use the torch backend, the dense method needs $8n^2$ bytes, and the positive-definiteness test behind \code{backend=\"auto\"} is a dense Cholesky factorisation.
 \end{itemize}
 \end{limitsbox}
 

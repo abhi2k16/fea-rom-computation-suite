@@ -44,3 +44,4 @@ Note: this changes style, not provenance. The book's own text on authorship (one
 
 ## Status
 - Pilot done: front matter, Ch. 1, Ch. 2 frame (opening box, algorithm blocks, Limits, Summary). Book 311 pages, clean build. Backups of the originals in /tmp only (git diff is the record).
+- Ch. 3-7 done (same changes as the pilot: opening box, 11 algorithm blocks folded into prose, Limits merged, light edits). Book 310 pages, clean build.

@@ -1,8 +1,8 @@
 \chapter{Dynamics: modal, transient, harmonic and random response}\label{ch:dyn}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-The reduced-order models of Part~III reduce the dynamic problem, and the contact chapter extends it, so this chapter states the problem and the five ways \fea{} solves it: the eigenproblem for natural frequencies, implicit Newmark integration, explicit central differences, modal superposition, and frequency-domain response (harmonic and random). For each method it gives the equation, the algorithm, what the code does, and a test whose reference is exact for the discrete model or independent of the solver. The tests show the second-order accuracy of Newmark and its period error, the sharp stability limit of the explicit method, the effect of keeping few modes, and the agreement of the direct frequency-response solve with a modal sum.\par\smallskip
-\textbf{After this chapter the reader can:} (i) choose among the five dynamic solvers for a given problem; (ii) compute and verify the critical time step of the explicit method; (iii) judge a modal truncation or a frequency-response result against an independent reference.
+The reduced-order models of Part III reduce the dynamic problem and the contact chapter extends it, so this chapter states the problem and the five ways \fea{} solves it: the eigenproblem for natural frequencies, implicit Newmark integration, explicit central differences, modal superposition, and frequency-domain response (harmonic and random). For each method we give the equation, the algorithm, what the code does, and a test whose reference is exact for the discrete model or independent of the solver. The tests show the second-order accuracy of Newmark and its period error, the sharp stability limit of the explicit method, the effect of keeping few modes, and the agreement of the direct frequency-response solve with a modal sum.\par\smallskip
+After it you should be able to choose among the five dynamic solvers for a given problem, compute and verify the critical time step of the explicit method, and judge a modal truncation or a frequency-response result against an independent reference.
 \end{tcolorbox}
 
 \section{The semi-discrete problem}\label{sec:dy-problem}
@@ -39,13 +39,9 @@ The Newmark family \citep{newmark1959} advances $(\bm u,\dot{\bm u},\ddot{\bm u}
 \EndFor
 \Ensure displacement history $\bm u_n$
 \end{pseudo}
-\begin{algdet}
-\item[Cost] one factorisation, then one back-substitution per step.
-\item[Fails when] the step is too coarse for the highest mode that matters (period elongation, no instability); the matrix is non-constant (nonlinear problems need Newton in every step).
-\item[Code] \anchor{fea_engine.solver.FESystem} (\code{solve_transient_implicit}).
-\item[Verified in] \Cref{fig:dy-newmark} (observed order 2, error against the exact discrete solution).
-\end{algdet}
 \end{algbox}
+
+Newmark needs one factorisation and then one back-substitution per step. A step that is too coarse for the highest mode that matters gives period elongation but no instability, and the method does not apply as it stands when the matrix changes during the run, since nonlinear problems need Newton in every step. The code is \code{solve_transient_implicit} of \anchor{fea_engine.solver.FESystem}; \Cref{fig:dy-newmark} checks the observed order 2 against the exact discrete solution.
 
 For a linear system $\bm K_{eff}$ does not change, so the code factors it once (dense LU, or SuperLU if the system is sparse) and each step costs one back-substitution. Loads are given as \anchor{fea_engine.loads.TimeHistoryLoad}: a fixed spatial pattern (\anchor{fea_engine.loads.LoadPattern}) times a function of time.
 
@@ -78,13 +74,9 @@ where $\omega_{max}$ is the largest frequency of the discrete system \emph{with 
 \EndFor
 \Ensure displacement history; no linear system is solved
 \end{pseudo}
-\begin{algdet}
-\item[Cost] one product with $\bm K$ per step; $\Delta t_c$ needs one eigenvalue solve (or the element-wise estimate, \code{critical_timestep_local}).
-\item[Fails when] $\Delta t>\Delta t_c$: the response grows without bound (a threshold, not a gradual loss); the code does \emph{not} check the step; a consistent mass matrix removes the cheap update.
-\item[Code] \anchor{fea_engine.solver.FESystem} (\code{solve_transient_explicit}, \code{critical_timestep}).
-\item[Verified in] \Cref{tab:dy-stab}, \Cref{fig:dy-explicit}.
-\end{algdet}
 \end{algbox}
+
+Each step costs one product with $\bm K$; the critical step $\Delta t_c$ needs one eigenvalue solve, or the element-wise estimate \code{critical_timestep_local}. The failure is sharp: above $\Delta t_c$ the response grows without bound, and the code does not check the step. A consistent mass matrix also removes the cheap update. The code is \code{solve_transient_explicit} and \code{critical_timestep} of \anchor{fea_engine.solver.FESystem}; \Cref{tab:dy-stab} and \Cref{fig:dy-explicit} are the checks.
 
 \paragraph{The limit is sharp.}
 \Cref{tab:dy-stab} integrates a plane-stress bar (20 elements, lumped mass, $E=1$ GPa, $\rho=1000$ kg/m$^3$, a short tip pulse) at fractions of the critical step computed from $\omega_{max}$ of $(\bm K,\bm M_{lumped})$, $\Delta t_c=$\,\cdyDtcLumped s. Up to $0.99\,\Delta t_c$ the response stays bounded (the late amplitude is within a few per cent of the early one). At $1.01\,\Delta t_c$ it grows by a factor \cdyGrowJustOver{} over the run and at $1.1\,\Delta t_c$ by \cdyGrowUnstable{}: a threshold, not a gradual degradation. \Cref{fig:dy-explicit} shows the two histories.
@@ -133,13 +125,9 @@ For a harmonic load $\bm f=\bm F_0e^{i\Omega t}$ the steady response solves the 
 \EndFor
 \Ensure complex amplitudes $\bm U_j$ (receptance at any dof by reading the entry)
 \end{pseudo}
-\begin{algdet}
-\item[Cost] $m$ complex factorisations of size $n$; a modal sum is far cheaper for many frequencies when few modes matter.
-\item[Fails when] $\Omega$ is at a resonance of an undamped model (the matrix is singular); damping is not proportional and a modal sum is attempted.
-\item[Code] \code{solve_harmonic}, \code{solve_frequency_sweep}.
-\item[Verified in] \Cref{fig:dy-harm} (against an independent modal sum).
-\end{algdet}
 \end{algbox}
+
+A sweep needs $m$ complex factorisations of size $n$, so for many frequencies a modal sum is far cheaper when few modes matter. The solve breaks down at a resonance of an undamped model, where the matrix is singular, and a modal sum is wrong when the damping is not proportional. The code is \code{solve_harmonic} and \code{solve_frequency_sweep}; \Cref{fig:dy-harm} compares with an independent modal sum.
 
 \paragraph{Check against an independent modal sum.}
 For proportional damping the receptance is $H(\Omega)=\sum_i\phi_i(x)\phi_i(x_f)/(\omega_i^2-\Omega^2+2i\zeta_i\omega_i\Omega)$, built here from the eigenpairs of all $\cdyModalAll$ modes with the Rayleigh ratios $\zeta_i$. \Cref{fig:dy-harm} compares it with the direct solve over $0.5$--$160$ Hz. The largest difference is \cdyHarmDiff{} relative to the largest value, which is a check of the direct solve and of the damping bookkeeping (the two share only the matrices). The peak is at \cdyHarmPeakHz{} Hz with an amplification of \cdyHarmAmp{} over the static value, close to the $\cdyShareOne/(2\zeta)=\cdyHarmPred$ expected from the first mode alone.
@@ -191,13 +179,13 @@ damping & \anchor{fea_engine.damping.RayleighDamping}, \anchor{fea_engine.dampin
 
 \begin{limitsbox}
 \begin{itemize}
-\item \textbf{Linear dynamics only here.} The methods of this chapter assume a constant $\bm K$; constrained systems (\code{add_constraint}) are refused by the dynamic solvers other than the modal solve, as the code states.
-\item \textbf{Explicit stability is not checked by the code.} The step is the user's responsibility (\Cref{tab:dy-stab}); the safe bound from \code{critical_timestep()} uses the consistent mass and is conservative for the lumped scheme.
-\item \textbf{Newmark} is shown here only with $\beta=\tfrac14,\gamma=\tfrac12$ (the default); other parameter choices, numerical damping and the stability of non-default parameters were not tested.
-\item \textbf{Modal superposition} has no static correction and no check on the adequacy of the number of modes; the user must test convergence in $m$, as in \Cref{fig:dy-modal}.
+\item \textbf{Linear dynamics only.} The methods here assume a constant $\bm K$; constrained systems (\code{add_constraint}) are refused by every dynamic solver except the modal solve, as the code states.
+\item \textbf{Explicit stability is not checked by the code.} The step is the user's responsibility (\Cref{tab:dy-stab}); the bound from \code{critical_timestep()} uses the consistent mass and is conservative for the lumped scheme.
+\item \textbf{Newmark} is shown only with $\beta=\tfrac14,\gamma=\tfrac12$ (the default); other parameters, numerical damping and their stability were not tested.
+\item \textbf{Modal superposition} has no static correction and no check that the number of modes is adequate; the user has to test convergence in $m$, as in \Cref{fig:dy-modal}.
 \item \textbf{Rayleigh damping} is exact only at the two calibration frequencies (\cdyRayleighMid{}\% at mode 2 in the test).
-\item \textbf{Random vibration:} stationary, single output; the check of this chapter is of the numerical composition, not of the statistics.
-\item \textbf{Test models} are a beam and a straight bar; a 3-D model and a model with high-aspect-ratio elements were not run here. The numbers come from \machine{}.
+\item \textbf{Random vibration} is stationary with a single output, and the check is of the numerical composition, not of the statistics.
+\item \textbf{Test models} are a beam and a straight bar; a 3-D model and high-aspect-ratio elements were not run.
 \end{itemize}
 \end{limitsbox}
 
