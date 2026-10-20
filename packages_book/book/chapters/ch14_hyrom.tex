@@ -44,7 +44,7 @@ Case~1 is a cantilever plate of aluminium, $1\times0.2\times0.01$~m, with a hole
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.8\linewidth]{figures/ch14r/hy_c1_mesh.png}
-\caption{Case 1: plate with a hole. Mesh with 204 nodes and 168 elements (1224 degrees of freedom), clamped edge (red squares), load point (star) and the hole. Plot of the reproduction report.}\label{fig:vf-hy-mesh1}
+\caption{Case 1: plate with a hole. Mesh with 204 nodes and 168 elements (1224 degrees of freedom), clamped edge (red squares), load point (star) and the hole.}\label{fig:vf-hy-mesh1}
 \end{figure}
 
 \begin{figure}[tbp]
@@ -77,7 +77,7 @@ Time step & $\Delta t=0.005$ s, 200 steps & as in the publication\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.6\linewidth]{figures/ch14r/hy_c1_modal.png}
-\caption{Case 1: natural frequencies against the publication's Table~1. Plot of the reproduction report.}\label{fig:vf-hy-modal}
+\caption{Case 1: natural frequencies against the publication's Table~1.}\label{fig:vf-hy-modal}
 \end{figure}
 
 \emph{The element's geometric nonlinearity.} A first version of the case-1 model gave a nearly linear transient. The cause was the element, not the integrator: tested on a clamped strip with a tip load against the exact elastica, the shell element with a ``moderate'' curvature measure gave a tip-deflection ratio of $1.0005$ where the elastica gives $0.8725$, i.e.\ no stiffening at all. With the Green--Lagrange curvature measure of \texttt{Shell4Director} the ratio is $0.8729$ (\Cref{fig:vf-hy-elastica}). The narrow strips follow the elastica in stiffening and tip foreshortening; the plate-width strip deviates in stiffening and tip rotation, and the narrow strip at 40 elements diverges at the first load step, a separate robustness issue that remains open. The change moves the panel results by at most $0.15\,\%$ in displacement.
@@ -85,7 +85,7 @@ Time step & $\Delta t=0.005$ s, 200 steps & as in the publication\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.8\linewidth]{figures/ch14r/hy_elastica.png}
-\caption{Element check on a clamped strip against the exact elastica, for strips of increasing width and mesh density. Plot of the reproduction report.}\label{fig:vf-hy-elastica}
+\caption{Element check on a clamped strip against the exact elastica, for strips of increasing width and mesh density.}\label{fig:vf-hy-elastica}
 \end{figure}
 
 \subsection*{Results: case 1, plate with hole}
@@ -95,7 +95,7 @@ Time step & $\Delta t=0.005$ s, 200 steps & as in the publication\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.8\linewidth]{figures/ch14r/hy_c1_fom.png}
-\caption{Case 1: full-order transient, nonlinear (Green--Lagrange curvature) against linear. Plot of the reproduction report.}\label{fig:vf-hy-c1fom}
+\caption{Case 1: full-order transient, nonlinear (Green--Lagrange curvature) against linear.}\label{fig:vf-hy-c1fom}
 \end{figure}
 
 \emph{Static training and ROM transient.} The cubic fit of the 15 signed samples has a maximum training error of $0.71\,\%$; the static hardening in $q_1$ is $0.998$ (nonlinear over linear) at $q_1=0.05$ and $0.951$ at $q_1=0.25$. An earlier one-sided training range ($q_1\in[0.004,0.020]$) needed a tenfold extrapolation and gave $20\,\%$ error, which, and not the integrator, was the cause (\texttt{fixed\_point} and \texttt{newton} agree). \Cref{tab:vf-hy-c1} gives the transient errors.
@@ -119,7 +119,7 @@ The nonlinear ROM beats the linear one only slightly: the linear ROM lags the fu
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.8\linewidth]{figures/ch14r/hy_c1_rom.png}
-\caption{Case 1: ROM transients against the full-order model. The one-sided earlier fit (trained on the faulty element) agrees only by accident and is not a better model. Plot of the reproduction report.}\label{fig:vf-hy-c1rom}
+\caption{Case 1: ROM transients against the full-order model. The one-sided earlier fit (trained on the faulty element) agrees only by accident and is not a better model.}\label{fig:vf-hy-c1rom}
 \end{figure}
 
 \emph{Backbone.} \Cref{tab:vf-hy-c1back} and \Cref{fig:vf-hy-backbone} show why: the ROM's static solve reproduces the full-order release state to about five digits, yet in free vibration the ROM's frequency shift is $4.7$ to $4.9$ times that of the full-order model. The full-order model retains only about $20\,\%$ of its static hardening in free vibration, because when a cantilever bends its tip moves inward and the inertia of that in-plane motion softens the response; a model trained on static solves contains no in-plane inertia and keeps all of the hardening. This also explains the ranking of \Cref{tab:vf-hy-c1}: the 2.5~Hz forcing is well below the 8.35~Hz mode, so much of the response is quasi-static, where the ROM is right and the linear ROM wrong, while the free-vibration part is where the ROM runs ahead. The report records this as an open defect; the option it recommends is to restore in-plane inertia through the membrane expansion of \rom{}, a change that needs sign-off, and the backbone test is the acceptance check of any fix.
@@ -143,7 +143,7 @@ Release $q_1$ & FOM shift & ROM shift & ROM / FOM\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.8\linewidth]{figures/ch14r/hy_c1_backbone.png}
-\caption{Case 1: backbone check. The ROM over-hardens and its phase runs ahead of the full-order model, while the linear ROM tracks it. Plot of the reproduction report.}\label{fig:vf-hy-backbone}
+\caption{Case 1: backbone check. The ROM over-hardens and its phase runs ahead of the full-order model, while the linear ROM tracks it.}\label{fig:vf-hy-backbone}
 \end{figure}
 
 \subsection*{Results: case 2, cylindrical panel}
@@ -153,7 +153,7 @@ Release $q_1$ & FOM shift & ROM shift & ROM / FOM\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.7\linewidth]{figures/ch14r/hy_c2_static.png}
-\caption{Case 2: static crown response, arc-length full-order solution (line) and Koiter--Newton points (stars). Plot of the reproduction report.}\label{fig:vf-hy-c2static}
+\caption{Case 2: static crown response, arc-length full-order solution (line) and Koiter--Newton points (stars).}\label{fig:vf-hy-c2static}
 \end{figure}
 
 \emph{Training fit.} Signed per-mode ranges, as fractions of the thickness, are $[-2.2,+2.5]$ for mode~1 and $\pm0.12$, $0.10$, $0.03$, $0.01$, $0.01$ for modes 6, 5, 9, 17, 16. All solves used Koiter--Newton with no fallbacks. \Cref{tab:vf-hy-fit} gives the fit error by mode set.
@@ -195,7 +195,7 @@ Mode set & ROM (\texttt{newton} = \texttt{fixed\_point}) & Projection baseline\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.75\linewidth]{figures/ch14r/hy_c2_rom.png}
-\caption{Case 2: ROM transients for the five mode sets against the full-order crown displacement. Plot of the reproduction report.}\label{fig:vf-hy-c2rom}
+\caption{Case 2: ROM transients for the five mode sets against the full-order crown displacement.}\label{fig:vf-hy-c2rom}
 \end{figure}
 
 \emph{Backbone.} Released from ten static states (push-in and pull-out), the orbits cross both sides. \Cref{tab:vf-hy-c2back} gives selected rows: the backbone first softens to $0.962$ and then hardens to $+12\,\%$; the six-mode ROM tracks it to within $0.09\,\%$ at all ten amplitudes and the two-mode ROM to within $0.5\,\%$, even on the two largest orbits, which slightly exceed the training range. The contrast with case~1 is the structure: here the nonlinearity is membrane stretching against fixed edges with no free in-plane motion, so static training captures the dynamics; in case~1 the free edge lets in-plane inertia matter and it does not.
@@ -247,6 +247,6 @@ Case 2 free vibration & within $0.09\,\%$ (6 modes) & reproduced\\
 \end{tabularx}
 \end{table}
 
-\subsection*{What was not reproduced, and why}
+\subsection*{Departures from the publication's set-up}
 
 The case-1 mesh has 1224 degrees of freedom against the publication's 2394. The training design is optimal Latin hypercube sampling and not the publication's combinatorial grid (its Eqs.~10--14). Case~1's final retraining uses incremental Newton because Koiter--Newton stalls at those amplitudes; case~2 uses Koiter--Newton at discrete target loads and not $m=1$ continuation. The case-2 load is spread over a $3\times3$ patch, and its modes are chosen by load projection, not by hand. The publication's \texttt{sign\_deviation} integrator diverges and is excluded. The remaining limits are the case-1 over-hardening (defect D6), the $12.8\,\%$ against $20$--$40\,\%$ full-order gap, an error floor near $3\,\%$ for three or more modes of case~2, and the lack of an independent reference for the publication's absolute numbers: its figures were compared by reading, not digitising. The main pipeline script of case~1 last ran with the old element and one-sided training, so its outputs are stale and superseded by the standalone scripts; folding the signed training into it and re-running (two hours or more) has not been done. Mode-shape signs depend on the BLAS thread count, so modal quantities are built once in the parent process.

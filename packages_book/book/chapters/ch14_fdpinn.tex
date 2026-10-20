@@ -96,7 +96,7 @@ The reference fields are exact: the analytical modal solution, a finite element 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/ch14r/fd_ref.png}
-\caption{Reference solutions: analytical, finite element Newmark and the 0--5~Hz frequency-domain solution, and the band-limiting error field. Plot of the reproduction report.}\label{fig:vf-fd-ref}
+\caption{Reference solutions: analytical, finite element Newmark and the 0--5~Hz frequency-domain solution, and the band-limiting error field.}\label{fig:vf-fd-ref}
 \end{figure}
 
 \begin{table}[tbp]
@@ -145,13 +145,13 @@ FD-PINN & $2.38\times10^{-3}$ & $7.0\times10^{-5}$ & 34\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/fd_pinn.png}
-\caption{Time-domain PINN, Case 3: fields, error, mid-span history, profile and training nMSE. Plot of the reproduction report.}\label{fig:vf-fd-pinn}
+\caption{Time-domain PINN, Case 3: fields, error, mid-span history, profile and training nMSE.}\label{fig:vf-fd-pinn}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/fd_fdpinn.png}
-\caption{FD-PINN, Case 3: fields, mid-span history, mid-span spectrum and training nMSE. Plot of the reproduction report.}\label{fig:vf-fd-fdpinn}
+\caption{FD-PINN, Case 3: fields, mid-span history, mid-span spectrum and training nMSE.}\label{fig:vf-fd-fdpinn}
 \end{figure}
 
 \emph{Attempts to close the gap.} \Cref{tab:vf-fd-try} lists three changes, none of which helped; the 20\,000-point run converged much faster early (nMSE $8.3\times10^{-3}$ at iteration 4500 against $5.0\times10^{-2}$) but plateaued, and a patience of four stopped it. The baseline had the same plateau before dropping at iteration 12\,000, so the comparison is inconclusive (\Cref{fig:vf-fd-cmp}).
@@ -173,7 +173,7 @@ Mode-1 amplitude envelope on the output & faster start, then stalled at $0.087$ 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/fd_cmp.png}
-\caption{FD-PINN with 5000 and 20\,000 collocation points: mid-span history, spectrum, profile and training nMSE. Plot of the reproduction report.}\label{fig:vf-fd-cmp}
+\caption{FD-PINN with 5000 and 20\,000 collocation points: mid-span history, spectrum, profile and training nMSE.}\label{fig:vf-fd-cmp}
 \end{figure}
 
 \subsection*{Results: inverse problem}
@@ -200,13 +200,13 @@ Case 1 converges cleanly ($EI$ within $0.1\,\%$ from iteration 2000). Case 2 nee
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/fd_inv_train.png}
-\caption{Inverse training: $EI$, accuracy and loss terms against iteration, three cases. Plot of the reproduction report.}\label{fig:vf-fd-train}
+\caption{Inverse training: $EI$, accuracy and loss terms against iteration, three cases.}\label{fig:vf-fd-train}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/fd_inv_fields.png}
-\caption{Identified displacement fields, error maps, mid-span histories and accuracy against the publication, three cases. Plot of the reproduction report.}\label{fig:vf-fd-fields}
+\caption{Identified displacement fields, error maps, mid-span histories and accuracy against the publication, three cases.}\label{fig:vf-fd-fields}
 \end{figure}
 
 \emph{The Case 3 bias.} None of four changes removed the $+5.7$ to $+7.4\,\%$ error of $EI$ (\Cref{tab:vf-fd-bias}), so it is not caused by float precision, the number of sensor frequencies, the number of collocation points or a wider band at this budget. The 0--8~Hz run is worse because it is under-trained ($\mathcal L_{DE}$ stayed near 650 against about 7 at 5~Hz), so it is confounded with the budget and says nothing about band choice at a larger budget. The 20\,000-point run is the cleanest negative result: the same plateau at $2.65$--$2.70\times10^9$ (about $89\,\%$) until iteration 7500, then a drift to $2.51$--$2.55\times10^9$, with the accuracy wandering between $93.6\,\%$ and $95.6\,\%$ over the last 6000 iterations while the loss keeps falling; the restored point was iteration 15\,000 ($94.63\,\%$), and the last point ($95.59\,\%$) was not selected because picking it would need the true $EI$. A 61\,000-iteration run to test whether the bias is under-training was aborted at about iteration 5000 with $EI$ at $2.68\times10^9$ ($89.6\,\%$), before the point where the baseline leaves its plateau, so that hypothesis is neither confirmed nor ruled out.
@@ -231,7 +231,7 @@ float64 & $2.5778\times10^9$ & $+7.4\,\%$ & $93.10\,\%$ & $1.01\times10^{-3}$\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/fd_tests.png}
-\caption{Case 3: $EI$, accuracy, nMSE and loss histories for the baseline, float64, 801-frequency and 0--8~Hz runs. Plot of the reproduction report.}\label{fig:vf-fd-tests}
+\caption{Case 3: $EI$, accuracy, nMSE and loss histories for the baseline, float64, 801-frequency and 0--8~Hz runs.}\label{fig:vf-fd-tests}
 \end{figure}
 
 \subsection*{Why the results differ from the publication}
@@ -259,7 +259,7 @@ Ranking of Cases 2 and 3 & Case 3 carries the least resonance content & hypothes
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/fd_bias.png}
-\caption{Left: field nMSE of an exact solution against the $EI$ error with the runs overlaid (squares: exact solution at the identified $EI$; circles: network field). Right: Case 3 mid-span history of the reference, the exact solution at the identified $EI$ and the network. Plot of the reproduction report.}\label{fig:vf-fd-bias}
+\caption{Left: field nMSE of an exact solution against the $EI$ error with the runs overlaid (squares: exact solution at the identified $EI$; circles: network field). Right: Case 3 mid-span history of the reference, the exact solution at the identified $EI$ and the network.}\label{fig:vf-fd-bias}
 \end{figure}
 
 \emph{Why Case 3 is the hardest (supported).} The load's own frequency is $v/2L$: $1.25$, $0.5$ and $0.375$~Hz, so $f_1$ is $2.8$, $7.0$ and $9.4$ times the load frequency. In Case 1 the beam is driven much closer to resonance and the response is mostly the large resonance term; in Case 3 it is mostly a quasi-static lobe with a small resonance ripple, which a $3\times60$ network must resolve along $\omega$ in a peak $3.5\,\%$ of the band wide while the rest of the spectrum is smooth. A network that cannot represent the ripple can absorb part of the misfit by moving $EI$, so both the residual and the sensor misfit are small at a biased $EI$: the loss keeps falling ($\mathcal L_{DE}$ from $2.3\times10^3$ to 4) but the misfit term is flat at about $3.7\times10^{-4}$. This is a hypothesis for the ordering and not a measured result; both the publication ($99.6$, $95.8$, $94.4\,\%$ at $10^4$ iterations) and this work ($100$, $98.9$, $94.6\,\%$) rank Case 1 first and Case 3 last.
@@ -285,6 +285,6 @@ Inverse-run field error, Case 3 & $1.08\times10^{-3}$ against about $7\times10^{
 \end{tabularx}
 \end{table}
 
-\subsection*{What was not reproduced, and why}
+\subsection*{What remains unchecked}
 
 Five parts of the publication remain unchecked. The appendix beams B1--B3 have reference solutions, but FD-PINN has not been run on them. Only Case 3 was run forward. The long-budget test that would show whether the $EI$ bias disappears with training was aborted. At least three seeds per result are needed before differences of one or two accuracy points mean anything, because within one run the Case 3 accuracy moved between $93.6\,\%$ and $95.6\,\%$ over the last 6000 iterations; only the $19.4\,\%$ error of the 0--8~Hz run and the $5$--$7\,\%$ bias common to all runs exceed that spread. And noisy sensor data were not used, where the publication's inverse tests may include noise. The resonance hypothesis could be tested without further training by comparing the sensitivity of the sensor misfit to $EI$ in Cases 1 and 3.

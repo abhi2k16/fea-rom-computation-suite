@@ -967,9 +967,28 @@ def hole_in_rectangle_mesh(Lx, Ly, hole_center, R, nr, ntheta, grade_p=2.0,
             f"rectangle [0,{Lx}]x[0,{Ly}], got clearances "
             f"{(a_plus, a_minus, b_plus, b_minus)}")
 
+    # ONE near-hole block size for all four quadrants. If each quadrant chose
+    # its own min(a, b) (as rectangle_with_hole_mesh_quarter_full() does for a
+    # single quadrant), two quadrants sharing a ray would put different nodes on
+    # it whenever their extents are unequal, leaving stray boundary nodes after
+    # the weld. With a common size s, a shared ray depends only on s and on the
+    # distance to the rectangle edge that ray runs into, which both quadrants
+    # share.
+    s_common = min(a_plus, a_minus, b_plus, b_minus)
+
     def _quadrant(a, b, flip_x, flip_y):
-        m = rectangle_with_hole_mesh_quarter_full(
-            a, b, R, nr, ntheta, grade_p, n_extend, extend_grade)
+        m = rectangle_with_hole_mesh_quarter(s_common, s_common, R, nr, ntheta, grade_p)
+        n_ext = nr if n_extend is None else n_extend
+        if not np.isclose(a, s_common):
+            edge = np.isclose(m.nodes[:, 0], s_common, atol=1e-9)
+            y_part = np.sort(m.nodes[edge, 1])
+            x_part = graded_partition(s_common, a, n_ext, grade=extend_grade, dense_at="start")
+            m = weld_meshes(m, rectangle_mesh_from_partitions(x_part, y_part))
+        if not np.isclose(b, s_common):
+            edge = np.isclose(m.nodes[:, 1], s_common, atol=1e-9)
+            x_part = np.sort(m.nodes[edge, 0])
+            y_part = graded_partition(s_common, b, n_ext, grade=extend_grade, dense_at="start")
+            m = weld_meshes(m, rectangle_mesh_from_partitions(x_part, y_part))
         if flip_x:
             m = _reflect_mesh(m, axis=0)
         if flip_y:

@@ -101,12 +101,12 @@ Mode & Publication (Hz) & This work (Hz) & Closed form (Hz) & Difference to publ
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.8\linewidth]{figures/ch14r/mfs_surfaces.png}
-\caption{Fitted nonlinear modal force of modes 1, 3 and 5 (multiquadric kernel) over the linear amplitudes of modes 1 and 3; the black dots are the OLHS training points of this run, and the shaded band is an improvised $95\,\%$ subsampling interval. The mode-5 input is held at its training mean. Plot of the reproduction report.}\label{fig:vf-mfs-surf}
+\caption{Fitted nonlinear modal force of modes 1, 3 and 5 (multiquadric kernel) over the linear amplitudes of modes 1 and 3; the black dots are the OLHS training points of this run, and the shaded band is an improvised $95\,\%$ subsampling interval. The mode-5 input is held at its training mean.}\label{fig:vf-mfs-surf}
 \end{figure}
 
 \begin{table}[tbp]
 \centering\footnotesize
-\caption{Static accuracy ($R^2$ against nonlinear finite elements, held-out samples) of the flat beam.}\label{tab:vf-mfs-static}
+\caption{Static accuracy ($R^2$ against nonlinear finite elements, unseen samples) of the flat beam.}\label{tab:vf-mfs-static}
 \begin{tabular}{@{}lrr@{}}
 \toprule
 Model & This work & Publication\\
@@ -136,12 +136,12 @@ Case & MFS, Newton & ICE & MFS, lagged force & MFS, predictor--corrector & Publi
 \end{tabular}
 \end{table}
 
-\emph{Sample size.} The held-out $R^2$ against the number of training samples (\Cref{fig:vf-mfs-samples}) is $0.844$, $0.986$, $0.9994$ and $1.0000$ for $N=9$, $15$, $30$ and $60$: substantial improvement at small $N$, and a knee near the publication's recommended $N=10n$.
+\emph{Sample size.} The unseen $R^2$ against the number of training samples (\Cref{fig:vf-mfs-samples}) is $0.844$, $0.986$, $0.9994$ and $1.0000$ for $N=9$, $15$, $30$ and $60$: substantial improvement at small $N$, and a knee near the publication's recommended $N=10n$.
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.6\linewidth]{figures/ch14r/mfs_samples.png}
-\caption{Held-out $R^2$ against the number of training samples, flat beam. Plot of the reproduction report.}\label{fig:vf-mfs-samples}
+\caption{$R^2$ on unseen samples against the number of training samples, flat beam.}\label{fig:vf-mfs-samples}
 \end{figure}
 
 \begin{figure}[tbp]
@@ -176,7 +176,7 @@ ICE (Hz) & 80.96 & 83.04 & 85.76 & 89.07 & 92.87 & 97.10\\
 \end{equation}
 is quadratic in displacement \emph{gradients}, and gradients across the thin layer are amplified: for the softest eigenmode the nonlinear internal force exceeds the linear prediction by a factor of 70 at 1~\textmu m of displacement (a rotation of about $0.0004^\circ$), scaling as $u^2$ against the linear term's $u^1$. A too-large load or time increment, rounding from the mesh condition number (about $2\times10^{11}$) and genuine large-rotation physics were each ruled out by direct tests; in-plane refinement barely changes the effect, and more layers through the thickness make it worse ($3957\times$ to $7128\times$ from one to four layers). A shell element never discretises the thickness, and its force ratio stays flat over six orders of magnitude of amplitude.
 
-The choice of shell element matters as well. \Cref{tab:vf-mfs-shell} shows the ratio $q_{{\rm nl},1}/q_{{\rm l},1}$ for pure mode-1 loads (1 means no nonlinearity): the corotational shell shows no geometric stiffening even at a tip displacement of 46~mm, so an early run that used it fitted numerical noise and had a deeply negative held-out $R^2$; \texttt{Shell4Director} stiffens as it should and is the reference.
+The choice of shell element matters as well. \Cref{tab:vf-mfs-shell} shows the ratio $q_{{\rm nl},1}/q_{{\rm l},1}$ for pure mode-1 loads (1 means no nonlinearity): the corotational shell shows no geometric stiffening even at a tip displacement of 46~mm, so an early run that used it fitted numerical noise and had a deeply negative unseen $R^2$; \texttt{Shell4Director} stiffens as it should and is the reference.
 
 \begin{table}[tbp]
 \centering\footnotesize
@@ -194,15 +194,15 @@ Tip load (thickness) & 3 & 10 & 20 & 40\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.8\linewidth]{figures/ch14r/mfs_wing_modes.png}
-\caption{First four modes of the reconstructed wing (ten-node tetrahedron mesh; colour is displacement magnitude). Plot of the reproduction report.}\label{fig:vf-mfs-wing}
+\caption{First four modes of the reconstructed wing (ten-node tetrahedron mesh; colour is displacement magnitude).}\label{fig:vf-mfs-wing}
 \end{figure}
 
-\emph{Static tip sweep.} \Cref{fig:vf-mfs-wing2} (left) shows the tip displacement against the mode-1 linear amplitude. Both reduced models give a sweep $R^2$ of $1.0000$, but the nonlinear part is only $2.6$--$3.8\,\%$ of the linear modal force at these amplitudes and the linear finite element alone scores $0.9993$, so the discriminating number is the $R^2$ of the nonlinear deviation $w-w_{\rm lin}$: $0.984$ for the surrogate (Gaussian kernel, held-out force $R^2=0.974$; MQ $0.915$, cubic $0.909$, TPS $0.875$) and $0.9999$ for the polynomial baseline (held-out $0.997$). The polynomial wins because the true force is close to the quadratic-plus-cubic form it assumes; the surrogate shows a $-0.09$~mm zero-load offset from the Gaussian fit.
+\emph{Static tip sweep.} \Cref{fig:vf-mfs-wing2} (left) shows the tip displacement against the mode-1 linear amplitude. Both reduced models give a sweep $R^2$ of $1.0000$, but the nonlinear part is only $2.6$--$3.8\,\%$ of the linear modal force at these amplitudes and the linear finite element alone scores $0.9993$, so the discriminating number is the $R^2$ of the nonlinear deviation $w-w_{\rm lin}$: $0.984$ for the surrogate (Gaussian kernel, unseen force $R^2=0.974$; MQ $0.915$, cubic $0.909$, TPS $0.875$) and $0.9999$ for the polynomial baseline (unseen $0.997$). The polynomial wins because the true force is close to the quadratic-plus-cubic form it assumes; the surrogate shows a $-0.09$~mm zero-load offset from the Gaussian fit.
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.8\linewidth]{figures/ch14r/mfs_wing_sweep.png}
-\caption{Shell wing, static tip-load sweep. Left: tip displacement against the mode-1 linear amplitude for nonlinear FE, linear FE, MFS-NLROM (Gaussian) and ICE. Right: held-out $R^2$ of $F_{\rm nl}$ per mode and kernel. Plot of the reproduction report.}\label{fig:vf-mfs-wing2}
+\caption{Shell wing, static tip-load sweep. Left: tip displacement against the mode-1 linear amplitude for nonlinear FE, linear FE, MFS-NLROM (Gaussian) and ICE. Right: unseen $R^2$ of $F_{\rm nl}$ per mode and kernel.}\label{fig:vf-mfs-wing2}
 \end{figure}
 
 \emph{Free decay.} \Cref{tab:vf-mfs-wdecay} gives the shell wing's tip response over about two periods ($\Delta t=2$~ms, 60 steps, about 22~mm amplitude). Case~(b) is an impulsive start with a mode-1 velocity and zero displacement, because a mode-shape displacement is not an admissible initial condition for a Green--Lagrange shell at this amplitude. Every scheme reaches $R^2\ge0.9998$, including the predictor--corrector that diverged on the beam. One full-order run takes about 2\,700~s, so the speed-ups of the table (from $1.2\times10^{4}$ to $5\times10^{5}$) are against that.
@@ -239,10 +239,10 @@ ICE (Hz) & 16.677 & 16.703 & 16.746 & 16.803\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.6\linewidth]{figures/ch14r/mfs_wing_backbone.png}
-\caption{Backbone of mode 1 of the shell wing: harmonic balance with five harmonics for the reduced models, free vibration from static equilibria for the full-order model. Plot of the reproduction report.}\label{fig:vf-mfs-wback}
+\caption{Backbone of mode 1 of the shell wing: harmonic balance with five harmonics for the reduced models, free vibration from static equilibria for the full-order model.}\label{fig:vf-mfs-wback}
 \end{figure}
 
-The solid wing model gives held-out $R^2$ of $0.780$ (surrogate, thin-plate spline) and $1.000$ (polynomial), a tip sweep of $0.9987$ and $1.0000$, and free decay of $0.9646$ and $1.0000$; its finite element reference fails to converge at large amplitude, so only one of three backbone points and a truncated window of case~(b) could be compared. The solid results are therefore secondary and are not used as evidence.
+The solid wing model gives unseen $R^2$ of $0.780$ (surrogate, thin-plate spline) and $1.000$ (polynomial), a tip sweep of $0.9987$ and $1.0000$, and free decay of $0.9646$ and $1.0000$; its finite element reference fails to converge at large amplitude, so only one of three backbone points and a truncated window of case~(b) could be compared. The solid results are therefore secondary and are not used as evidence.
 
 \subsection*{Comparison with the publication}
 
@@ -266,7 +266,7 @@ Hammer test (Figs.~13, 14) & measured signals cannot be recovered from the publi
 \end{tabularx}
 \end{table}
 
-\subsection*{What was not reproduced, and why}
+\subsection*{Missing equations and an early failure}
 
 The equations for the training-load scaling and the time-integration scheme of the publication did not survive text extraction from the PDF. The load scaling is structurally confirmed by the appendix of the publication, but its iterative calibration loop is not implemented; a fixed target-fraction range tuned to the axes of its Fig.~5 is used instead, and the time-integration scheme is a reconstruction that diverges on the flat beam, which is why a Newton solve of the same relation is used. The publication states no damping ratio, so $1\,\%$ modal Rayleigh damping is assumed in every dynamic case. The full-order backbone is obtained by free vibration and period measurement, not by the publication's multi-harmonic-balance solver on the full model. The wing planform is digitised, its frequencies lie $11$--$16\,\%$ from the publication's, and its training sizes are reduced. Both reduced models are valid only inside their training range, and the publication's hammer test cannot be rebuilt. Finally, the polynomial baseline matches or exceeds the surrogate in accuracy on these smooth, weakly nonlinear problems, so the benefit measured here is speed and generality, not accuracy.
 

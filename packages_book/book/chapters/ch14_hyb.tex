@@ -98,7 +98,7 @@ The dual mode count differs because the first multiplier mode holds only $67\,\%
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.7\linewidth]{figures/ch14r/hb_decay.png}
-\caption{Best rank-$k$ approximation error of the 120 snapshots: primal POD, dual POD and dual NMF (100 iterations). Plot of the reproduction report.}\label{fig:vf-hb-decay}
+\caption{Best rank-$k$ approximation error of the 120 snapshots: primal POD, dual POD and dual NMF (100 iterations).}\label{fig:vf-hb-decay}
 \end{figure}
 
 \emph{Table~1 analogue.} At $\mu=(0.07,0.17)$, which is not in the snapshot set and where the full-order solve takes $1.9$~ms, \Cref{tab:vf-hb-t1} gives the comparison. The accuracy ordering matches the publication (the PB force error is much larger than the hybrid one at comparable displacement accuracy), but the speed-up is not reproduced: the hybrid model has 72 unknowns against 28 and its Lemke solve is slower than the full-order complementarity solve at 100 nodes.
@@ -126,13 +126,13 @@ PB, $l_u=14$ & 28 & 4.2 & 0.037 & 18.8\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/hb_solutions.png}
-\caption{Solutions at $\mu=(0.07,0.17)$: displacement (top left), multipliers of the full-order, the hybrid model on the RID and the reconstruction (top right), and the PB models with 9 and 14 modes (bottom). Plot of the reproduction report.}\label{fig:vf-hb-sol}
+\caption{Solutions at $\mu=(0.07,0.17)$: displacement (top left), multipliers of the full-order, the hybrid model on the RID and the reconstruction (top right), and the PB models with 9 and 14 modes (bottom).}\label{fig:vf-hb-sol}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.98\linewidth]{figures/ch14r/hb_errmap_reg.png}
-\caption{Error over the parameter space for the $10\times12$ snapshot grid, $100\times120$ test points: displacement (left), multipliers on the RID (centre), reconstructed multipliers (right); red crosses are the snapshots. Plot of the reproduction report.}\label{fig:vf-hb-errmap}
+\caption{Error over the parameter space for the $10\times12$ snapshot grid, $100\times120$ test points: displacement (left), multipliers on the RID (centre), reconstructed multipliers (right); red crosses are the snapshots.}\label{fig:vf-hb-errmap}
 \end{figure}
 
 \begin{table}[tbp]
@@ -156,7 +156,7 @@ With the greedy loop the first run (480 candidates, 50 iterations, $\epsilon_u=1
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/hb_greedy_first.png}
-\caption{Greedy loop driven by $\eta$, first run: average error over the 480 candidates for the hybrid (red; dotted: reconstructed multipliers) and PB (blue) models: (A) displacement, $H^1$; (B) multipliers, $(H^1)'$ (not usable in this run); (C) displacement, 2-norm; (D) multipliers, 2-norm. Plot of the reproduction report.}\label{fig:vf-hb-greedy1}
+\caption{Greedy loop driven by $\eta$, first run: average error over the 480 candidates for the hybrid (red; dotted: reconstructed multipliers) and PB (blue) models: (A) displacement, $H^1$; (B) multipliers, $(H^1)'$ (not usable in this run); (C) displacement, 2-norm; (D) multipliers, 2-norm.}\label{fig:vf-hb-greedy1}
 \end{figure}
 
 \emph{Two failure modes of the reduced system.} Both are properties of the formulation as stated and were diagnosed with scripts in the study. (1) If every node of $\mathcal P$ is a potential contact, the enriched basis has $|\mathcal P|$ columns, so $\mathbf A$ is square; for the $\eta$-selected set $|\mathcal P|=38$ with 38 columns, $\operatorname{cond}(\mathbf A)\approx10^{16}$, smallest singular value $3.7\times10^{-15}$ against $5.8\times10^1$, and the greedy runs gave displacement errors of $5$--$880\,\%$ and one ``good'' run ($0.0016\,\%$) that could not be reproduced. \Cref{tab:vf-hb-sing} lists the remedies tried; the one that works is to keep fewer potential contacts than $|\mathcal P|$, only the nodes that carried a contact force in some snapshot ($\pm1$ node), at the cost that contact outside the snapshot-observed zone is not enforced. (2) At the publication's $\epsilon_u=10^{-10}$ the loop showed spikes (error up to $32\,\%$); the Lemke solve failed on about $35\,\%$ of the parameters because the condensed matrix $\mathbf B_r\mathbf A^{-1}\mathbf B_r^{T}$ is strongly indefinite (minimum eigenvalue of its symmetric part about $-2\max|\text{entry}|$), and with the non-symmetric Petrov--Galerkin system nothing guarantees a well-posed complementarity problem. Alternatives (primal--dual active set, semismooth Newton) flagged $91$--$99\,\%$ of the cases as solved but had median errors of $2.7$--$6.3\,\%$; a symmetric Galerkin form on the RID is always well posed but about $10\,\%$ accurate. Coarsening to $\epsilon_u=10^{-8}$ (max error after iteration 20: $1.6\,\%$, final $0.49\,\%$) was the workaround of the first run.
@@ -186,7 +186,7 @@ Truncated pseudo-inverse of $\mathbf A$ & 38 & --- & about 99 & ---\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.98\linewidth]{figures/ch14r/hb_rid.png}
-\caption{The RID size sets the accuracy. Left: mean displacement error of the hybrid model against the number of balance nodes $|\mathcal P|$ for RIDs grown by 1--16 rings, two POD tolerances and two contact sets; the dotted line is the publication's greedy accuracy. Right: mean error over the candidate set at each greedy iteration for three RID sizes; the blue dashed line is PB on the same snapshots. Plot of the reproduction report.}\label{fig:vf-hb-rid}
+\caption{The RID size sets the accuracy. Left: mean displacement error of the hybrid model against the number of balance nodes $|\mathcal P|$ for RIDs grown by 1--16 rings, two POD tolerances and two contact sets; the dotted line is the publication's greedy accuracy. Right: mean error over the candidate set at each greedy iteration for three RID sizes; the blue dashed line is PB on the same snapshots.}\label{fig:vf-hb-rid}
 \end{figure}
 
 \Cref{tab:vf-hb-greedy} gives the greedy runs. With a large RID the $\epsilon_u=10^{-10}$ setting no longer needs the workaround, and the run `$\_$L3e10' (three rings, 70 nodes) is the closest match to the publication in all displacement and RID-force numbers (\Cref{fig:vf-hb-greedy2,fig:vf-hb-errmap2}); once the RID is large the hybrid model is 4 to 20 times more accurate than PB in displacement, and the larger RID also means no cost reduction on this 100-node mesh.
@@ -211,13 +211,13 @@ Publication & $10^{-10}$ & --- & n/a & n/a & 0.004\,\% / 0.077\,\% & 0.34\,\% / 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/hb_greedy_best.png}
-\caption{Greedy loop driven by $\eta$, best run (3 rings, $\epsilon_u=10^{-10}$, 70 RID nodes), panels as in \Cref{fig:vf-hb-greedy1}. The hybrid displacement error falls to $3$--$5\times10^{-4}$ in the $H^1$ norm against $5\times10^{-3}$ for PB, with one spike at iteration 12 (a bad reduced complementarity solve). Plot of the reproduction report.}\label{fig:vf-hb-greedy2}
+\caption{Greedy loop driven by $\eta$, best run (3 rings, $\epsilon_u=10^{-10}$, 70 RID nodes), panels as in \Cref{fig:vf-hb-greedy1}. The hybrid displacement error falls to $3$--$5\times10^{-4}$ in the $H^1$ norm against $5\times10^{-3}$ for PB, with one spike at iteration 12 (a bad reduced complementarity solve).}\label{fig:vf-hb-greedy2}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/hb_errmap_best.png}
-\caption{Error maps after the greedy loop, best run, $100\times120$ test points: displacement (mean $0.011\,\%$, maximum $0.084\,\%$), multipliers on the RID (maximum about $10\,\%$) and reconstructed multipliers (maximum about $38\,\%$); highest at small $\mu_1$, where the contact zone is largest. Plot of the reproduction report.}\label{fig:vf-hb-errmap2}
+\caption{Error maps after the greedy loop, best run, $100\times120$ test points: displacement (mean $0.011\,\%$, maximum $0.084\,\%$), multipliers on the RID (maximum about $10\,\%$) and reconstructed multipliers (maximum about $38\,\%$); highest at small $\mu_1$, where the contact zone is largest.}\label{fig:vf-hb-errmap2}
 \end{figure}
 
 \begin{figure}[tbp]
@@ -233,7 +233,7 @@ One eighth of the problem is modelled, a $90^\circ$ sector and half the height, 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/hb3_geom.png}
-\caption{Pellet--cladding model: the one-eighth model (pellet orange, cladding blue, case S3) and the same mesh mirrored over the symmetry planes with one half cut away. Plot of the reproduction report.}\label{fig:vf-hb3-geom}
+\caption{Pellet--cladding model: the one-eighth model (pellet orange, cladding blue, case S3) and the same mesh mirrored over the symmetry planes with one half cut away.}\label{fig:vf-hb3-geom}
 \end{figure}
 
 \emph{Validation of the finite element model.} Rigid translations lie in the null space of the unconstrained stiffness (residual $10^{-15}$); the Lam\'e thick cylinder under external pressure, with three elements through the thickness, gives inner and outer radial displacements within $0.25\,\%$ and $0.23\,\%$ of the closed form (angular spread $2\times10^{-14}$); and pellet uniaxial compression gives the exact top displacement and $\sigma_{zz}=-5$~MPa in every element. An earlier version used the transposed Jacobian inverse (errors of $17$--$69\,\%$ in the Lam\'e test), fixed and verified by these checks. The full-order behaviour: S1 has all 252 pairs in contact from step 1; S2 first touches at step 25 (18 pairs); S3 at step about 12 (63 pairs at the end); S4 at about step 16 (36 pairs); S5 at about step 6 (90 pairs). \Cref{fig:vf-hb3-fom} shows the stresses of S3: the cladding is pressed in by up to $0.044$~mm where the 250~MPa pressure acts and has closed the gap there, its hoop stress reaches about $-1000$~MPa (von Mises up to $1062$~MPa) while the pellet stays below about $250$~MPa, with a stress concentration at the end of the contact zone ($z\approx1.5$--$2$~mm).
@@ -241,7 +241,7 @@ One eighth of the problem is modelled, a $90^\circ$ sector and half the height, 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/hb3_fom.png}
-\caption{Full-order solution of S3 at step 25 (deformation magnified three times, element-centroid values): $\sigma_{xx}$, $\sigma_{yy}$ and von Mises stress seen from the symmetry planes. Plot of the reproduction report.}\label{fig:vf-hb3-fom}
+\caption{Full-order solution of S3 at step 25 (deformation magnified three times, element-centroid values): $\sigma_{xx}$, $\sigma_{yy}$ and von Mises stress seen from the symmetry planes.}\label{fig:vf-hb3-fom}
 \end{figure}
 
 \subsection*{Results: prediction of S3 from snapshots}
@@ -270,7 +270,7 @@ Publication & S1+S2 & $10^{-5}$ & 17/20/21 & --- & --- & 1\,\% & 5\,\% & --- & 1
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/hb3_errors.png}
-\caption{Prediction error of S3 at each load step for cases A1--B4: displacement (left) and $\sigma_{11}$ (right), maximum over the RID relative to the maximum value; dotted lines are the publication's $1\,\%$ and $5\,\%$. Plot of the reproduction report.}\label{fig:vf-hb3-err}
+\caption{Prediction error of S3 at each load step for cases A1--B4: displacement (left) and $\sigma_{11}$ (right), maximum over the RID relative to the maximum value; dotted lines are the publication's $1\,\%$ and $5\,\%$.}\label{fig:vf-hb3-err}
 \end{figure}
 
 \emph{Why the publication's training set is not enough here.} The 50 snapshots of S1 and S2 have normalised singular values $1$, $0.11$, $5.6\times10^{-3}$, $5.2\times10^{-5}$ and then $10^{-15}$: rank 4. S1 is bonded and exactly linear in the load, and S2 is free until the last step. A POD tolerance of $10^{-5}$ gives 3 modes, not the publication's 17, and the four-mode basis alone has a $6\,\%$ projection error on the last step of S3 (\Cref{fig:vf-hb3-rank}); S3's contact reaction is up to $61\,\%$ of its solution but only one S2 step (18 pairs) shows contact in the training data. The publication's 17, 20 and 21 modes mean its S1 and S2 snapshots contained much richer contact evolution; why could not be recovered. Adding S4 and S5 gives a slowly decaying spectrum and 9 modes at tolerance $10^{-8}$, with the projection error of S3 below $5\times10^{-4}$ at every step. A second finding is that keeping every primal degree of freedom of the potential contact zone as a finite element degree of freedom (the publication's Sec.~7.3) is essential: with the minimal rank-completing enrichment of the rope case and the same training data the error is $13.7\,\%$ against $3.35\,\%$ (B1).
@@ -278,7 +278,7 @@ Publication & S1+S2 & $10^{-5}$ & 17/20/21 & --- & --- & 1\,\% & 5\,\% & --- & 1
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/hb3_rank.png}
-\caption{Left: singular values of the displacement snapshots for S1+S2 (50 snapshots, exactly four non-negligible values) and S1+S2+S4+S5 (100). Right: projection error of the full-order S3 solution on the basis, the best any model built on it can do. Plot of the reproduction report.}\label{fig:vf-hb3-rank}
+\caption{Left: singular values of the displacement snapshots for S1+S2 (50 snapshots, exactly four non-negligible values) and S1+S2+S4+S5 (100). Right: projection error of the full-order S3 solution on the basis, the best any model built on it can do.}\label{fig:vf-hb3-rank}
 \end{figure}
 
 \emph{Fields, RID and contact.} \Cref{fig:vf-hb3-hrom} compares the von Mises stress of the full model and of case B2 on the whole body: the fields are visually identical and the largest difference is $1.05$~MPa against a peak of $1062$~MPa ($0.10\,\%$); the displacement magnitude differs by a relative $L^2$ error of $4.0\times10^{-4}$. \Cref{fig:vf-hb3-rid} shows the RID, 616 of 1944 elements ($32\,\%$), and the contact force per pair, active only below $z=2$~mm. The contact behaviour of S1--S3 is in \Cref{fig:vf-hb3-contact}: S1 is in contact everywhere with the largest forces below $z=2$~mm, S2 has only just touched (18 pairs), S3 has 63 active pairs for $z<1.5$~mm, which is why S1 and S2 alone teach the basis almost nothing about partial contact; the loaded zone grows upwards with the load, the peak is about 16~N per pair, and the cladding moves in by about 44~\textmu m at the bottom while the pellet moves about 4~\textmu m, so the difference of 40~\textmu m equals the initial gap where the surfaces touch; the HROM markers lie on the full-order curves.
@@ -286,19 +286,19 @@ Publication & S1+S2 & $10^{-5}$ & 17/20/21 & --- & --- & 1\,\% & 5\,\% & --- & 1
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.98\linewidth]{figures/ch14r/hb3_hrom.png}
-\caption{Hybrid HROM against the full model for S3 at step 25 (case B2): von Mises stress from the full model, from the HROM reconstructed on the whole body, and their absolute difference. Plot of the reproduction report.}\label{fig:vf-hb3-hrom}
+\caption{Hybrid HROM against the full model for S3 at step 25 (case B2): von Mises stress from the full model, from the HROM reconstructed on the whole body, and their absolute difference.}\label{fig:vf-hb3-hrom}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/hb3_rid.png}
-\caption{Left: the RID (616 of 1944 elements, green). Right: contact force per pair on the pellet surface nodes at step 25. Plot of the reproduction report.}\label{fig:vf-hb3-rid}
+\caption{Left: the RID (616 of 1944 elements, green). Right: contact force per pair on the pellet surface nodes at step 25.}\label{fig:vf-hb3-rid}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.98\linewidth]{figures/ch14r/hb3_contact.png}
-\caption{Contact behaviour: contact force per pair over the contact surface for S1, S2, S3 (top); S3 contact force along $z$ at several steps, number of active pairs per step for the full model, the restricted count and the HROM, and radial displacements of the cladding inner surface and of the pellet outer surface (bottom). Plot of the reproduction report.}\label{fig:vf-hb3-contact}
+\caption{Contact behaviour: contact force per pair over the contact surface for S1, S2, S3 (top); S3 contact force along $z$ at several steps, number of active pairs per step for the full model, the restricted count and the HROM, and radial displacements of the cladding inner surface and of the pellet outer surface (bottom).}\label{fig:vf-hb3-contact}
 \end{figure}
 
 \subsection*{Results: mesh refinement, RID size and extrapolation (3D)}
@@ -323,7 +323,7 @@ L2 (12, 6, 16, 54) & 15\,552 & 50\,936 & 935 & 914 (5.9\,\%) & 134.9 & 2.71 & 49
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/hb3_mesh.png}
-\caption{Mesh study: speed-up, computing time and worst $\sigma_{11}$ error against the number of free degrees of freedom, for S3 (solid) and the extrapolation case S2 (dashed); the red dotted lines are the publication's $10\times$ and $5\,\%$. Plot of the reproduction report.}\label{fig:vf-hb3-mesh}
+\caption{Mesh study: speed-up, computing time and worst $\sigma_{11}$ error against the number of free degrees of freedom, for S3 (solid) and the extrapolation case S2 (dashed); the red dotted lines are the publication's $10\times$ and $5\,\%$.}\label{fig:vf-hb3-mesh}
 \end{figure}
 
 A larger RID (two rings, or $d=0.3$~mm) covers more of the active pairs (130 of 221 with two layers on L2) but does not improve the errors usefully: displacement and stress errors change by less than $0.05$ percentage points, the force error stays at $7$--$9\,\%$ and the speed-up falls by half (L2: $49.7\times$ to $22.5\times$); the single-layer RID with $d=0.1$~mm remains the best trade-off. To test an edge case, S2 (the smallest radius, the largest gap) was predicted from S1, S3, S4, S5, so it lies outside the training range (\Cref{tab:vf-hb3-extra}); the case S6 ($R_p=3.98$~mm) never touches and is not a contact test.
@@ -365,7 +365,7 @@ Rope speed-up & $0.6$--$1\times$ against $8.5\times$ & not reproduced\\
 \end{tabularx}
 \end{table}
 
-\subsection*{What was not reproduced, and why}
+\subsection*{Open details and the speed-ups}
 
 The publication leaves open several details that decide the numbers (\Cref{tab:vf-hb-gaps}); the final RID size and the contact-node set should be treated as free tuning parameters unless the authors' code is available. The speed-up on the rope is not reproduced because with a 70--90 node RID on a 100-node mesh there is little to gain, and the three-dimensional speed-up depends on a mesh size the publication does not state. The 4 against 1 dual mode count was not resolved, the reconstruction of forces outside the RID (\cref{eq:hb-nnls}) is worse than the publication's mean for reasons not investigated, and every test is interpolation inside the trained parameter range, with one mesh, one geometric parameter and no extrapolation except the one S2 case.
 

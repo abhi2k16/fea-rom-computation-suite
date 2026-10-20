@@ -76,7 +76,7 @@ Excitation & uniform, Gaussian, band-limited 0--1500 Hz, 0.9216 and 0.0072 lb/in
 Damping & not recorded here & Rayleigh, mass-proportional, $\zeta_1=0.02$, in FOM and ROM\\
 Time integration & not recorded here & 20\,000 steps, $\Delta t=5\times10^{-5}$ s, $T=1$ s; implicit Newmark (FOM about 240 s per run)\\
 Training, 4 modes & not stated & 150 static solves, target $\pm3\times0.09$ in per mode (Latin hypercube), 12 held out\\
-Training, 1 mode & not stated & 60 samples at $\pm150$, 15 held out (set A); 20 samples at $\pm3$ (set B)\\
+Training, 1 mode & not stated & 60 samples at $\pm150$, 15 kept for testing (set A); 20 samples at $\pm3$ (set B)\\
 Neural surrogate & none & multilayer perceptron (MLP), 4000 epochs, 150 static samples\\
 Trajectory states & none & 80 states from short FOM transients (6\,002 visited) added to the 150\\
 \bottomrule
@@ -85,7 +85,7 @@ Trajectory states & none & 80 states from short FOM transients (6\,002 visited) 
 
 \subsection*{Results: modes and static identification}
 
-The four symmetric bending frequencies are within $0.21\,\%$ of the publication's Table~2 (\Cref{tab:vf-ice-modes}, \Cref{fig:vf-ice-modes}). The static fit of the nonlinear modal force reaches held-out $R^2$ of $0.9998$ for one mode, $0.99998$ for four modes (unrestricted polynomial, 30 terms) and $0.99935$ for the neural surrogate. The static fits are as good as the method requires; they do not predict the dynamic outcome below.
+The four symmetric bending frequencies are within $0.21\,\%$ of the publication's Table~2 (\Cref{tab:vf-ice-modes}, \Cref{fig:vf-ice-modes}). The static fit of the nonlinear modal force reaches unseen $R^2$ of $0.9998$ for one mode, $0.99998$ for four modes (unrestricted polynomial, 30 terms) and $0.99935$ for the neural surrogate. The static fits are as good as the method requires; they do not predict the dynamic outcome below.
 
 \begin{table}[tbp]
 \centering\footnotesize
@@ -105,7 +105,7 @@ Mode & This work (Hz) & Publication (Hz) & Difference\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/ch14r/ice_modes.png}
-\caption{The four retained symmetric bending modes. The one-mode ROM keeps only the first. Plot of the reproduction report.}\label{fig:vf-ice-modes}
+\caption{The four retained symmetric bending modes. The one-mode ROM keeps only the first.}\label{fig:vf-ice-modes}
 \end{figure}
 
 \subsection*{Results: one-mode dynamics}
@@ -155,7 +155,7 @@ The clamp has no effect (the ROM never reaches either bound, so 6 and 20 times g
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.8\linewidth]{figures/ch14r/ice_inplane.png}
-\caption{In-plane displacement spectrum at $x=4$ in. Solid: full-order model; dashed: single-mode ICE with membrane expansion. Upper pair: high level; lower pair: low level. Plot of the reproduction report.}\label{fig:vf-ice-inplane}
+\caption{In-plane displacement spectrum at $x=4$ in. Solid: full-order model; dashed: single-mode ICE with membrane expansion. Upper pair: high level; lower pair: low level.}\label{fig:vf-ice-inplane}
 \end{figure}
 
 \subsection*{Results: four modes and the training distribution}
@@ -180,13 +180,13 @@ Neural surrogate (MLP), static samples only & $3.3\times10^{4}$ & 538\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.7\linewidth]{figures/ch14r/ice_variants.png}
-\caption{Four-mode RMS error by training strategy; the dotted line at 1 marks an error equal to the full-order signal. Plot of the reproduction report.}\label{fig:vf-ice-variants}
+\caption{Four-mode RMS error by training strategy; the dotted line at 1 marks an error equal to the full-order signal.}\label{fig:vf-ice-variants}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.8\linewidth]{figures/ch14r/ice_neural.png}
-\caption{Four-mode neural ICE ROM against the full-order model, on separate scales about 1000 times apart. Plot of the reproduction report.}\label{fig:vf-ice-neural}
+\caption{Four-mode neural ICE ROM against the full-order model, on separate scales about 1000 times apart.}\label{fig:vf-ice-neural}
 \end{figure}
 
 Two regressors of different type, with static $R^2$ above $0.999$, fail in the same way, which points at the training distribution and not at the regression: the static sampling strategy draws each mode's target displacement independently, whereas a random response visits coupled, sign-varying combinations. Adding states from full-order transients reduces the four-mode error by a factor of $1.5$ to $3$, consistent with a coverage problem. Whether broader or iterated training (refit, re-simulate, add points where ROM and full-order response disagree) brings the high level below 1 was not run.
@@ -198,13 +198,13 @@ The reduced Newton--Newmark routine of the package, \texttt{integrate\_newmark\_
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.8\linewidth]{figures/ch14r/ice_integrator.png}
-\caption{Modal trajectories from the prototype integrator (colour) and the package routine (black dashed), with the difference below. Plot of the reproduction report.}\label{fig:vf-ice-integ}
+\caption{Modal trajectories from the prototype integrator (colour) and the package routine (black dashed), with the difference below.}\label{fig:vf-ice-integ}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.7\linewidth]{figures/ch14r/ice_stress.png}
-\caption{Axial stress along element 7 for a training snapshot with 0.31 in peak transverse amplitude. Plot of the reproduction report.}\label{fig:vf-ice-stress}
+\caption{Axial stress along element 7 for a training snapshot with 0.31 in peak transverse amplitude.}\label{fig:vf-ice-stress}
 \end{figure}
 
 \subsection*{Comparison with the publication}
@@ -217,7 +217,7 @@ The reduced Newton--Newmark routine of the package, \texttt{integrate\_newmark\_
 Claim & This work & Outcome\\
 \midrule
 Linear modes (Table~2) & $57.8/312.3/771.1/1434.1$ against $57.8/312.1/770.3/1431.2$ Hz & reproduced\\
-Nonlinear force identified from static solutions & held-out $R^2$ 0.9998 (1 mode), 0.99935--0.99998 (4 modes) & reproduced\\
+Nonlinear force identified from static solutions & unseen $R^2$ 0.9998 (1 mode), 0.99935--0.99998 (4 modes) & reproduced\\
 Accurate random response, low level & $19.5\,\%$ (1 mode); $2.2$--$33.6\,\%$ (4 modes, by variant) & partly\\
 Accurate random response, high level & $112$--$136\,\%$ (1 mode); $135$--$793\,\%$ (4 modes) & not reproduced\\
 Membrane expansion recovers in-plane displacement (Fig.~1) & agrees below about 400 Hz at the high level only; one-sign signal & not reproduced\\
@@ -226,7 +226,7 @@ Stress recovery from the expanded field & implemented, one snapshot, no full-ord
 \end{tabularx}
 \end{table}
 
-\subsection*{What was not reproduced, and why}
+\subsection*{How the comparison was judged}
 
 The comparison is of the ROM against the full-order model, not an overlay of the publication's plots, so ``not reproduced'' is judged from error levels, and the publication's own dynamic accuracy figures were not extracted from the PDF. Several settings that the publication does not give (damping, time step, training sizes, the load realisation) were chosen here and can change the numbers. The one-mode case has a three-seed study on the training seed only; the four-mode variants are one training run each, and differences between them below a factor of about 2 should not be read as significant. The membrane expansion is implemented for one mode only; whether a four-mode $\mathbf T_m$ (ten quadratic terms in \cref{eq:ice-exp}) repairs the in-plane spectrum was not tried. Stress recovery has no full-order comparison. Finally, why a wider training amplitude gives a softer cubic coefficient was measured but not explained.
 

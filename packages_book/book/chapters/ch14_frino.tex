@@ -86,7 +86,7 @@ Fr2 & $1.374\times10^{-4}$ & $2.234\times10^{-4}$ & $1.743\times10^{-5}$\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.98\linewidth]{figures/ch14r/fr_fom.png}
-\caption{(a) Unexplained snapshot energy after 1--3 POD modes, publication against this work. (b) Relative error of the 3-, 10- and 20-mode ROM against the 4239-dof model for all 12 loads. (c) Error floor if the forced response is not learned, against the publication's and this work's single-tone errors. Plot of the reproduction report.}\label{fig:vf-fr-fom}
+\caption{(a) Unexplained snapshot energy after 1--3 POD modes, publication against this work. (b) Relative error of the 3-, 10- and 20-mode ROM against the 4239-dof model for all 12 loads. (c) Error floor if the forced response is not learned, against the publication's and this work's single-tone errors.}\label{fig:vf-fr-fom}
 \end{figure}
 
 \subsection*{Results: the operator on the publication's loads}
@@ -119,13 +119,13 @@ Fr2 & $9.87\times10^{-2}$ & $6.09\times10^{-1}$ & $6.08\times10^{-1}$ & $6.08\ti
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/ch14r/fr_err.png}
-\caption{Relative $L_2$ error for the 12 test loads: publication (Tables 1, 4, 5) against this work. Plot of the reproduction report.}\label{fig:vf-fr-err}
+\caption{Relative $L_2$ error for the 12 test loads: publication (Tables 1, 4, 5) against this work.}\label{fig:vf-fr-err}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.98\linewidth]{figures/ch14r/fr_resp.png}
-\caption{Tip displacement, operator-minus-reference error and amplitude spectrum for 5~Hz, 100~Hz, Fm1 and Fr1. At 5 and 100~Hz the waveforms are nearly indistinguishable and the 100~Hz forced peak is reproduced in the spectrum; on Fm1 and Fr1 the early-time peaks are missed. Plot of the reproduction report.}\label{fig:vf-fr-resp}
+\caption{Tip displacement, operator-minus-reference error and amplitude spectrum for 5~Hz, 100~Hz, Fm1 and Fr1. At 5 and 100~Hz the waveforms are nearly indistinguishable and the 100~Hz forced peak is reproduced in the spectrum; on Fm1 and Fr1 the early-time peaks are missed.}\label{fig:vf-fr-resp}
 \end{figure}
 
 \emph{Why the high-frequency error looks large in the publication.} \Cref{tab:vf-fr-forced} splits the ROM response into forced and transient parts. Above about 90~Hz the forced response carries only $7$--$11\,\%$ of the energy, because the 10~Hz free-decay transient dominates the $L_2$ norm; a model that missed the forced part entirely would show $0.26$--$0.33$, exactly the publication's $0.29$--$0.31$. The network here reproduces the forced peak at the excitation frequency to $0.46\,\%$ at all eight tones. The publication's high-frequency errors are therefore consistent with a network that has not learned the forced response, and a whole-window $L_2$ norm hides this.
@@ -172,7 +172,7 @@ Publication (not stated) & $1.8\times10^{-2}$ & $3.0\times10^{-1}$ & 0.166 & 0.0
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.7\linewidth]{figures/ch14r/fr_train.png}
-\caption{Mean error by load class for three training sets and the publication's values. Plot of the reproduction report.}\label{fig:vf-fr-train}
+\caption{Mean error by load class for three training sets and the publication's values.}\label{fig:vf-fr-train}
 \end{figure}
 
 \begin{table}[tbp]
@@ -192,7 +192,7 @@ Seed & 5--20 Hz & 95--110 Hz & Multi-frequency & Random\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.7\linewidth]{figures/ch14r/fr_seed.png}
-\caption{Three seeds of the default configuration. Plot of the reproduction report.}\label{fig:vf-fr-seed}
+\caption{Three seeds of the default configuration.}\label{fig:vf-fr-seed}
 \end{figure}
 
 \emph{Is the learned operator linear?} The ROM operator is linear, so its superposition defect is zero; the trained network's mean superposition defect over 12 pairs of tones is $0.632$, and pairs with a tone at 95~Hz or above reach $1.0$--$1.2$. Scaling the 100~Hz waveform in amplitude shows the same (\Cref{tab:vf-fr-lin}, \Cref{fig:vf-fr-lin}): the relative error is $0.0695$ at the trained amplitude and $0.976$ at ten times that amplitude. The network interpolates between trained waveforms and amplitudes and has not learned the linearity of the structure, which is why waveform and amplitude generalisation depend on the training set.
@@ -212,7 +212,7 @@ Relative error & 53.1 & 4.84 & 0.0695 & 0.976 & 1.06\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/ch14r/fr_lin.png}
-\caption{Left: superposition defect of the trained operator for random pairs of tones. Right: error for the same 100~Hz waveform scaled in amplitude. Plot of the reproduction report.}\label{fig:vf-fr-lin}
+\caption{Left: superposition defect of the trained operator for random pairs of tones. Right: error for the same 100~Hz waveform scaled in amplitude.}\label{fig:vf-fr-lin}
 \end{figure}
 
 \subsection*{Results: parameter studies}
@@ -242,7 +242,7 @@ $10^{-1}$ & $2.47\times10^{-2}$ & $8.54\times10^{-2}$ & 0.509 & 0.82 & $5.2\time
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/ch14r/fr_lambda.png}
-\caption{Error against the physics weight $\lambda$. Plot of the reproduction report.}\label{fig:vf-fr-lambda}
+\caption{Error against the physics weight $\lambda$.}\label{fig:vf-fr-lambda}
 \end{figure}
 
 \emph{Resolution, width and ROM order.} \Cref{tab:vf-fr-hyper} and \Cref{fig:vf-fr-hyper}: error falls up to 256--512 points per excitation and then stops improving while training time keeps rising (the publication's 6.25\,\% is on the knee); width 128 matches width 256 at $38\,\%$ of the training time; and the ROM order does not change accuracy, as the publication finds, but unlike its $1.1\times10^{3}$, $5.8\times10^{3}$, $1.6\times10^{4}$~s the training time is flat here because the cost is dominated by the width-256 Fourier layers and not by the number of reduced channels. The first-order forward difference that an analysis predicted to carry a 0.25~rad phase error at 100~Hz does not change the result at $\lambda=10^{-3}$, where the data loss dominates, and row scaling of the residual by $\operatorname{diag}(\mathbf K)$ makes the in-range error about $45\,\%$ worse by raising the effective weight of the physics term.
@@ -277,7 +277,7 @@ ROM order & 3 & $1.52\times10^{-2}$ & $8.53\times10^{-2}$ & 0.443 & 133\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.98\linewidth]{figures/ch14r/fr_hyper.png}
-\caption{Error and training time against the training resolution, the network width and the ROM order. Plot of the reproduction report.}\label{fig:vf-fr-hyper}
+\caption{Error and training time against the training resolution, the network width and the ROM order.}\label{fig:vf-fr-hyper}
 \end{figure}
 
 \subsection*{Results: PINN baselines and cost}
@@ -306,7 +306,7 @@ Tone & Setup & PINN & FF-PINN & PINN + data & FF-PINN + data & Operator\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/ch14r/fr_pinn.png}
-\caption{Per-tone PINN baselines against the operator. Plot of the reproduction report.}\label{fig:vf-fr-pinn}
+\caption{Per-tone PINN baselines against the operator.}\label{fig:vf-fr-pinn}
 \end{figure}
 
 \emph{Cost.} \Cref{tab:vf-fr-cost} and \Cref{fig:vf-fr-cost}: for this linear benchmark the exact frequency-domain solution of the publication's Eq.~(20) costs $18.1$~ms, the same order as the operator's inference ($11$~ms), so its $139$~s of training is never repaid against it (break-even about $2\times10^{4}$ loads); against the CPU full-order solve the break-even is about 3 loads, and against ROM time stepping about 16 (overstated, since that GPU time stepping is launch-bound and a CPU loop is faster). A fair speed claim for this linear problem must compare with the frequency-domain solve; the 4580~s of finite element time in the publication's Table~2 is about 100 times slower than the solve here, which inflates its ratio.
@@ -331,7 +331,7 @@ Operator training (once) & 139 s\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.7\linewidth]{figures/ch14r/fr_cost.png}
-\caption{Seconds per excitation on the study machine. Plot of the reproduction report.}\label{fig:vf-fr-cost}
+\caption{Seconds per excitation on the study machine.}\label{fig:vf-fr-cost}
 \end{figure}
 
 \begin{figure}[tbp]
@@ -364,6 +364,6 @@ Higher ROM order costs more training time & accuracy claim reproduced; training 
 \end{tabularx}
 \end{table}
 
-\subsection*{What was not reproduced, and why}
+\subsection*{What the missing data prevent}
 
 The ANSYS model, the publication's training set and its code are unavailable, so exact numbers cannot be matched; every unstated choice is in \Cref{tab:vf-fr-setup}. Each configuration was trained once except for the three seeds, and differences below the seed spread are not significant. The operator was trained in single precision on a 3~GB GPU; a double-precision run with the package's own FNO blocks is supported but was not run. The PINN baselines are the author's designs, and no width above 256 was run, so the publication's overfitting-with-width claim is untested. An analysis written before the runs made predictions that the outcomes confirmed (consistent units give 345~Hz against $10.9$~Hz as printed; $\zeta_1=2.8\,\%$ against the estimated $2.6\,\%$; the exact frequency-domain solve costs $18$~ms against $11$~ms; the publication's $30\,\%$ high-frequency error equals the forced-part floor; the superposition defect is $0.63$) or contradicted (scale-free residual rows did not help; the estimated third-mode frequency of 175~Hz is 227.8~Hz in the three-dimensional ROM; the forward-difference effect is not visible in the final accuracy).

@@ -64,13 +64,9 @@ The last system is the adjoint system. It has one right-hand side whatever the n
 \State $\mathrm dL/\mathrm d\bm\theta\gets$ gradient of $\bm\lambda^T\bm f_\theta(\bm u^\ast;\bm\theta)$ with respect to $\bm\theta$, $\bm u^\ast$ held fixed
 \Ensure $\bm u^\ast$ and $\mathrm dL/\mathrm d\bm\theta$
 \end{pseudo}
-\begin{algdet}
-\item[Cost] Forward: the Newton solve, with no memory for the iterates. Backward: one factorisation or solve with $\bm K_{\mathrm{eff}}^T$ and one backward pass through $\bm f_\theta$ for the cost of a single evaluation of it.
-\item[Fails when] Newton does not converge (the layer raises an error: a gradient through a non-converged state is not defined); $\bm K_{\mathrm{eff}}$ is singular at the solution (a limit point); the solver has features that the plain Newton driver of this layer does not (line search, extra convergence tests, mixed formulations: it has none of them).
-\item[Code] \anchor{fea_engine.differentiable.solve_nonlinear_static_corrected}, \anchor{fea_engine.differentiable.adjoint_gradient}, \anchor{fea_engine.differentiable.implicit_correction_solve}.
-\item[Verified in] \Cref{tab:df-numpy}, \Cref{fig:df-checks}.
-\end{algdet}
 \end{algbox}
+
+The forward pass is the Newton solve and needs no memory for the iterates; the backward pass is one solve with $\bm K_{\mathrm{eff}}^T$ and one backward pass through $\bm f_\theta$, at the cost of a single evaluation of it. The layer raises an error when Newton does not converge, because a gradient through a non-converged state is not defined. It also cannot be used where $\bm K_{\mathrm{eff}}$ is singular at the solution (a limit point), or where the problem needs features that its plain Newton driver lacks: line search, extra convergence tests and mixed formulations. The code is \anchor{fea_engine.differentiable.solve_nonlinear_static_corrected}, \anchor{fea_engine.differentiable.adjoint_gradient} and \anchor{fea_engine.differentiable.implicit_correction_solve}; \Cref{tab:df-numpy} and \Cref{fig:df-checks} are the checks.
 
 \subsection{Explicit calibration}\label{sec:df-explicit}
 

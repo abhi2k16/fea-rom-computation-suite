@@ -33,19 +33,19 @@ The 2D benchmark is a top-hat strip placed on a flat strip, 100~mm long with a 2
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/as_geometry.png}
-\caption{2D benchmark: the top-hat strip on the flat strip. Plot of the reproduction report.}\label{fig:vf-as-geom}
+\caption{2D benchmark: the top-hat strip on the flat strip.}\label{fig:vf-as-geom}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/as_mesh.png}
-\caption{2D benchmark mesh, 324 elements and 800 free degrees of freedom. Plot of the reproduction report.}\label{fig:vf-as-mesh}
+\caption{2D benchmark mesh, 324 elements and 800 free degrees of freedom.}\label{fig:vf-as-mesh}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/as_baseline_deformed.png}
-\caption{Full-order deformed shape of the baseline (as stated) model: contact has already begun in the first increment. Plot of the reproduction report.}\label{fig:vf-as-defo}
+\caption{Full-order deformed shape of the baseline (as stated) model: contact has already begun in the first increment.}\label{fig:vf-as-defo}
 \end{figure}
 
 \subsection*{Results: the 2D benchmark}
@@ -55,13 +55,13 @@ The 2D benchmark is a top-hat strip placed on a flat strip, 100~mm long with a 2
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/ch14r/as_sens_bar.png}
-\caption{Sensitivity of the contact onset to the 28 parameter variations. Plot of the reproduction report.}\label{fig:vf-as-sens}
+\caption{Sensitivity of the contact onset to the 28 parameter variations.}\label{fig:vf-as-sens}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.8\linewidth]{figures/ch14r/as_width10_svd.png}
-\caption{Singular values of the displacement snapshots, 10~mm-wide variant. Plot of the reproduction report.}\label{fig:vf-as-svd}
+\caption{Singular values of the displacement snapshots, 10~mm-wide variant.}\label{fig:vf-as-svd}
 \end{figure}
 
 \emph{Plain Newton.} The full-order model needs 86 Newton iterations over the load history (publication 104). The reduced models are in \Cref{tab:vf-as-conv} and \Cref{fig:vf-as-iters}: DEIM and UDEIM fail at $\varepsilon=10^{-6}$ (at increments 2 and 5; publication 18 and 17), POD and ECSW converge, which is the qualitative result of the publication; at $\varepsilon=10^{-9}$ DEIM and UDEIM also converge, which the report could not explain. ECSW was run with $\tau=0.003$ (publication 0.5, which gave no usable model here).
@@ -86,25 +86,25 @@ ECSW tolerance $\tau$ & 0.5 & 0.003\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/ch14r/as_rom_iters.png}
-\caption{Newton iterations per load increment for the full-order and reduced models. Plot of the reproduction report.}\label{fig:vf-as-iters}
+\caption{Newton iterations per load increment for the full-order and reduced models.}\label{fig:vf-as-iters}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/ch14r/as_rom_errors.png}
-\caption{Error of the reduced models against the full-order model at three tolerances. Plot of the reproduction report.}\label{fig:vf-as-errors}
+\caption{Error of the reduced models against the full-order model at three tolerances.}\label{fig:vf-as-errors}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/ch14r/as_rom_elements.png}
-\caption{Elements evaluated per iteration against error for the converged runs. Plot of the reproduction report.}\label{fig:vf-as-elements}
+\caption{Elements evaluated per iteration against error for the converged runs.}\label{fig:vf-as-elements}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/ch14r/as_timing.png}
-\caption{Online timing of the reduced models. Plot of the reproduction report.}\label{fig:vf-as-timing}
+\caption{Online timing of the reduced models.}\label{fig:vf-as-timing}
 \end{figure}
 
 \begin{figure}[tbp]
@@ -118,19 +118,19 @@ ECSW tolerance $\tau$ & 0.5 & 0.003\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/ch14r/as_dp_zones.png}
-\caption{Linear and nonlinear zones from the partitioning indicator. Plot of the reproduction report.}\label{fig:vf-as-dp}
+\caption{Linear and nonlinear zones from the partitioning indicator.}\label{fig:vf-as-dp}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/ch14r/as_dp_tradeoff.png}
-\caption{Partitioning: error against speed-up as the threshold varies. Plot of the reproduction report.}\label{fig:vf-as-dptr}
+\caption{Partitioning: error against speed-up as the threshold varies.}\label{fig:vf-as-dptr}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/ch14r/as_mode_scan.png}
-\caption{Scan of the number of modes. Plot of the reproduction report.}\label{fig:vf-as-scan}
+\caption{Scan of the number of modes.}\label{fig:vf-as-scan}
 \end{figure}
 
 \subsection*{Geometry and mesh: 3D joint}
@@ -140,19 +140,19 @@ The 3D pipeline uses total-Lagrangian Hex8 and Hex20 elements (\Cref{fig:vf-as3-
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.7\linewidth]{figures/ch14r/as3_element.png}
-\caption{3D elements of the pipeline. Plot of the reproduction report.}\label{fig:vf-as3-el}
+\caption{3D elements of the pipeline.}\label{fig:vf-as3-el}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch14r/as3_geometry.png}
-\caption{Scaled butt joint, 480 Hex20 elements, 12\,087 degrees of freedom. Plot of the reproduction report.}\label{fig:vf-as3-geom}
+\caption{Scaled butt joint, 480 Hex20 elements, 12\,087 degrees of freedom.}\label{fig:vf-as3-geom}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.7\linewidth]{figures/ch14r/as3_contact_law.png}
-\caption{Regularised penalty contact law. Plot of the reproduction report.}\label{fig:vf-as3-law}
+\caption{Regularised penalty contact law.}\label{fig:vf-as3-law}
 \end{figure}
 
 \subsection*{Results: 3D joint}
@@ -179,19 +179,19 @@ Speed-up ECSW & 8.8 & 4.3 & 1.4\\
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/ch14r/as3_k500_fom.png}
-\caption{Full-order response of the spring-connected joint over the nine preloads. Plot of the reproduction report.}\label{fig:vf-as3-fom}
+\caption{Full-order response of the spring-connected joint over the nine preloads.}\label{fig:vf-as3-fom}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/ch14r/as3_rom_accuracy.png}
-\caption{3D joint: accuracy of the reduced models. Plot of the reproduction report.}\label{fig:vf-as3-acc}
+\caption{3D joint: accuracy of the reduced models.}\label{fig:vf-as3-acc}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/ch14r/as3_rom_speedup.png}
-\caption{3D joint: speed-up of the reduced models. Plot of the reproduction report.}\label{fig:vf-as3-speed}
+\caption{3D joint: speed-up of the reduced models.}\label{fig:vf-as3-speed}
 \end{figure}
 
 The ECSW speed-up at $10^{-5}$ is $8.8\times$ for 87 of 480 elements, falling to $1.4\times$ at $10^{-9}$, with an offline set-up of 54~s.
@@ -215,7 +215,7 @@ Domain partitioning saves cost & error $0.29\,\%$, speed-up $\le2.8$ & partly\\
 \end{tabularx}
 \end{table}
 
-\subsection*{What was not reproduced, and why}
+\subsection*{Where the assembly study departs from the publication}
 
 The publication's geometry is incomplete: with the stated parameters contact begins in the first increment, so the study continues with a variant that is circumstantial. ECSW needed a much smaller tolerance than the stated 0.5. The 3D part is a pipeline and not a reproduction; it uses a regularised contact law, replaces the connectors by springs, covers one parameter (preload) inside the trained range, and the DEIM-NL and UDEIM-NL variants are additions. Not done: other parameters, the publication's full assembly sizes, and an explanation of why DEIM and UDEIM converge at $\varepsilon=10^{-9}$. Each configuration is a single run.
 

@@ -196,3 +196,23 @@ def test_reflect_mesh_preserves_winding_orientation():
         x, y = reflected.nodes[e, 0], reflected.nodes[e, 1]
         signed = 0.5 * (np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1)))
         assert signed > 0
+
+
+def test_hole_in_rectangle_conforming_for_unequal_quadrants():
+    """Regression: quadrants with unequal extents used to leave stray boundary nodes on the shared rays."""
+    import numpy as np
+    from collections import Counter
+    from fea_engine.mesh import hole_in_rectangle_mesh
+    Lx, Ly, R = 2.4, 2.0, 0.3
+    for c in [(1.2, 1.0), (1.2, 0.9), (0.8, 1.3), (1.5, 0.7)]:
+        m = hole_in_rectangle_mesh(Lx, Ly, c, R, 4, 8)
+        cnt = Counter()
+        for q in m.elements:
+            for i in range(4):
+                cnt[tuple(sorted((q[i], q[(i + 1) % 4])))] += 1
+        assert max(cnt.values()) <= 2
+        for i in {n for k, v in cnt.items() if v == 1 for n in k}:
+            x, y = m.nodes[i]
+            on_rect = min(abs(x), abs(x - Lx), abs(y), abs(y - Ly)) < 1e-9
+            on_hole = abs(np.hypot(x - c[0], y - c[1]) - R) < 1e-9
+            assert on_rect or on_hole, (c, x, y)

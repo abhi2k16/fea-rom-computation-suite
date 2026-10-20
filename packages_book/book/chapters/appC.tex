@@ -71,7 +71,7 @@ The entries below cover the terms that the chapters and appendices use, in alpha
 \item[Guyan reduction] Static condensation of the interior degrees of freedom onto selected master degrees of freedom (Chapter~\ref{ch:cms}).
 \item[Hankel singular values] Quantities that measure the joint controllability and observability of the states of a linear system; their sum controls the truncation error (Chapter~\ref{ch:bt}).
 \item[Harmonic balance] A method for periodic responses that expands them in a Fourier series and solves for the coefficients; used for the backbone (Chapter~\ref{ch:nonint}).
-\item[Held-out] Data (parameters, states) not used to build the reduced model and used only to test it (Appendix~\ref{ch:conv}).
+\item[Unseen (held-out)] Data (parameters, states) not used to build the reduced model and used only to test it (Appendix~\ref{ch:conv}).
 \item[History variable] A quantity that a path-dependent material stores from step to step, such as the plastic strain (Chapter~\ref{ch:nonlin}).
 \item[Hyperelasticity] A material law derived from a strain-energy function, such as the neo-Hookean model (Chapter~\ref{ch:nonlin}).
 \item[Hyper-reduction] Approximating the nonlinear reduced force from a small part of the model, so that its cost no longer scales with the full mesh (Chapter~\ref{ch:hyper}).
@@ -117,7 +117,7 @@ The entries below cover the terms that the chapters and appendices use, in alpha
 \item[Passivity] A property of a reduced model that it cannot generate energy; important when it is coupled to others (Chapter~\ref{ch:bt}).
 \item[Patch test] A test that an element reproduces a constant-strain state exactly on an arbitrary mesh (Chapter~\ref{ch:elem}).
 \item[Penalty method] Enforcing a constraint by a stiff spring; an alternative to the exact contact treatment, with a trade-off between accuracy and conditioning (Chapter~\ref{ch:contact}).
-\item[Pipeline (integrated)] One run from mesh to a held-out prediction, with the cost reported by offline, online and lift parts (Chapter~\ref{ch:verif}).
+\item[Pipeline (integrated)] One run from mesh to a prediction on unseen loads, with the cost reported by offline, online and lift parts (Chapter~\ref{ch:verif}).
 \item[Plate element] A two-dimensional bending element; the Mindlin plate includes transverse shear (Chapter~\ref{ch:elem}).
 \item[POD] Proper orthogonal decomposition: the basis of dominant singular vectors of a snapshot matrix (Chapter~\ref{ch:pod}).
 \item[Poles] The values of $s$ at which the transfer function of a linear system is infinite; they carry frequencies and damping (Chapter~\ref{ch:nonint}).

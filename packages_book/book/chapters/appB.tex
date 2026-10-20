@@ -12,7 +12,7 @@ A convergence study answers one question: does the error of a discretisation fal
 \item \textbf{State what was held fixed and what was not tested}: the load, the boundary conditions, the other discretisation parameters, the range of the parameter.
 \end{enumerate}
 
-For reduced-order models the parameter of step 3 is the basis size, there is no asymptotic order to compare, and the template becomes: report the error on \emph{held-out} parameters and not on the training set, and report both (\Cref{ch:pod,ch:contact}).
+For reduced-order models the parameter of step 3 is the basis size, there is no asymptotic order to compare, and the template becomes: report the error on \emph{unseen} parameters (parameters not used to build the model) and not on the training set, and report both (\Cref{ch:pod,ch:contact}).
 
 \section{Tolerances used in the book}\label{sec:conv-tol}
 
@@ -31,7 +31,7 @@ nonlinear static drivers (listings of Chapters~\ref{ch:nonlin}, \ref{ch:batch}) 
 \code{ecsw_weights} & \code{tol} $10^{-6}$ (default) & relative training residual at which element selection stops (Chapter~\ref{ch:hyper} sweeps $10^{-2}$ to $10^{-8}$) \\
 \code{nonneg_dual_basis} & \code{tol} $10^{-9}$, 500 iterations & non-negative factorisation stop \\
 \code{rank_deficiency} & $10^{-10}$ (relative) & singular values below this fraction of the largest count as zero \\
-success criteria of the experiments & 1\,\% (Chapter~\ref{ch:pod}), 2\,\% (Chapter~\ref{ch:nonint}) & held-out error and frequency error used to call a basis or an identification adequate; chosen by the author, not by a standard \\
+success criteria of the experiments & 1\,\% (Chapter~\ref{ch:pod}), 2\,\% (Chapter~\ref{ch:nonint}) & error on unseen parameters and frequency error used to call a basis or an identification adequate; chosen by the author, not by a standard \\
 \bottomrule
 \end{tabularx}
 \caption{Tolerances and thresholds.}\label{tab:conv-tol}
@@ -44,6 +44,6 @@ A speed-up or error figure of a reduced-order model is meaningful only with its 
 \item the full-order model, its size, its solver and whether the baseline is dense or sparse;
 \item the \emph{offline} cost (snapshots, basis, training, preprocessing), the \emph{online} cost per query, and, if the answer has to be lifted to the full space, the \emph{reconstruction} cost, each separately;
 \item whether a quoted speed-up includes the preprocessing: a speed-up of the online solve alone is not a speed-up of the workflow, and the break-even number of queries (offline cost divided by saving per query) is what connects them;
-\item the error on held-out parameters, with its definition, next to a \emph{local} quantity of engineering interest (a reaction, a peak stress or displacement), because a small global error can hide a large local one.
+\item the error on unseen parameters, with its definition, next to a \emph{local} quantity of engineering interest (a reaction, a peak stress or displacement), because a small global error can hide a large local one.
 \end{itemize}
 Chapters~\ref{ch:pod}, \ref{ch:freq}, \ref{ch:nonint} and~\ref{ch:hyper} follow this convention for their main reduced-order benchmarks: the offline, online and lift costs are given separately, the break-even number of queries includes the offline cost, and an error in a local quantity is given next to the error of the full state. The local quantities are the tip deflection (Chapter~\ref{ch:pod}), the peak tip amplitude at the resonances (Chapter~\ref{ch:freq}), the mid-span deflection (Chapter~\ref{ch:nonint}, where the full-state error is the larger) and the peak centre displacement and total contact force (Chapter~\ref{ch:hyper}). Chapter~\ref{ch:verif} reports the integrated pipeline by the same convention, with the tip deflection, the peak von Mises stress, the reaction and the root moment next to the full-state error; in the chapters before it no reaction or peak stress was computed. The benchmark models are small, the baselines are dense or small sparse solves, and the timings are single runs that vary by tens of per cent, so the speed-ups show orders of magnitude and not production performance. The remaining chapters of Part~III (Chapters~\ref{ch:bt} and~\ref{ch:cms}) report errors and sizes but do not apply the full convention.

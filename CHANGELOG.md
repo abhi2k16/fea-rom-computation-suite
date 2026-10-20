@@ -6,6 +6,9 @@ All notable changes to `fea_engine` and `rom_engine`. Format follows
 
 ## Unreleased
 
+### Fixed (fea_engine, hole_in_rectangle_mesh)
+- `hole_in_rectangle_mesh` and `hole_in_rectangle_mesh_graded` left stray boundary nodes on the shared rays (non-conforming mesh) when the hole centre gave the four quadrants unequal extents. All four quadrants now use one near-hole block of size `min(a_+, a_-, b_+, b_-)` and extend from it to their own edges, so shared rays carry identical nodes. Node and element counts for such positions change; the symmetric case is unchanged. Regression test in `fea_engine/tests/test_mesh_grading_generalized.py`.
+
 ### Added (rom_engine, cached contact-condition indicator)
 - `ContactConditionIndicator(K, B, f, weights=(1, 0, 0), max_dense_bytes=1e9)`: the indicator of `contact_condition_indicator` (kept unchanged as the reference) with the force estimate `(B^T)^+ (K u - f)` prepared once and only when `a2` or `a3` is nonzero, by the cheapest exact route: `identity` and `selection` need no solve, `normal_equations` is one sparse LU of `B B^T` for a sparse full-row-rank `B` (checked on random vectors), `dense_pinv` caches the dense pseudo-inverse otherwise (refused above `max_dense_bytes`). Accepts trajectories `(n, T)` (sum over the columns, per-step `f` and `c` allowed); `for_parameter(c_of_p)` gives the `indicator(p, u)` for `greedy_contact_sampling`. Tests: `rom_engine/tests/test_contact_indicator.py` (37); timing: `rom_engine/tests/contact_indicator_timing.py`.
 
