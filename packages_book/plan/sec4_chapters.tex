@@ -27,7 +27,7 @@ Each chapter follows one template: problem, formulation, algorithm, implementati
 \item[Implementation] \anchor{fea_engine.mesh.rectangle_mesh}, \anchor{fea_engine.grading}, \anchor{fea_engine.geometry.build_system}, \anchor{fea_engine.mesh_io}; \code{MultiBlockMesh} for mixed element types.
 \item[Verification] Index-mapping check of the exported connectivity against \code{meshio} (optional extra); element-quality and area/volume sum checks. \todo{meshio round-trip script.}
 \item[Figures and tables] Hole and notch grading figures \todo{figure from the grading tests}; table of generators and the element each one targets.
-\item[Design lesson] Why Gmsh support was removed, and what that did to the contract between mesh and element.
+\item[Dispatcher] The one function that decides which mesh type each element may receive.
 \item[Exclusions] Unstructured generators, Delaunay triangulation, manual input-file editing.
 \end{description}
 

@@ -1781,6 +1781,7 @@ INPUT ./figures/ch02_import.pdf
 INPUT figures/ch02_import.pdf
 INPUT ./figures/ch02_import.pdf
 INPUT ./figures/ch02_import.pdf
+INPUT /usr/share/texmf/fonts/tfm/public/lm/ts1-lmr10.tfm
 INPUT ./chapters/ch02.bbl
 INPUT chapters/ch02.bbl
 INPUT ./chapters/ch02.bbl
@@ -2031,7 +2032,6 @@ INPUT ./figures/ch06_torch.pdf
 INPUT figures/ch06_torch.pdf
 INPUT ./figures/ch06_torch.pdf
 INPUT ./figures/ch06_torch.pdf
-INPUT /usr/share/texmf/fonts/tfm/public/lm/ts1-lmr10.tfm
 INPUT ./chapters/ch06.bbl
 INPUT chapters/ch06.bbl
 INPUT ./chapters/ch06.bbl
