@@ -9,9 +9,35 @@ A mesh is the contract between geometry and element: nodes, connectivity, and a 
 
 A \anchor{fea_engine.mesh.Mesh} holds an array of node coordinates of shape $(n_{nodes},\dim)$ and an integer array of element connectivity of shape $(n_{el},n_{nodes/el})$, with node numbers indexing the first array. It does not know the element formulation: the same quadrilateral mesh serves a plane-stress element, a plate or a scalar field. \anchor{fea_engine.mesh.MultiBlockMesh} holds several connectivity arrays (blocks, for example a triangle block and a quadrilateral block) over \emph{one} shared node array. Nodes and elements are selected by coordinates (\code{nodes_on_line}, \code{select_nodes}) and by named node sets, which is how boundary conditions are applied without node numbers appearing in the analysis.
 
-The one property that the mesh must have for any element is a positive Jacobian determinant at every Gauss point: an inverted element gives a wrong or negative stiffness without any error being raised. \code{check_quality(element)} evaluates $\det\bm J$ at every Gauss point with the element's own shape functions and reports the ratio of the largest to the smallest value.
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/ch02_anatomy.pdf}
+\caption{A $4\times3$ rectangle mesh from \texttt{rectangle\_mesh}: (a) node numbers (blue) and element numbers (orange); (b) the node sets \code{root}, \code{tip} and \code{top}, selected by coordinates with \code{select_nodes}, with their sizes (\cmeAnRoot, \cmeAnTip{} and \cmeAnTop{} of \cmeAnNodes{} nodes); (c) the two arrays that are the whole mesh, read from the object. Drawn by \texttt{scripts/ch02\_figs.py} (matplotlib).}\label{fig:me-anatomy}
+\end{figure}
 
-\tikzfigure[0.55\linewidth]{ch02_jacobian}{Why a positive Jacobian matters. A convex element has $\det\bm J>0$ at every Gauss point; a re-entrant corner makes it non-positive and the stiffness wrong without an error message.}{fig:me-jacobian}
+\Cref{fig:me-anatomy} shows what the object contains. The mesh has \cmeAnNodes{} nodes and \cmeAnElems{} elements. Node numbers run up each column in turn, and each connectivity row lists the four nodes of one element counter-clockwise from the lower left; the second array is the only place where elements are tied to nodes, so renumbering the nodes means rewriting both arrays together. A node set is a name and an array of node numbers: \code{select_nodes(x=0.0, name="root")} finds the nodes on the line $x=0$ by coordinates and stores them under that name, so an analysis can refer to the root or the tip without a node number in its text. The same call with a \code{(lo, hi)} pair selects a segment, and with several coordinates their intersection.
+
+\section{Element topologies and node ordering}\label{sec:me-topo}
+
+A mesh does not know its element formulation, but the connectivity rows only mean something when read with the right one: the order of the nodes in a row is the order of the shape functions of the element. \fea{} supports the line, triangle, quadrilateral, tetrahedron and hexahedron in their linear form, and the triangle, quadrilateral, tetrahedron and hexahedron in their quadratic form (\Cref{fig:me-elements}). Corner nodes come first, in counter-clockwise order for the faces and bottom face first for the hexahedron, followed by the mid-edge nodes, edge by edge. The numbering is the same as the VTK (Visualization Toolkit) numbering for these cell types, which is why a mesh can be written to a VTK file without permuting its connectivity (\Cref{sec:me-viz}). Gmsh numbers some quadratic cells differently, and the element classes carry the permutation (\code{GMSH_NODE_ORDER}) that maps Gmsh's order to their own.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/ch02_elements.pdf}
+\caption{The reference elements of the package, drawn at their natural coordinates with the node numbers of the connectivity row; blue: corner nodes, orange: mid-edge nodes. The coordinates of the mid-edge nodes are taken from the element classes (\code{Quad8PlaneStress}, \code{Hex20Solid3D}, \code{Tet10Solid3D}) and from the edge lists of the triangle, so a mistake in the node order of a class would show here. Drawn by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-elements}
+\end{figure}
+
+\Cref{tab:me-elements} states what each element has and checks the ordering. The check is the defining property of a nodal shape function: $N_i(\bm\xi_j)=\delta_{ij}$, shape function $i$ is one at node $i$ and zero at every other node. If a class listed its nodes in another order than the coordinates of \Cref{fig:me-elements}, the matrix $N_i(\bm\xi_j)$ would not be the identity. For all eight element types it is the identity to rounding, and the shape functions sum to one at the centroid to \cmeElMaxPU. The test shows that the picture and the code agree; it does not test the element's stiffness, which Chapter~\ref{ch:elem} does.
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch02_elements}
+\caption{Element types: number of nodes, dimension, corner and mid-edge nodes, the Gauss rule that the element class declares (tensor rule with $n$ points per direction for quadrilaterals and hexahedra, the order of the simplex rule for triangles and tetrahedra), and the Kronecker check $N_i(\bm\xi_j)=\delta_{ij}$. All pass: \cmeElAllOk.}\label{tab:me-elements}
+\end{table}
+
+\section{Mesh quality}\label{sec:me-quality}
+
+The one property that the mesh must have for any element is a positive Jacobian determinant at every Gauss point: an inverted element gives a wrong or negative stiffness without any error being raised. \code{check_quality(element)} evaluates $\det\bm J$ at every Gauss point with the element's own shape functions and reports the ratio of the largest to the smallest value.
 
 \begin{algbox}{Mesh quality check}
 \begin{pseudo}
@@ -27,9 +53,25 @@ The one property that the mesh must have for any element is a positive Jacobian 
 \item[Cost] $n_e\,n_g$ small determinants.
 \item[Fails when] it is not called: nothing else checks it. A positive ratio of the extremes says the element is distorted, not wrong.
 \item[Code] \code{check_quality(element)} on \anchor{fea_engine.mesh.Mesh}.
-\item[Verified in] \Cref{tab:me-gen} (all generated meshes pass).
+\item[Verified in] \Cref{tab:me-gen} (all generated meshes pass), \Cref{tab:me-quality}.
 \end{algdet}
 \end{algbox}
+
+\paragraph{What the determinant is.} For a bilinear quadrilateral the map from the reference square to the element is $\bm x(\bm\xi)=\sum_iN_i(\bm\xi)\bm x_i$ and $\det\bm J(\bm\xi)$ is a linear function of $\xi$ and $\eta$ (Exercise~\ref{ex:me-jac}). It is positive everywhere if and only if it is positive at the four corners, where it equals the cross product of the two edges that meet there. A convex quadrilateral has all four positive; a quadrilateral with a re-entrant corner has a non-positive value at that corner, and near the corner at the Gauss points. \Cref{fig:me-quality}c shows both: the convex element has four positive values, and the element whose fourth node is pushed inside the triangle of the other three has a negative $\det\bm J$ (\cmeQReentMin{}, against 0.25 at every Gauss point of a unit square) at the Gauss point nearest that node, while its other three values stay positive. Only \cmeQReentNeg{} of the four Gauss points is negative, and the value at the element centre is positive (0.08, the mean of the four corner values), so a check at the centre alone would pass: the sign has to be tested at every Gauss point.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/ch02_quality.pdf}
+\caption{Mesh quality of a $14\times8$ quadrilateral mesh whose interior nodes are moved at random by a fraction of the cell size. (a), (b) The smallest Gauss-point $\det\bm J$ of each element relative to its value for the undistorted cell, for 15\% and 45\% perturbation. (c) $\det\bm J$ at the four Gauss points of a convex element and of a re-entrant one (green: positive, red: negative). (d), (e) Histograms of the aspect ratio and the smallest interior angle for four perturbation levels. (f) The smallest $\det\bm J$ of the whole mesh against the perturbation. Drawn by \texttt{scripts/ch02\_figs.py} (matplotlib).}\label{fig:me-quality}
+\end{figure}
+
+\paragraph{Distortion, and what it costs.} \Cref{tab:me-quality} follows one mesh through four perturbation levels. As the nodes move, the smallest determinant falls from 1 to \cmeQMinDetHi{} of its nominal value at 45\%, the ratio of the extremes grows, the worst aspect ratio goes from 1.1 to 3.8 and the smallest angle from $90^\circ$ to $18^\circ$; the first element with a non-positive determinant appears when the perturbation reaches about \cmeQFirstBad\% of the cell size for this seed. The last column is the patch test of Chapter~\ref{ch:elem}: a linear displacement field is imposed on the boundary and the interior nodes must reproduce it. The error is at rounding (at most \cmeQPatchMax) at every level, for every mesh whose determinants are positive. So distortion alone does not break the quadrilateral on the patch test: it is exact on any positive-Jacobian mesh for a linear field. What distortion reduces is accuracy for fields that are \emph{not} linear, which this check does not measure, and which is the reason to keep aspect ratio and angles under control as well as the sign of $\det\bm J$.
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch02_quality}
+\caption{One $14\times8$ mesh at four perturbation levels (one random seed). The determinant is relative to the undistorted element. The patch error is the largest nodal error of a linear field, relative to the largest displacement.}\label{tab:me-quality}
+\end{table}
 
 \section{Generators}\label{sec:me-gen}
 
@@ -199,7 +241,7 @@ A mesh is nodes and connectivity with a positive-Jacobian guarantee. The structu
 \item \emph{(Implementation)} Make the interface of \Cref{sec:me-multi} slanted instead of vertical and run the patch test again. Does the error stay at rounding?
 \item \emph{(Implementation)} Apply a pure-shear patch test (not only a linear field with a symmetric gradient) to the mixed mesh and check the recovered stress on both sides of the interface.
 \item \emph{(Interpretation)} Round-trip a \code{MultiBlockMesh} through \code{write_mesh} and \code{read_mesh}. Which information survives, and which does not (see the notes on field data in the module)?
-\item \emph{(Derivation)} Show that the Jacobian determinant of a bilinear quadrilateral is a linear function of the natural coordinates, and that it is positive everywhere in the element if and only if it is positive at the four corners.
+\item\label{ex:me-jac} \emph{(Derivation)} Show that the Jacobian determinant of a bilinear quadrilateral is a linear function of the natural coordinates, and that it is positive everywhere in the element if and only if it is positive at the four corners.
 \end{enumerate}
 
 \chapterrefs
