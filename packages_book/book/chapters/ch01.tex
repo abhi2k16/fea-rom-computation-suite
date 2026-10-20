@@ -1,8 +1,8 @@
 \chapter{The design of a decoupled scientific engine}\label{ch:arch}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-The two packages of this book, \fea{} and \rom{}, are meant to grow without rewriting what exists: a new element, material, geometry, load, solution strategy or linear-algebra backend should be added by a subclass or a registry entry. This chapter describes the structure that makes this possible and tests the claims it rests on. It shows the flow from material to post-processing, the small interface that the solvers use to talk to elements, a new element added in about twenty lines to a solver that was not changed, an interface test of all 34 registered elements, the rule that \rom{} never imports \fea{}, and the backend dispatcher, including a cost it has on sparse systems that the book measured and the package documentation does not mention.\par\smallskip
-\textbf{After this chapter the reader can:} (i) add an element to \fea{} by subclassing and say which interface checks it must pass; (ii) state why \rom{} does not import \fea{} and how that is checked; (iii) read the choice of the backend dispatcher and name the cost of its \code{auto} setting on sparse systems.
+The two packages in this book, \fea{} and \rom{}, are meant to grow without anyone rewriting what is already there: a new element, material, geometry, load, solution strategy or linear-algebra backend is added by a subclass or a registry entry. This chapter shows the structure that allows this and tests the claims it rests on. It follows the flow from material to post-processing, the small interface through which solvers talk to elements, a new element of about twenty lines added to a solver that was not changed, an interface test of all 34 registered elements, the rule that \rom{} never imports \fea{}, and the backend dispatcher, whose cost on sparse systems we measured and the package documentation does not mention.\par\smallskip
+After the chapter you should be able to add an element by subclassing and know which interface checks it has to pass, say why \rom{} does not import \fea{} and how that is checked, and explain what the \code{auto} backend setting costs on sparse systems.
 \end{tcolorbox}
 
 \section{One system, many problems}\label{sec:ar-system}
@@ -11,7 +11,7 @@ Whatever the physical problem is (a membrane, a beam, a shell with contact), the
 \begin{equation}\label{eq:ar-system}
 \bm M\ddot{\bm u}+\bm C\dot{\bm u}+\bm K\bm u=\bm F ,
 \end{equation}
-or, for nonlinear problems, on the residual $\bm f_{int}(\bm u)-\bm F$ and its tangent (Chapter~\ref{ch:nonlin}). The vectors and matrices are plain NumPy or SciPy arrays. Everything that is specific to a problem is pushed into the construction of $\bm M,\bm C,\bm K$ (or of $\bm f_{int}$ and $\bm K_T$), and everything that is specific to a solution method is in the solvers. The design question of this chapter is where the boundary between the two sits, and how narrow it can be made.
+or, for nonlinear problems, on the residual $\bm f_{int}(\bm u)-\bm F$ and its tangent (Chapter~\ref{ch:nonlin}). The vectors and matrices are plain NumPy or SciPy arrays. Everything that is specific to a problem is pushed into the construction of $\bm M,\bm C,\bm K$ (or of $\bm f_{int}$ and $\bm K_T$), and everything that is specific to a solution method is in the solvers. The question for this chapter is where the boundary between the two sits, and how narrow it can be made.
 
 \section{The flow and the layers}\label{sec:ar-flow}
 
@@ -39,17 +39,13 @@ The contact elements of \fea{} are in the same registry but have no interpolatio
 \State apply boundary conditions on the free/fixed split afterwards
 \Ensure assembled stiffness (calling again \emph{replaces} it unless \texttt{accumulate=True})
 \end{pseudo}
-\begin{algdet}
-\item[Cost] $n_e$ element matrices of $O(n_g\,d^3)$ each, plus one scatter-add per element; the Python loop over elements dominates for small elements (Chapter~\ref{ch:batch} removes it).
-\item[Fails when] an element has a non-positive Jacobian (no error is raised, Chapter~\ref{ch:mesh}); the element does not implement the method that the call asks for (e.g.\ contact elements have no \texttt{shape\_and\_derivs}).
-\item[Code] \anchor{fea_engine.solver.FESystem} (\code{assemble_stiffness}, \code{assemble_mass}), \anchor{fea_engine.elements.base.Element}.
-\item[Verified in] \Cref{tab:ar-registry} (interface conformance), \Cref{lst:ar-bar} (a new element on the unchanged assembly).
-\end{algdet}
 \end{algbox}
+
+Assembly costs one element matrix of $O(n_g\,d^3)$ per element plus a scatter-add, and for small elements the Python loop over the elements dominates; Chapter~\ref{ch:batch} removes it. Two things go wrong: an element with a non-positive Jacobian raises no error (Chapter~\ref{ch:mesh}), and an element that does not implement the requested method fails at the call, as a contact element does when asked for \code{shape_and_derivs}. The code is \code{assemble_stiffness} and \code{assemble_mass} of \anchor{fea_engine.solver.FESystem}, with the Gauss loop in \anchor{fea_engine.elements.base.Element}; \Cref{tab:ar-registry} and \Cref{lst:ar-bar} are the checks.
 
 \section{Extending the engine: a new element}\label{sec:ar-extend}
 
-The claim of the design is that a new element touches no existing code. \Cref{lst:ar-bar} defines a two-node bar with one displacement per node (a one-dimensional element, $\bm B=\mathrm dN/\mathrm dx$, with the stiffness $\bm D=EA$ as a $1\times1$ matrix) as a subclass, registers it with one line (after \texttt{from fea\_engine.elements import Element, ELEMENT\_REGISTRY, jacobian}), and uses it with the existing assembly, static solver and modal solver.
+A new element should not need any existing code to change. \Cref{lst:ar-bar} defines a two-node bar with one displacement per node (a one-dimensional element, $\bm B=\mathrm dN/\mathrm dx$, with the stiffness $\bm D=EA$ as a $1\times1$ matrix) as a subclass, registers it with one line (after \texttt{from fea\_engine.elements import Element, ELEMENT\_REGISTRY, jacobian}), and uses it with the existing assembly, static solver and modal solver.
 
 \begin{lstlisting}[caption={A new element by subclassing, and the one registry line. Nothing in \texttt{fea\_engine} is edited.},label={lst:ar-bar}]
 class Bar1D(Element):
@@ -75,7 +71,7 @@ s.fix_dofs([0], [0]); s.add_nodal_force([n], 0, P)
 U = s.solve_static(); f, _ = s.solve_modal(n_modes=1)
 \end{lstlisting}
 
-The listing was run for 1, 2, 4, 8, 16 and 32 elements ($E=210$ GPa, $A=10^{-4}$ m$^2$, $\rho=7800$ kg/m$^3$, $L=2$ m). The static tip displacement equals $PL/(EA)$ to \cdeExtStatic{} (the linear element is exact for this problem), and the first axial frequency converges to $\sqrt{E/\rho}/(4L)$ with observed order \cdeExtFreqOrder{}, from an error of \cdeExtFreqCoarse{} with one element. The existing solvers ran on the new element unchanged, which is what the design promises. It does not show that every solver works with every new element: a path-dependent or batched element must also meet the conventions of \Cref{sec:ar-interface}.
+The listing was run for 1, 2, 4, 8, 16 and 32 elements ($E=210$ GPa, $A=10^{-4}$ m$^2$, $\rho=7800$ kg/m$^3$, $L=2$ m). The static tip displacement equals $PL/(EA)$ to \cdeExtStatic{} (the linear element is exact for this problem), and the first axial frequency converges to $\sqrt{E/\rho}/(4L)$ with observed order \cdeExtFreqOrder{}, from an error of \cdeExtFreqCoarse{} with one element. The existing solvers ran on the new element without any change. That does not mean every solver works with every new element: a path-dependent or batched element also has to meet the conventions of \Cref{sec:ar-interface}.
 
 \section{The six extension points}\label{sec:ar-points}
 
@@ -136,13 +132,9 @@ A registry is only useful if every entry honours the interface. The test of this
 \State solve $\bm K_{ff}\bm u_f=\bm f_f$ with the chosen backend
 \Ensure displacement; a non-SPD matrix is never sent to conjugate gradients
 \end{pseudo}
-\begin{algdet}
-\item[Cost] The probe costs $O(n^3)$ time and $O(n^2)$ memory on \emph{every} solve, also below the threshold where its answer decides nothing.
-\item[Fails when] the system is large and sparse: the probe, not the solve, dominates (measured below). Use \texttt{backend="scipy"} there.
-\item[Code] \anchor{fea_engine.backend_dispatch.select_backend}.
-\item[Verified in] \Cref{fig:ar-dispatch}.
-\end{algdet}
 \end{algbox}
+
+The probe costs $O(n^3)$ time and $O(n^2)$ memory on \emph{every} solve, including those below the threshold, where its answer decides nothing. For a large sparse system the probe and not the solve therefore dominates (measured below), and \code{backend="scipy"} is the better choice there. The code is \anchor{fea_engine.backend_dispatch.select_backend}, and \Cref{fig:ar-dispatch} is the check.
 
 \paragraph{Measured cost of the automatic choice.} \Cref{fig:ar-dispatch} compares \code{solve_static} with \code{backend="scipy"} and \code{backend="auto"} for a sparse plane-stress plate with up to \cdeDispMaxDof{} dofs, a range in which \code{auto} always picks the SciPy path. The two give the same answer, but \code{auto} is slower, and by an amount that grows quickly: at the largest size \code{auto} takes \cdeDispExtraFracLarge{}\% more time than \code{scipy}, \cdeDispExtraMs{} ms more in absolute terms, and the extra time grows with the dof count with an observed exponent of \cdeDispSlope{}. The cause is visible in the source. The SPD test of \code{select_backend} converts the sparse matrix to a dense array and runs a dense Cholesky factorisation, which is $O(n^3)$ in time and $O(n^2)$ in memory, and it does so on every solve, even when the answer decides nothing (below the threshold the SciPy path is taken regardless). For a free-dof count of 5\,000, the dense array takes about \cdeDenseFiveK{} GB; for 50\,000 it would take about \cdeDenseFiveK0{} GB (computed as $8n^2$ bytes, not measured). Until the probe works on the sparse matrix, the practical advice is to pass \code{backend="scipy"} for large sparse systems and to use \code{"auto"} only where the system is small.
 
@@ -170,16 +162,15 @@ dispatcher & \anchor{fea_engine.backend_dispatch.select_backend} & no \\
 \begin{limitsbox}
 \begin{itemize}
 \item \textbf{The interface test is shallow.} It checks attributes, shape functions and the presence of the force and tangent methods, not that an element is correct (\Cref{tab:ar-registry}).
-\item \textbf{Extension is easy for the common case.} A new element with the generic Gauss loop is about twenty lines. Elements with history variables, mixed formulations or batched kernels have to follow the conventions of Chapters~\ref{ch:nonlin} and~\ref{ch:batch}.
-\item \textbf{The \code{auto} backend has a large cost on sparse systems} (\Cref{fig:ar-dispatch}), because of its dense SPD probe, and the torch branch was not exercised here.
+\item \textbf{Extension is easy for the common case.} A new element that uses the generic Gauss loop is about twenty lines; elements with history variables, mixed formulations or batched kernels have to follow the conventions of Chapters~\ref{ch:nonlin} and~\ref{ch:batch}. Registries are Python dictionaries, so an extension is made in code and there is no plug-in discovery.
+\item \textbf{The \code{auto} backend} is costly on sparse systems (\Cref{fig:ar-dispatch}), and its torch branch was not run here.
 \item \textbf{Line counts} include comments and docstrings, so they measure documentation as well as code.
-\item \textbf{One model of extension.} Registries are Python dictionaries: an extension is made in code by the user, and there is no plug-in discovery.
 \end{itemize}
 \end{limitsbox}
 
 \section{Summary}\label{sec:ar-summary}
 
-\fea{} separates material, mesh, element, system, solver and post-processing, and the only thing a solver needs from an element is the matrix or the force and tangent. The consequence was tested: a new element of twenty lines worked with the existing static and modal solvers with an error of \cdeExtStatic{}; all \cdeRegTotal{} registered elements satisfy the interface test; and \rom{} is independent of \fea{} at the source level. The measured cost of \code{backend="auto"} is an example of why the book tests design claims: the dispatcher works, but not for free.
+In \fea{} the material, mesh, element, system, solver and post-processing layers are separate, and a solver needs only the matrix, or the force and tangent, from an element. We tested what follows from that: a twenty-line element ran in the existing static and modal solvers with an error of \cdeExtStatic{}, all \cdeRegTotal{} registered elements pass the interface test, and \rom{} does not depend on \fea{} at source level. The \code{auto} backend shows why design claims are worth testing: it works, but it is not free.
 
 \section*{Exercises}\label{sec:ar-exercises}
 \begin{enumerate}

@@ -1,8 +1,8 @@
 \chapter{Mesh topologies and structural domain partitioning}\label{ch:mesh}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-A mesh is the contract between geometry and element: nodes, connectivity, and a guarantee that every element has a positive Jacobian. This chapter describes how \fea{} generates structured meshes for lines, rectangles and boxes, with holes, notches and fillets, how it grades them by a growth ratio and not by a guessed exponent, how several element topologies are combined in one mesh by sharing nodes, how meshes are built from parts (mirror, weld, extrude), how node sets and the boundary are selected, how meshes are exchanged with other tools, and how meshes and results are drawn. Each claim is checked: element areas and volumes against exact values, the realised growth ratio against the requested one, a patch test across a triangle--quadrilateral interface, a round trip through two file formats, and an end-to-end import of an Abaqus mesh to a result file. The chapter ends with the dispatcher that decides which mesh type each element may receive.\par\smallskip
-\textbf{After this chapter the reader can:} (i) generate a structured mesh and grade it by a growth ratio instead of a guessed exponent; (ii) combine element topologies in a multi-block mesh and verify the interface by a patch test; (iii) check a mesh for positive Jacobians and for unshared interior edges, and exchange it through a file format; (iv) draw a mesh and a result in two and three dimensions with the package's plotting tools.
+A mesh is where geometry meets the element: nodes, connectivity and, for every element, a positive Jacobian. The chapter covers how \fea{} generates structured meshes for lines, rectangles and boxes with holes, notches and fillets; how it grades them by a growth ratio instead of a guessed exponent; how elements of different topology share nodes in one mesh; how meshes are built from parts, how node sets and boundaries are picked, how meshes are exchanged with other tools, and how meshes and results are drawn. Each claim is checked against something: element areas and volumes against exact values, the realised growth ratio against the requested one, a patch test across a triangle--quadrilateral interface, a round trip through two file formats, and an Abaqus import carried through to a result file. The chapter ends with the dispatcher that decides which element may receive which mesh.\par\smallskip
+After it you should be able to generate and grade a structured mesh, join topologies in a multi-block mesh and test the interface, check a mesh for positive Jacobians and for unshared interior edges, exchange it through a file format, and draw it and a result in two and three dimensions.
 \end{tcolorbox}
 
 \section{What a mesh is}\label{sec:me-what}
@@ -49,13 +49,9 @@ The one property that the mesh must have for any element is a positive Jacobian 
 \State report $\min d_{eg}$, $\max d_{eg}/\min d_{eg}$ and whether all $d_{eg}>0$
 \Ensure quality report
 \end{pseudo}
-\begin{algdet}
-\item[Cost] $n_e\,n_g$ small determinants.
-\item[Fails when] it is not called: nothing else checks it. A positive ratio of the extremes says the element is distorted, not wrong.
-\item[Code] \code{check_quality(element)} on \anchor{fea_engine.mesh.Mesh}.
-\item[Verified in] \Cref{tab:me-gen} (all generated meshes pass), \Cref{tab:me-quality}.
-\end{algdet}
 \end{algbox}
+
+The check costs $n_e\,n_g$ small determinants. Nothing else in the package performs it, so it has to be called, and a large ratio of the extremes says that an element is distorted, not that it is wrong. It is \code{check_quality(element)} on \anchor{fea_engine.mesh.Mesh}; \Cref{tab:me-gen} and \Cref{tab:me-quality} show it applied.
 
 \paragraph{What the determinant is.} For a bilinear quadrilateral the map from the reference square to the element is $\bm x(\bm\xi)=\sum_iN_i(\bm\xi)\bm x_i$ and $\det\bm J(\bm\xi)$ is a linear function of $\xi$ and $\eta$ (Exercise~\ref{ex:me-jac}). It is positive everywhere if and only if it is positive at the four corners, where it equals the cross product of the two edges that meet there. A convex quadrilateral has all four positive; a quadrilateral with a re-entrant corner has a non-positive value at that corner, and near the corner at the Gauss points. \Cref{fig:me-quality}c shows both: the convex element has four positive values, and the element whose fourth node is pushed inside the triangle of the other three has a negative $\det\bm J$ (\cmeQReentMin{}, against 0.25 at every Gauss point of a unit square) at the Gauss point nearest that node, while its other three values stay positive. Only \cmeQReentNeg{} of the four Gauss points is negative, and the value at the element centre is positive (0.08, the mean of the four corner values), so a check at the centre alone would pass: the sign has to be tested at every Gauss point.
 
@@ -121,13 +117,9 @@ Near a hole, a notch or a fillet the stress changes quickly, and the mesh should
 \EndWhile
 \Ensure $p=p_{lo}$: the largest exponent whose ratio does not exceed $\rho^\ast$
 \end{pseudo}
-\begin{algdet}
-\item[Cost] about $\log_2((p_{hi}-p_{lo})/\mathrm{tol})$ evaluations of $\rho$, each $O(n)$.
-\item[Fails when] the target is below what $n$ elements can give for any $p>1$ (returns $p=1$, uniform); bisection relies on $\rho(p)$ being monotone, which holds for this partition.
-\item[Code] \anchor{fea_engine.grading.grade_for_growth_ratio}, \anchor{fea_engine.grading.growth_ratio_of_partition}.
-\item[Verified in] \Cref{fig:me-grading} (realised ratio within $0.1\,\%$ below the target).
-\end{algdet}
 \end{algbox}
+
+The bisection needs about $\log_2((p_{hi}-p_{lo})/\mathrm{tol})$ evaluations of $\rho$, each $O(n)$. It returns $p=1$, a uniform partition, when the target is below what $n$ elements can give for any $p>1$, and it relies on $\rho(p)$ being monotone, which holds for this partition. The functions are \anchor{fea_engine.grading.grade_for_growth_ratio} and \anchor{fea_engine.grading.growth_ratio_of_partition}, and \Cref{fig:me-grading} is the check: the realised ratio is within $0.1\,\%$ below the target.
 
 \Cref{fig:me-grading} (left) shows the realised ratio against $p$ and (right) the partition chosen for a target of 1.2: $p=\cmeGradeForTarget$, with realised ratio \cmeGradeRealTarget. For the targets 1.1, 1.2, 1.3, 1.5 and 2.0 the realised ratio is within 0.1\% below the target and never above it (\cmeGradeWorstOver{}\% at the worst). The graded hole mesh of \Cref{fig:me-gallery} uses this rule through \anchor{fea_engine.mesh.hole_in_rectangle_mesh_graded}; the ratio of the largest to the smallest element area in it is \cmeGradedSizeRatio.
 
@@ -351,20 +343,18 @@ exchange & \anchor{fea_engine.mesh_io.read_mesh}, \anchor{fea_engine.mesh_io.wri
 
 \begin{limitsbox}
 \begin{itemize}
-\item \textbf{Structured meshes only.} The generators are for lines, rectangles and boxes, and for the listed features; there is no unstructured generator, Delaunay triangulation or CAD import.
-\item \textbf{Arcs are polygons.} Curved boundaries are approximated with straight element edges (\Cref{tab:me-gen}); the geometric error is second order in the number of elements round the arc and is separate from the discretisation error of the analysis.
-\item \textbf{Grading is one-dimensional.} The growth ratio is controlled along a partition; the two-dimensional element sizes of the hole mesh are a consequence, and the ratio quoted for it is of element areas, not of adjacent sizes.
-\item \textbf{Off-centre hole meshes may not be conforming.} \code{hole_in_rectangle_mesh} produced unshared interior edges for four of the six hole positions of \Cref{tab:me-conform}; the position $(1.2,1.0)$ of this chapter's figures is conforming. The check is the boundary mask of \Cref{sec:me-sets}; the cause given there (blocks of different heights) was inferred from the node positions, not traced in the code.
-\item \textbf{Mixed meshes} must have one \code{dofs_per_node}; the patch test shows displacement consistency, not stress continuity.
-\item \textbf{Import is nodes and connectivity only.} Sets, materials, sections, boundary conditions and loads of a foreign file are not read, unsupported cell types are skipped without a message, the input is a mesh and not CAD geometry, and only the VTU and Abaqus INP round trips (and, for quadratic elements, the Gmsh node order) were checked (\Cref{sec:me-example}).
-\item \textbf{Exchange} was tested for two formats and two linear element types.
-\item \textbf{The 40x--1500x figure} for misaligned rotational-dof elements is quoted from the package documentation and was not reproduced.
+\item \textbf{Structured meshes only.} The generators are for lines, rectangles and boxes and the listed features; there is no unstructured generator, Delaunay triangulation or CAD import. Curved boundaries are polygons, with a geometric error of second order in the number of elements round the arc (\Cref{tab:me-gen}), separate from the discretisation error of the analysis.
+\item \textbf{Grading is one-dimensional.} The growth ratio is controlled along one partition. The two-dimensional element sizes of the hole mesh follow from it, and the neighbour ratios of \Cref{fig:me-grade-meshes} are larger than the target.
+\item \textbf{Off-centre hole meshes may not be conforming.} \code{hole_in_rectangle_mesh} produced unshared interior edges for four of the six hole positions of \Cref{tab:me-conform}; the position $(1.2,1.0)$ used for this chapter's figures is conforming. The check is the boundary mask of \Cref{sec:me-sets}. The cause given there (blocks of different heights) was inferred from the node positions and not traced in the code.
+\item \textbf{Mixed meshes} must have one \code{dofs_per_node}, and the patch test shows displacement consistency, not stress continuity.
+\item \textbf{Import and exchange.} Only nodes and connectivity are read; sets, materials, sections, boundary conditions and loads of a foreign file are not, unsupported cell types are skipped without a message, and the input is a mesh, not CAD geometry. Round trips were checked for VTU and Abaqus INP with linear elements, and the Gmsh node order for quadratic ones (\Cref{sec:me-example}).
+\item \textbf{The 40x--1500x figure} for misaligned rotational-dof elements comes from the package documentation and was not reproduced.
 \end{itemize}
 \end{limitsbox}
 
 \section{Summary}\label{sec:me-summary}
 
-A mesh is nodes and connectivity with a positive-Jacobian guarantee. The structured generators of \fea{} reproduce the domain area or volume exactly where the edges are straight and with second-order error where they follow an arc; grading is requested by a growth ratio and realised within 0.1\% of it; blocks of different topology are joined by shared nodes and pass a patch test to \cmeMBErr; meshes are built from parts by mirror, weld and extrude, with the caveat that a weld merges only coincident nodes; the boundary mask selects curved boundaries and also finds interior edges that are not shared, which showed that the off-centre hole generator is not conforming for most hole positions; and meshes round-trip through the file formats tested and are drawn in two and three dimensions. One dispatcher holds the knowledge of which element accepts which mesh type.
+A mesh is nodes and connectivity with a positive-Jacobian guarantee. The structured generators reproduce the area or volume of the domain exactly where edges are straight and with second-order error along arcs, and grading by growth ratio is realised within 0.1\,\% of the request. Blocks of different topology joined by shared nodes pass a patch test to \cmeMBErr, but a weld joins only coincident nodes, and the boundary mask showed that the off-centre hole generator is not conforming for most hole positions. Meshes round-trip through the file formats we tried and can be drawn in two and three dimensions, and one dispatcher decides which element accepts which mesh.
 
 \section*{Exercises}\label{sec:me-exercises}
 \begin{enumerate}
