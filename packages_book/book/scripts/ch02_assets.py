@@ -89,7 +89,7 @@ def exp_generators():
     cases = []
     cases.append(("rectangle_mesh", "rectangle $2\\times1$", M.rectangle_mesh(2.0, 1.0, 20, 10), 2.0, "quad4"))
     cases.append(("rectangle_with_hole_mesh_quarter", "quarter plate, hole $R=0.3$", M.rectangle_with_hole_mesh_quarter(a, b, R, 8, 16), a * b - np.pi * R ** 2 / 4, "quad4"))
-    cases.append(("hole_in_rectangle_mesh", "hole off centre, $R=0.3$", M.hole_in_rectangle_mesh(3.0, 2.0, (1.2, 0.9), R, 6, 16), 6.0 - np.pi * R ** 2, "quad4"))
+    cases.append(("hole_in_rectangle_mesh", "hole off centre, $R=0.3$", M.hole_in_rectangle_mesh(3.0, 2.0, (1.2, 1.0), R, 6, 16), 6.0 - np.pi * R ** 2, "quad4"))
     cases.append(("notch_in_rectangle_mesh", "notch $0.4\\times0.6$", M.notch_in_rectangle_mesh(2.0, 1.0, "top", 0.8, 1.2, 0.6, 8, 4, 8, 6, 6), 2.0 - 0.4 * 0.6, "quad4"))
     cases.append(("fillet_in_rectangle_mesh", "fillet $R=0.3$", M.fillet_in_rectangle_mesh(2.0, 1.0, (2.0, 1.0), R, 10, 6, 6), 2.0 - R ** 2 * (1 - np.pi / 4), "quad4"))
     rows = []
@@ -127,7 +127,7 @@ def exp_generators():
     num("cmeArcOrder", f"{order:.1f}"); num("cmeArcErrCoarse", sci(ae[0])); num("cmeArcErrFine", sci(ae[-1]))
     # figure
     fig, ax = plt.subplots(2, 2, figsize=(8.4, 5.2))
-    gm = M.hole_in_rectangle_mesh_graded(3.0, 2.0, (1.2, 0.9), R, 6, 16, h_far=0.3)
+    gm = M.hole_in_rectangle_mesh_graded(3.0, 2.0, (1.2, 1.0), R, 6, 16, h_far=0.3)
     for a_, (m, t) in zip(ax.ravel(), [(gm, "hole, graded to a growth ratio"), (cases[3][2], "notch"),
                                        (cases[4][2], "fillet"), (cases[1][2], "quarter plate with hole")]):
         M.plot_mesh_2d(m, a_); a_.set_aspect("equal"); a_.set_title(t, fontsize=9); a_.set_xticks([]); a_.set_yticks([])

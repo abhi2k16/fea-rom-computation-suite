@@ -46,3 +46,4 @@ Current: 14 pages-ish, 6 figures (2 TikZ, 3 matplotlib, 1 import), 3 tables. Tar
 ## Status
 - Step 1 done (2.1-2.3): `scripts/ch02_figs.py step1` writes ch02_anatomy, ch02_elements, ch02_quality, tables ch02_elements/ch02_quality, numbers_ch02_figs.tex. One reference (sec:me-viz) is pending until Step 3. Book 304 pages.
 - Step 2 done (2.4-2.6): `ch02_figs.py step2` writes gallery2d, gallery3d (PyVista), arc, grade_meshes, plan, payoff, multiblock + table ch02_plan. Chapter 2 is about 15 pages now; book 307 pages. Pending: sec:me-viz.
+- Step 3 done: 2.7 parts, 2.8 node sets and conformity check, 2.10 visualisation, 2.11 dispatcher figure; exercises, code map, Appendix D, README updated. Chapter 2 pages 10-30 (about 20 pages); book 312 pages, 0 errors, 0 undefined refs. Finding: hole_in_rectangle_mesh is not conforming for hole centres with unequal quadrant extents (see Table me-conform).

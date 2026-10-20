@@ -1,8 +1,8 @@
 \chapter{Mesh topologies and structural domain partitioning}\label{ch:mesh}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-A mesh is the contract between geometry and element: nodes, connectivity, and a guarantee that every element has a positive Jacobian. This chapter describes how \fea{} generates structured meshes for lines, rectangles and boxes, with holes, notches and fillets, how it grades them by a growth ratio and not by a guessed exponent, how several element topologies are combined in one mesh by sharing nodes, and how meshes are exchanged with other tools. Each claim is checked: element areas and volumes against exact values, the realised growth ratio against the requested one, a patch test across a triangle--quadrilateral interface, a round trip through two file formats, and an end-to-end import of an Abaqus mesh to a result file. The chapter ends with the dispatcher that decides which mesh type each element may receive.\par\smallskip
-\textbf{After this chapter the reader can:} (i) generate a structured mesh and grade it by a growth ratio instead of a guessed exponent; (ii) combine element topologies in a multi-block mesh and verify the interface by a patch test; (iii) check a mesh for positive Jacobians and exchange it through a file format.
+A mesh is the contract between geometry and element: nodes, connectivity, and a guarantee that every element has a positive Jacobian. This chapter describes how \fea{} generates structured meshes for lines, rectangles and boxes, with holes, notches and fillets, how it grades them by a growth ratio and not by a guessed exponent, how several element topologies are combined in one mesh by sharing nodes, how meshes are built from parts (mirror, weld, extrude), how node sets and the boundary are selected, how meshes are exchanged with other tools, and how meshes and results are drawn. Each claim is checked: element areas and volumes against exact values, the realised growth ratio against the requested one, a patch test across a triangle--quadrilateral interface, a round trip through two file formats, and an end-to-end import of an Abaqus mesh to a result file. The chapter ends with the dispatcher that decides which mesh type each element may receive.\par\smallskip
+\textbf{After this chapter the reader can:} (i) generate a structured mesh and grade it by a growth ratio instead of a guessed exponent; (ii) combine element topologies in a multi-block mesh and verify the interface by a patch test; (iii) check a mesh for positive Jacobians and for unshared interior edges, and exchange it through a file format; (iv) draw a mesh and a result in two and three dimensions with the package's plotting tools.
 \end{tcolorbox}
 
 \section{What a mesh is}\label{sec:me-what}
@@ -144,7 +144,7 @@ Near a hole, a notch or a fillet the stress changes quickly, and the mesh should
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{figures/ch02_grade_meshes.pdf}
-\caption{A rectangle $3\times2$ with a hole of radius $0.3$ at $(1.2,0.9)$, 12 rings and 24 divisions round the half circle: uniform exponent against three target growth ratios (\code{hole_in_rectangle_mesh_graded}), coloured by element size $\sqrt{A}$. Titles give the smallest size and the ratio of the largest to the smallest size. Drawn by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-grade-meshes}
+\caption{A rectangle $3\times2$ with a hole of radius $0.3$ at $(1.2,1.0)$, 12 rings and 24 divisions round the half circle: uniform exponent against three target growth ratios (\code{hole_in_rectangle_mesh_graded}), coloured by element size $\sqrt{A}$. Titles give the smallest size and the ratio of the largest to the smallest size. Drawn by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-grade-meshes}
 \end{figure}
 
 \paragraph{Declaring features.} The feature classes and \code{plan()} turn a list of features into one exponent per feature. \Cref{tab:me-plan} gives the plan for a hole (12 rings), a fillet (8), a notch (6) and an edge bias, for a far-field size of 0.3 and a growth ratio of 1.2: every feature with a ring count gets the same exponent \cmeGradeForTarget{} (about $\log_2 2.2$) and a realised ratio just under 1.2, and the edge bias, whose size is fixed by its first element, is left uniform. With a growth ratio of 1.8 instead, \code{plan()} issues \cmePlanWarnHigh{} warning (the target is beyond the 1.5 at which \fea{} warns), and with 1.2 it issues \cmePlanWarnLow.
@@ -185,6 +185,46 @@ A \code{MultiBlockMesh} holds blocks of different topologies over one node array
 
 \paragraph{A slanted interface, and a missing one.} \Cref{fig:me-multiblock}b moves the interface nodes sideways in proportion to $y$, so that the line is inclined and the adjacent elements are distorted; the error stays at rounding, \cmeMBSlantErr{}, as for the vertical interface (\cmeMBVertErr{}). The interface is a set of node numbers and not a line, so its direction does not matter. \Cref{fig:me-multiblock}c shows what happens when the nodes are not shared: the blocks are then two separate bodies that touch at the interface without exchanging force, each with a traction-free edge there, and the same patch test gives an error of \cmeMBDupErr{} of the largest displacement. The mesh looks identical to a viewer; only the connectivity differs, which is why the interface is checked by a numerical test and not by eye.
 
+
+\section{Building meshes from parts}\label{sec:me-parts}
+
+Three functions combine meshes that already exist: \anchor{fea_engine.mesh.mirror_mesh}, \anchor{fea_engine.mesh.weld_meshes} and \anchor{fea_engine.mesh.extrude_mesh}. The generators of \Cref{sec:me-gen} are built from them, and a user can apply them to a mesh of their own. \Cref{fig:me-parts} shows one use of each.
+
+\paragraph{Mirror.} \code{mirror_mesh(mesh, mirror_x=True, mirror_y=True)} reflects a quadrilateral mesh across $x=0$ and $y=0$ and merges the nodes that fall on the mirror lines. The quarter plate with a hole of \Cref{fig:me-gallery} has \cmeMirQuarterNodes{} nodes and \cmeMirQuarterEl{} elements; its mirror image has \cmeMirFullNodes{} nodes and \cmeMirFullEl{} elements, and the total area of the elements is exactly \cmeMirAreaRatio{} times the area of the quarter. The nodes on the mirror lines are counted once, which is the only reason the full plate is a connected mesh and not four touching ones.
+
+\paragraph{Weld.} \code{weld_meshes(a, b, tol)} concatenates two meshes and replaces every node of $b$ that lies within \code{tol} (default $10^{-9}$) of a node of $a$ by that node. Two $5\times5$ meshes of the unit square placed side by side have $\cmeWeldA+\cmeWeldB$ nodes and the welded mesh has \cmeWeldOut: the six nodes of the common edge are merged (\Cref{fig:me-parts}, second panel), and every element has a positive Jacobian (\cmeWeldPos). The function merges \emph{coincident} nodes only. If the second mesh has three divisions on the common edge and the first has five (third panel), only \cmeWeldBadMerged{} nodes coincide, the result has \cmeWeldBadOut{} nodes, and the mesh is a valid \code{Mesh} object with hanging nodes along the interface. Nothing is raised, nothing warns, and the elements on the two sides do not share the intermediate edge nodes, so the interface transmits no force between them; \Cref{sec:me-sets} gives a check that finds this.
+
+\paragraph{Extrude.} \code{extrude_mesh(mesh2d, Lz, nz)} stacks $n_z$ layers of hexahedra on a quadrilateral mesh: each quadrilateral becomes $n_z$ eight-node elements whose bottom and top faces are copies of its nodes. The off-centre hole plate of the generator gallery, with \cmeExtQuads{} quadrilaterals, becomes \cmeExtHex{} hexahedra on \cmeExtNodes{} nodes with two layers, and every Gauss-point Jacobian is positive (\cmeExtPos). The 3-D meshes of \Cref{fig:me-gallery3d} are made this way.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/ch02_parts.pdf}
+\caption{Building meshes from parts. From the left: the quarter plate (blue) mirrored across both axes (the nodes on the mirror lines, red, are shared); two meshes welded along a matching edge (red: the merged nodes); two meshes welded along an edge with 5 against 3 divisions (blue circles and orange squares are the unmerged nodes of the two sides, the latter drawn slightly displaced); a hole mesh extruded in two layers (PyVista). Node and element counts are read from the meshes. Drawn by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-parts}
+\end{figure}
+
+\section{Boundary and node sets}\label{sec:me-sets}
+
+Boundary conditions and loads are applied to sets of nodes. For a boundary that lies on a coordinate line or plane, \code{select_nodes} (\Cref{fig:me-anatomy}) is enough. For a curved boundary, such as a hole, a coordinate selection cannot name the nodes, and \code{Mesh.compute_boundary_mask} does: an edge (in 2-D) or face (in 3-D) that belongs to exactly one element is on the boundary, and a node is flagged if it belongs to such an edge or face. The result is a boolean array and is also stored in \code{point_data["is_boundary"]}. \Cref{fig:me-sets}a flags \cmeBmBnd{} of the \cmeBmNodes{} nodes of the plate with a hole: \cmeBmLines{} on the four straight edges and \cmeBmRing{} on the hole, the latter not selectable by any coordinate line. \Cref{fig:me-sets}c does the same in three dimensions for a box with a hole, \cmeBmBoxBnd{} of \cmeBmBoxNodes{} nodes. A node set made this way is attached with \code{add_node_set} and is used like the others. \Cref{fig:me-annot} marks a clamped edge, a loaded edge and a free edge with \code{plot_mesh_annotated}, which draws the supports and the load directions on the mesh before a solve.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/ch02_sets.pdf}
+\caption{\code{compute_boundary_mask}. (a) The hole mesh with the hole at $(1.2,1.0)$: boundary nodes on the four straight edges (blue) and on the hole (green); there are no others. (b) The same generator with the hole at $(1.2,0.9)$: the red nodes are boundary nodes that are on neither, along the horizontal line through the hole centre. (c) The mask in three dimensions for a box with a hole, boundary nodes in red (PyVista). Drawn by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-sets}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.75\linewidth]{figures/ch02_annot.pdf}
+\caption{\code{plot_mesh_annotated} on the plate with a hole: the nodes of the clamped edge (hatch), the loaded edge (arrows) and the free top edge (squares), with the number of nodes in each selection. The mesh is drawn with the package's matplotlib helper.}\label{fig:me-annot}
+\end{figure}
+
+\paragraph{The mask as a conformity check.} The same mask finds a defect that none of the area, Jacobian or duplicate-node checks of this chapter sees. In an interior of a conforming mesh every edge belongs to two elements, so a boundary node that is on no outer edge and on no hole is a node of an unshared interior edge. \Cref{fig:me-sets}b shows such nodes for \code{hole_in_rectangle_mesh} with the hole at $(1.2,0.9)$: \cmeBmStrayBad{} stray nodes along the horizontal line through the hole centre, and none with the hole at $(1.2,1.0)$. The mesh is built from four quadrant blocks welded along the lines through the hole centre; when the blocks above and below the line have different heights ($1.1$ and $0.9$ here), their near-hole parts have different sizes, the nodes on the shared line do not coincide, and \code{weld_meshes} merges only the coinciding ones (as in \Cref{fig:me-parts}). The elements on the two sides then share no edges along most of that line. \Cref{tab:me-conform} repeats the check for six hole positions, for the ungraded mesh and the one graded to a growth ratio of 1.2: the meshes are conforming for the two positions with $y=Ly/2$ and $x=1.5$ or $1.2$, and not for the other four. The area, the Jacobian and the duplicate-node tests of the package's test suite pass for all of them, because the nodes that fail to merge are not coincident. The figures of this chapter that use a hole mesh use the position $(1.2,1.0)$.
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch02_conform}
+\caption{Boundary nodes of \code{hole_in_rectangle_mesh} (and of \code{hole_in_rectangle_mesh_graded}) that lie neither on the four straight edges of the $3\times2$ rectangle nor on the hole of radius 0.3, for six hole positions. A conforming mesh has none.}\label{tab:me-conform}
+\end{table}
 
 \section{Exchange formats}\label{sec:me-io}
 
@@ -238,6 +278,38 @@ write_vtu("beam.vtu", fields={"displacement": s.field(U, "displacement")},
 
 \paragraph{Before trusting an imported mesh.} Four checks cost little. First, \code{check_quality} with the element that will be used: an element whose nodes are listed in another order than the formulation expects has a negative Jacobian, as case~5 shows. Second, count the elements that were read against the count in the other program, because a skipped cell type changes the model without a message (case~4). Third, the package has no units: lengths, moduli and loads must be in one consistent system, and the file's units are not read. Fourth, quadratic elements from a format other than Gmsh's or VTU were not checked here (see above), so check them first with a patch test. The package works from meshes: a part designed in a computer-aided design (CAD) system is meshed in a meshing program, and the mesh is imported.
 
+\section{Visualising meshes and results}\label{sec:me-viz}
+
+Meshes are checked by looking at them as well as by numbers: a missing weld, an element in the wrong place or a boundary condition on the wrong edge is seen in a picture before it is seen in a result. \fea{} has two sets of plotting tools. The matplotlib helpers (\code{plot_mesh_2d}, \code{plot_mesh_3d}, \code{plot_mesh_annotated} in \code{fea_engine.mesh}, and the plotting methods of \code{FEField} and \code{FieldSeries}) need only matplotlib, draw vector graphics, and are used for the 2-D figures of this chapter. The sub-package \code{fea_engine.visualization} uses PyVista, the Python interface to VTK, and is an optional extra (\code{pip install fea_engine[viz]}); it is used for the 3-D figures and for sections through a 3-D body. \Cref{tab:me-viz} compares the two.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.19\linewidth} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
+\toprule
+ & matplotlib helpers & \code{fea_engine.visualization} (PyVista) \\
+\midrule
+needs & matplotlib only & PyVista and VTK; an OpenGL context or a virtual display for off-screen output \\
+dimension & 2-D meshes, mesh annotations, line and field plots & 2-D and 3-D meshes, contours, deformed shapes, slices, clips, thresholds, animations \\
+output & vector (PDF, SVG) & raster (PNG), GIF and MP4, interactive window, VTK files for ParaView \\
+cells & quadrilaterals and hexahedra edges & line2, tri3, quad4, tet4, hex8 and the quadratic tri6, quad8, tet10, hex20 \\
+use here & numbering, gallery, quality, grading, node sets & 3-D gallery, extrusion, boundary mask in 3-D, the figure below \\
+\bottomrule
+\end{tabularx}
+\caption{The two plotting routes of \fea{}.}\label{tab:me-viz}
+\end{table}
+
+\paragraph{The pipeline.} \code{to_pyvista(mesh)} turns a \code{Mesh} or \code{MultiBlockMesh} into a \code{pyvista.UnstructuredGrid}: nodes, connectivity and VTK cell types, with any registered point and cell data carried over. The node order of the package is already the VTK order for the supported cells, as \Cref{sec:me-topo} noted, so no permutation is made. \code{add_displacement} attaches a nodal displacement and its magnitude; \code{plot_field} draws a nodal or element field as colour contours, \code{plot_deformed} the displaced mesh over a wire outline of the undeformed one, and \code{save_vtk} writes a file for ParaView. The field can be a registered array name, \code{"displacement"}, a component name, an \code{FEField} such as the result of \code{FESystem.von_mises}, a plain array, or a function of the displacement vector. For 3-D meshes, \code{slice_field}, \code{clip_field} and \code{threshold_field} return the cut surface, the part of the body on one side of a plane, and the cells whose field is in a range, with the field attached; their \code{plot_} counterparts draw them. \code{animate_history} and \code{animate_mode} write GIF or MP4 animations of time histories and mode shapes, and \code{compare_fields} puts a full-order and a reduced-order field side by side with the error; they are used from Chapter~\ref{ch:pod} on and are not shown here.
+
+\paragraph{An example.} \Cref{fig:me-viz} uses a steel cantilever of $10\times1\times1$~m on \cmeVizNodes{} nodes and \cmeVizElems{} hexahedra, clamped at one end and loaded by $1000$~N downward at the other, the model of the example in \Cref{sec:me-example}. The tip deflection is \cmeVizTip~mm and the largest nodal von Mises stress \cmeVizVmMax~kPa, an average over the elements at each node. The panels show the mesh, the stress, the deformed shape with the undeformed outline (displacement magnified for visibility), a slice at mid-span (\cmeVizSliceCells{} cells), the half of the beam with $y<0.5$ (\cmeVizClipCells{} cells) and the cells that have a node above half the maximum stress (\cmeVizThrCells{} cells, the region at the clamped end). The mesh is coarse, so the plots are for looking at and not for numbers.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/ch02_viz.pdf}
+\caption{The visualisation sub-package on a cantilever of 80 hexahedra: (a) \code{to_pyvista}; (b) \code{plot_field}, von Mises stress; (c) \code{plot_deformed}; (d) \code{slice_field} at mid-span; (e) \code{clip_field}; (f) \code{threshold_field}. Rendered off-screen with PyVista by \texttt{scripts/ch02\_figs.py}.}\label{fig:me-viz}
+\end{figure}
+
+\paragraph{Headless use.} Every plotting function takes \code{screenshot="out.png"}, which renders off-screen and saves the image, and \code{set_off_screen(True)} makes the whole session off-screen. VTK still needs an OpenGL context. On a machine without a display, a plotting call fails with a message about the X server connection, and the figures of this book are produced by running the script under a virtual display (\texttt{xvfb-run -a}).
+
 \section{The mesh dispatcher}\label{sec:me-dispatch}
 
 The generators of this chapter know nothing about elements, and the elements know nothing about generators. The one function that connects them is \anchor{fea_engine.build_mesh.build_mesh}. It receives a geometry, a target element size and the element formulation, and returns a mesh. The geometry class \anchor{fea_engine.build_mesh.RectangleWithHole} describes a rectangle with at most one circular hole and reports its features; \code{build_mesh} then decides for itself whether and how to grade.
@@ -247,6 +319,12 @@ The generators of this chapter know nothing about elements, and the elements kno
 \item \emph{A single hole and an element with rotational bending degrees of freedom} (the Mindlin plate and the shells, the tuple \code{ROTATIONAL_DOF_ELEMENTS}): a structured mesh of axis-aligned blocks around the hole, graded by a growth ratio (\code{hole_in_rectangle_mesh_graded}). These elements derive their local frame from the element geometry, so they need a mesh whose frames are consistent from element to element; the structured block mesh provides that, and a curved or unstructured mesh could give neighbouring elements misaligned frames and a wrong stiffness without any visible sign.
 \item \emph{Any other combination}: a \code{MeshGradingError} that names the combination. For a hole with a translational element such as \code{Quad4PlaneStress}, use the generators of \Cref{sec:me-gen} directly.
 \end{itemize}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/ch02_dispatch.pdf}
+\caption{What \code{build_mesh} returns for a $3\times2$ rectangle at a target size of 0.15: a uniform mesh for a plain rectangle (\cmeDispPlainEl{} elements, the same for either element family), a structured graded mesh of \cmeDispHoleEl{} elements for a hole and a Mindlin plate, and a \code{MeshGradingError} for a hole and a plane-stress element (raised: \cmeDispErrRaised). Drawn by calling \code{build_mesh} in \texttt{scripts/ch02\_figs.py}.}\label{fig:me-dispatch}
+\end{figure}
 
 The set of elements that receive the structured path is an explicit tuple and is not inferred from the number of degrees of freedom, because beams also have rotational degrees of freedom but no local frame that can be misaligned. Adding an element of that kind means adding it to the tuple. The dispatcher thus holds the knowledge of which element needs which mesh in a single place, and \code{grading} stays free of any reference to elements.
 
@@ -259,14 +337,16 @@ The set of elements that receive the structured path is an explicit tuple and is
 Concept & Code & Script calls \\
 \midrule
 meshes & \anchor{fea_engine.mesh.Mesh}, \anchor{fea_engine.mesh.MultiBlockMesh} & yes \\
-generators & \anchor{fea_engine.mesh.line_mesh}, \anchor{fea_engine.mesh.rectangle_mesh}, \anchor{fea_engine.mesh.box_mesh}, \anchor{fea_engine.mesh.weld_meshes}, \anchor{fea_engine.mesh.mirror_mesh} & part \\
+generators and parts & \anchor{fea_engine.mesh.line_mesh}, \anchor{fea_engine.mesh.rectangle_mesh}, \anchor{fea_engine.mesh.box_mesh}, \anchor{fea_engine.mesh.weld_meshes}, \anchor{fea_engine.mesh.mirror_mesh}, \anchor{fea_engine.mesh.extrude_mesh} & yes \\
+node sets and boundary & \code{select_nodes}, \code{add_node_set}, \code{compute_boundary_mask}, \code{plot_mesh_annotated} & yes \\
+visualisation & \anchor{fea_engine.visualization.to_pyvista}, \anchor{fea_engine.visualization.plot_field}, \anchor{fea_engine.visualization.plot_deformed}, \anchor{fea_engine.visualization.slice_field}, \anchor{fea_engine.visualization.clip_field}, \anchor{fea_engine.visualization.threshold_field} & yes \\
 grading & \anchor{fea_engine.grading.graded_partition}, \anchor{fea_engine.grading.growth_ratio_of_partition}, \anchor{fea_engine.grading.grade_for_growth_ratio} & yes \\
 dim-driven entry point & \anchor{fea_engine.geometry.shapes.build_system}, \anchor{fea_engine.geometry.shapes.generate_mesh} & no \\
-dispatcher with safety gate & \anchor{fea_engine.build_mesh.build_mesh}, \code{ROTATIONAL_DOF_ELEMENTS} & no \\
+dispatcher with safety gate & \anchor{fea_engine.build_mesh.build_mesh}, \code{ROTATIONAL_DOF_ELEMENTS} & part \\
 exchange & \anchor{fea_engine.mesh_io.read_mesh}, \anchor{fea_engine.mesh_io.write_mesh} & yes \\
 \bottomrule
 \end{tabularx}
-\caption{Where the concepts of this chapter live in the repository (tag \booktag). The last column says whether the chapter's script \texttt{scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:me-map}
+\caption{Where the concepts of this chapter live in the repository (tag \booktag). The last column says whether the chapter's scripts (\texttt{scripts/ch02\_assets.py} and \texttt{scripts/ch02\_figs.py}) call, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:me-map}
 \end{table}
 
 \begin{limitsbox}
@@ -274,6 +354,7 @@ exchange & \anchor{fea_engine.mesh_io.read_mesh}, \anchor{fea_engine.mesh_io.wri
 \item \textbf{Structured meshes only.} The generators are for lines, rectangles and boxes, and for the listed features; there is no unstructured generator, Delaunay triangulation or CAD import.
 \item \textbf{Arcs are polygons.} Curved boundaries are approximated with straight element edges (\Cref{tab:me-gen}); the geometric error is second order in the number of elements round the arc and is separate from the discretisation error of the analysis.
 \item \textbf{Grading is one-dimensional.} The growth ratio is controlled along a partition; the two-dimensional element sizes of the hole mesh are a consequence, and the ratio quoted for it is of element areas, not of adjacent sizes.
+\item \textbf{Off-centre hole meshes may not be conforming.} \code{hole_in_rectangle_mesh} produced unshared interior edges for four of the six hole positions of \Cref{tab:me-conform}; the position $(1.2,1.0)$ of this chapter's figures is conforming. The check is the boundary mask of \Cref{sec:me-sets}; the cause given there (blocks of different heights) was inferred from the node positions, not traced in the code.
 \item \textbf{Mixed meshes} must have one \code{dofs_per_node}; the patch test shows displacement consistency, not stress continuity.
 \item \textbf{Import is nodes and connectivity only.} Sets, materials, sections, boundary conditions and loads of a foreign file are not read, unsupported cell types are skipped without a message, the input is a mesh and not CAD geometry, and only the VTU and Abaqus INP round trips (and, for quadratic elements, the Gmsh node order) were checked (\Cref{sec:me-example}).
 \item \textbf{Exchange} was tested for two formats and two linear element types.
@@ -283,7 +364,7 @@ exchange & \anchor{fea_engine.mesh_io.read_mesh}, \anchor{fea_engine.mesh_io.wri
 
 \section{Summary}\label{sec:me-summary}
 
-A mesh is nodes and connectivity with a positive-Jacobian guarantee. The structured generators of \fea{} reproduce the domain area or volume exactly where the edges are straight and with second-order error where they follow an arc; grading is requested by a growth ratio and realised within 0.1\% of it; blocks of different topology are joined by shared nodes and pass a patch test to \cmeMBErr; and meshes round-trip through the file formats tested. One dispatcher holds the knowledge of which element accepts which mesh type.
+A mesh is nodes and connectivity with a positive-Jacobian guarantee. The structured generators of \fea{} reproduce the domain area or volume exactly where the edges are straight and with second-order error where they follow an arc; grading is requested by a growth ratio and realised within 0.1\% of it; blocks of different topology are joined by shared nodes and pass a patch test to \cmeMBErr; meshes are built from parts by mirror, weld and extrude, with the caveat that a weld merges only coincident nodes; the boundary mask selects curved boundaries and also finds interior edges that are not shared, which showed that the off-centre hole generator is not conforming for most hole positions; and meshes round-trip through the file formats tested and are drawn in two and three dimensions. One dispatcher holds the knowledge of which element accepts which mesh type.
 
 \section*{Exercises}\label{sec:me-exercises}
 \begin{enumerate}
@@ -292,6 +373,9 @@ A mesh is nodes and connectivity with a positive-Jacobian guarantee. The structu
 \item \emph{(Implementation)} Shear the interface of \Cref{sec:me-multi} more strongly, until an element becomes inverted, and run the patch test on the last valid mesh and with \code{check_quality}. What changes first?
 \item \emph{(Implementation)} Apply a pure-shear patch test (not only a linear field with a symmetric gradient) to the mixed mesh and check the recovered stress on both sides of the interface.
 \item \emph{(Interpretation)} Round-trip a \code{MultiBlockMesh} through \code{write_mesh} and \code{read_mesh}. Which information survives, and which does not (see the notes on field data in the module)?
+\item \emph{(Implementation)} Write a function that returns the number of stray boundary nodes of a 2-D mesh with a hole from \code{compute_boundary_mask}, and use it to find the largest offset of the hole centre from $y=Ly/2$ for which \code{hole_in_rectangle_mesh} is still conforming at $x_c=1.2$ (\Cref{tab:me-conform}).
+\item \emph{(Implementation)} Weld two meshes with 5 and 3 divisions on the common edge and add the missing intermediate nodes by hand so that the weld becomes conforming. How many elements change?
+\item \emph{(Implementation)} Solve the cantilever of \Cref{fig:me-viz} for a downward load at mid-span and show the von Mises stress on the slice at the clamped end with \code{plot_slice}.
 \item\label{ex:me-jac} \emph{(Derivation)} Show that the Jacobian determinant of a bilinear quadrilateral is a linear function of the natural coordinates, and that it is positive everywhere in the element if and only if it is positive at the four corners.
 \end{enumerate}
 

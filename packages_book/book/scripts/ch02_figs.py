@@ -355,8 +355,8 @@ def _gen_cases():
     return dict(
         rect=M.rectangle_mesh(2.0, 1.0, 12, 6),
         quarter=M.rectangle_with_hole_mesh_quarter(2.0, 1.0, R, 8, 16),
-        holeoff=M.hole_in_rectangle_mesh(3.0, 2.0, (1.2, 0.9), R, 6, 16),
-        graded=M.hole_in_rectangle_mesh_graded(3.0, 2.0, (1.2, 0.9), R, 6, 16, h_far=0.3, growth_ratio=1.2),
+        holeoff=M.hole_in_rectangle_mesh(3.0, 2.0, (1.2, 1.0), R, 6, 16),
+        graded=M.hole_in_rectangle_mesh_graded(3.0, 2.0, (1.2, 1.0), R, 6, 16, h_far=0.3, growth_ratio=1.2),
         notch=M.notch_in_rectangle_mesh(2.0, 1.0, "top", 0.8, 1.2, 0.6, 8, 4, 8, 6, 6),
         fillet=M.fillet_in_rectangle_mesh(2.0, 1.0, (2.0, 1.0), R, 10, 6, 6),
         full=M.mirror_mesh(M.rectangle_with_hole_mesh_quarter(1.5, 1.0, R, 6, 12), mirror_x=True, mirror_y=True),
@@ -430,7 +430,7 @@ def fig_arc():
     nth = np.array([4, 8, 16, 32, 64])
     cases = {
         "quarter plate with hole": (lambda k: M.rectangle_with_hole_mesh_quarter(2.0, 1.0, R, 8, k), 2.0 - np.pi * R ** 2 / 4),
-        "hole off centre": (lambda k: M.hole_in_rectangle_mesh(3.0, 2.0, (1.2, 0.9), R, 6, k), 6.0 - np.pi * R ** 2),
+        "hole off centre": (lambda k: M.hole_in_rectangle_mesh(3.0, 2.0, (1.2, 1.0), R, 6, k), 6.0 - np.pi * R ** 2),
         "fillet": (lambda k: M.fillet_in_rectangle_mesh(2.0, 1.0, (2.0, 1.0), R, 10, 6, 6, ntheta=k), 2.0 - R ** 2 * (1 - np.pi / 4)),
     }
     fig, ax = plt.subplots(figsize=(3.6, 2.8))
@@ -459,9 +459,9 @@ def _sizes(m):
 def fig_grade_meshes():
     from fea_engine import grading as G
     R = 0.3
-    cases = [("uniform ($p=1$)", M.hole_in_rectangle_mesh(3.0, 2.0, (1.2, 0.9), R, 12, 24, grade_p=1.0, extend_grade=1.0))]
+    cases = [("uniform ($p=1$)", M.hole_in_rectangle_mesh(3.0, 2.0, (1.2, 1.0), R, 12, 24, grade_p=1.0, extend_grade=1.0))]
     for gr in (1.1, 1.2, 1.5):
-        cases.append((f"target ratio {gr}", M.hole_in_rectangle_mesh_graded(3.0, 2.0, (1.2, 0.9), R, 12, 24, h_far=0.3, growth_ratio=gr)))
+        cases.append((f"target ratio {gr}", M.hole_in_rectangle_mesh_graded(3.0, 2.0, (1.2, 1.0), R, 12, 24, h_far=0.3, growth_ratio=gr)))
     hmax = max(_sizes(m).max() for _, m in cases); hmin = min(_sizes(m).min() for _, m in cases)
     fig, axs = plt.subplots(1, 4, figsize=(7.6, 2.2))
     rows = []
@@ -483,7 +483,7 @@ def fig_grade_meshes():
 
 def fig_plan():
     from fea_engine import grading as G
-    feats = [G.Hole(center=(1.2, 0.9), radius=0.3, n_ring=12),
+    feats = [G.Hole(center=(1.2, 1.0), radius=0.3, n_ring=12),
              G.Fillet(corner=(2.0, 1.0), radius=0.3, n_ring=8),
              G.Notch(path=[(0.8, 1.0), (1.2, 1.0)], depth=0.6, n_ring=6),
              G.EdgeBias(axis=0, dense_at="start", h_first=0.02, growth_ratio=1.2)]
@@ -628,8 +628,239 @@ def fig_multiblock():
     print("multiblock errs", errs)
 
 
+# ---------------------------------------------------------------------------------------------- Sec. 2.7 parts
+def fig_parts():
+    from fea_engine.grading import MeshGradingError  # noqa: F401
+    R = 0.3
+    q = M.rectangle_with_hole_mesh_quarter(1.5, 1.0, R, 6, 12)
+    full = M.mirror_mesh(q, mirror_x=True, mirror_y=True)
+    A = M.rectangle_mesh(1.0, 1.0, 5, 5); B = M.rectangle_mesh(1.0, 1.0, 5, 5, x0=1.0)
+    W = M.weld_meshes(A, B)
+    B3 = M.rectangle_mesh(1.0, 1.0, 3, 3, x0=1.0)
+    W3 = M.weld_meshes(A, B3)
+    hole = M.hole_in_rectangle_mesh(3.0, 2.0, (1.2, 1.0), R, 5, 12)
+    ext = M.extrude_mesh(hole, 0.4, 2)
+    fig, axs = plt.subplots(1, 4, figsize=(7.6, 2.5), gridspec_kw={"width_ratios": [1.2, 1.35, 1.35, 1.2]})
+    ax = axs[0]
+    _fill2d(ax, full, fc="#fbe2c4", lw=0.3)
+    _fill2d(ax, q, fc="#cfe0f1", lw=0.3)
+    on = np.where((np.abs(full.nodes[:, 0]) < 1e-9) | (np.abs(full.nodes[:, 1]) < 1e-9))[0]
+    ax.plot(full.nodes[on, 0], full.nodes[on, 1], ".", ms=2.5, color=RED, zorder=3)
+    ax.set_title(f"mirror_mesh: {len(q.nodes)} nodes, {len(q.elements)} el.\n$\\rightarrow$ {len(full.nodes)} nodes, {len(full.elements)} el.", fontsize=6.5)
+    ax = axs[1]
+    _fill2d(ax, A, fc="#cfe0f1", lw=0.4); _fill2d(ax, B, fc="#fbe2c4", lw=0.4)
+    iface = np.where(np.abs(W.nodes[:, 0] - 1.0) < 1e-9)[0]
+    ax.plot(W.nodes[iface, 0], W.nodes[iface, 1], "o", ms=3, color=RED, zorder=3)
+    ax.set_title(f"weld_meshes, matching: {len(A.nodes)}+{len(B.nodes)}\n$\\rightarrow$ {len(W.nodes)} nodes (6 merged)", fontsize=6.5)
+    ax = axs[2]
+    _fill2d(ax, A, fc="#cfe0f1", lw=0.4); _fill2d(ax, B3, fc="#fbe2c4", lw=0.4)
+    xa = A.nodes[np.abs(A.nodes[:, 0] - 1.0) < 1e-9]; xb = B3.nodes[np.abs(B3.nodes[:, 0] - 1.0) < 1e-9]
+    ax.plot(xa[:, 0], xa[:, 1], "o", ms=3, color=BLUE, zorder=3); ax.plot(xb[:, 0] + 0.012, xb[:, 1], "s", ms=3, color=ORANGE, zorder=3)
+    ax.set_title(f"weld_meshes, 5 against 3 divisions:\n{len(A.nodes)}+{len(B3.nodes)} $\\rightarrow$ {len(W3.nodes)} nodes (only {len(A.nodes) + len(B3.nodes) - len(W3.nodes)} merged)", fontsize=6.5)
+    ax = axs[3]
+    ax.imshow(_render(ext, window=(420, 340), view=(0.8, -1.2, 1.0))); ax.axis("off")
+    ax.set_title(f"extrude_mesh: {len(hole.elements)} quad4\n$\\rightarrow$ {len(ext.elements)} hex8, {len(ext.nodes)} nodes", fontsize=6.5)
+    fig.tight_layout(w_pad=0.6)
+    fig.savefig(os.path.join(FIG, "ch02_parts.pdf"), bbox_inches="tight", dpi=200); plt.close(fig)
+    num("cmeMirQuarterNodes", str(len(q.nodes))); num("cmeMirFullNodes", str(len(full.nodes)))
+    num("cmeMirQuarterEl", str(len(q.elements))); num("cmeMirFullEl", str(len(full.elements)))
+    num("cmeMirAreaRatio", f"{_area(full) / _area(q):.12f}".rstrip("0").rstrip("."))
+    num("cmeWeldA", str(len(A.nodes))); num("cmeWeldB", str(len(B.nodes))); num("cmeWeldOut", str(len(W.nodes)))
+    num("cmeWeldMerged", str(len(A.nodes) + len(B.nodes) - len(W.nodes)))
+    num("cmeWeldBadOut", str(len(W3.nodes))); num("cmeWeldBadMerged", str(len(A.nodes) + len(B3.nodes) - len(W3.nodes)))
+    num("cmeWeldBadBnodes", str(len(B3.nodes)))
+    num("cmeExtQuads", str(len(hole.elements))); num("cmeExtHex", str(len(ext.elements)))
+    num("cmeExtNodes", str(len(ext.nodes)))
+    ok = Hex8Solid3D(); pos = all(np.linalg.det(ok.shape_and_derivs(p)[1] @ ext.nodes[c]) > 0
+                                  for c in ext.elements for p in gauss_product(2, 3)[0])
+    num("cmeExtPos", "yes" if pos else "NO")
+    sv = [np.linalg.det(Quad4PlaneStress().shape_and_derivs(p)[1] @ W.nodes[c]) > 0 for c in W.elements for p in gauss_product(2, 2)[0]]
+    num("cmeWeldPos", "yes" if all(sv) else "NO")
+    print("parts", len(q.nodes), len(full.nodes), _area(full) / _area(q), len(W.nodes), len(W3.nodes), pos)
+
+
+# ---------------------------------------------------------------------------------------------- Sec. 2.8 sets
+def _stray(m, Lx, Ly, c, R):
+    """Boundary-mask nodes that are neither on the four straight edges nor on the hole circle: nodes of unshared edges
+    in the interior of the domain."""
+    mask = m.compute_boundary_mask(store_as=None); X = m.nodes
+    ring = np.abs(np.hypot(X[:, 0] - c[0], X[:, 1] - c[1]) - R) < 1e-9
+    lines = (np.abs(X[:, 0]) < 1e-9) | (np.abs(X[:, 0] - Lx) < 1e-9) | (np.abs(X[:, 1]) < 1e-9) | (np.abs(X[:, 1] - Ly) < 1e-9)
+    return mask, ring, lines, int((mask & ~lines & ~ring).sum())
+
+
+def fig_sets():
+    R = 0.3
+    Lx, Ly = 3.0, 2.0
+    good = M.hole_in_rectangle_mesh(Lx, Ly, (1.2, 1.0), R, 5, 12)
+    bad = M.hole_in_rectangle_mesh(Lx, Ly, (1.2, 0.9), R, 5, 12)
+    m3 = M.box_with_hole_mesh(2.0, 1.0, R, 0.5, 5, 10, 2)
+    mask3 = m3.compute_boundary_mask()
+    fig, axs = plt.subplots(1, 3, figsize=(7.6, 2.6), gridspec_kw={"width_ratios": [1.15, 1.15, 1]})
+    res = {}
+    for ax, m, c, lab in ((axs[0], good, (1.2, 1.0), "(a) hole at (1.2, 1.0)"), (axs[1], bad, (1.2, 0.9), "(b) hole at (1.2, 0.9)")):
+        mask, ring, lines, stray = _stray(m, Lx, Ly, c, R); X = m.nodes
+        res[c] = (len(X), int(mask.sum()), int((mask & ring).sum()), int((mask & lines).sum()), stray)
+        _fill2d(ax, m, lw=0.3)
+        ax.plot(X[mask & lines, 0], X[mask & lines, 1], "o", ms=2.5, color=BLUE)
+        ax.plot(X[mask & ring, 0], X[mask & ring, 1], "o", ms=2.5, color=GREEN)
+        ax.plot(X[mask & ~lines & ~ring, 0], X[mask & ~lines & ~ring, 1], "o", ms=4, color=RED, zorder=3)
+        ax.set_title(f"{lab}\n{int(mask.sum())} boundary nodes, {stray} stray", fontsize=7)
+    ax = axs[2]
+    ax.imshow(_render_points(m3, mask3)); ax.axis("off")
+    ax.set_title(f"(c) 3-D box with a hole\n{int(mask3.sum())} of {len(m3.nodes)} nodes on the boundary", fontsize=7)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch02_sets.pdf"), bbox_inches="tight", dpi=200); plt.close(fig)
+    g = res[(1.2, 1.0)]; bd = res[(1.2, 0.9)]
+    num("cmeBmNodes", str(g[0])); num("cmeBmBnd", str(g[1])); num("cmeBmRing", str(g[2])); num("cmeBmLines", str(g[3]))
+    num("cmeBmStrayGood", str(g[4])); num("cmeBmStrayBad", str(bd[4])); num("cmeBmBadBnd", str(bd[1]))
+    num("cmeBmBoxNodes", str(len(m3.nodes))); num("cmeBmBoxBnd", str(int(mask3.sum())))
+    # conformity table over hole positions (ungraded and graded)
+    rows = []
+    for c in [(1.5, 1.0), (1.2, 1.0), (0.9, 1.0), (1.5, 0.9), (1.2, 0.9), (1.0, 0.7)]:
+        u = M.hole_in_rectangle_mesh(Lx, Ly, c, R, 5, 12)
+        gr = M.hole_in_rectangle_mesh_graded(Lx, Ly, c, R, 5, 12, h_far=0.3, growth_ratio=1.2)
+        rows.append((c, _stray(u, Lx, Ly, c, R)[3], _stray(gr, Lx, Ly, c, R)[3]))
+    with open(os.path.join(TAB, "ch02_conform.tex"), "w") as fh:
+        fh.write("% generated by scripts/ch02_figs.py\n\\begin{tabular}{@{}l r r l@{}}\n\\toprule\nhole centre & stray (ungraded) & stray (graded) & conforming \\\\\n\\midrule\n")
+        for c, a1, a2 in rows:
+            fh.write(f"$({c[0]}, {c[1]})$ & {a1} & {a2} & {'yes' if a1 == a2 == 0 else 'no'} \\\\\n")
+        fh.write("\\bottomrule\n\\end{tabular}\n")
+    print("conformity", rows)
+    # annotated plot of the package: a plate with a hole, clamped left edge, load on the right edge
+    m = good
+    left = m.select_nodes(x=0.0); right = m.select_nodes(x=3.0); top = m.select_nodes(y=2.0)
+    fig2, ax2 = M.plot_mesh_annotated(m, annotations=[
+        dict(nodes=left, label=f"clamped, x=0 ({len(left)} nodes)", color=RED, hatch="left", connect=False),
+        dict(nodes=right, label=f"traction, x=3 ({len(right)} nodes)", color=GREEN, arrow=(1, 0), connect=False),
+        dict(nodes=top, label=f"free edge, y=2 ({len(top)} nodes)", color=ORANGE, marker="s", connect=False)], figsize=(5.2, 3.2))
+    ax2.set_title("")
+    fig2.savefig(os.path.join(FIG, "ch02_annot.pdf"), bbox_inches="tight"); plt.close(fig2)
+    num("cmeAnnLeft", str(len(left))); num("cmeAnnRight", str(len(right))); num("cmeAnnTop", str(len(top)))
+
+
+def _render_points(m, mask, window=(520, 380)):
+    import pyvista as pv
+    from fea_engine.visualization import to_pyvista
+    pv.OFF_SCREEN = True
+    g = to_pyvista(m)
+    pl = pv.Plotter(off_screen=True, window_size=window); pl.set_background("white")
+    pl.add_mesh(g, color="#eaf1f8", show_edges=True, edge_color="#999999", line_width=0.6)
+    P = pv.PolyData(np.asarray(m.nodes)[mask])
+    pl.add_mesh(P, color="#c0392b", point_size=5, render_points_as_spheres=True)
+    pl.camera_position = [tuple(np.array(g.center) + np.array((0.8, -1.2, 1.0)) * g.length * 1.15), g.center, (0, 0, 1)]
+    img = pl.screenshot(return_img=True); pl.close()
+    return img
+
+
+# ---------------------------------------------------------------------------------------------- Sec. 2.11 visualisation
+def fig_viz():
+    import pyvista as pv
+    from fea_engine.material import D_solid3d
+    from fea_engine.visualization import (plot_field, plot_deformed, slice_field, clip_field, threshold_field, to_pyvista)
+    pv.OFF_SCREEN = True
+    L = 10.0
+    m = M.box_mesh(L, 1.0, 1.0, 20, 2, 2)
+    mat = Material(E=2.1e11, nu=0.3, rho=7850.0)
+    s = FESystem(m, Hex8Solid3D()); s.assemble_stiffness(D_solid3d(mat))
+    s.fix_dofs(m.select_nodes(x=0.0), [0, 1, 2])
+    tip = m.select_nodes(x=L)
+    s.add_nodal_force(tip, dof_index=2, total_force=-1000.0)
+    U = s.solve_static()
+    vm = s.von_mises(U)
+    tmp = os.path.join(FIG, "_viz_tmp"); os.makedirs(tmp, exist_ok=True)
+    W = (560, 300)
+    paths = {}
+    def snap(name, fn):
+        path = os.path.join(tmp, name + ".png"); fn(path); paths[name] = path
+    snap("mesh", lambda p: _save_mesh(m, p, W))
+    snap("field", lambda p: plot_field(m, vm, title="von Mises stress (Pa)", window_size=W, screenshot=p, show=False, off_screen=True, cmap="viridis"))
+    snap("deformed", lambda p: plot_deformed(m, U, scale="auto", field="displacement", window_size=W, screenshot=p, show=False, off_screen=True, cmap="viridis"))
+    def _slice(p):
+        sl = slice_field(m, vm, normal="x", origin=(L / 2, 0.5, 0.5))
+        pl = pv.Plotter(off_screen=True, window_size=W); pl.set_background("white")
+        g = to_pyvista(m); pl.add_mesh(g, style="wireframe", color="#999999", line_width=0.6)
+        pl.add_mesh(sl, scalars=sl.array_names[0], cmap="viridis", show_edges=True, show_scalar_bar=False)
+        pl.camera_position = [tuple(np.array(g.center) + np.array((0.7, -1.2, 0.6)) * g.length * 0.82), g.center, (0, 0, 1)]
+        pl.add_text("slice_field at x = L/2", font_size=9, color="black"); pl.screenshot(p); pl.close()
+        paths["_slice_n"] = sl.n_cells
+    def _clip(p):
+        cl = clip_field(m, vm, normal="y", origin=(L / 2, 0.5, 0.5))
+        pl = pv.Plotter(off_screen=True, window_size=W); pl.set_background("white")
+        g = to_pyvista(m)
+        pl.add_mesh(cl, scalars=cl.array_names[0], cmap="viridis", show_edges=True, show_scalar_bar=False)
+        pl.camera_position = [tuple(np.array(g.center) + np.array((0.7, -1.4, 0.8)) * g.length * 0.82), g.center, (0, 0, 1)]
+        pl.add_text("clip_field, y < 0.5", font_size=9, color="black"); pl.screenshot(p); pl.close()
+        paths["_clip_n"] = cl.n_cells
+    def _thr(p):
+        lim = 0.5 * float(np.max(np.asarray(vm)))
+        th = threshold_field(m, vm, (lim, None), all_scalars=False)
+        pl = pv.Plotter(off_screen=True, window_size=W); pl.set_background("white")
+        g = to_pyvista(m)
+        pl.add_mesh(g, style="wireframe", color="#bbbbbb", line_width=0.5)
+        pl.add_mesh(th, scalars=th.array_names[0], cmap="viridis", show_edges=True, show_scalar_bar=False)
+        pl.camera_position = [tuple(np.array(g.center) + np.array((0.7, -1.2, 0.6)) * g.length * 0.82), g.center, (0, 0, 1)]
+        pl.add_text("threshold_field: a node above half the maximum", font_size=9, color="black"); pl.screenshot(p); pl.close()
+        paths["_thr_n"] = th.n_cells
+    snap("slice", _slice); snap("clip", _clip); snap("thr", _thr)
+    from PIL import Image
+    fig, axs = plt.subplots(3, 2, figsize=(7.4, 6.0))
+    names = [("mesh", "(a)"), ("field", "(b)"), ("deformed", "(c)"), ("slice", "(d)"), ("clip", "(e)"), ("thr", "(f)")]
+    for ax, (n, lab) in zip(axs.ravel(), names):
+        im = np.asarray(Image.open(paths[n]).convert("RGB"))
+        nz = np.where((im < 245).any(2))
+        im = im[max(nz[0].min() - 6, 0):nz[0].max() + 6, max(nz[1].min() - 6, 0):nz[1].max() + 6]
+        ax.imshow(im); ax.axis("off")
+    fig.tight_layout(h_pad=0.2, w_pad=0.2)
+    fig.savefig(os.path.join(FIG, "ch02_viz.pdf"), bbox_inches="tight", dpi=200); plt.close(fig)
+    import shutil; shutil.rmtree(tmp)
+    uz = np.asarray(U).reshape(-1, 3)[tip, 2].mean()
+    num("cmeVizTip", f"{abs(uz):.3e}".replace("e-0", "\\times10^{-").replace("e-", "\\times10^{-") + "}" if False else f"{abs(uz) * 1000:.4f}")
+    num("cmeVizNodes", str(len(m.nodes))); num("cmeVizElems", str(len(m.elements)))
+    num("cmeVizVmMax", f"{np.max(np.asarray(vm)) / 1e3:.1f}")
+    num("cmeVizSliceCells", str(paths["_slice_n"])); num("cmeVizClipCells", str(paths["_clip_n"])); num("cmeVizThrCells", str(paths["_thr_n"]))
+    print("viz", uz, paths["_slice_n"], paths["_clip_n"], paths["_thr_n"])
+
+
+def _save_mesh(m, path, W):
+    import pyvista as pv
+    from fea_engine.visualization import to_pyvista
+    g = to_pyvista(m)
+    pl = pv.Plotter(off_screen=True, window_size=W); pl.set_background("white")
+    pl.add_mesh(g, color="#cfe0f1", show_edges=True, edge_color="#333333", line_width=0.8)
+    pl.camera_position = [tuple(np.array(g.center) + np.array((0.7, -1.2, 0.6)) * g.length * 0.82), g.center, (0, 0, 1)]
+    pl.add_text("to_pyvista: the mesh as an unstructured grid", font_size=9, color="black"); pl.screenshot(path); pl.close()
+
+
+# ---------------------------------------------------------------------------------------------- Sec. 2.12 dispatcher
+def fig_dispatch():
+    from fea_engine.build_mesh import build_mesh, RectangleWithHole
+    from fea_engine.grading import MeshGradingError
+    from fea_engine.elements.plates import Quad4MindlinPlate
+    plain = build_mesh(RectangleWithHole(3.0, 2.0), 0.15, Quad4MindlinPlate)
+    holed = build_mesh(RectangleWithHole(3.0, 2.0, hole_center=(1.2, 1.0), hole_radius=0.3, n_ring=12), 0.15, Quad4MindlinPlate, nr=8)
+    msg = ""
+    try:
+        build_mesh(RectangleWithHole(3.0, 2.0, hole_center=(1.2, 1.0), hole_radius=0.3), 0.15, Quad4PlaneStress)
+    except MeshGradingError as e:
+        msg = str(e)
+    plain_t = build_mesh(RectangleWithHole(3.0, 2.0), 0.15, Quad4PlaneStress)
+    fig, axs = plt.subplots(1, 3, figsize=(7.6, 2.2), gridspec_kw={"width_ratios": [1, 1, 1.05]})
+    _fill2d(axs[0], plain, lw=0.3); axs[0].set_title(f"no feature, any element\nrectangle_mesh: {len(plain.elements)} el.", fontsize=7)
+    _fill2d(axs[1], holed, lw=0.3); axs[1].set_title(f"hole + Mindlin plate\nstructured, graded: {len(holed.elements)} el.", fontsize=7)
+    ax = axs[2]; ax.axis("off")
+    ax.text(0.0, 0.95, "hole + Quad4PlaneStress:", fontsize=7, va="top", weight="bold")
+    ax.text(0.0, 0.80, "raises MeshGradingError\n(\"the unstructured grading path\nwas removed from this package ...\")",
+            fontsize=6.5, va="top", family="monospace", color=RED)
+    ax.set_title("refused combinations", fontsize=7)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch02_dispatch.pdf"), bbox_inches="tight"); plt.close(fig)
+    num("cmeDispPlainEl", str(len(plain.elements))); num("cmeDispHoleEl", str(len(holed.elements)))
+    num("cmeDispPlainTransEl", str(len(plain_t.elements))); num("cmeDispErrRaised", "yes" if msg else "NO")
+    print("dispatch", len(plain.elements), len(holed.elements), bool(msg))
+
+
 STEPS = {"step1": [fig_anatomy, fig_elements, fig_quality],
-         "step2": [fig_gallery2d, fig_gallery3d, fig_arc, fig_grade_meshes, fig_plan, fig_payoff, fig_multiblock]}
+         "step2": [fig_gallery2d, fig_gallery3d, fig_arc, fig_grade_meshes, fig_plan, fig_payoff, fig_multiblock],
+         "step3": [fig_parts, fig_sets, fig_viz, fig_dispatch]}
 
 
 def main():
