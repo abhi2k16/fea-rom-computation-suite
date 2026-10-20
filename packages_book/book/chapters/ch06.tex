@@ -1,7 +1,7 @@
 \chapter{Computational acceleration: vectorised assembly and batched kernels}\label{ch:batch}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-A nonlinear element has no stored matrix: its force and tangent are recomputed from the current displacement in every Newton iteration, so assembly is paid for again and again. The default implementation works one element at a time in Python, and for small elements most of the time goes into the interpreter. This chapter describes the opt-in batched path of \fea{}, which computes all elements of a block with array operations, keeps the tangent sparse and lets the Newton drivers use a sparse factorisation. It shows what the batched path computes, how its caches and memory limit work and how the code reports a block that cannot be batched, and then measures the gain and the agreement with the loop on four element families. The loop stays the default and the reference, and every batched result is compared with it.\par\smallskip
+Profile a nonlinear run on a plate of a couple of thousand elements and the result is surprising: nearly all the time goes into assembling the force and the tangent, and nearly all of that into the Python interpreter, not into arithmetic. A nonlinear element has no stored matrix; its force and tangent are recomputed from the current displacement in every Newton iteration, so assembly is paid for again and again. The default implementation works one element at a time in Python. This chapter describes the opt-in batched path of \fea{}, which computes all elements of a block with array operations, keeps the tangent sparse and lets the Newton drivers use a sparse factorisation. It shows what the batched path computes, how its caches and memory limit work and how the code reports a block that cannot be batched, and then measures the gain and the agreement with the loop on four element families. The loop stays the default and the reference, and every batched result is compared with it.\par\smallskip
 After it you should be able to decide when the batched path pays off, check a batched result against the loop, read the support report for a block that cannot be batched, set the chunk size to bound memory, and say what the optional PyTorch backend replaces, what it leaves alone, and at which sizes it pays off.
 \end{tcolorbox}
 
@@ -14,6 +14,55 @@ In a Newton iteration (Chapter~\ref{ch:nonlin}) the code assembles the internal 
 \bm S=\bm D\bm E,
 \end{equation}
 then the element force $\bm f_e=\sum_g w_g J_{0,g}\,\bm B(\bm u_e)^{T}\bm S$ and tangent $\bm K_e=\sum_g w_gJ_{0,g}\,[\bm B^{T}\bm D\bm B+\text{geometric term}]$ (\Cref{eq:nl-tangent} of Chapter~\ref{ch:nonlin}). The arithmetic per element is small: a $3\times3$ or $2\times2$ matrix algebra. When the loop over elements is a Python loop, the cost per element is dominated by function calls and small-array overhead, not by floating-point work. That is the cost the batched path removes, and it is why the gain is large for small two-dimensional elements and smaller for elements that do a lot of arithmetic (\Cref{sec:bk-verif}).
+
+\paragraph{Try it.} \Cref{lst:bk-try} is the naive baseline, the default loop, set against the batched path on a plate of $48$, $192$ and $1728$ \code{Quad4PlaneStressTL} elements at a random displacement state. The plate is the running example of this chapter. The last two lines show what the batched call reports about itself.
+
+\begin{lstlisting}[caption={The default element loop against batched assembly of the internal force of a plate (run with the package on the path).},label={lst:bk-try}]
+import time
+import numpy as np
+from fea_engine import FESystem, Material, MultiBlockMesh
+from fea_engine.material import D_plane_stress
+from fea_engine.elements import Quad4PlaneStressTL
+
+def plate(nx, ny, L=6.0, H=2.0):                       # nx * ny Quad4 elements of a plate
+    x, y = np.meshgrid(np.linspace(0, L, nx + 1), np.linspace(0, H, ny + 1))
+    nodes = np.column_stack([x.ravel(), y.ravel()])
+    n = lambda i, j: j * (nx + 1) + i
+    el = np.array([[n(i, j), n(i + 1, j), n(i + 1, j + 1), n(i, j + 1)]
+                   for j in range(ny) for i in range(nx)])
+    fes = FESystem(MultiBlockMesh(nodes=nodes, blocks={"q": el}, dim=2),
+                   {"q": Quad4PlaneStressTL()}, sparse=False)
+    return fes, {"q": D_plane_stress(Material(E=2.1e11, nu=0.3))}
+
+def timed(fn, repeats=1):                              # best wall time of repeats runs
+    best = np.inf
+    for _ in range(repeats):
+        t0 = time.perf_counter(); out = fn(); best = min(best, time.perf_counter() - t0)
+    return out, best
+
+for nx, ny in ((12, 4), (24, 8), (72, 24)):
+    fes, mat = plate(nx, ny)
+    u = np.random.default_rng(0).normal(size=fes.n_dof) * 0.02
+    kw = dict(thickness=0.5)
+    fes.assemble_internal_force(u, mat, vectorized=True, **kw)            # warm-up of the caches
+    f_loop, t_loop = timed(lambda: fes.assemble_internal_force(u, mat, **kw))               # the default loop
+    f_bat, t_bat = timed(lambda: fes.assemble_internal_force(u, mat, vectorized=True, **kw), 5)  # batched
+    diff = np.linalg.norm(f_bat - f_loop) / np.linalg.norm(f_loop)
+    print(f"{nx*ny:5d} elements: loop {1e3*t_loop:7.1f} ms, batched {1e3*t_bat:6.2f} ms, "
+          f"x{t_loop / t_bat:3.0f}, difference {diff:.0e}")
+print(fes.batch_support_report())
+print(fes.last_assembly_modes)
+\end{lstlisting}
+
+\begin{lstlisting}[numbers=none,language={},keywordstyle={},commentstyle={},frame=single,aboveskip=2pt]
+   48 elements: loop    17.5 ms, batched   0.33 ms, x 53, difference 5e-16
+  192 elements: loop    71.3 ms, batched   0.68 ms, x104, difference 9e-16
+ 1728 elements: loop   635.0 ms, batched   4.57 ms, x139, difference 3e-15
+[('q', 'Quad4PlaneStressTL', 1728, None)]
+{'q': 'batched'}
+\end{lstlisting}
+
+The batched path gives the same force to rounding ($10^{-15}$) and is faster by a factor that grows with the size of the model, from about fifty on the smallest plate to over a hundred on the largest. These are single runs on one machine, so the factors vary by tens of per cent; the trend and the agreement do not. The loop's time grows with the number of elements and the batched time much more slowly, because a fixed cost per call is spread over more elements, which is the subject of the next section.
 
 \section{What the batched path does}\label{sec:bk-idea}
 
@@ -51,6 +100,10 @@ All elements of one block (one element type with one material) share the referen
 \end{algbox}
 
 The batched assembly costs $O(E\,n_g\,n_{dof}^2)$ arithmetic with no per-element interpreter overhead, and its working memory is proportional to $E_c\,n_g\,n_{str}\,n_{dof}$ per chunk. It does not apply to path-dependent elements or elements without a batched kernel: \code{batch_support_report} says so and the block stays on the loop. If the mesh or the Gauss order changes, the cache is rebuilt and compared exactly. The code is \code{assemble_tangent_stiffness(..., vectorized=True, sparse=True)} and \code{batch_support_report}; \Cref{sec:bk-verif} gives the agreement with the loop and the measured gain on four element families.
+
+\begin{sidenote}{Batching and chunking}
+Batching replaces a Python loop over elements by array operations over all elements of one type at once, so the interpreter is entered once per block instead of once per element. Chunking splits a very large block into pieces so that the arrays that batching builds fit in memory; the result is the same, and only the peak memory changes.
+\end{sidenote}
 
 \section{Using it}\label{sec:bk-use}
 
@@ -197,7 +250,9 @@ sparse Newton settings & \anchor{fea_engine.newton_options.NewtonOptions} & no \
 
 \section{Summary}\label{sec:bk-summary}
 
-A nonlinear element is reassembled in every Newton iteration, and a Python loop over elements makes that expensive. The batched path computes all elements of a block at once, caches the reference geometry and the sparse pattern, limits its memory by chunking, and reports the blocks it cannot handle. On four element families it agreed with the loop to \cbkAgreeWorst{} and was between \cbkKFHexTwenty{} and \cbkKFQuad{} times faster for the force kernel in this study; a full Newton solve of a plate was \cbkNewtonRatio{} times faster, with the solution unchanged to \cbkNewtonDiff. The optional PyTorch backend gives the same results to rounding for the solve, the stress recovery and the kernels, but on the records of one machine it pays off only for systems of tens of thousands of degrees of freedom, and for recovery and kernels of a few thousand elements or more. The loop stays the default and the reference.
+We started from a profile in which the interpreter, not the arithmetic, dominated the assembly of a nonlinear model. A nonlinear element is reassembled in every Newton iteration, and a Python loop over elements makes that expensive. The batched path computes all elements of a block at once, caches the reference geometry and the sparse pattern, limits its memory by chunking, and reports the blocks it cannot handle. On four element families it agreed with the loop to \cbkAgreeWorst{} and was between \cbkKFHexTwenty{} and \cbkKFQuad{} times faster for the force kernel in this study; a full Newton solve of a plate was \cbkNewtonRatio{} times faster, with the solution unchanged to \cbkNewtonDiff.
+
+The optional PyTorch backend gives the same results to rounding for the solve, the stress recovery and the kernels, but on the records of one machine it pays off only for systems of tens of thousands of degrees of freedom, and for recovery and kernels of a few thousand elements or more. The loop stays the default and the reference. The next chapter returns to a problem where the solver itself, not the assembly, has to change: contact.
 
 \section*{Exercises}\label{sec:bk-exercises}
 \begin{enumerate}

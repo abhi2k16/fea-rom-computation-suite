@@ -1,17 +1,23 @@
 \chapter{Material and geometric nonlinearity}\label{ch:nonlin}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-Linear analysis assumes small displacements and a linear material; this chapter drops both assumptions, in the total-Lagrangian setting of \fea{}. It states the Newton iteration that every nonlinear driver shares, derives the internal force and tangent of a truss and of a continuum element, adds hyperelasticity and $J_2$ plasticity with history variables, and compares four ways of following a response: load control, displacement control, arc length and Koiter--Newton. Each statement about the code comes with a check: rotation invariance, the tangents against finite differences, the von Mises snap-through truss against its closed form, and a plastic load cycle against the hand solution.\par\smallskip
+A shallow two-bar truss is pushed down at its apex. At first it resists, then at a certain load it gives way and snaps through, and a solver that steps up the load in small increments simply stops converging just above that load. This chapter is about solvers that do not stop there. We state the Newton iteration that every nonlinear driver shares, derive the internal force and tangent of a truss and of a continuum element in the total-Lagrangian setting, add hyperelasticity and $J_2$ plasticity with history variables, and compare four ways of following a response: load control, displacement control, arc length and Koiter--Newton. Each statement about the code comes with a check: rotation invariance, the tangents against finite differences, the von Mises snap-through truss against its closed form, and a plastic load cycle against the hand solution.\par\smallskip
 After it you should be able to state the Newton iteration the drivers share, verify an element's force and tangent by rotation invariance and finite differences, choose among the four path-following methods for a response with a limit point, and check a plastic load cycle against a hand solution.
 \end{tcolorbox}
 
 \section{Why a nonlinear solver is different}\label{sec:nl-why}
+
+The two-bar truss of \Cref{sec:nl-paths} is the running example of this chapter. It is small enough to have a closed form, \eqref{eq:nl-vm}, so every claim below can be checked against it, and it shows the one thing that distinguishes nonlinear from linear analysis in practice: the load that the structure can carry has a maximum, and a solver that prescribes the load has no way to go beyond it.
 
 A linear model solves $\bm K\bm u=\bm f$ once. A nonlinear model has an internal force $\bm f_{int}(\bm u)$ that is not linear in $\bm u$, and equilibrium with a load $\lambda\bm f_{ref}$ is the residual equation
 \begin{equation}\label{eq:nl-residual}
 \bm r(\bm u,\lambda)=\bm f_{int}(\bm u)-\lambda\,\bm f_{ref}=\bm 0 .
 \end{equation}
 Two things change. First, the solution has to be found by iteration: Newton's method linearises \eqref{eq:nl-residual} with the tangent stiffness $\bm K_T(\bm u)=\partial\bm f_{int}/\partial\bm u$. Second, the response may have no unique answer for a given load: when the load-displacement curve turns back, there are several equilibrium states for one $\lambda$, and a method that prescribes $\lambda$ cannot follow the curve (\Cref{sec:nl-paths}). The standard references are \citet{zienkiewicz2013fem}, \citet{bathe2014fep} and, for inelasticity, \citet{simo1998inelasticity}.
+
+\begin{sidenote}{Tangent stiffness}
+The tangent $\bm K_T=\partial\bm f_{int}/\partial\bm u$ is the stiffness the structure has \emph{at the current deformation}: the slope of the force--displacement curve there. For a linear structure it is the constant $\bm K$ and Newton's method finishes in one iteration. For a nonlinear one it changes with $\bm u$, and when it becomes singular the structure has reached a limit point.
+\end{sidenote}
 
 \begin{algbox}{Newton iteration for one load step}
 \begin{pseudo}
@@ -131,23 +137,63 @@ P(\delta)=\frac{EA}{L_0^{3}}\,\delta\,(h_0-\delta)(2h_0-\delta),
 \end{equation}
 with a limit load $P_{max}=\cnlTrussPeak$ N at $\delta=\cnlTrussPeakDelta$ mm. Beyond this deflection the load \emph{decreases} while the displacement grows.
 
-\begin{lstlisting}[caption={The von Mises truss with \texttt{TrussTL2D}, followed with displacement control and with arc length.},label={lst:nl-vm}]
-nodes = np.array([[-1.0, 0.0], [0.0, 0.10], [1.0, 0.0]])
-mesh = Mesh(nodes=nodes, elements=np.array([[0, 1], [1, 2]]), dim=2)
-fes = FESystem(mesh, elmod.TrussTL2D())
-fes.fix_dofs([0, 2], [0, 1])
-apex_y = 1 * fes.npn + 1
-mat = (210e9, 2e-4)
+\paragraph{Try it.} \Cref{lst:nl-vm} does what a first attempt would do, which is to prescribe a load $10\,\%$ above the limit load, and then the two ways out: prescribing the deflection instead, and arc length.
 
-# displacement control: the apex deflection is prescribed
-U, R = nls.solve_nonlinear_displacement_control(
-    fes, mat, apex_y, -np.linspace(0, 0.2, 81), tol=1e-12, max_iter=50)
+\begin{lstlisting}[caption={The von Mises truss with \texttt{TrussTL2D}: load control past the limit load, displacement control and arc length (run with the package on the path).},label={lst:nl-vm}]
+import numpy as np
+from fea_engine import elements as elmod
+from fea_engine.mesh import Mesh
+from fea_engine.solver import FESystem
+from fea_engine import nonlinear_solver as nls
+
+E, A, h0 = 210e9, 2e-4, 0.10
+L0 = np.hypot(1.0, h0)
+P_exact = lambda d: E * A / L0**3 * d * (h0 - d) * (2 * h0 - d)   # closed form of the truss
+d_peak = h0 * (3 - np.sqrt(3)) / 3
+P_max = P_exact(d_peak)
+
+def truss():
+    nodes = np.array([[-1.0, 0.0], [0.0, h0], [1.0, 0.0]])
+    fes = FESystem(Mesh(nodes=nodes, elements=np.array([[0, 1], [1, 2]]), dim=2), elmod.TrussTL2D())
+    fes.fix_dofs([0, 2], [0, 1])
+    return fes, 1 * fes.npn + 1                       # the system and the apex's vertical dof
+
+print(f"limit load {P_max:.0f} N at apex deflection {d_peak*1e3:.2f} mm")
+
+# naive: prescribe the load, 10 % above the limit load
+fes, apex = truss()
+fes.add_nodal_force([1], 1, -1.1 * P_max)
+try:
+    nls.solve_nonlinear_static(fes, (E, A), n_steps=20, tol=1e-12)
+    print("load control at 1.1 P_max: converged")
+except RuntimeError as e:
+    print("load control at 1.1 P_max: failed -", str(e)[:60])
+
+# prescribe the deflection instead; the load comes back as the reaction
+fes, apex = truss()
+d = np.linspace(0, 0.2, 81)
+U, R = nls.solve_nonlinear_displacement_control(fes, (E, A), apex, -d, tol=1e-12, max_iter=50)
+err = np.max(np.abs(-R - P_exact(d))) / np.abs(R).max()
+print(f"displacement control: peak load {np.max(-R):.0f} N, worst error against the closed form {err:.1e}")
 
 # arc length: only the direction of the load is given
+fes, apex = truss()
 fes.add_nodal_force([1], 1, -1.0)
-lam, U = nls.solve_nonlinear_arc_length(
-    fes, mat, delta_L=0.01, n_steps=60, tol=1e-10, max_iter=60)
+lam, U = nls.solve_nonlinear_arc_length(fes, (E, A), delta_L=0.01, n_steps=60, tol=1e-10, max_iter=60)
+dal = -U[:, apex]
+keep = dal <= 2 * h0                                  # the path up to the inversion at 2 h0
+err = np.max(np.abs(lam[keep] - P_exact(dal[keep]))) / lam[keep].max()
+print(f"arc length: {keep.sum()} points up to {2*h0*1e3:.0f} mm, peak load {lam[keep].max():.0f} N, worst error {err:.1e}")
 \end{lstlisting}
+
+\begin{lstlisting}[numbers=none,language={},keywordstyle={},commentstyle={},frame=single,aboveskip=2pt]
+limit load 15926 N at apex deflection 42.26 mm
+load control at 1.1 P_max: failed - solve_nonlinear_static: Newton-Raphson failed to converge at
+displacement control: peak load 15926 N, worst error against the closed form 6.8e-14
+arc length: 20 points up to 200 mm, peak load 15889 N, worst error 4.9e-14
+\end{lstlisting}
+
+The first attempt fails, as it must, since above $P_{max}$ there is no equilibrium state on the branch that the solver is following. The other two follow the whole curve: displacement control recovers the load as the reaction and matches the closed form to rounding, and arc length, which prescribes neither load nor deflection, takes the points through the limit load, the snap and the inversion with a worst error of the same order. The arc-length peak of $15\,889$ N is a sampled point just below the exact $15\,926$ N, because the steps of fixed length do not land on the maximum.
 
 \Cref{fig:nl-vm} shows three results. Load control, which prescribes $P$, fails at a load of $1.1\,P_{max}$: it \cnlLoadCtrlFailed{} because no equilibrium state of the same branch exists. Displacement control prescribes $\delta$ and recovers the load as the reaction, and it follows the whole curve with a largest relative error of \cnlTrussErrDC against \eqref{eq:nl-vm}. Arc length prescribes neither: it takes steps of fixed length in the combined space of $(\bm u,\lambda)$, and the load factor is one of the unknowns. It follows the curve through the limit point and beyond the inversion at $\delta=2h_0$ with a largest relative error of \cnlTrussErrAL over all 60 steps; the figure shows the \cnlTrussALpts{} points up to $\delta=2h_0$.
 
@@ -175,6 +221,10 @@ lam, U = nls.solve_nonlinear_arc_length(
 \end{algbox}
 
 Arc length takes two linear solves per iteration with the same tangent, at a fixed radius with no step adaptation. A radius $\Delta_L$ that is too large lets the predictor jump to another branch or the corrector fail, and the wrong root can be picked at a sharp turn. The code is \anchor{fea_engine.nonlinear_solver.solve_nonlinear_arc_length}; \Cref{fig:nl-vm} checks the von Mises truss against its closed form. Koiter--Newton, in the same module, is not verified in this book.
+
+\begin{sidenote}{Limit point and snap-through}
+A limit point is where the load--displacement curve reaches a maximum or minimum in the load. Past a maximum the structure can only be in equilibrium if the load \emph{drops}, so under a prescribed load it jumps to a distant state: snap-through. To follow the unstable part of the curve one must prescribe something other than the load.
+\end{sidenote}
 
 \paragraph{Choosing a driver.}
 \Cref{tab:nl-drivers} lists the drivers. Load control is the cheapest and the right default for a response that rises monotonically with the load. Displacement control suits a problem where the displacement of one point is the natural control (an indentation, a snap with one dominant dof). Arc length \citep{riks1979,crisfield1981} needs only a reference load and handles turning points in load and in displacement. Koiter--Newton \citep{liang2014koiternewton} replaces the linear predictor of arc length by a cubic one built from an asymptotic expansion; it is not exercised in this chapter.
@@ -234,7 +284,9 @@ shared Newton settings & \anchor{fea_engine.newton_options.NewtonOptions} & yes 
 
 \section{Summary}\label{sec:nl-summary}
 
-Nonlinear equilibrium \eqref{eq:nl-residual} is solved by Newton's method with the exact tangent \eqref{eq:nl-tangent}; the total-Lagrangian elements of \fea{} are invariant under rigid rotation (\Cref{fig:nl-obj}) and their tangents match finite differences to about $10^{-10}$ (\Cref{tab:nl-tangent}). Plasticity needs history variables, updated once per converged step. Load control cannot follow a response past a limit load; displacement control and arc length can, and both reproduce the von Mises truss to $10^{-13}$ (\Cref{fig:nl-vm}). The limits are in the box above: an approximate hyperelastic tangent, linear-kinematics plasticity, and path-following parameters that the user must choose.
+We started from a truss that snaps through and a solver that stops at its limit load. Nonlinear equilibrium \eqref{eq:nl-residual} is solved by Newton's method with the exact tangent \eqref{eq:nl-tangent}, and the total-Lagrangian elements of \fea{} are invariant under rigid rotation (\Cref{fig:nl-obj}) with tangents that match finite differences to about $10^{-10}$ (\Cref{tab:nl-tangent}). Plasticity adds history variables, updated once per converged step.
+
+The answer to the opening problem is to prescribe something other than the load. Load control cannot follow a response past a limit load; displacement control and arc length can, and both reproduce the von Mises truss to $10^{-13}$ (\Cref{fig:nl-vm}). The limits are in the box above: an approximate hyperelastic tangent, linear-kinematics plasticity, and path-following parameters that the user must choose. The next chapter is about making the assembly behind each Newton iteration fast.
 
 \section*{Exercises}\label{sec:nl-exercises}
 \begin{enumerate}

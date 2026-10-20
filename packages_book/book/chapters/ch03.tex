@@ -1,9 +1,11 @@
 \chapter{Linear continua and structural elements}\label{ch:elem}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-Everything in the later chapters is built from element matrices, so this chapter starts at the root: how a weak form becomes a sparse stiffness matrix and a mass matrix, and which element families \fea{} offers for scalar fields, plane and solid continua, beams, plates and shells. It does not re-derive shape functions. It looks instead at the places where an element can be wrong while looking plausible: locking, integration rules and the choice of mass matrix. Each is followed by a test against an independent reference: patch tests on distorted meshes, pure bending, a slender cantilever of a nearly incompressible material, beam frequencies against closed forms, and a plate against the shell that must reproduce it.\par\smallskip
+A thin steel strip is meshed with a standard plate element, loaded at the tip, and solved. The answer comes out two hundred times too stiff, and no setting is wrong: the element is simply too stiff for thin plates under the integration rule that looks the most careful. This chapter starts from that failure. It first shows how a weak form becomes a stiffness and a mass matrix, and which element families \fea{} offers for scalar fields, plane and solid continua, beams, plates and shells. It does not re-derive shape functions. It then looks at the places where an element can be wrong while looking plausible, namely locking, integration rules and the choice of mass matrix, and tests each against an independent reference: patch tests on distorted meshes, pure bending, a slender cantilever of a nearly incompressible material, beam frequencies against closed forms, and a plate against the shell that must reproduce it.\par\smallskip
 After it you should be able to say how a weak form becomes a stiffness and a mass matrix, recognise locking or a wrong integration rule from a test with an independent reference, and choose between a consistent and a lumped mass matrix, knowing the frequency error of each.
 \end{tcolorbox}
+
+Imagine a designer who wants the tip deflection of a thin plate strip, $1\,\mathrm{m}$ long and $1\,\mathrm{cm}$ thick, clamped at one end. The finite element answer is $0.005$ of the beam-theory value on a coarse mesh, and still $0.6$ on a mesh sixteen times finer. Nothing is broken, and every element is positive definite and passes the patch test. The cure is a change of integration rule on one term of the element matrix, and the rest of the chapter explains why that works and how to tell it from the outside. The thin cantilever strip is the running example of this chapter, and its numbers appear again in \Cref{sec:el-locking}.
 
 \section{From the weak form to an element matrix}\label{sec:el-weak}
 
@@ -39,6 +41,10 @@ The integrals are computed by Gauss quadrature on the reference element, with $d
 
 The rule evaluates $n_g$ integrands of $O(d^2n_{str})$ each, and it sets the rank of $\bm K_e$. It goes wrong when it is too low (hourglass modes, rank deficiency) or too high for the physics (locking, \Cref{sec:el-locking}), and when the Jacobian is not positive. The code is \anchor{fea_engine.elements.base.Element} (\code{stiffness}, \code{mass}) and \code{assemble_lumped_mass}; the checks are \Cref{sec:el-verif} (patch tests, beams) and \Cref{fig:el-mass} (mass choices).
 
+\begin{sidenote}{Admissible function and quadrature}
+The function $v$ in the weak form is a \emph{test function}: any function that is zero where $u$ is prescribed. Taking $v=N_a$ for each node $a$ in turn gives one equation per node. The integrals in \eqref{eq:el-K} are rarely done exactly; a Gauss rule with $n_g$ points per direction integrates polynomials up to degree $2n_g-1$ exactly, and which rule is used is a modelling choice, not just a numerical one, as the next sections show.
+\end{sidenote}
+
 \paragraph{The mass matrix: consistent or lumped.}
 The same interpolation gives the consistent mass matrix $\bm M_e=\int\rho\bm N^{T}\bm N\,d\Omega$, which is sparse with the pattern of $\bm K$. A lumped mass matrix is diagonal: \fea{} provides element-by-element HRZ lumping (\code{assemble_lumped_mass}), which keeps the total mass of the element. The diagonal form is what the explicit time integration of Chapter~\ref{ch:dyn} needs, since it makes the solve for the accelerations trivial. The choice has a measurable effect on the eigenvalues. For the lowest eigenvalue of the unit-square membrane, $\lambda_1=2\pi^2$ for a clamped edge, \Cref{fig:el-mass} shows that the consistent mass overestimates it and the lumped mass underestimates it, both with the error falling like $h^{\cecMassConsOrder}$ and $h^{\cecMassLumpOrder}$. On the finest mesh the consistent mass is high by \cecMassConsFine{} and the lumped mass is low by \cecMassLumpFine{}. The signs are the usual ones for these two choices, and an average of the two is a classical way to reduce the error; this chapter does not test that.
 
@@ -64,6 +70,39 @@ The beam elements use a one-dimensional mesh. \anchor{fea_engine.elements.beams.
 \section{Locking and how the elements avoid it}\label{sec:el-locking}
 
 Locking is an element behaving too stiffly for a deformation mode that its interpolation cannot reproduce without also producing a parasitic strain. It is the one error in this chapter that grows when the problem gets \emph{easier} (a thinner beam, a more incompressible material), which is why it needs a test of its own.
+
+\paragraph{Try it.} \Cref{lst:el-try} meshes the strip of the introduction with \code{Quad4MindlinPlate} and solves it twice on each mesh: with full integration for both the bending and the shear energy (the careful-looking choice) and with the package default, selective reduced integration. The ratio is the tip deflection divided by the beam-theory value.
+
+\begin{lstlisting}[caption={A thin cantilever strip with two integration rules for the same plate element (run with the package on the path).},label={lst:el-try}]
+from fea_engine import FESystem, Material, Quad4MindlinPlate
+from fea_engine.material import D_mindlin_plate
+from fea_engine.mesh import rectangle_mesh
+
+mat = Material(E=2.1e11, nu=0.3, rho=7850.0)
+h, L, W, P = 0.01, 1.0, 0.2, -1000.0                  # thin strip: h/L = 0.01
+Db, Ds = D_mindlin_plate(mat, h)
+ref = P * L**3 / (3 * mat.E * h**3 / (12 * (1 - mat.nu**2)) * W)   # beam theory with plate rigidity
+
+for nx in (4, 16, 64):
+    mesh = rectangle_mesh(L, W, nx, max(2, nx // 4))
+    left, tip = mesh.nodes_on_plane(axis=0, value=0.0), mesh.nodes_on_plane(axis=0, value=L)
+    out = {}
+    for rule in ("full", "sri"):                      # same element, two integration rules
+        s = FESystem(mesh, Quad4MindlinPlate())
+        s.assemble_stiffness((Db, Ds), integration=rule)
+        s.fix_dofs(left, [0, 1, 2]); s.add_nodal_force(tip, 0, P)
+        out[rule] = s.solve_static()[3 * tip[0]] / ref
+    print(f"{nx:3d} elements: tip deflection / beam theory   "
+          f"full {out['full']:.3f}   selective-reduced {out['sri']:.3f}")
+\end{lstlisting}
+
+\begin{lstlisting}[numbers=none,language={},keywordstyle={},commentstyle={},frame=single,aboveskip=2pt]
+  4 elements: tip deflection / beam theory   full 0.005   selective-reduced 1.059
+ 16 elements: tip deflection / beam theory   full 0.081   selective-reduced 1.077
+ 64 elements: tip deflection / beam theory   full 0.602   selective-reduced 1.078
+\end{lstlisting}
+
+The fully integrated element is two hundred times too stiff on four elements and still $40\,\%$ too stiff on sixty-four, so refining the mesh is an expensive and poor remedy. The selective rule is within $6\,\%$ at once. The reference is approximate, which is why the converged ratio is $1.078$ and not $1$; the difference between the two rows is what matters. The mechanism, the same one in continuum elements, is the next topic.
 
 \tikzfigure[0.98\linewidth]{ch03_locking}{The mechanism of shear locking in a bilinear element under bending (schematic). The exact bending mode curves the edges and has no shear strain; the bilinear interpolation keeps the edges straight, which produces a parasitic shear strain and an artificially stiff element.}{fig:el-lockmech}
 
@@ -95,6 +134,10 @@ A nearly incompressible material ($\nu\to0.5$) forces $\operatorname{tr}\bm\vare
 \end{table}
 
 \section{Verification}\label{sec:el-verif}
+
+\begin{sidenote}{Patch test}
+A patch test asks whether an element can reproduce the simplest nonzero strain state, constant strain, exactly on an irregular patch of elements. An element that cannot is not guaranteed to converge to the right answer when the mesh is refined, so the test is a necessary condition. It says nothing about locking, since a locking element still passes it.
+\end{sidenote}
 
 \paragraph{Patch tests.}
 An element passes the patch test if a mesh of distorted elements reproduces a linear displacement field exactly when the boundary nodes are given the field, and recovers the constant stress. \Cref{tab:el-patch} gives the largest relative error of the displacement and of the stress for the \cecPatchCount{} continuum elements on distorted meshes; the worst value is \cecPatchWorst{}, which is rounding. The patch test is necessary but not sufficient for convergence, and it says nothing about locking, which is why the tests above exist. The B-bar hexahedron is not in this table: it does not support stress recovery in the nodal form the test uses, so its patch test (displacements only) is the one of \texttt{tests/test\_hex8\_bbar.py}, which passes together with the other three tests of that file (4 passed in the run for this chapter).
@@ -143,7 +186,9 @@ convergence studies & \anchor{fea_engine.convergence.run_study}, \anchor{fea_eng
 
 \section{Summary}\label{sec:el-summary}
 
-Every element is $\int\bm B^{T}\bm D\bm B$ evaluated by Gauss quadrature, plus a mass matrix that is consistent or lumped; the consistent mass overestimates the membrane eigenvalue and the lumped mass underestimates it. All continuum elements pass the patch test on distorted meshes to rounding, but the low-order ones lock in bending, and nearly incompressible material locks the plain hexahedron to \cecLockHexPlainB{} of the beam value. B-bar fixes the incompressible part only, selective reduced integration keeps the Mindlin plate usable when thin, and the MITC shell agrees with the plate in the flat limit. The beams are exact (Euler--Bernoulli, end load) or converge at the expected orders.
+We began with a thin strip that came out two hundred times too stiff. The cause is that every element is the integral $\int\bm B^{T}\bm D\bm B$ evaluated by Gauss quadrature, and the quadrature rule is part of the model: a rule that looks the most careful produced locking, and a cheaper rule applied to the shear term only removed it. The same quadrature gives the mass matrix, consistent or lumped, and the consistent mass overestimates the membrane eigenvalue while the lumped mass underestimates it.
+
+All continuum elements pass the patch test on distorted meshes to rounding, yet the low-order ones lock in bending, and a nearly incompressible material locks the plain hexahedron to \cecLockHexPlainB{} of the beam value. B-bar fixes the incompressible part only, selective reduced integration keeps the Mindlin plate usable when thin, and the MITC shell agrees with the plate in the flat limit. The beams are exact (Euler--Bernoulli under an end load) or converge at the expected orders. The next chapter takes these matrices into time.
 
 \section*{Exercises}\label{sec:el-exercises}
 \begin{enumerate}

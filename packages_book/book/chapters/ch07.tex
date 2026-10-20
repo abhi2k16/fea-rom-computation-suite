@@ -1,7 +1,7 @@
 \chapter{Exact unilateral contact: sparse active sets and BDF2}\label{ch:contact}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-Contact is the first place where the solver cannot be a single linear solve, because the set of points in contact is unknown and has to be found. This chapter enforces frictionless contact exactly, with Lagrange multipliers, for models with tens of thousands of unknowns. It shows why a penalty parameter is the wrong tool, derives the primal-dual active-set method as a semismooth Newton iteration, explains the three sparse routes of \anchor{fea_engine.contact_solvers.solve_contact_static_sparse} and how the solver reports a route that does not suit the problem, and then adds a second-order time scheme (BDF2) for impact. Each claim is followed by the measurement that supports it, with the limits stated beside the results.\par\smallskip
+A membrane is pressed down onto a bumpy floor. The obvious way to keep it from passing through is to put a stiff spring at every node that has sunk below the floor, and it works, until the spring gets stiff enough for the answer to be good and the matrix gets too ill-conditioned to solve. Contact is the first place where the solver cannot be a single linear solve, because the set of points in contact is unknown and has to be found. This chapter enforces frictionless contact exactly, with Lagrange multipliers, for models with tens of thousands of unknowns. It measures what the penalty costs, derives the primal-dual active-set method as a semismooth Newton iteration, explains the three sparse routes of \anchor{fea_engine.contact_solvers.solve_contact_static_sparse} and how the solver reports a route that does not suit the problem, and then adds a second-order time scheme (BDF2) for impact. Each claim is followed by the measurement that supports it, with the limits stated beside the results.\par\smallskip
 After it you should be able to explain why a penalty parameter is the wrong tool for contact, state the primal-dual active-set method and choose among the sparse routes, and run an impact with BDF2 and read its energy behaviour.
 \end{tcolorbox}
 
@@ -15,6 +15,10 @@ Take a discretised elastic body with $n$ unknowns, a symmetric positive definite
 \bm\lambda^{T}\bm g=0 .
 \end{equation}
 The four conditions say, in turn: equilibrium including the contact forces; no penetration; contact forces only push; and a contact force acts only where the gap is closed. The last condition is what makes the problem nonlinear, and it is the same condition throughout the book: the packages use this convention in \fea{} here and in the reduced models of Chapter~\ref{ch:hyper}~\cite{balajewicz2016contact}. For the formulation in a general setting see \citet{wriggers2006contact} and the survey of \citet{wohlmuth2011contact}.
+
+\begin{sidenote}{Lagrange multiplier and KKT}
+A Lagrange multiplier $\lambda_i$ is an extra unknown that stands for the force an inequality exerts when it is binding. Here it is the contact force at node $i$. The four conditions of \eqref{eq:ct-kkt} are the Karush--Kuhn--Tucker (KKT) conditions: equilibrium, feasibility, a sign condition on the force, and complementarity, which says that a force can only act where the gap is closed.
+\end{sidenote}
 
 \paragraph{The model problem.}
 All the experiments of this chapter use one problem that is small enough to inspect and large enough to need a sparse solver: a membrane, a unit square clamped at its edge, loaded by a uniform downward pressure, and pushed onto a rigid obstacle below it. The membrane is discretised with the scalar element \anchor{fea_engine.elements.scalar.Quad4Laplace} (one unknown per node), $\bm B=\bm I$ (every node may touch the obstacle), and the obstacle is a flat floor with two smooth bumps. \Cref{fig:ct-obstacle} shows the solution on a $40\times40$ mesh. The area where the membrane rests on the obstacle, the contact set, is not known in advance; it is found by the algorithm of \Cref{sec:ct-pdas}.
@@ -30,6 +34,60 @@ For this solution the contact conditions \eqref{eq:ct-kkt} hold to rounding: the
 \section{Why not a penalty?}\label{sec:ct-penalty}
 
 The usual way to avoid the inequality is to let the obstacle push back with a spring: for $\bm B=\bm I$, add the force $k_p\max(0,\,c_i-u_i)$ at every node that has penetrated. Then \eqref{eq:ct-kkt} is replaced by $\bm K\bm u=\bm f+k_p\max(0,\bm c-\bm u)$, an ordinary nonlinear equation, and a Newton iteration on the set $\mathcal A=\{i:u_i<c_i\}$ solves $(\bm K+k_p\bm P_{\mathcal A})\bm u=\bm f+k_p\bm P_{\mathcal A}\bm c$, where $\bm P_{\mathcal A}$ selects the penetrating nodes. The penalty method is simple, and \fea{} keeps it as the contact elements \code{GapContactPenalty} and \code{NodeToSegmentContact2D}. Its cost is a parameter that has no physical meaning.
+
+\paragraph{Try it.} \Cref{lst:ct-penalty} builds the membrane of the model problem on a $30\times30$ mesh, solves it by the penalty method at three stiffnesses, and then solves it exactly. The penalty loop is the Newton iteration just described; \code{kp} is measured in units of the mean diagonal of $\bm K$.
+
+\begin{lstlisting}[caption={The membrane obstacle problem: penalty at three stiffnesses against the exact solution (run with the package on the path).},label={lst:ct-penalty}]
+import numpy as np, scipy.sparse as sp, scipy.sparse.linalg as spl
+from fea_engine import FESystem, Quad4Laplace, solve_contact_static_sparse
+from fea_engine import mesh as meshlib
+
+m = meshlib.rectangle_mesh(1.0, 1.0, 30, 30)
+fes = FESystem(m, Quad4Laplace(), sparse=True)
+fes.assemble_stiffness(1.0); fes.assemble_lumped_mass(1.0)
+X = m.nodes
+edge = np.flatnonzero((X[:, 0] < 1e-9) | (X[:, 0] > 1 - 1e-9) |
+                      (X[:, 1] < 1e-9) | (X[:, 1] > 1 - 1e-9))
+fes.fix_dofs(edge, ["u"])
+free = np.asarray(fes.free_dofs)
+K = sp.csr_matrix(fes.K)[free][:, free]
+M = sp.diags(sp.csr_matrix(fes.M_lumped).diagonal()[free]).tocsr()
+f = -10.0 * (M @ np.ones(len(free)))                       # uniform pressure
+c = np.where(np.hypot(X[free, 0] - .5, X[free, 1] - .5) < .2, -0.05, -10.0)
+B = sp.identity(len(free), format="csr")                   # every node may touch
+
+# naive: a penalty spring at every node that has penetrated, solved by Newton
+def penalty(kp, iters=60):
+    u = np.zeros(len(free))
+    for _ in range(iters):
+        P = sp.diags((u < c).astype(float))
+        A = (K + kp * P).tocsc()
+        un = spl.spsolve(A, f + kp * (P @ c))
+        if np.allclose(un, u, atol=1e-14): break
+        u = un
+    return u, A
+
+kbar = K.diagonal().mean()
+for k in (1e2, 1e4, 1e6):
+    u, A = penalty(k * kbar)
+    cond = np.linalg.cond(A.toarray())
+    print(f"penalty kp = {k:.0e} x mean diag: penetration {max(0, (c - u).max()):.1e}, "
+          f"condition number {cond:.1e}")
+
+r = solve_contact_static_sparse(K, f, B, c)                # route="auto" -> "reduced"
+print(f"exact:  penetration {max(0, -r.gap.min()):.1e}, condition number "
+      f"{np.linalg.cond(K.toarray()):.1e}, route {r.route}, {r.iterations} iterations, "
+      f"{len(r.active)} active")
+\end{lstlisting}
+
+\begin{lstlisting}[numbers=none,language={},keywordstyle={},commentstyle={},frame=single,aboveskip=2pt]
+penalty kp = 1e+02 x mean diag: penetration 4.3e-04, condition number 3.4e+03
+penalty kp = 1e+04 x mean diag: penetration 4.3e-06, condition number 3.4e+05
+penalty kp = 1e+06 x mean diag: penetration 4.3e-08, condition number 3.4e+07
+exact:  penetration 0.0e+00, condition number 1.8e+02, route reduced, 2 iterations, 111 active
+\end{lstlisting}
+
+Each factor of $100$ in the stiffness lowers the penetration by $100$ and raises the condition number by $100$: the penetration shrinks like $1/k_p$ and the conditioning worsens like $k_p$, and neither reaches the exact values. The exact solve has no such parameter, solves a system with a condition number of $180$, and finds the $111$ contact points in two iterations. \Cref{fig:ct-penalty} repeats the measurement on a finer mesh.
 
 \Cref{fig:ct-penalty} measures that cost on the model problem with $\ctcPenN$ unknowns. The penetration shrinks like $1/k_p$, from $\ctcPenAtOne$ at $k_p=\overline{K_{ii}}$ (the mean diagonal of $\bm K$) to \ctcPenAtEight at $k_p=10^8\,\overline{K_{ii}}$, and the penalty force approaches the exact multipliers (largest relative error $\ctcRelForceOne$ at the smallest $k_p$, \ctcRelForceSix at $k_p=10^6\,\overline{K_{ii}}$). At the same time the condition number of the matrix grows in proportion to $k_p$, reaching \ctcCondAtEight at $k_p=10^8\,\overline{K_{ii}}$, against $\ctcCondExact$ for the matrix $\bm K_{FF}$ of the free unknowns that the exact method solves. A penetration small enough for the application therefore has to be bought with an ill-conditioned system, and for an iterative solver or a single-precision GPU run the price is larger still. The exact method has no such parameter: the penetration is \ctcPenExact.
 
@@ -152,19 +210,30 @@ c = np.where(np.hypot(X[free, 0] - .5, X[free, 1] - .5) < .2, -0.05, -10.0)
 B = sp.identity(len(free), format="csr")                   # every node may touch
 
 r = solve_contact_static_sparse(K, f, B, c)                # route="auto" -> "reduced"
-print(r.ok, r.route, r.iterations, len(r.active))          # True reduced 2 111
+print(r.ok, r.route, r.iterations, len(r.active))
 print(r.gap.min(), r.lam.min())                            # both >= 0
+\end{lstlisting}
+
+\begin{lstlisting}[numbers=none,language={},keywordstyle={},commentstyle={},frame=single,aboveskip=2pt]
+True reduced 2 111
+0.0 0.0
 \end{lstlisting}
 
 \Cref{lst:ct-fail} shows what a failure looks like and how the fallback chain behaves, by limiting the iteration count so that the \texttt{reduced} route cannot finish.
 
 \begin{lstlisting}[caption={A route that cannot finish reports why and what to try; fallback is opt-in.},label={lst:ct-fail}]
 bad = solve_contact_static_sparse(K, f, B, c, route="reduced", max_iter=1)
-print(bad.ok, bad.reason, bad.suggestion)    # False max_iter saddle
-print(bad.message)  # route 'reduced' failed (max_iter): no convergence in 1 iterations. Try route='saddle'.
+print(bad.ok, bad.reason, bad.suggestion)
+print(bad.message)
 
 r = solve_contact_static_sparse(K, f, B, c, route="reduced", max_iter=1, fallback=True)
-print(r.ok, r.route, r.fallbacks)            # True condensed ['reduced', 'saddle']
+print(r.ok, r.route, r.fallbacks)
+\end{lstlisting}
+
+\begin{lstlisting}[numbers=none,language={},keywordstyle={},commentstyle={},frame=single,aboveskip=2pt]
+False max_iter saddle
+route 'reduced' failed (max_iter): no convergence in 1 iterations. Try route='saddle'.
+True condensed ['reduced', 'saddle']
 \end{lstlisting}
 
 \Cref{tab:ct-map} maps the chapter to the code.
@@ -224,6 +293,10 @@ The repository script \texttt{fea\_engine/tests/sparse\_contact\_timing.py} was 
 
 \paragraph{The semi-discrete problem.}
 With a mass matrix $\bm M$, the dynamic problem is $\bm M\ddot{\bm u}+\bm K\bm u=\bm f(t)+\bm B^T\bm\lambda$ with the conditions of \eqref{eq:ct-kkt} at every time. A time integrator turns each step into a static contact problem of the form \eqref{eq:ct-kkt} with a modified matrix, so the solvers of \Cref{sec:ct-pdas} are reused unchanged.
+
+\begin{sidenote}{BDF2}
+The second-order backward-difference formula advances a step using the two previous ones, $\dot{\bm u}_{n+1}\approx(3\bm u_{n+1}-4\bm u_n+\bm u_{n-1})/(2h)$. It is implicit and stable for stiff problems, and it is second-order accurate on smooth motion. It does not conserve energy at an impact, which is why the energy behaviour in the verification is reported.
+\end{sidenote}
 
 \paragraph{The default scheme (first order).}
 \fea{} keeps, as the default, the first-order two-step scheme
@@ -338,7 +411,9 @@ BDF2 is therefore more accurate on smooth motion and keeps more energy through a
 
 \section{Summary}\label{sec:ct-summary}
 
-Frictionless contact is the problem \eqref{eq:ct-kkt}, a convex quadratic program with the inequality $\bm B\bm u\ge\bm c$. A penalty replaces the inequality by a parameter and pays for it in conditioning (\Cref{fig:ct-penalty}); the primal-dual active-set method treats it exactly as a semismooth Newton iteration and needs a few sparse solves, in the \texttt{reduced} route when $\bm B$ selects nodes and in the \texttt{saddle} route otherwise. The dense condensed form is the reference. The solver never returns a failed iterate as a solution and says which route to try next. BDF2 makes the time integration second order on smooth motion, and it is not contact-stabilised. The reduced models of Chapter~\ref{ch:hyper} solve the same problem \eqref{eq:ct-kkt} in a reduced space, with the same convention and, for the reduced time stepping, the same BDF2 scheme.
+We began with a membrane on a bumpy floor and a penalty spring that works until it is stiff enough to be accurate. Frictionless contact is the problem \eqref{eq:ct-kkt}, a convex quadratic program with the inequality $\bm B\bm u\ge\bm c$. A penalty replaces the inequality by a parameter and pays for it in conditioning (\Cref{lst:ct-penalty}, \Cref{fig:ct-penalty}); the primal-dual active-set method treats the inequality exactly as a semismooth Newton iteration and needs a few sparse solves, in the \texttt{reduced} route when $\bm B$ selects nodes and in the \texttt{saddle} route otherwise. The dense condensed form is the reference, and the solver never returns a failed iterate as a solution; it says which route to try next.
+
+In time, BDF2 makes the integration second order on smooth motion, but it is not contact-stabilised, and the energy at an impact is reported and not assumed. The reduced models of Chapter~\ref{ch:hyper} solve the same problem \eqref{eq:ct-kkt} in a reduced space, with the same convention and, for the reduced time stepping, the same BDF2 scheme. That is where Part~III picks it up.
 
 \section*{Exercises}\label{sec:ct-exercises}
 \begin{enumerate}

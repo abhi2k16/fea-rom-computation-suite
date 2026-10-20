@@ -1,7 +1,7 @@
 \chapter{Mesh topologies and structural domain partitioning}\label{ch:mesh}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-A mesh is where geometry meets the element: nodes, connectivity and, for every element, a positive Jacobian. The chapter covers how \fea{} generates structured meshes for lines, rectangles and boxes with holes, notches and fillets; how it grades them by a growth ratio instead of a guessed exponent; how elements of different topology share nodes in one mesh; how meshes are built from parts, how node sets and boundaries are picked, how meshes are exchanged with other tools, and how meshes and results are drawn. Each claim is checked against something: element areas and volumes against exact values, the realised growth ratio against the requested one, a patch test across a triangle--quadrilateral interface, a round trip through two file formats, and an Abaqus import carried through to a result file. The chapter ends with the dispatcher that decides which element may receive which mesh.\par\smallskip
+A hand-written mesh of a unit square passes the first check anyone would write, because its element areas add up to exactly $1$, and one of its elements is listed clockwise and produces a negative stiffness without any error being raised. A mesh is where geometry meets the element: nodes, connectivity and, for every element, a positive Jacobian. The chapter covers how \fea{} generates structured meshes for lines, rectangles and boxes with holes, notches and fillets; how it grades them by a growth ratio instead of a guessed exponent; how elements of different topology share nodes in one mesh; how meshes are built from parts, how node sets and boundaries are picked, how meshes are exchanged with other tools, and how meshes and results are drawn. Each claim is checked against something: element areas and volumes against exact values, the realised growth ratio against the requested one, a patch test across a triangle--quadrilateral interface, a round trip through two file formats, and an Abaqus import carried through to a result file. The chapter ends with the dispatcher that decides which element may receive which mesh. The plate with a hole is the running example from the generators onwards.\par\smallskip
 After it you should be able to generate and grade a structured mesh, join topologies in a multi-block mesh and test the interface, check a mesh for positive Jacobians and for unshared interior edges, exchange it through a file format, and draw it and a result in two and three dimensions.
 \end{tcolorbox}
 
@@ -39,6 +39,10 @@ A mesh does not know its element formulation, but the connectivity rows only mea
 
 The one property that the mesh must have for any element is a positive Jacobian determinant at every Gauss point: an inverted element gives a wrong or negative stiffness without any error being raised. \code{check_quality(element)} evaluates $\det\bm J$ at every Gauss point with the element's own shape functions and reports the ratio of the largest to the smallest value.
 
+\begin{sidenote}{Connectivity order}
+Each row of the connectivity array lists the nodes of one element in a fixed order, counter-clockwise starting from the lower left for a quadrilateral. Reversing the order mirrors the element, which reverses the sign of the Jacobian determinant while leaving the element's area unchanged, so an area check cannot see it.
+\end{sidenote}
+
 \begin{algbox}{Mesh quality check}
 \begin{pseudo}
 \Require mesh, element formulation (shape functions, Gauss rule)
@@ -52,6 +56,43 @@ The one property that the mesh must have for any element is a positive Jacobian 
 \end{algbox}
 
 The check costs $n_e\,n_g$ small determinants. Nothing else in the package performs it, so it has to be called, and a large ratio of the extremes says that an element is distorted, not that it is wrong. It is \code{check_quality(element)} on \anchor{fea_engine.mesh.Mesh}; \Cref{tab:me-gen} and \Cref{tab:me-quality} show it applied.
+
+\paragraph{Try it.} \Cref{lst:me-try} builds a unit square of nine elements, lists the central element clockwise, and applies the first check one would write (the sum of the element areas) and then \code{check_quality}.
+
+\begin{lstlisting}[caption={An element listed clockwise passes an area check and fails the Jacobian check (run with the package on the path).},label={lst:me-try}]
+import numpy as np
+from fea_engine import Quad4PlaneStress
+from fea_engine.mesh import rectangle_mesh, Mesh
+
+good = rectangle_mesh(1.0, 1.0, 3, 3)                 # a unit square, 9 elements
+elems = good.elements.copy()
+elems[4] = elems[4][::-1]                             # one element listed clockwise
+bad = Mesh(good.nodes, elems, dim=2)
+
+def area(mesh):                                       # the check one would write first
+    total = 0.0
+    for e in mesh.elements:
+        x, y = mesh.nodes[e].T
+        total += 0.5 * abs(x @ np.roll(y, -1) - y @ np.roll(x, -1))
+    return total
+
+for name, mesh in (("good", good), ("bad ", bad)):
+    print(f"{name} mesh: total area {area(mesh):.3f}")
+    mesh.check_quality(Quad4PlaneStress())
+\end{lstlisting}
+
+\begin{lstlisting}[numbers=none,language={},keywordstyle={},commentstyle={},frame=single,aboveskip=2pt]
+good mesh: total area 1.000
+  9 elements, 16 nodes, dim=2
+  detJ range: [2.778e-02, 2.778e-02]  (max/min |detJ| ratio: 1.0)
+  OK: all Gauss-point Jacobians positive (no inverted elements)
+bad  mesh: total area 1.000
+  9 elements, 16 nodes, dim=2
+  detJ range: [-2.778e-02, 2.778e-02]  (max/min |detJ| ratio: 1.0)
+  *** 1 element(s) with non-positive detJ -- INVERTED/DEGENERATE ***
+\end{lstlisting}
+
+Both meshes have the area $1.000$, so the area check cannot tell them apart, and only the Jacobian check reports the inverted element. The same lesson returns later in the chapter for a different defect, the unshared interior edges found by the boundary mask.
 
 \paragraph{What the determinant is.} For a bilinear quadrilateral the map from the reference square to the element is $\bm x(\bm\xi)=\sum_iN_i(\bm\xi)\bm x_i$ and $\det\bm J(\bm\xi)$ is a linear function of $\xi$ and $\eta$ (Exercise~\ref{ex:me-jac}). It is positive everywhere if and only if it is positive at the four corners, where it equals the cross product of the two edges that meet there. A convex quadrilateral has all four positive; a quadrilateral with a re-entrant corner has a non-positive value at that corner, and near the corner at the Gauss points. \Cref{fig:me-quality}c shows both: the convex element has four positive values, and the element whose fourth node is pushed inside the triangle of the other three has a negative $\det\bm J$ (\cmeQReentMin{}, against 0.25 at every Gauss point of a unit square) at the Gauss point nearest that node, while its other three values stay positive. Only \cmeQReentNeg{} of the four Gauss points is negative, and the value at the element centre is positive (0.08, the mean of the four corner values), so a check at the centre alone would pass: the sign has to be tested at every Gauss point.
 
@@ -354,7 +395,9 @@ exchange & \anchor{fea_engine.mesh_io.read_mesh}, \anchor{fea_engine.mesh_io.wri
 
 \section{Summary}\label{sec:me-summary}
 
-A mesh is nodes and connectivity with a positive-Jacobian guarantee. The structured generators reproduce the area or volume of the domain exactly where edges are straight and with second-order error along arcs, and grading by growth ratio is realised within 0.1\,\% of the request. Blocks of different topology joined by shared nodes pass a patch test to \cmeMBErr, but a weld joins only coincident nodes, and the boundary mask showed that the off-centre hole generator is not conforming for most hole positions. Meshes round-trip through the file formats we tried and can be drawn in two and three dimensions, and one dispatcher decides which element accepts which mesh.
+We started with a mesh whose element areas add up and which is nevertheless wrong. A mesh is nodes and connectivity, and what makes it usable is a positive Jacobian in every element, which no generator guarantees and only \code{check_quality} verifies. The structured generators reproduce the area or volume of the domain exactly where edges are straight and with second-order error along arcs, and grading by growth ratio is realised within 0.1\,\% of the request.
+
+Blocks of different topology joined by shared nodes pass a patch test to \cmeMBErr, but a weld joins only coincident nodes, and the boundary mask found, in the version at the release tag, that the off-centre hole generator left unshared edges for most hole positions; the generator was corrected and the table of \Cref{tab:me-conform} now shows none. Meshes round-trip through the file formats we tried and can be drawn in two and three dimensions, and one dispatcher decides which element accepts which mesh. The next chapter uses these meshes to build the elements' matrices.
 
 \section*{Exercises}\label{sec:me-exercises}
 \begin{enumerate}

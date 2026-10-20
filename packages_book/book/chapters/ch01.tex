@@ -1,7 +1,7 @@
 \chapter{The design of a decoupled scientific engine}\label{ch:arch}
 
 \begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
-The two packages in this book, \fea{} and \rom{}, are meant to grow without anyone rewriting what is already there: a new element, material, geometry, load, solution strategy or linear-algebra backend is added by a subclass or a registry entry. This chapter shows the structure that allows this and tests the claims it rests on. It follows the flow from material to post-processing, the small interface through which solvers talk to elements, a new element of about twenty lines added to a solver that was not changed, an interface test of all 34 registered elements, the rule that \rom{} never imports \fea{}, and the backend dispatcher, whose cost on sparse systems we measured and the package documentation does not mention.\par\smallskip
+Suppose a colleague asks for a new element, a simple bar, and wants to run it in the static solver, the modal solver and the nonlinear drivers. In a code where each solver knows which elements it handles, that means opening three solvers and adding a branch to each; the next element needs the same again. The two packages in this book, \fea{} and \rom{}, are built so that this is not necessary: a new element, material, geometry, load, solution strategy or linear-algebra backend is added by a subclass or a registry entry. This chapter shows the structure that allows this and tests the claims it rests on. It follows the flow from material to post-processing, the small interface through which solvers talk to elements, a new element of about twenty lines added to a solver that was not changed, an interface test of all 34 registered elements, the rule that \rom{} never imports \fea{}, and the backend dispatcher, whose cost on sparse systems we measured and the package documentation does not mention.\par\smallskip
 After the chapter you should be able to add an element by subclassing and know which interface checks it has to pass, say why \rom{} does not import \fea{} and how that is checked, and explain what the \code{auto} backend setting costs on sparse systems.
 \end{tcolorbox}
 
@@ -20,6 +20,10 @@ or, for nonlinear problems, on the residual $\bm f_{int}(\bm u)-\bm F$ and its t
 \tikzfigure[0.98\linewidth]{ch01_flow}{The flow of an analysis in \fea{} (blue: package code; grey: data; violet: \rom{}; green: validation only; dashed: optional). The link to \rom{} is plain arrays, never an import.}{fig:ar-flow}
 
 \section{The element interface}\label{sec:ar-interface}
+
+\begin{sidenote}{Registry and base class}
+The \emph{registry} \code{ELEMENT\_REGISTRY} is a dictionary from a short name to an element class, so a mesh or an input file can name an element by string. The \emph{base class} \code{Element} supplies everything an element has in common, such as the Gauss loop, so a new element only states what is specific to it.
+\end{sidenote}
 
 The narrow boundary is the base class \anchor{fea_engine.elements.base.Element}. An element declares four class attributes, \code{n_nodes}, \code{dofs_per_node}, \code{dim} (the dimension of the natural-coordinate space) and \code{gauss_order}, and provides the shape functions in the natural coordinates, \code{shape_and_derivs}. From these the base class implements the Gauss loop \emph{once}: if the element supplies a strain-displacement matrix \code{B_matrix}, the generic \code{stiffness} computes $\int\bm B^{T}\bm D\bm B$ (\Cref{eq:el-K}) and the generic \code{mass} computes $\int\rho\bm N^{T}\bm N$. An element that needs more overrides the method it needs: the Mindlin plate overrides \code{stiffness} for selective reduced integration, and the Euler--Bernoulli beam uses a closed form. Nonlinear elements provide the pair \code{internal_force} and \code{tangent_stiffness} instead (or as well). Optional capabilities are declared by attributes and methods the solvers look for: \code{supports_batch} with the batched kernels of Chapter~\ref{ch:batch}, \code{state} and \code{commit_state} for history variables (Chapter~\ref{ch:nonlin}), and \code{lumped_mass} for the explicit method (Chapter~\ref{ch:dyn}).
 
@@ -47,8 +51,28 @@ Assembly costs one element matrix of $O(n_g\,d^3)$ per element plus a scatter-ad
 
 A new element should not need any existing code to change. \Cref{lst:ar-bar} defines a two-node bar with one displacement per node (a one-dimensional element, $\bm B=\mathrm dN/\mathrm dx$, with the stiffness $\bm D=EA$ as a $1\times1$ matrix) as a subclass, registers it with one line (after \texttt{from fea\_engine.elements import Element, ELEMENT\_REGISTRY, jacobian}), and uses it with the existing assembly, static solver and modal solver.
 
-\begin{lstlisting}[caption={A new element by subclassing, and the one registry line. Nothing in \texttt{fea\_engine} is edited.},label={lst:ar-bar}]
-class Bar1D(Element):
+\begin{lstlisting}[caption={A new element by subclassing, the one registry line, and a check that the package was not edited (run with the package on the path).},label={lst:ar-bar}]
+import hashlib, pathlib, ast
+import numpy as np
+import fea_engine
+from fea_engine import FESystem
+from fea_engine.elements import Element, ELEMENT_REGISTRY, jacobian
+from fea_engine.mesh import line_mesh
+
+pkg = pathlib.Path(fea_engine.__file__).parent
+digest = lambda: hashlib.sha256(b"".join(p.read_bytes() for p in sorted(pkg.rglob("*.py")))).hexdigest()
+before = digest()
+
+# what the solvers know about concrete elements: names of element classes used in their code (not comments)
+names = {c.__name__ for c in ELEMENT_REGISTRY.values()} - {"Element"}
+used = 0
+for f in ["solver.py", "nonlinear_solver.py", "contact_solvers.py"]:
+    for node in ast.walk(ast.parse((pkg / f).read_text())):
+        used += isinstance(node, ast.Name) and node.id in names
+        used += isinstance(node, ast.Attribute) and node.attr in names
+print(f"concrete element classes named in the code of the three solver modules: {used}")
+
+class Bar1D(Element):                                    # the new element
     n_nodes, dofs_per_node, dim, gauss_order = 2, 1, 1, 1
     dof_names = ("u",)
 
@@ -61,17 +85,32 @@ class Bar1D(Element):
         J, detJ = jacobian(dN, elem_coords)
         return np.linalg.solve(J, dN), detJ
 
-ELEMENT_REGISTRY["bar1d"] = Bar1D                      # the one registry line
+ELEMENT_REGISTRY["bar1d"] = Bar1D                        # the one registry line
 
-m = line_mesh(L, n)
-s = FESystem(m, ELEMENT_REGISTRY["bar1d"]())
-s.assemble_stiffness(np.array([[E * A]]))
-s.assemble_mass(np.array([[rho * A]]))
-s.fix_dofs([0], [0]); s.add_nodal_force([n], 0, P)
-U = s.solve_static(); f, _ = s.solve_modal(n_modes=1)
+E, A, rho, L, P = 210e9, 1.0e-4, 7800.0, 2.0, 1000.0
+for n in (1, 4, 32):
+    s = FESystem(line_mesh(L, n), ELEMENT_REGISTRY["bar1d"]())
+    s.assemble_stiffness(np.array([[E * A]])); s.assemble_mass(np.array([[rho * A]]))
+    s.fix_dofs([0], [0]); s.add_nodal_force([n], 0, P)
+    U = s.solve_static(); f, _ = s.solve_modal(n_modes=1)
+    f_exact = np.sqrt(E / rho) / (4 * L)
+    print(f"{n:2d} elements: tip error {abs(U[n] / (P * L / (E * A)) - 1):.0e}, "
+          f"first frequency error {abs(f[0] / f_exact - 1):.1e}")
+
+print("package source changed:", digest() != before)
 \end{lstlisting}
 
-The listing was run for 1, 2, 4, 8, 16 and 32 elements ($E=210$ GPa, $A=10^{-4}$ m$^2$, $\rho=7800$ kg/m$^3$, $L=2$ m). The static tip displacement equals $PL/(EA)$ to \cdeExtStatic{} (the linear element is exact for this problem), and the first axial frequency converges to $\sqrt{E/\rho}/(4L)$ with observed order \cdeExtFreqOrder{}, from an error of \cdeExtFreqCoarse{} with one element. The existing solvers ran on the new element without any change. That does not mean every solver works with every new element: a path-dependent or batched element also has to meet the conventions of \Cref{sec:ar-interface}.
+\begin{lstlisting}[numbers=none,language={},keywordstyle={},commentstyle={},frame=single,aboveskip=2pt]
+concrete element classes named in the code of the three solver modules: 0
+ 1 elements: tip error 0e+00, first frequency error 2.7e-01
+ 4 elements: tip error 1e-15, first frequency error 1.3e-02
+32 elements: tip error 0e+00, first frequency error 2.0e-04
+package source changed: False
+\end{lstlisting}
+
+The naive design is the one we would have to write if solvers knew their elements, with a branch per element in each solver; here the three solver modules name no concrete element class, so there is nothing to edit, and the check of the package source confirms that the run changed nothing. The new element runs in the static and the modal solver, with a tip displacement that is exact (the linear element is exact for this problem) and a frequency error that falls as the mesh is refined.
+
+The longer study behind the listing was run for 1, 2, 4, 8, 16 and 32 elements ($E=210$ GPa, $A=10^{-4}$ m$^2$, $\rho=7800$ kg/m$^3$, $L=2$ m). The static tip displacement equals $PL/(EA)$ to \cdeExtStatic{} (the linear element is exact for this problem), and the first axial frequency converges to $\sqrt{E/\rho}/(4L)$ with observed order \cdeExtFreqOrder{}, from an error of \cdeExtFreqCoarse{} with one element. The existing solvers ran on the new element without any change. That does not mean every solver works with every new element: a path-dependent or batched element also has to meet the conventions of \Cref{sec:ar-interface}.
 
 \section{The six extension points}\label{sec:ar-points}
 
@@ -115,6 +154,10 @@ A registry is only useful if every entry honours the interface. The test of this
 \end{table}
 
 \section{Backend dispatch and what it costs}\label{sec:ar-backend}
+
+\begin{sidenote}{Backend}
+A \emph{backend} is the library that does the dense and sparse linear algebra, NumPy and SciPy by default and PyTorch optionally. The \code{auto} setting chooses between them for each call, and the choice itself has a cost, which this section measures.
+\end{sidenote}
 
 \code{FESystem(..., backend=...)} chooses the linear-algebra backend of \code{solve_static}: \code{"scipy"} (the default), \code{"torch"} (conjugate gradients on CPU or GPU) or \code{"auto"}. The automatic choice is made at solve time by \anchor{fea_engine.backend_dispatch.select_backend}: a free-dof block that is symmetric positive definite (SPD) and larger than \cdeDispThreshold{} dofs is routed to the torch conjugate-gradient path, everything else to SciPy; a non-SPD matrix is never given to the conjugate-gradient solver. The threshold is a documented rule of thumb and not a benchmark result.
 
@@ -170,7 +213,9 @@ dispatcher & \anchor{fea_engine.backend_dispatch.select_backend} & no \\
 
 \section{Summary}\label{sec:ar-summary}
 
-In \fea{} the material, mesh, element, system, solver and post-processing layers are separate, and a solver needs only the matrix, or the force and tangent, from an element. We tested what follows from that: a twenty-line element ran in the existing static and modal solvers with an error of \cdeExtStatic{}, all \cdeRegTotal{} registered elements pass the interface test, and \rom{} does not depend on \fea{} at source level. The \code{auto} backend shows why design claims are worth testing: it works, but it is not free.
+We started from a request that, in many codes, means editing every solver: a new element. In \fea{} the material, mesh, element, system, solver and post-processing layers are separate, and a solver needs only the matrix, or the force and tangent, from an element. We tested what follows from that. A twenty-line element ran in the existing static and modal solvers with a tip-displacement error of \cdeExtStatic{} without a change to the package source, all \cdeRegTotal{} registered elements pass the interface test, and \rom{} does not depend on \fea{} at source level.
+
+The \code{auto} backend shows why design claims are worth testing: it works, but it is not free, and its cost on sparse systems was not in the documentation. The next chapters use this structure: first the meshes that elements are placed on, and then the elements themselves.
 
 \section*{Exercises}\label{sec:ar-exercises}
 \begin{enumerate}
