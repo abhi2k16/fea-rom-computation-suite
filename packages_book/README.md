@@ -1,6 +1,6 @@
 # packages_book
 
-Planning material for the book *Implementing Reduced-Order Modeling in Computational Mechanics: Theory, Algorithms, and From-Scratch Implementation in Python*, based on the two packages of this repository (`fea_engine`, `rom_engine`).
+Planning material for the book *Implementing Reduced-Order Modeling In Computational Mechanics: Theory, Algorithms, and From-Scratch Implementation in Python*, based on the two packages of this repository (`fea_engine`, `rom_engine`).
 
 - `plan/` the book plan, written in LaTeX in the same style as `paper/`.
   Build: `cd plan && latexmk -pdf main` (or `pdflatex main && bibtex main && pdflatex main && pdflatex main`).
