@@ -388,6 +388,61 @@ m4 = rectangle_with_hole_mesh_quarter(a=2.0, b=1.0, R=0.3, nr=8, ntheta=12)  # m
 > Gmsh support" section for the fuller note. The structured `mesh.py`
 > front end above is now the only supported meshing path.
 
+**`mesh_io.py` — meshes made in other programs (optional `meshio`):**
+
+`read_mesh(path, dim)` reads any format `meshio` understands (Abaqus INP,
+Nastran BDF, Gmsh MSH, VTK/VTU, UNV, MED, ...) into a `Mesh` or
+`MultiBlockMesh`; `write_mesh` goes the other way, and
+`fea_engine.export.write_vtu` writes results for ParaView. Install with
+`pip install fea_engine[meshio]`; the rest of the package does not need it.
+
+What is read: node coordinates and the connectivity of nine cell types
+(`line`, `triangle`, `quad`, `tetra`, `hexahedron`, `triangle6`, `quad8`,
+`tetra10`, `hexahedron20`) of the topological dimension `dim` that you ask
+for. What is **not** read: node/element sets, materials, sections,
+boundary conditions and loads of the file. Define those again in Python;
+place loads and constraints by coordinates (`mesh.select_nodes(...)`).
+Cell types the package has no formulation for (wedges, pyramids) are
+skipped **without a message**; a `dim` with no supported cell raises
+`RuntimeError`. CAD geometry (STEP/IGES) cannot be read: mesh it elsewhere
+and import the mesh.
+
+A complete example, runnable as
+`python fea_engine/examples/import_abaqus_mesh_demo.py` (or with your own
+file: `python ... model.inp`), writes an Abaqus file by hand, reads it,
+checks it, solves a cantilever and writes a `.vtu`:
+
+```python
+from fea_engine import mesh_io
+from fea_engine.material import Material, D_solid3d
+from fea_engine.elements import Hex8Solid3D
+from fea_engine.solver import FESystem
+from fea_engine.export import write_vtu
+
+mesh = mesh_io.read_mesh("beam.inp", dim=3)          # nodes and C3D8 connectivity only
+assert mesh.check_quality(Hex8Solid3D())              # all Jacobians positive: node order/orientation usable
+s = FESystem(mesh, Hex8Solid3D())                     # the element formulation is chosen here, not read from the file
+s.assemble_stiffness(D_solid3d(Material(E=2.1e11, nu=0.3, rho=7850.0)))
+root = mesh.select_nodes(x=0.0, name="root")          # loads and constraints by coordinates
+tip = mesh.select_nodes(x=mesh.nodes[:, 0].max(), name="tip")
+s.fix_dofs(root, [0, 1, 2])
+s.add_nodal_force(tip, dof_index=2, total_force=-1000.0)
+U = s.solve_static()
+write_vtu("beam.vtu", fields={"displacement": s.field(U, "displacement")},
+          point_data={"von_mises": s.von_mises(U)})   # open in ParaView
+```
+
+Measured (10 m x 1 m x 1 m cantilever, 20x2x2 `Hex8Solid3D`, 1 kN tip
+load, steel): tip deflection 1.6682e-05 m, identical to the same beam built
+with `box_mesh` to 7e-12 (relative); the ratio to Euler-Bernoulli is 0.876,
+the usual bending stiffening of an 8-node hexahedron with two elements
+through the depth, not an import error. Before trusting an imported mesh:
+run `check_quality` with the element you will use (a different node order
+gives negative Jacobians), compare the element count with the other
+program's, keep one consistent unit system (units are not read), and check
+quadratic elements from formats other than Gmsh or VTU with a patch test
+first (only those two were verified).
+
 <a id="s-13"></a>
 
 ## 🧱 Elements and quadrature: choosing an element

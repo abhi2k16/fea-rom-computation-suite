@@ -40,23 +40,38 @@
 \@writefile{lot}{\contentsline {table}{\numberline {2.2}{\ignorespaces Round trip of a mesh through \code  {write_mesh} and \code  {read_mesh}.\relax }}{14}{table.caption.25}\protected@file@percent }
 \newlabel{tab:me-meshio}{{2.2}{14}{Round trip of a mesh through \code {write_mesh} and \code {read_mesh}.\relax }{table.caption.25}{}}
 \newlabel{tab:me-meshio@cref}{{[table][2][2]2.2}{[1][14][]14}}
-\@writefile{toc}{\contentsline {section}{\numberline {2.6}Design lesson: why Gmsh support was removed}{15}{section.2.6}\protected@file@percent }
-\newlabel{sec:me-lesson}{{2.6}{15}{Design lesson: why Gmsh support was removed}{section.2.6}{}}
-\newlabel{sec:me-lesson@cref}{{[section][6][2]2.6}{[1][14][]15}}
-\@writefile{toc}{\contentsline {paragraph}{Domain partitioning, in the sense of this book.}{15}{section*.26}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {2.3}{\ignorespaces Where the concepts of this chapter live in the repository (tag \texttt  {release-fea1.0.1-rom0.2.0}). The last column says whether the chapter's script \texttt  {scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.\relax }}{15}{table.caption.27}\protected@file@percent }
-\newlabel{tab:me-map}{{2.3}{15}{Where the concepts of this chapter live in the repository (tag \booktag ). The last column says whether the chapter's script \texttt {scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.\relax }{table.caption.27}{}}
-\newlabel{tab:me-map@cref}{{[table][3][2]2.3}{[1][15][]15}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5.1}An end-to-end example: from an Abaqus mesh to a result file}{15}{subsection.2.5.1}\protected@file@percent }
+\newlabel{sec:me-example}{{2.5.1}{15}{An end-to-end example: from an Abaqus mesh to a result file}{subsection.2.5.1}{}}
+\newlabel{sec:me-example@cref}{{[subsection][1][2,5]2.5.1}{[1][14][]15}}
+\@writefile{toc}{\contentsline {paragraph}{What is read and what is not.}{15}{section*.26}\protected@file@percent }
+\newlabel{lst:me-import}{{2.1}{15}{A mesh from an Abaqus file to a result file (the file \texttt {beam.inp} is the one described above)}{lstlisting.2.1}{}}
+\newlabel{lst:me-import@cref}{{[listing][1][2]2.1}{[1][15][]15}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {2.1}A mesh from an Abaqus file to a result file (the file \texttt  {beam.inp} is the one described above).}{15}{lstlisting.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Result.}{15}{section*.28}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Before trusting an imported mesh.}{15}{section*.30}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2.3}{\ignorespaces Checks of the import example. Case 1 compares the imported model with the same beam built by \code  {box_mesh}, through the displacement of every node, matched by coordinates. Cases 2 to 5 change the file.\relax }}{16}{table.caption.27}\protected@file@percent }
+\newlabel{tab:me-import}{{2.3}{16}{Checks of the import example. Case 1 compares the imported model with the same beam built by \code {box_mesh}, through the displacement of every node, matched by coordinates. Cases 2 to 5 change the file.\relax }{table.caption.27}{}}
+\newlabel{tab:me-import@cref}{{[table][3][2]2.3}{[1][15][]16}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.5}{\ignorespaces Result for the imported cantilever: nodes of the face $y=0$, displaced by the field magnified 37461\xspace  {} times (grey: undeformed), coloured by the nodal von Mises stress. Produced by \texttt  {scripts/ch02\_import\_assets.py}.\relax }}{16}{figure.caption.29}\protected@file@percent }
+\newlabel{fig:me-import}{{2.5}{16}{Result for the imported cantilever: nodes of the face $y=0$, displaced by the field magnified \cmiScale {} times (grey: undeformed), coloured by the nodal von Mises stress. Produced by \texttt {scripts/ch02\_import\_assets.py}.\relax }{figure.caption.29}{}}
+\newlabel{fig:me-import@cref}{{[figure][5][2]2.5}{[1][15][]16}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.6}Design lesson: why Gmsh support was removed}{16}{section.2.6}\protected@file@percent }
+\newlabel{sec:me-lesson}{{2.6}{16}{Design lesson: why Gmsh support was removed}{section.2.6}{}}
+\newlabel{sec:me-lesson@cref}{{[section][6][2]2.6}{[1][16][]16}}
+\@writefile{toc}{\contentsline {paragraph}{Domain partitioning, in the sense of this book.}{17}{section*.31}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2.4}{\ignorespaces Where the concepts of this chapter live in the repository (tag \texttt  {release-fea1.0.1-rom0.2.0}). The last column says whether the chapter's script \texttt  {scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.\relax }}{17}{table.caption.32}\protected@file@percent }
+\newlabel{tab:me-map}{{2.4}{17}{Where the concepts of this chapter live in the repository (tag \booktag ). The last column says whether the chapter's script \texttt {scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.\relax }{table.caption.32}{}}
+\newlabel{tab:me-map@cref}{{[table][4][2]2.4}{[1][17][]17}}
 \bibstyle{unsrtnat}
 \bibdata{refs}
-\@writefile{toc}{\contentsline {section}{\numberline {2.7}Summary}{16}{section.2.7}\protected@file@percent }
-\newlabel{sec:me-summary}{{2.7}{16}{Summary}{section.2.7}{}}
-\newlabel{sec:me-summary@cref}{{[section][7][2]2.7}{[1][16][]16}}
-\newlabel{sec:me-exercises}{{2.7}{16}{Exercises}{section*.28}{}}
-\newlabel{sec:me-exercises@cref}{{[section][7][2]2.7}{[1][16][]16}}
-\@writefile{toc}{\contentsline {section}{References}{16}{section*.29}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.7}Summary}{18}{section.2.7}\protected@file@percent }
+\newlabel{sec:me-summary}{{2.7}{18}{Summary}{section.2.7}{}}
+\newlabel{sec:me-summary@cref}{{[section][7][2]2.7}{[1][18][]18}}
+\newlabel{sec:me-exercises}{{2.7}{18}{Exercises}{section*.33}{}}
+\newlabel{sec:me-exercises@cref}{{[section][7][2]2.7}{[1][18][]18}}
+\@writefile{toc}{\contentsline {section}{References}{18}{section*.34}\protected@file@percent }
 \@setckpt{chapters/ch02}{
-\setcounter{page}{17}
+\setcounter{page}{19}
 \setcounter{equation}{0}
 \setcounter{enumi}{6}
 \setcounter{enumii}{0}
@@ -71,8 +86,8 @@
 \setcounter{subsubsection}{0}
 \setcounter{paragraph}{0}
 \setcounter{subparagraph}{0}
-\setcounter{figure}{4}
-\setcounter{table}{3}
+\setcounter{figure}{5}
+\setcounter{table}{4}
 \setcounter{parentequation}{0}
 \setcounter{LT@tables}{2}
 \setcounter{LT@chunks}{3}
@@ -80,25 +95,25 @@
 \setcounter{continuedfloat}{0}
 \setcounter{subfigure}{0}
 \setcounter{subtable}{0}
-\setcounter{tcbbreakpart}{1}
+\setcounter{tcbbreakpart}{2}
 \setcounter{tcblayer}{0}
-\setcounter{tcolorbox@number}{8}
+\setcounter{tcolorbox@number}{9}
 \setcounter{tcbrastercolumn}{1}
 \setcounter{tcbrasterrow}{1}
 \setcounter{tcbrasternum}{1}
 \setcounter{tcbraster}{0}
-\setcounter{lstnumber}{22}
+\setcounter{lstnumber}{18}
 \setcounter{tcblisting}{0}
 \setcounter{NAT@ctr}{0}
 \setcounter{Item}{12}
 \setcounter{Hfootnote}{0}
-\setcounter{bookmark@seq@number}{23}
+\setcounter{bookmark@seq@number}{24}
 \setcounter{proposition}{0}
 \setcounter{definition}{0}
 \setcounter{example}{0}
 \setcounter{remark}{0}
 \setcounter{tcb@cnt@algbox}{2}
 \setcounter{algline}{9}
-\setcounter{lstlisting}{0}
+\setcounter{lstlisting}{1}
 \setcounter{section@level}{1}
 }

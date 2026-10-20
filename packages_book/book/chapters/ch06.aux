@@ -2,97 +2,97 @@
 \providecommand\hyper@newdestlabel[2]{}
 \citation{belytschko2014nonlinear}
 \citation{cuvelier2014assemble}
-\@writefile{toc}{\contentsline {chapter}{\numberline {6}Computational acceleration: vectorised assembly and batched kernels}{46}{chapter.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {6}Computational acceleration: vectorised assembly and batched kernels}{48}{chapter.6}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{ch:batch}{{6}{46}{Computational acceleration: vectorised assembly and batched kernels}{chapter.6}{}}
-\newlabel{ch:batch@cref}{{[chapter][6][]6}{[1][46][]46}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.1}Where the time goes}{46}{section.6.1}\protected@file@percent }
-\newlabel{sec:bk-time}{{6.1}{46}{Where the time goes}{section.6.1}{}}
-\newlabel{sec:bk-time@cref}{{[section][1][6]6.1}{[1][46][]46}}
-\newlabel{eq:bk-gp}{{6.1}{46}{Where the time goes}{equation.6.1}{}}
-\newlabel{eq:bk-gp@cref}{{[equation][1][6]6.1}{[1][46][]46}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.2}What the batched path does}{47}{section.6.2}\protected@file@percent }
-\newlabel{sec:bk-idea}{{6.2}{47}{What the batched path does}{section.6.2}{}}
-\newlabel{sec:bk-idea@cref}{{[section][2][6]6.2}{[1][46][]47}}
-\@writefile{toc}{\contentsline {paragraph}{No Python loop over elements.}{47}{section*.84}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{One contraction over the Gauss points.}{47}{section*.85}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Caches built once per block.}{47}{section*.86}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Memory limit.}{47}{section*.87}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {6.1}{\ignorespaces Estimated working memory of a batched tangent call (the dominant arrays, not the peak resident memory), from the package's own estimate.\relax }}{47}{table.caption.88}\protected@file@percent }
-\newlabel{tab:bk-chunk}{{6.1}{47}{Estimated working memory of a batched tangent call (the dominant arrays, not the peak resident memory), from the package's own estimate.\relax }{table.caption.88}{}}
-\newlabel{tab:bk-chunk@cref}{{[table][1][6]6.1}{[1][47][]47}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.1}{\ignorespaces Loop against batched assembly. The loop is the default and the reference; the batched path replaces the element loop by array contractions, in chunks, with a cached sparse pattern.\relax }}{48}{figure.caption.89}\protected@file@percent }
-\newlabel{fig:bk-flow}{{6.1}{48}{Loop against batched assembly. The loop is the default and the reference; the batched path replaces the element loop by array contractions, in chunks, with a cached sparse pattern.\relax }{figure.caption.89}{}}
-\newlabel{fig:bk-flow@cref}{{[figure][1][6]6.1}{[1][47][]48}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.3}Using it}{48}{section.6.3}\protected@file@percent }
-\newlabel{sec:bk-use}{{6.3}{48}{Using it}{section.6.3}{}}
-\newlabel{sec:bk-use@cref}{{[section][3][6]6.3}{[1][48][]48}}
-\newlabel{lst:bk-use}{{6.1}{48}{Requesting batched assembly and checking what was used (plate of \cbkChunkedPlateElems {} \texttt {Quad4PlaneStressTL} elements)}{lstlisting.6.1}{}}
-\newlabel{lst:bk-use@cref}{{[listing][1][6]6.1}{[1][48][]48}}
-\@writefile{lol}{\contentsline {lstlisting}{\numberline {6.1}Requesting batched assembly and checking what was used (plate of 192\xspace  {} \texttt  {Quad4PlaneStressTL} elements).}{48}{lstlisting.6.1}\protected@file@percent }
-\newlabel{lst:bk-newton}{{6.2}{49}{A load-controlled Newton solve with batched assembly and a sparse tangent}{lstlisting.6.2}{}}
-\newlabel{lst:bk-newton@cref}{{[listing][2][6]6.2}{[1][49][]49}}
-\@writefile{lol}{\contentsline {lstlisting}{\numberline {6.2}A load-controlled Newton solve with batched assembly and a sparse tangent.}{49}{lstlisting.6.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {6.4}Verification}{49}{section.6.4}\protected@file@percent }
-\newlabel{sec:bk-verif}{{6.4}{49}{Verification}{section.6.4}{}}
-\newlabel{sec:bk-verif@cref}{{[section][4][6]6.4}{[1][49][]49}}
-\@writefile{toc}{\contentsline {paragraph}{Four element families.}{49}{section*.90}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {6.2}{\ignorespaces Loop against batched route: speed-up of the element kernels (force, tangent) and of the assembled force of the whole system, and the largest relative difference of the results. One run per family on the sandbox used for the figures of this chapter (2 CPUs).\relax }}{49}{table.caption.91}\protected@file@percent }
-\newlabel{tab:bk-families}{{6.2}{49}{Loop against batched route: speed-up of the element kernels (force, tangent) and of the assembled force of the whole system, and the largest relative difference of the results. One run per family on \machine .\relax }{table.caption.91}{}}
-\newlabel{tab:bk-families@cref}{{[table][2][6]6.2}{[1][49][]49}}
-\@writefile{toc}{\contentsline {paragraph}{Scaling with the number of elements.}{49}{section*.92}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{A whole Newton solve.}{49}{section*.94}\protected@file@percent }
+\newlabel{ch:batch}{{6}{48}{Computational acceleration: vectorised assembly and batched kernels}{chapter.6}{}}
+\newlabel{ch:batch@cref}{{[chapter][6][]6}{[1][48][]48}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.1}Where the time goes}{48}{section.6.1}\protected@file@percent }
+\newlabel{sec:bk-time}{{6.1}{48}{Where the time goes}{section.6.1}{}}
+\newlabel{sec:bk-time@cref}{{[section][1][6]6.1}{[1][48][]48}}
+\newlabel{eq:bk-gp}{{6.1}{48}{Where the time goes}{equation.6.1}{}}
+\newlabel{eq:bk-gp@cref}{{[equation][1][6]6.1}{[1][48][]48}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.2}What the batched path does}{49}{section.6.2}\protected@file@percent }
+\newlabel{sec:bk-idea}{{6.2}{49}{What the batched path does}{section.6.2}{}}
+\newlabel{sec:bk-idea@cref}{{[section][2][6]6.2}{[1][48][]49}}
+\@writefile{toc}{\contentsline {paragraph}{No Python loop over elements.}{49}{section*.89}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{One contraction over the Gauss points.}{49}{section*.90}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Caches built once per block.}{49}{section*.91}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Memory limit.}{49}{section*.92}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6.1}{\ignorespaces Estimated working memory of a batched tangent call (the dominant arrays, not the peak resident memory), from the package's own estimate.\relax }}{49}{table.caption.93}\protected@file@percent }
+\newlabel{tab:bk-chunk}{{6.1}{49}{Estimated working memory of a batched tangent call (the dominant arrays, not the peak resident memory), from the package's own estimate.\relax }{table.caption.93}{}}
+\newlabel{tab:bk-chunk@cref}{{[table][1][6]6.1}{[1][49][]49}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6.1}{\ignorespaces Loop against batched assembly. The loop is the default and the reference; the batched path replaces the element loop by array contractions, in chunks, with a cached sparse pattern.\relax }}{50}{figure.caption.94}\protected@file@percent }
+\newlabel{fig:bk-flow}{{6.1}{50}{Loop against batched assembly. The loop is the default and the reference; the batched path replaces the element loop by array contractions, in chunks, with a cached sparse pattern.\relax }{figure.caption.94}{}}
+\newlabel{fig:bk-flow@cref}{{[figure][1][6]6.1}{[1][49][]50}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.3}Using it}{50}{section.6.3}\protected@file@percent }
+\newlabel{sec:bk-use}{{6.3}{50}{Using it}{section.6.3}{}}
+\newlabel{sec:bk-use@cref}{{[section][3][6]6.3}{[1][50][]50}}
+\newlabel{lst:bk-use}{{6.1}{50}{Requesting batched assembly and checking what was used (plate of \cbkChunkedPlateElems {} \texttt {Quad4PlaneStressTL} elements)}{lstlisting.6.1}{}}
+\newlabel{lst:bk-use@cref}{{[listing][1][6]6.1}{[1][50][]50}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {6.1}Requesting batched assembly and checking what was used (plate of 192\xspace  {} \texttt  {Quad4PlaneStressTL} elements).}{50}{lstlisting.6.1}\protected@file@percent }
+\newlabel{lst:bk-newton}{{6.2}{51}{A load-controlled Newton solve with batched assembly and a sparse tangent}{lstlisting.6.2}{}}
+\newlabel{lst:bk-newton@cref}{{[listing][2][6]6.2}{[1][51][]51}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {6.2}A load-controlled Newton solve with batched assembly and a sparse tangent.}{51}{lstlisting.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.4}Verification}{51}{section.6.4}\protected@file@percent }
+\newlabel{sec:bk-verif}{{6.4}{51}{Verification}{section.6.4}{}}
+\newlabel{sec:bk-verif@cref}{{[section][4][6]6.4}{[1][51][]51}}
+\@writefile{toc}{\contentsline {paragraph}{Four element families.}{51}{section*.95}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6.2}{\ignorespaces Loop against batched route: speed-up of the element kernels (force, tangent) and of the assembled force of the whole system, and the largest relative difference of the results. One run per family on the sandbox used for the figures of this chapter (2 CPUs).\relax }}{51}{table.caption.96}\protected@file@percent }
+\newlabel{tab:bk-families}{{6.2}{51}{Loop against batched route: speed-up of the element kernels (force, tangent) and of the assembled force of the whole system, and the largest relative difference of the results. One run per family on \machine .\relax }{table.caption.96}{}}
+\newlabel{tab:bk-families@cref}{{[table][2][6]6.2}{[1][51][]51}}
+\@writefile{toc}{\contentsline {paragraph}{Scaling with the number of elements.}{51}{section*.97}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{A whole Newton solve.}{51}{section*.99}\protected@file@percent }
 \citation{paszke2019pytorch}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.2}{\ignorespaces Internal-force assembly of a \code  {Quad4PlaneStressTL} plate: time of the loop and the batched route (left) and their ratio (right). Produced by \texttt  {scripts/ch06\_assets.py}.\relax }}{50}{figure.caption.93}\protected@file@percent }
-\newlabel{fig:bk-scaling}{{6.2}{50}{Internal-force assembly of a \code {Quad4PlaneStressTL} plate: time of the loop and the batched route (left) and their ratio (right). Produced by \texttt {scripts/ch06\_assets.py}.\relax }{figure.caption.93}{}}
-\newlabel{fig:bk-scaling@cref}{{[figure][2][6]6.2}{[1][49][]50}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.3}{\ignorespaces Wall time of the same load-controlled Newton solve with the default path and with batched assembly and a sparse tangent.\relax }}{50}{figure.caption.95}\protected@file@percent }
-\newlabel{fig:bk-newton}{{6.3}{50}{Wall time of the same load-controlled Newton solve with the default path and with batched assembly and a sparse tangent.\relax }{figure.caption.95}{}}
-\newlabel{fig:bk-newton@cref}{{[figure][3][6]6.3}{[1][50][]50}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.5}The optional PyTorch backend}{50}{section.6.5}\protected@file@percent }
-\newlabel{sec:bk-torch}{{6.5}{50}{The optional PyTorch backend}{section.6.5}{}}
-\newlabel{sec:bk-torch@cref}{{[section][5][6]6.5}{[1][50][]50}}
-\@writefile{toc}{\contentsline {paragraph}{Purpose.}{50}{section*.96}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{How it is patched in.}{50}{section*.97}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {6.4}{\ignorespaces How the PyTorch backend is patched in. A call with \texttt  {backend="torch"} leaves the default NumPy and SciPy route untouched and takes a separate path of three stages: conversion to tensors on the chosen device, computation in double precision, and conversion back to NumPy. Assembly and the Newton drivers do not change, and what the route cannot do is refused.\relax }}{51}{figure.caption.98}\protected@file@percent }
-\newlabel{fig:bk-torch}{{6.4}{51}{How the PyTorch backend is patched in. A call with \texttt {backend="torch"} leaves the default NumPy and SciPy route untouched and takes a separate path of three stages: conversion to tensors on the chosen device, computation in double precision, and conversion back to NumPy. Assembly and the Newton drivers do not change, and what the route cannot do is refused.\relax }{figure.caption.98}{}}
-\newlabel{fig:bk-torch@cref}{{[figure][4][6]6.4}{[1][51][]51}}
-\@writefile{toc}{\contentsline {paragraph}{The three routes.}{51}{section*.99}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Automatic choice.}{52}{section*.100}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{What was run here, and what was not.}{52}{section*.101}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Reading the tables.}{52}{section*.105}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {6.3}{\ignorespaces Linear solve of the free-dof system of a Quad4 plane-stress plate (clamped at one end, tip load): SciPy (default) against PyTorch, on the CPU and on the GPU, by conjugate gradients (Jacobi preconditioner, relative tolerance $10^{-10}$) and by the dense method (not run above $12\,000$ degrees of freedom). Each time is the minimum of three runs and includes the conversion to tensors and back. The last column is the largest relative difference to the SciPy solution. Records of the author's machine (GTX 1050\xspace  ), not measured for this book.\relax }}{53}{table.caption.102}\protected@file@percent }
-\newlabel{tab:bk-torch-solve}{{6.3}{53}{Linear solve of the free-dof system of a Quad4 plane-stress plate (clamped at one end, tip load): SciPy (default) against PyTorch, on the CPU and on the GPU, by conjugate gradients (Jacobi preconditioner, relative tolerance $10^{-10}$) and by the dense method (not run above $12\,000$ degrees of freedom). Each time is the minimum of three runs and includes the conversion to tensors and back. The last column is the largest relative difference to the SciPy solution. Records of the author's machine (\bktGpu ), not measured for this book.\relax }{table.caption.102}{}}
-\newlabel{tab:bk-torch-solve@cref}{{[table][3][6]6.3}{[1][52][]53}}
-\@writefile{lot}{\contentsline {table}{\numberline {6.4}{\ignorespaces (a) Stress recovery of the same plates, in milliseconds. (b) Element kernels of 1\,536\xspace  {} \texttt  {Hex8SolidTL} elements, in milliseconds, including the copies of the inputs to the device and of the result back, because the NumPy-in, NumPy-out wrapper makes them. The last column is the largest relative difference to the NumPy result. Records of the author's machine (GTX 1050\xspace  ), not measured for this book.\relax }}{53}{table.caption.103}\protected@file@percent }
-\newlabel{tab:bk-torch-other}{{6.4}{53}{(a) Stress recovery of the same plates, in milliseconds. (b) Element kernels of \bktKernNe {} \texttt {Hex8SolidTL} elements, in milliseconds, including the copies of the inputs to the device and of the result back, because the NumPy-in, NumPy-out wrapper makes them. The last column is the largest relative difference to the NumPy result. Records of the author's machine (\bktGpu ), not measured for this book.\relax }{table.caption.103}{}}
-\newlabel{tab:bk-torch-other@cref}{{[table][4][6]6.4}{[1][52][]53}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.5}{\ignorespaces Data of \Cref  {tab:bk-torch-solve} and \Cref  {tab:bk-torch-other}(a). (a) Time of the solve against the number of free degrees of freedom. (b) Time of the stress recovery against the number of elements. Drawn by \texttt  {scripts/ch06\_torch\_assets.py} from the records of the author's machine.\relax }}{54}{figure.caption.104}\protected@file@percent }
-\newlabel{fig:bk-torch-data}{{6.5}{54}{Data of \Cref {tab:bk-torch-solve} and \Cref {tab:bk-torch-other}(a). (a) Time of the solve against the number of free degrees of freedom. (b) Time of the stress recovery against the number of elements. Drawn by \texttt {scripts/ch06\_torch\_assets.py} from the records of the author's machine.\relax }{figure.caption.104}{}}
-\newlabel{fig:bk-torch-data@cref}{{[figure][5][6]6.5}{[1][52][]54}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.6}Related pieces}{54}{section.6.6}\protected@file@percent }
-\newlabel{sec:bk-related}{{6.6}{54}{Related pieces}{section.6.6}{}}
-\newlabel{sec:bk-related@cref}{{[section][6][6]6.6}{[1][54][]54}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.7}Limits}{54}{section.6.7}\protected@file@percent }
-\newlabel{sec:bk-limits}{{6.7}{54}{Limits}{section.6.7}{}}
-\newlabel{sec:bk-limits@cref}{{[section][7][6]6.7}{[1][54][]54}}
-\@writefile{lot}{\contentsline {table}{\numberline {6.5}{\ignorespaces Where the concepts of this chapter live in the repository (tag \texttt  {release-fea1.0.1-rom0.2.0}). The last column says whether the chapter's script \texttt  {scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.\relax }}{55}{table.caption.106}\protected@file@percent }
-\newlabel{tab:bk-map}{{6.5}{55}{Where the concepts of this chapter live in the repository (tag \booktag ). The last column says whether the chapter's script \texttt {scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.\relax }{table.caption.106}{}}
-\newlabel{tab:bk-map@cref}{{[table][5][6]6.5}{[1][54][]55}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6.2}{\ignorespaces Internal-force assembly of a \code  {Quad4PlaneStressTL} plate: time of the loop and the batched route (left) and their ratio (right). Produced by \texttt  {scripts/ch06\_assets.py}.\relax }}{52}{figure.caption.98}\protected@file@percent }
+\newlabel{fig:bk-scaling}{{6.2}{52}{Internal-force assembly of a \code {Quad4PlaneStressTL} plate: time of the loop and the batched route (left) and their ratio (right). Produced by \texttt {scripts/ch06\_assets.py}.\relax }{figure.caption.98}{}}
+\newlabel{fig:bk-scaling@cref}{{[figure][2][6]6.2}{[1][51][]52}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6.3}{\ignorespaces Wall time of the same load-controlled Newton solve with the default path and with batched assembly and a sparse tangent.\relax }}{52}{figure.caption.100}\protected@file@percent }
+\newlabel{fig:bk-newton}{{6.3}{52}{Wall time of the same load-controlled Newton solve with the default path and with batched assembly and a sparse tangent.\relax }{figure.caption.100}{}}
+\newlabel{fig:bk-newton@cref}{{[figure][3][6]6.3}{[1][52][]52}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.5}The optional PyTorch backend}{52}{section.6.5}\protected@file@percent }
+\newlabel{sec:bk-torch}{{6.5}{52}{The optional PyTorch backend}{section.6.5}{}}
+\newlabel{sec:bk-torch@cref}{{[section][5][6]6.5}{[1][52][]52}}
+\@writefile{toc}{\contentsline {paragraph}{Purpose.}{52}{section*.101}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{How it is patched in.}{52}{section*.102}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.4}{\ignorespaces How the PyTorch backend is patched in. A call with \texttt  {backend="torch"} leaves the default NumPy and SciPy route untouched and takes a separate path of three stages: conversion to tensors on the chosen device, computation in double precision, and conversion back to NumPy. Assembly and the Newton drivers do not change, and what the route cannot do is refused.\relax }}{53}{figure.caption.103}\protected@file@percent }
+\newlabel{fig:bk-torch}{{6.4}{53}{How the PyTorch backend is patched in. A call with \texttt {backend="torch"} leaves the default NumPy and SciPy route untouched and takes a separate path of three stages: conversion to tensors on the chosen device, computation in double precision, and conversion back to NumPy. Assembly and the Newton drivers do not change, and what the route cannot do is refused.\relax }{figure.caption.103}{}}
+\newlabel{fig:bk-torch@cref}{{[figure][4][6]6.4}{[1][53][]53}}
+\@writefile{toc}{\contentsline {paragraph}{The three routes.}{53}{section*.104}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Automatic choice.}{54}{section*.105}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{What was run here, and what was not.}{54}{section*.106}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Reading the tables.}{54}{section*.110}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6.3}{\ignorespaces Linear solve of the free-dof system of a Quad4 plane-stress plate (clamped at one end, tip load): SciPy (default) against PyTorch, on the CPU and on the GPU, by conjugate gradients (Jacobi preconditioner, relative tolerance $10^{-10}$) and by the dense method (not run above $12\,000$ degrees of freedom). Each time is the minimum of three runs and includes the conversion to tensors and back. The last column is the largest relative difference to the SciPy solution. Records of the author's machine (GTX 1050\xspace  ), not measured for this book.\relax }}{55}{table.caption.107}\protected@file@percent }
+\newlabel{tab:bk-torch-solve}{{6.3}{55}{Linear solve of the free-dof system of a Quad4 plane-stress plate (clamped at one end, tip load): SciPy (default) against PyTorch, on the CPU and on the GPU, by conjugate gradients (Jacobi preconditioner, relative tolerance $10^{-10}$) and by the dense method (not run above $12\,000$ degrees of freedom). Each time is the minimum of three runs and includes the conversion to tensors and back. The last column is the largest relative difference to the SciPy solution. Records of the author's machine (\bktGpu ), not measured for this book.\relax }{table.caption.107}{}}
+\newlabel{tab:bk-torch-solve@cref}{{[table][3][6]6.3}{[1][54][]55}}
+\@writefile{lot}{\contentsline {table}{\numberline {6.4}{\ignorespaces (a) Stress recovery of the same plates, in milliseconds. (b) Element kernels of 1\,536\xspace  {} \texttt  {Hex8SolidTL} elements, in milliseconds, including the copies of the inputs to the device and of the result back, because the NumPy-in, NumPy-out wrapper makes them. The last column is the largest relative difference to the NumPy result. Records of the author's machine (GTX 1050\xspace  ), not measured for this book.\relax }}{55}{table.caption.108}\protected@file@percent }
+\newlabel{tab:bk-torch-other}{{6.4}{55}{(a) Stress recovery of the same plates, in milliseconds. (b) Element kernels of \bktKernNe {} \texttt {Hex8SolidTL} elements, in milliseconds, including the copies of the inputs to the device and of the result back, because the NumPy-in, NumPy-out wrapper makes them. The last column is the largest relative difference to the NumPy result. Records of the author's machine (\bktGpu ), not measured for this book.\relax }{table.caption.108}{}}
+\newlabel{tab:bk-torch-other@cref}{{[table][4][6]6.4}{[1][54][]55}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6.5}{\ignorespaces Data of \Cref  {tab:bk-torch-solve} and \Cref  {tab:bk-torch-other}(a). (a) Time of the solve against the number of free degrees of freedom. (b) Time of the stress recovery against the number of elements. Drawn by \texttt  {scripts/ch06\_torch\_assets.py} from the records of the author's machine.\relax }}{56}{figure.caption.109}\protected@file@percent }
+\newlabel{fig:bk-torch-data}{{6.5}{56}{Data of \Cref {tab:bk-torch-solve} and \Cref {tab:bk-torch-other}(a). (a) Time of the solve against the number of free degrees of freedom. (b) Time of the stress recovery against the number of elements. Drawn by \texttt {scripts/ch06\_torch\_assets.py} from the records of the author's machine.\relax }{figure.caption.109}{}}
+\newlabel{fig:bk-torch-data@cref}{{[figure][5][6]6.5}{[1][54][]56}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.6}Related pieces}{56}{section.6.6}\protected@file@percent }
+\newlabel{sec:bk-related}{{6.6}{56}{Related pieces}{section.6.6}{}}
+\newlabel{sec:bk-related@cref}{{[section][6][6]6.6}{[1][56][]56}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.7}Limits}{56}{section.6.7}\protected@file@percent }
+\newlabel{sec:bk-limits}{{6.7}{56}{Limits}{section.6.7}{}}
+\newlabel{sec:bk-limits@cref}{{[section][7][6]6.7}{[1][56][]56}}
+\@writefile{lot}{\contentsline {table}{\numberline {6.5}{\ignorespaces Where the concepts of this chapter live in the repository (tag \texttt  {release-fea1.0.1-rom0.2.0}). The last column says whether the chapter's script \texttt  {scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.\relax }}{57}{table.caption.111}\protected@file@percent }
+\newlabel{tab:bk-map}{{6.5}{57}{Where the concepts of this chapter live in the repository (tag \booktag ). The last column says whether the chapter's script \texttt {scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.\relax }{table.caption.111}{}}
+\newlabel{tab:bk-map@cref}{{[table][5][6]6.5}{[1][56][]57}}
 \bibstyle{unsrtnat}
 \bibdata{refs}
 \bibcite{belytschko2014nonlinear}{{1}{2014}{{Belytschko et~al.}}{{Belytschko, Liu, Moran, and Elkhodary}}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.8}Summary}{56}{section.6.8}\protected@file@percent }
-\newlabel{sec:bk-summary}{{6.8}{56}{Summary}{section.6.8}{}}
-\newlabel{sec:bk-summary@cref}{{[section][8][6]6.8}{[1][56][]56}}
-\newlabel{sec:bk-exercises}{{6.8}{56}{Exercises}{section*.107}{}}
-\newlabel{sec:bk-exercises@cref}{{[section][8][6]6.8}{[1][56][]56}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.8}Summary}{58}{section.6.8}\protected@file@percent }
+\newlabel{sec:bk-summary}{{6.8}{58}{Summary}{section.6.8}{}}
+\newlabel{sec:bk-summary@cref}{{[section][8][6]6.8}{[1][58][]58}}
+\newlabel{sec:bk-exercises}{{6.8}{58}{Exercises}{section*.112}{}}
+\newlabel{sec:bk-exercises@cref}{{[section][8][6]6.8}{[1][58][]58}}
 \bibcite{cuvelier2014assemble}{{2}{2014}{{Cuvelier et~al.}}{{Cuvelier, Japhet, and Scarella}}}
 \bibcite{paszke2019pytorch}{{3}{2019}{{Paszke et~al.}}{{Paszke, Gross, Massa, et~al.}}}
-\@writefile{toc}{\contentsline {section}{References}{57}{section*.108}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{59}{section*.113}\protected@file@percent }
 \@setckpt{chapters/ch06}{
-\setcounter{page}{58}
+\setcounter{page}{60}
 \setcounter{equation}{1}
 \setcounter{enumi}{10}
 \setcounter{enumii}{0}
@@ -118,7 +118,7 @@
 \setcounter{subtable}{0}
 \setcounter{tcbbreakpart}{3}
 \setcounter{tcblayer}{0}
-\setcounter{tcolorbox@number}{30}
+\setcounter{tcolorbox@number}{31}
 \setcounter{tcbrastercolumn}{1}
 \setcounter{tcbrasterrow}{1}
 \setcounter{tcbrasternum}{1}
@@ -128,7 +128,7 @@
 \setcounter{NAT@ctr}{3}
 \setcounter{Item}{40}
 \setcounter{Hfootnote}{0}
-\setcounter{bookmark@seq@number}{60}
+\setcounter{bookmark@seq@number}{61}
 \setcounter{proposition}{0}
 \setcounter{definition}{0}
 \setcounter{example}{0}

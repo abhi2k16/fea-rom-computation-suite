@@ -103,6 +103,48 @@ A \code{MultiBlockMesh} holds blocks of different topologies over one node array
 \caption{Round trip of a mesh through \code{write_mesh} and \code{read_mesh}.}\label{tab:me-meshio}
 \end{table}
 
+\subsection{An end-to-end example: from an Abaqus mesh to a result file}\label{sec:me-example}
+
+The round trip above uses files that the package wrote itself. The more common case is a mesh made in another program. The example below uses a cantilever of $20\times2\times2$ eight-node hexahedra, $10$~m long with a $1$~m square section, in the form a pre-processor writes it: an Abaqus input file with \cmiNsetLines{} keyword lines (\texttt{*NODE}, \texttt{*ELEMENT, TYPE=C3D8}, a node set, a section, a material, a step with a boundary condition and a load). The file was written as plain text by the example script \texttt{fea\_engine/examples/import\_abaqus\_mesh\_demo.py}, not by \code{meshio} or by the package, so that the test does not depend on the writer being the reader's inverse.
+
+\paragraph{What is read and what is not.} \code{read_mesh} takes from the file the node coordinates and the connectivity of the supported cell types, and nothing else. The node set, the section, the material, the boundary condition and the load of the file are not used: they are defined again in Python, and the loads and constraints are placed by coordinates (\code{select_nodes}) and not by the labels of the other program. The ids of the file are not kept; the nodes are renumbered from zero in the order in which they occur. The argument \code{dim} is required: it selects the cells of that topological dimension, which is how the boundary faces that a volume mesh file often also contains are left out. Unsupported cell types are skipped without a message; \Cref{tab:me-import} shows the effect of that, and of the other things that can go wrong.
+
+\begin{lstlisting}[caption={A mesh from an Abaqus file to a result file (the file \texttt{beam.inp} is the one described above).},label={lst:me-import}]
+from fea_engine import mesh_io
+from fea_engine.material import Material, D_solid3d
+from fea_engine.elements import Hex8Solid3D
+from fea_engine.solver import FESystem
+from fea_engine.export import write_vtu
+
+mesh = mesh_io.read_mesh("beam.inp", dim=3)            # nodes and C3D8 connectivity only
+assert mesh.check_quality(Hex8Solid3D())                # every Jacobian positive: node order and orientation are usable
+s = FESystem(mesh, Hex8Solid3D())                       # the element formulation is chosen here, not read from the file
+s.assemble_stiffness(D_solid3d(Material(E=2.1e11, nu=0.3, rho=7850.0)))
+root = mesh.select_nodes(x=0.0, name="root")            # loads and constraints by coordinates
+tip = mesh.select_nodes(x=mesh.nodes[:, 0].max(), name="tip")
+s.fix_dofs(root, [0, 1, 2])
+s.add_nodal_force(tip, dof_index=2, total_force=-1000.0)
+U = s.solve_static()
+write_vtu("beam.vtu", fields={"displacement": s.field(U, "displacement")},
+          point_data={"von_mises": s.von_mises(U)})     # open in ParaView
+\end{lstlisting}
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch02_import}
+\caption{Checks of the import example. Case 1 compares the imported model with the same beam built by \code{box_mesh}, through the displacement of every node, matched by coordinates. Cases 2 to 5 change the file.}\label{tab:me-import}
+\end{table}
+
+\paragraph{Result.} The mean vertical displacement of the tip is \cmiTip~m, and the model built natively by \code{box_mesh} gives \cmiTipNative~m; the displacement fields of the two agree to \cmiDiffNative{} (relative to the largest displacement), so the import changed nothing in the model. The Euler--Bernoulli value is \cmiEb~m, and the ratio of the computed value to it is \cmiEbRatio. This is not an import error: an eight-node hexahedron with two elements through the depth stiffens in bending (Chapter~\ref{ch:elem}), and the same ratio comes out of the natively built model. \Cref{fig:me-import} shows the deformed shape of one face and the von Mises stress; the stresses are element averages carried to the nodes, so their maximum, \cmiVmMax~kPa, is about half of the beam-theory value at the root, $60$~kPa, for the same reason.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/ch02_import.pdf}
+\caption{Result for the imported cantilever: nodes of the face $y=0$, displaced by the field magnified \cmiScale{} times (grey: undeformed), coloured by the nodal von Mises stress. Produced by \texttt{scripts/ch02\_import\_assets.py}.}\label{fig:me-import}
+\end{figure}
+
+\paragraph{Before trusting an imported mesh.} Four checks cost little. First, \code{check_quality} with the element that will be used: an element whose nodes are listed in another order than the formulation expects has a negative Jacobian, as case~5 shows. Second, count the elements that were read against the count in the other program, because a skipped cell type changes the model without a message (case~4). Third, the package has no units: lengths, moduli and loads must be in one consistent system, and the file's units are not read. Fourth, quadratic elements from a format other than Gmsh's or VTU were not checked here (see above), so check them first with a patch test. Geometry in the sense of CAD, such as STEP or IGES, cannot be read; mesh it in the other program and import the mesh.
+
 \section{Design lesson: why Gmsh support was removed}\label{sec:me-lesson}
 
 \fea{} used to include two optional modules built on Gmsh, one for unstructured meshing (including the import of STEP and IGES geometry) and one for rendering. Both required a system OpenGL library (libGLU) that could not be reliably provided on a minimal installation, and no verified example, result or default code path used either of them: every plot of the Gmsh renderer already had a matplotlib equivalent used by all the example scripts. They were removed together with their tests, and the structured generators remain the supported way to mesh.
@@ -134,6 +176,7 @@ exchange & \anchor{fea_engine.mesh_io.read_mesh}, \anchor{fea_engine.mesh_io.wri
 \item \textbf{Arcs are polygons.} Curved boundaries are approximated with straight element edges (\Cref{tab:me-gen}); the geometric error is second order in the number of elements round the arc and is separate from the discretisation error of the analysis.
 \item \textbf{Grading is one-dimensional.} The growth ratio is controlled along a partition; the two-dimensional element sizes of the hole mesh are a consequence, and the ratio quoted for it is of element areas, not of adjacent sizes.
 \item \textbf{Mixed meshes} must have one \code{dofs_per_node}; the patch test shows displacement consistency, not stress continuity.
+\item \textbf{Import is nodes and connectivity only.} Sets, materials, sections, boundary conditions and loads of a foreign file are not read, unsupported cell types are skipped without a message, CAD geometry cannot be read, and only the VTU and Abaqus INP round trips (and, for quadratic elements, the Gmsh node order) were checked (\Cref{sec:me-example}).
 \item \textbf{Exchange} was tested for two formats and two linear element types.
 \item \textbf{The 40x--1500x figure} for misaligned rotational-dof elements is quoted from the package documentation and was not reproduced.
 \end{itemize}
