@@ -21,7 +21,24 @@ This book explains how the two packages of the companion repository, \fea{} and 
 
 \section*{Working with the repository}
 
-The book is tied to one pinned release of the repository, tag \booktag{}: every listing, number and code anchor refers to that release. Check out the tag before you run anything, or the output you see may differ from the output printed here. The two packages depend only on NumPy and SciPy. Either install them from the repository (each has its own \texttt{pyproject.toml}) or put the two \texttt{src} directories on the Python path. PyTorch is optional and is needed only for the parts that say so; PyVista is used for the three-dimensional figures of Chapter~\ref{ch:mesh}. The listings that print output assume the working directory named in their caption, and nothing else. The package tests are run with \texttt{pytest} from the repository root, and Appendix~\ref{ch:map} lists, chapter by chapter, which test files cover the topic.
+The book is tied to one pinned release of the repository, tag \booktag{}: every listing, number and code anchor refers to that release. Check out the tag before you run anything, or the output you see may differ from the output printed here. The two packages depend only on NumPy and SciPy. Either install them from the repository (each has its own \texttt{pyproject.toml}) or put the two \texttt{src} directories on the Python path. PyTorch is optional and is needed only for the parts that say so; PyVista is used for the three-dimensional figures of Chapter~\ref{ch:mesh}. The listings that print output assume the working directory named in their caption, and nothing else. The package tests are run with \texttt{pytest} from the repository root, and Appendix~\ref{ch:map} lists, chapter by chapter, which test files cover the topic. The installation steps, the API reference and the example scripts are in the repository; the section \emph{Documentation on GitHub} below says where.
+
+\section*{Documentation on GitHub}
+
+The book describes the design of the two packages and tests it. The repository that holds them, \url{\repourl}, also has the reference material that a book should not repeat, and the table below says which file to open for which question. The links point to the \texttt{main} branch, which moves; the numbers of this book belong to the tag \booktag, so when a page of the repository and a number of the book differ, the tag decides and the \ghfile{CHANGELOG.md}{changelog} says what changed.
+
+{\small\begin{longtable}{@{}p{0.31\linewidth}p{0.62\linewidth}@{}}
+\hline
+\textbf{Open} & \textbf{When you want to} \\ \hline\endhead
+\ghfile{USER_GUIDE.md}{\texttt{USER\_GUIDE.md}} & install the packages, learn the concepts, and run worked examples, including multi-core and GPU use and performance notes. Read it next to Chapters~\ref{ch:arch} and~\ref{ch:mesh}. \\[3pt]
+\ghfile{API_REFERENCE.md}{\texttt{API\_REFERENCE.md}} & look up the signature of a class or function cited in the text as \anchor{importable.name}; its first part answers which API a given task needs, and its examples are short and runnable. \\[3pt]
+\ghfile{README.md}{\texttt{README.md}} and the package files \ghfile{fea_engine/README.md}{\texttt{fea\_engine/README.md}} and \ghfile{rom_engine/README.md}{\texttt{rom\_engine/README.md}} & see what each package contains, and how the two fit together. \\[3pt]
+\ghdir{fea_engine/examples}{\texttt{fea\_engine/examples}} and \ghdir{rom_engine/examples}{\texttt{rom\_engine/examples}} & read complete scripts, with the example galleries in their \texttt{gallery} subfolders: cantilever, modal analysis, contact, plasticity, POD bases, and more. Use them after Chapters~\ref{ch:elem} to~\ref{ch:contact} and Chapters~\ref{ch:pod} to~\ref{ch:hyper}. \\[3pt]
+\ghfile{CHANGELOG.md}{\texttt{CHANGELOG.md}} & find out what changed between the tagged release and now, for example the correction of \code{hole_in_rectangle_mesh} of Chapter~\ref{ch:mesh}. \\[3pt]
+\ghfile{CITATION.cff}{\texttt{CITATION.cff}} and \ghfile{LICENSE}{\texttt{LICENSE}} & cite the software, and check the terms of the code (MIT). \\[3pt]
+\href{\repourl/issues}{Issues page} & report an error in the code or in this book. \\
+\hline
+\end{longtable}}
 
 \section*{How a chapter is laid out}
 
