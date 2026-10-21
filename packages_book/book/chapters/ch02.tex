@@ -57,6 +57,44 @@ Each row of the connectivity array lists the nodes of one element in a fixed ord
 
 The check costs $n_e\,n_g$ small determinants. Nothing else in the package performs it, so it has to be called, and a large ratio of the extremes says that an element is distorted, not that it is wrong. It is \code{check_quality(element)} on \anchor{fea_engine.mesh.Mesh}; \Cref{tab:me-gen} and \Cref{tab:me-quality} show it applied.
 
+\paragraph{Reading results per node.} Every node has a number, its row in the coordinate array, and the unknowns of node $i$ sit at the global dof numbers $d\,i,\dots,d\,i+d-1$, where $d$ is the number of dofs per node (2 for plane stress). A solve returns one flat vector of length $n_{dof}$, so the displacement of a node can be read by index arithmetic. The returned object also has a nodal view with one row per node, which is the form to use in post-processing. \Cref{lst:me-nodal} solves a small plane-stress cantilever, reads one node both ways, and then takes one displacement component for all nodes and for the node set \code{tip}. Quantities that belong to elements, such as stresses, are not nodal in this sense: they live at Gauss points, and a nodal value needs an averaging step, as for the von Mises field of \Cref{sec:me-example}.
+
+\begin{lstlisting}[caption={Reading a solution per node (run with the package on the path).},label={lst:me-nodal}]
+import numpy as np
+from fea_engine import Quad4PlaneStress
+from fea_engine.material import Material, D_plane_stress
+from fea_engine.mesh import rectangle_mesh
+from fea_engine.solver import FESystem
+
+mesh = rectangle_mesh(4.0, 1.0, 4, 3)                  # 20 nodes, 12 elements
+s = FESystem(mesh, Quad4PlaneStress())
+s.assemble_stiffness(D_plane_stress(Material(E=2.1e11, nu=0.3, rho=7850.0)))
+root = mesh.select_nodes(x=0.0, name="root")
+tip = mesh.select_nodes(x=4.0, name="tip")
+s.fix_dofs(root, [0, 1])
+s.add_nodal_force(tip, dof_index=1, total_force=-1000.0)
+U = s.solve_static()                                   # flat vector, length n_dof = 2 * 20
+
+print("n_nodes, dim:", mesh.nodes.shape, " n_dof:", U.shape[0])
+i = 13
+print(f"node {i} at {mesh.nodes[i]}: dofs {2*i}, {2*i+1} -> U[2*i:2*i+2] =", U[2*i:2*i+2])
+print("U.nodal[13]       =", U.nodal[i])               # the same two numbers, selected by node
+uy = U.nodal[:, 1]                                     # y-displacement of every node
+print("uy at the tip nodes:", np.round(U.component("uy", nodes="tip"), 9))
+k = np.argmin(uy)
+print(f"largest deflection: node {k} at {mesh.nodes[k]}, uy = {uy[k]:.4e}")
+\end{lstlisting}
+
+\begin{lstlisting}[numbers=none,language={},keywordstyle={},commentstyle={},frame=single,aboveskip=2pt]
+n_nodes, dim: (20, 2)  n_dof: 40
+node 13 at [3.         0.33333333]: dofs 26, 27 -> U[2*i:2*i+2] = [-5.01006694e-08 -5.72795018e-07]
+U.nodal[13]       = [-5.01006694e-08 -5.72795018e-07]
+uy at the tip nodes: [-9.01e-07 -9.00e-07 -9.00e-07 -9.01e-07]
+largest deflection: node 16 at [4. 0.], uy = -9.0131e-07
+\end{lstlisting}
+
+The two readings of node 13 agree, because $2\cdot13=26$ and $27$ are its dofs; the nodal view removes the arithmetic and, unlike it, stays correct when the element is changed to one with three dofs per node. The largest deflection is at the lower tip corner, node 16.
+
 \paragraph{Try it.} \Cref{lst:me-try} builds a unit square of nine elements, lists the central element clockwise, and applies the first check one would write (the sum of the element areas) and then \code{check_quality}.
 
 \begin{lstlisting}[caption={An element listed clockwise passes an area check and fails the Jacobian check (run with the package on the path).},label={lst:me-try}]
