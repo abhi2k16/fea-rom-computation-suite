@@ -1,0 +1,22 @@
+\begin{tikzpicture}[node distance=5mm and 5mm,font=\sffamily\scriptsize]
+\node[cmPLAIN] (n1) {samples $\bm\mu_i$\\optimal LHS};
+\node[cmFE,right=of n1] (n2) {full-order\\solves $\bm K(\bm\mu_i)\bm u_i=\bm f_i$};
+\node[cmPLAIN,right=of n2] (n3) {snapshots\\$\bm S$};
+\node[cmROM,right=of n3] (n4) {POD\\basis $\bm V$, $\sigma_k$};
+\node[cmROM,right=of n4] (n5) {project once\\$\bm K_{q,r},\ \bm f_r$};
+\draw[cmFlow] (n1)--(n2); \draw[cmFlow] (n2)--(n3); \draw[cmFlow] (n3)--(n4); \draw[cmFlow] (n4)--(n5);
+\begin{scope}[on background layer]
+\node[cmDASH,fit=(n1)(n2)(n3)(n4)(n5),inner sep=5mm,label={[font=\sffamily\scriptsize\bfseries]above:offline (once, expensive)}] (off) {};
+\end{scope}
+\node[cmPLAIN,below=24mm of n1] (m1) {new parameter\\$\bm\mu$};
+\node[cmROM,right=of m1] (m2) {assemble\\$\bm K_r=\sum_q\theta_q(\bm\mu)\bm K_{q,r}$};
+\node[cmROM,right=of m2] (m3) {solve\\$r\times r$ system};
+\node[cmROM,right=of m3,dashed] (m4) {lift $\bm u=\bm V\bm q$\\(only if the field is needed)};
+\node[cmCERT,right=of m4] (m5) {held-out check\\against the FOM};
+\draw[cmFlow] (m1)--(m2); \draw[cmFlow] (m2)--(m3); \draw[cmFlow] (m3)--(m4); \draw[cmFlow] (m4)--(m5);
+\begin{scope}[on background layer]
+\node[cmDASH,fit=(m1)(m2)(m3)(m4)(m5),inner sep=5mm,label={[font=\sffamily\scriptsize\bfseries]below:online (per query, independent of $n$ until the lift)}] (on) {};
+\end{scope}
+\draw[cmFlow] (n5.south) -- ++(0,-6.5mm) -| node[cmLab,pos=0.2,above] {stored $r\times r$ operators} (m2.north);
+\draw[cmFb] (m5.north) -- ++(0,5mm) -| node[cmLab,pos=0.3,above] {validation only} (n1.south);
+\end{tikzpicture}

@@ -1,0 +1,47 @@
+\newpage\thispagestyle{hl}
+\hlbanner{Part II $\cdot$ Full-order physics}{4}{Dynamics: modal, transient, harmonic and random response}
+\hlsection{The question}
+\begin{hlquote}An explicit simulation runs for a week. Someone refines the mesh a little, the time step ends up one per cent above the limit, and in six hundred steps the displacements reach $10^{68}$ m. Nothing complained: the stability limit is sharp, not gradual.\end{hlquote}
+\hlsection{Key concepts}
+\begin{description}\setlength\itemsep{5pt}\setlength\parsep{0pt}\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\sffamily\bfseries\color{hlnavy}#1}
+\item[Natural frequencies and modes] $\bm K\bm\phi=\omega^2\bm M\bm\phi$, with mass-normalised shapes
+\item[Newmark integration] implicit; the average-acceleration rule is stable for any step
+\item[Central differences] explicit and cheap per step, stable only below $2/\omega_{max}$
+\item[Critical time step] set by the highest frequency; a finer mesh shortens it
+\item[Modal superposition] a few modes carry a low-frequency response; truncation error is checked
+\item[FRF and PSD] frequency response function, and the random-load response through $|H|^2S_{in}$
+\end{description}
+\hlsection{After this chapter you can}
+\begin{itemize}\setlength\itemsep{3pt}
+\item choose among the five dynamic solvers for a given problem
+\item compute and verify the critical time step of the explicit method
+\item judge a modal truncation or a frequency-response result against an independent reference
+\end{itemize}
+\hlsection{In this chapter}
+{\begin{multicols}{2}\raggedright
+\textbf{4.1}\ The semi-discrete problem\\
+\textbf{4.2}\ Natural frequencies and modes\\
+\textbf{4.3}\ Implicit integration: Newmark\\
+\textbf{4.4}\ Explicit integration and the critical step\\
+\textbf{4.5}\ Modal superposition\\
+\textbf{4.6}\ Frequency-domain response\\
+\textbf{4.7}\ Choosing a method\\
+\textbf{4.8}\ Summary
+\end{multicols}}
+\hlsection{Explained on the page, in short boxes}
+\noindent Semi-discrete equations and initial conditions; Modes, orthogonality and mass normalisation; Damping ratio and Rayleigh damping; Implicit and explicit integration, stability and accuracy; Where the limit $\Delta t\le2/\omega_{max}$ comes from; Stability and accuracy; Why a few modes can be enough; Frequency response function and resonance; Power spectral density in one paragraph.
+\newpage\thispagestyle{hl}
+\noindent{\sffamily\small\color{hlgrey}Chapter 4 \quad Dynamics: modal, transient, harmonic and random response}\par
+\hlsection{Signature figure}
+\hlfig{\hlimg{ch04_explicit}}{Maximum displacement of a bar integrated by central differences at 0.9 and 1.1 times the critical step.}
+\hlsection{Headline result}
+\begin{hlheadline}For a plane-stress bar with lumped mass the critical step is \cdyDtcLumped{} s. Up to $0.99\,\Delta t_c$ the response stays bounded; at $1.01\,\Delta t_c$ it grows by a factor \cdyGrowJustOver{} over the run.\end{hlheadline}
+\hlsection{From the code}
+\begin{lstlisting}[style=hlpy]
+free = s.free_dofs
+K = np.asarray(s.K.toarray() if hasattr(s.K, "toarray") else s.K)[np.ix_(free, free)]
+Ml = np.asarray(s.M_lumped.toarray() if hasattr(s.M_lumped, "toarray") else s.M_lumped)[np.ix_(free, free)]
+dtc = 2 / np.sqrt(sl.eigh(K, Ml, eigvals_only=True)[-1])   # critical step: 2 / omega_max
+\end{lstlisting}
+\hlsection{A stated limit}
+\begin{hllimit}Explicit stability is not checked by the code: the step is the user's responsibility, and the code's bound uses the consistent mass.\end{hllimit}

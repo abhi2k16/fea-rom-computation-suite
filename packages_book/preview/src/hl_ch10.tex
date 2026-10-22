@@ -1,0 +1,45 @@
+\newpage\thispagestyle{hl}
+\hlbanner{Part III $\cdot$ Reduced-order modelling}{10}{Frequency-domain ROMs, greedy training and certified bounds}
+\hlsection{The question}
+\begin{hlquote}Sweep a damped beam over frequency and the response is flat for long stretches and then jumps at each resonance. A reduced model needs full-order snapshots, each an expensive solve, and the question is where to take them: evenly spaced, or where the response is hardest.\end{hlquote}
+\hlsection{Key concepts}
+\begin{description}\setlength\itemsep{5pt}\setlength\parsep{0pt}\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\sffamily\bfseries\color{hlnavy}#1}
+\item[Frequency-dependent operator] $\bm A(\omega)=-\omega^2\bm M+i\omega\bm C+\bm K$ is nearly singular at resonance
+\item[Greedy training] add the next snapshot where the current model is judged worst
+\item[Error indicator] ranks frequencies cheaply, but does not measure the error
+\item[Certified bound] a number the true error cannot exceed, via a lower bound on the smallest singular value
+\item[Random vibration] response to a power spectral density through the reduced model
+\item[Break-even] offline cost against saving per query
+\end{description}
+\hlsection{After this chapter you can}
+\begin{itemize}\setlength\itemsep{3pt}
+\item train a frequency-domain model by greedy selection
+\item tell a cheap indicator from a certified bound
+\item compute a random-load response from a reduced model
+\end{itemize}
+\hlsection{In this chapter}
+{\begin{multicols}{2}\raggedright
+\textbf{10.1}\ The problem\\
+\textbf{10.2}\ Mathematical structure\\
+\textbf{10.3}\ Implementation in the packages\\
+\textbf{10.4}\ Verification\\
+\textbf{10.5}\ Limits and failure modes\\
+\textbf{10.6}\ Summary
+\end{multicols}}
+\hlsection{Explained on the page, in short boxes}
+\noindent Frequency-domain response and complex unknowns; Snapshot and column; The greedy idea; Indicator and bound.
+\newpage\thispagestyle{hl}
+\noindent{\sffamily\small\color{hlgrey}Chapter 10 \quad Frequency-domain ROMs, greedy training and certified bounds}\par
+\hlsection{Signature figure}
+\hlfig{\hlimg{ch10_greedy}}{Frequency response with the greedy-selected frequencies (left), and largest error near the resonances against basis size for greedy, uniform and modal training (right).}
+\hlsection{Headline result}
+\begin{hlheadline}With 5 basis columns the modal basis errs by \cfrModalNearFive{} on the near-resonance test set, and greedy training reaches \cfrGreedyNearFive; uniform training gives \cfrUniformNearFive, comparable.\end{hlheadline}
+\hlsection{Main classes and functions}
+{\begin{itemize}\setlength\itemsep{2pt}
+\item \texttt{rom\_engine.greedy.greedy\_train\_frequency\_basis}
+\item \texttt{rom\_engine.scm.certified\_error\_bound}
+\item \texttt{rom\_engine.scm\_lp.LPSingularValueLowerBound}
+\item \texttt{rom\_engine.random\_vibration.psd\_response}
+\end{itemize}}
+\hlsection{A stated limit}
+\begin{hllimit}Greedy is not uniformly better: it gave a lower median error at \cfrGreedyWinsMed{} of \cfrRankCount{} sizes, but a higher maximum error at four of the seven.\end{hllimit}

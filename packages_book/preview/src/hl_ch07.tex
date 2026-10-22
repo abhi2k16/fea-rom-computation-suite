@@ -1,0 +1,47 @@
+\newpage\thispagestyle{hl}
+\hlbanner{Part II $\cdot$ Full-order physics}{7}{Exact unilateral contact: sparse active sets and BDF2}
+\hlsection{The question}
+\begin{hlquote}A membrane is pressed onto a bumpy floor. The obvious fix is a stiff spring at every node that has sunk below the floor, and it works, until the spring is stiff enough for the answer to be good and the matrix is too ill-conditioned to solve.\end{hlquote}
+\hlsection{Key concepts}
+\begin{description}\setlength\itemsep{5pt}\setlength\parsep{0pt}\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\sffamily\bfseries\color{hlnavy}#1}
+\item[Gap and complementarity] $g\ge0$, $\lambda\ge0$, $\lambda g=0$: touching with force, or separated without
+\item[Active set] the contact points that are closed in the solution
+\item[Primal-dual active-set method] a semismooth Newton iteration, with three sparse routes
+\item[Penalty method] a stiff spring on penetration: approximate, and ill-conditioned when accurate
+\item[Linear complementarity problem] the contact forces as the only unknowns
+\item[BDF2] a second-order time scheme for impact, with its energy behaviour reported
+\end{description}
+\hlsection{After this chapter you can}
+\begin{itemize}\setlength\itemsep{3pt}
+\item explain why a penalty parameter is the wrong tool for contact
+\item state the primal-dual active-set method and choose among the sparse routes
+\item run an impact with BDF2 and read its energy behaviour
+\end{itemize}
+\hlsection{In this chapter}
+{\begin{multicols}{2}\raggedright
+\textbf{7.1}\ The problem\\
+\textbf{7.2}\ Why not a penalty?\\
+\textbf{7.3}\ Mathematical structure\\
+\textbf{7.4}\ The primal-dual active-set method and its three routes\\
+\textbf{7.5}\ Implementation\\
+\textbf{7.6}\ Verification of the static solvers\\
+\textbf{7.7}\ Contact dynamics\\
+\textbf{7.8}\ Failure modes and limits\\
+\textbf{7.9}\ Summary
+\end{multicols}}
+\hlsection{Explained on the page, in short boxes}
+\noindent Gap, contact force and the three conditions; Lagrange multiplier and KKT; The penalty method; Active set; Linear complementarity problem; BDF2.
+\newpage\thispagestyle{hl}
+\noindent{\sffamily\small\color{hlgrey}Chapter 7 \quad Exact unilateral contact: sparse active sets and BDF2}\par
+\hlsection{Signature figure}
+\hlfig{\hlimg{ch07_obstacle}}{A membrane pressed onto an obstacle: displacement with the contact set outlined (left) and contact force, zero outside the contact set (right).}
+\hlsection{Headline result}
+\begin{hlheadline}On a $40\times40$ model problem the solver finds \ctcObsActive{} active constraints in \ctcObsIt{} iterations. A penalty needs a condition number of \ctcCondAtEight{} to reach a penetration of \ctcPenAtEight, against \ctcCondExact{} for the exact method.\end{hlheadline}
+\hlsection{Main classes and functions}
+{\begin{itemize}\setlength\itemsep{2pt}
+\item \texttt{fea\_engine.contact\_solvers.solve\_contact\_static\_sparse}
+\item \texttt{fea\_engine.contact\_solvers.solve\_contact\_dynamics}
+\item \texttt{fea\_engine.elements.contact.GapContactPenalty}
+\end{itemize}}
+\hlsection{A stated limit}
+\begin{hllimit}No convergence guarantee in general: finite termination is proved for M-matrices, and for an elastic solid the method may cycle or stall, which the solver reports.\end{hllimit}

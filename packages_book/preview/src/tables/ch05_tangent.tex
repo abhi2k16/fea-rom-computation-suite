@@ -1,0 +1,11 @@
+\begin{tabular}{llrrr}
+\toprule
+element & \code{mat} & dofs & $\|K_T-K_{fd}\|/\|K_{fd}\|$ & $\|K_T-K_T^{\top}\|/\|K_T\|$ \\
+\midrule
+\code{Quad4PlaneStressTL} & plane-stress $D$ & 8 & $4.2\times10^{-11}$ & $7.9\times10^{-17}$ \\
+\code{Hex8SolidTL} & \code{Material} & 24 & $9.1\times10^{-11}$ & $1.1\times10^{-16}$ \\
+\code{Tet10SolidTL} & \code{Material} & 30 & $2.5\times10^{-11}$ & 0 \\
+\code{TrussTL2D} & $(E,A)$ & 4 & $2.8\times10^{-11}$ & 0 \\
+\code{Beam2DCorotational} & $(E,A,I)$ & 6 & $6.8\times10^{-11}$ & 0 \\
+\bottomrule
+\end{tabular}

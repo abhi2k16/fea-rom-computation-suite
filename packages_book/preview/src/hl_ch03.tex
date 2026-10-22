@@ -1,0 +1,44 @@
+\newpage\thispagestyle{hl}
+\hlbanner{Part II $\cdot$ Full-order physics}{3}{Linear continua and structural elements}
+\hlsection{The question}
+\begin{hlquote}A thin steel strip is meshed with a standard plate element, loaded at the tip and solved. The answer comes out two hundred times too stiff, and no setting is wrong: the integration rule that looks the most careful is the cause.\end{hlquote}
+\hlsection{Key concepts}
+\begin{description}\setlength\itemsep{5pt}\setlength\parsep{0pt}\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\sffamily\bfseries\color{hlnavy}#1}
+\item[Weak form] equilibrium tested against every admissible virtual displacement
+\item[Shape functions, $\bm B$, $\bm D$] interpolation, strain from nodal values, stress from strain
+\item[Gauss quadrature] the integration rule is a modelling choice, not only a numerical one
+\item[Locking] spurious stiffening: shear in thin plates, volume near incompressibility
+\item[Selective reduced integration] full rule for bending, reduced rule for the term that locks
+\item[Patch test] a constant-strain state must be reproduced on distorted meshes
+\end{description}
+\hlsection{After this chapter you can}
+\begin{itemize}\setlength\itemsep{3pt}
+\item say how a weak form becomes a stiffness and a mass matrix
+\item recognise locking or a wrong integration rule from a test with an independent reference
+\item choose between consistent and lumped mass, knowing the frequency error of each
+\end{itemize}
+\hlsection{In this chapter}
+{\begin{multicols}{2}\raggedright
+\textbf{3.1}\ From the weak form to an element matrix\\
+\textbf{3.2}\ The element families\\
+\textbf{3.3}\ Locking and how the elements avoid it\\
+\textbf{3.4}\ Verification\\
+\textbf{3.5}\ Summary
+\end{multicols}}
+\hlsection{Explained on the page, in short boxes}
+\noindent Strong form, weak form and virtual work; Admissible function and quadrature; Natural frequency and the eigenvalue problem; Plane stress, plane strain and the matrix $\bm D$; Beam and plate theories in one paragraph; What locking looks like inside an element; Incompressibility and the Poisson ratio; Convergence order and mesh refinement; Patch test.
+\newpage\thispagestyle{hl}
+\noindent{\sffamily\small\color{hlgrey}Chapter 3 \quad Linear continua and structural elements}\par
+\hlsection{Signature figure}
+\hlfig{\hlimg{ch03_bending}}{Pure bending of a plane-stress beam: tip deflection divided by the exact value against the number of elements. Linear elements converge from below; quadratic elements are exact.}
+\hlsection{Headline result}
+\begin{hlheadline}On a strip with $h/L=0.01$, the plate element with full integration gives 0.005 of the beam-theory deflection on 4 elements and still 0.602 on 64. With selective reduced integration it gives 1.059 and 1.078.\end{hlheadline}
+\hlsection{From the code}
+\begin{lstlisting}[style=hlpy]
+s = FESystem(mesh, Quad4MindlinPlate())
+s.assemble_stiffness((Db, Ds), integration=rule)   # rule = "full" or "sri"
+# 4 elements:  full 0.005   selective-reduced 1.059
+# 64 elements: full 0.602   selective-reduced 1.078
+\end{lstlisting}
+\hlsection{A stated limit}
+\begin{hllimit}Locking is not removed by the patch test: every element passes it, and the plain 8-node hexahedron still locks.\end{hllimit}

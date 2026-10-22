@@ -1,0 +1,56 @@
+\newpage\thispagestyle{hl}
+\hlbanner{Part I $\cdot$ Architectural foundations}{1}{The design of a decoupled scientific engine}
+\hlsection{The question}
+\begin{hlquote}A colleague asks for a new element and wants it in the static, modal and nonlinear solvers. Where each solver knows its elements, that means opening three solvers and adding a branch to each. Here it takes one subclass and one registry line, and no solver is touched.\end{hlquote}
+\hlsection{Key concepts}
+\begin{description}\setlength\itemsep{5pt}\setlength\parsep{0pt}\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\sffamily\bfseries\color{hlnavy}#1}
+\item[Element interface] the small set of methods that every element provides to the solvers
+\item[Registry] a dictionary from names to element classes, so a new element is one line
+\item[Semi-discrete equation] $\bm M\ddot{\bm u}+\bm C\dot{\bm u}+\bm K\bm u=\bm F$, the one form all solvers work on
+\item[Conformance test] a check that every registered element meets the interface
+\item[One-way dependence] \rom{} works on plain arrays and never imports \fea{}
+\item[Backend] the linear-algebra library, SciPy by default and PyTorch optionally
+\end{description}
+\hlsection{After this chapter you can}
+\begin{itemize}\setlength\itemsep{3pt}
+\item add an element by subclassing and know which interface checks it has to pass
+\item say why \rom{} does not import \fea{}, and how that is checked
+\item explain what the \code{auto} backend costs on sparse systems
+\end{itemize}
+\hlsection{In this chapter}
+{\begin{multicols}{2}\raggedright
+\textbf{1.1}\ One system, many problems\\
+\textbf{1.2}\ The flow and the layers\\
+\textbf{1.3}\ The element interface\\
+\textbf{1.4}\ Extending the engine: a new element\\
+\textbf{1.5}\ The six extension points\\
+\textbf{1.6}\ Does the interface hold? A conformance test\\
+\textbf{1.7}\ Two packages, one direction of dependence\\
+\textbf{1.8}\ Backend dispatch and what it costs\\
+\textbf{1.9}\ Summary
+\end{multicols}}
+\hlsection{Explained on the page, in short boxes}
+\noindent The matrices of the semi-discrete equation; Registry and base class; Why the direction of a dependence matters; Backend; Sparse, dense, direct and iterative.
+\newpage\thispagestyle{hl}
+\noindent{\sffamily\small\color{hlgrey}Chapter 1 \quad The design of a decoupled scientific engine}\par
+\hlsection{Signature figure}
+\hlfig{\hltikz{ch01_flow}}{The flow of an analysis: material, mesh, element, system, solver. The link to \rom{} is plain arrays, never an import.}
+\hlsection{Headline result}
+\begin{hlheadline}\cdeRegPass{} of \cdeRegTotal{} registered elements pass the interface test, and the source of \fea{} has \cdeFeaImportsRom{} imports of \rom{} (and \rom{} has \cdeRomImportsFea{} of \fea{}).\end{hlheadline}
+\hlsection{From the code}
+\begin{lstlisting}[style=hlpy]
+class Bar1D(Element):                         # the new element
+    n_nodes, dofs_per_node, dim, gauss_order = 2, 1, 1, 1
+    dof_names = ("u",)
+    def shape_and_derivs(self, natural_coords):
+        (xi,) = natural_coords
+        return np.array([(1-xi)/2, (1+xi)/2]), np.array([[-0.5, 0.5]])
+    def B_matrix(self, natural_coords, elem_coords):
+        _, dN = self.shape_and_derivs(natural_coords)
+        J, detJ = jacobian(dN, elem_coords)
+        return np.linalg.solve(J, dN), detJ
+
+ELEMENT_REGISTRY["bar1d"] = Bar1D             # the one registry line
+\end{lstlisting}
+\hlsection{A stated limit}
+\begin{hllimit}The interface test is shallow: it checks attributes, shape functions and the presence of the force and tangent methods, not that an element is correct.\end{hllimit}

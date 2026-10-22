@@ -1,0 +1,47 @@
+\newpage\thispagestyle{hl}
+\hlbanner{Part II $\cdot$ Full-order physics}{6}{Computational acceleration: vectorised assembly and batched kernels}
+\hlsection{The question}
+\begin{hlquote}Profile a nonlinear run on a plate of a couple of thousand elements and nearly all the time goes into assembly, and nearly all of that into the Python interpreter, not into arithmetic.\end{hlquote}
+\hlsection{Key concepts}
+\begin{description}\setlength\itemsep{5pt}\setlength\parsep{0pt}\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\sffamily\bfseries\color{hlnavy}#1}
+\item[Vectorisation] array operations in compiled code replace the loop over elements
+\item[Batched kernel] all elements of a block are computed in one call
+\item[Sparse tangent] the tangent stays sparse so Newton can use a sparse factorisation
+\item[Chunking] the batch size is set to bound memory
+\item[Support report] says which blocks cannot be batched, and why
+\item[PyTorch backend] optional; not run where the book is built, and said so
+\end{description}
+\hlsection{After this chapter you can}
+\begin{itemize}\setlength\itemsep{3pt}
+\item decide when the batched path pays off and check it against the loop
+\item read the support report and set the chunk size to bound memory
+\item say what the optional PyTorch backend replaces, and at which sizes it pays off
+\end{itemize}
+\hlsection{In this chapter}
+{\begin{multicols}{2}\raggedright
+\textbf{6.1}\ Where the time goes\\
+\textbf{6.2}\ What the batched path does\\
+\textbf{6.3}\ Using it\\
+\textbf{6.4}\ Verification\\
+\textbf{6.5}\ The optional PyTorch backend\\
+\textbf{6.6}\ Related pieces\\
+\textbf{6.7}\ Limits\\
+\textbf{6.8}\ Summary
+\end{multicols}}
+\hlsection{Explained on the page, in short boxes}
+\noindent Interpreted loops and vectorisation; Assembly as a scatter-add; Batching and chunking; GPUs and floating-point precision.
+\newpage\thispagestyle{hl}
+\noindent{\sffamily\small\color{hlgrey}Chapter 6 \quad Computational acceleration: vectorised assembly and batched kernels}\par
+\hlsection{Signature figure}
+\hlfig{\hlimg{ch06_scaling}}{Assembly time of the element loop and the batched route against the number of elements (left), and the ratio of the two (right).}
+\hlsection{Headline result}
+\begin{hlheadline}A whole Newton solve on a plate of \cbkNewtonNE{} elements and \cbkNewtonN{} unknowns takes \cbkNewtonBatched{} s on the batched path against \cbkNewtonDefault{} s on the default path, a factor of \cbkNewtonRatio{}, and the solutions agree to \cbkNewtonDiff.\end{hlheadline}
+\hlsection{Main classes and functions}
+{\begin{itemize}\setlength\itemsep{2pt}
+\item \texttt{fea\_engine.solver.FESystem}
+\item \texttt{fea\_engine.newton\_options.NewtonOptions}
+\item \texttt{fea\_engine.elements.nonlinear\_solids.Tet10SolidTL}
+\item \texttt{fea\_engine.torch\_sparse\_solver.torch\_sparse\_cg\_solve}
+\end{itemize}}
+\hlsection{A stated limit}
+\begin{hllimit}The gain depends on the element: arithmetic-heavy hexahedra gain less than interpreter-bound plane elements, and once assembly is fast the sparse solve can dominate.\end{hllimit}

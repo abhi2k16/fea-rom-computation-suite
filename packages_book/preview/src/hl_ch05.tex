@@ -1,0 +1,45 @@
+\newpage\thispagestyle{hl}
+\hlbanner{Part II $\cdot$ Full-order physics}{5}{Material and geometric nonlinearity}
+\hlsection{The question}
+\begin{hlquote}A shallow two-bar truss is pushed down at its apex. At first it resists, then at a certain load it gives way and snaps through, and a solver that steps up the load simply stops converging just above that load.\end{hlquote}
+\hlsection{Key concepts}
+\begin{description}\setlength\itemsep{5pt}\setlength\parsep{0pt}\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\sffamily\bfseries\color{hlnavy}#1}
+\item[Newton iteration] residual and tangent stiffness, shared by every driver
+\item[Total-Lagrangian kinematics] Green--Lagrange strain is unchanged by rigid rotation
+\item[Tangent consistency] the tangent must be the derivative of the force, checked by finite differences
+\item[Hyperelasticity, $J_2$ plasticity] stored-energy law; permanent strain with history variables
+\item[Limit point] the load reaches a maximum and the tangent is singular
+\item[Path following] load control, displacement control, arc length and Koiter--Newton
+\end{description}
+\hlsection{After this chapter you can}
+\begin{itemize}\setlength\itemsep{3pt}
+\item state the Newton iteration the drivers share and verify force and tangent by rotation invariance and finite differences
+\item choose among four path-following methods for a response with a limit point
+\item check a plastic load cycle against a hand solution
+\end{itemize}
+\hlsection{In this chapter}
+{\begin{multicols}{2}\raggedright
+\textbf{5.1}\ Why a nonlinear solver is different\\
+\textbf{5.2}\ Total-Lagrangian kinematics\\
+\textbf{5.3}\ Material nonlinearity\\
+\textbf{5.4}\ Verification of the elements\\
+\textbf{5.5}\ Following the response\\
+\textbf{5.6}\ Solver settings\\
+\textbf{5.7}\ Summary
+\end{multicols}}
+\hlsection{Explained on the page, in short boxes}
+\noindent Residual, tangent and Newton's method; Tangent stiffness; Reference and current configuration; Elastic, hyperelastic and plastic; Why the tangent has to be consistent; Limit points and path following; Limit point and snap-through; Convergence criteria and line search.
+\newpage\thispagestyle{hl}
+\noindent{\sffamily\small\color{hlgrey}Chapter 5 \quad Material and geometric nonlinearity}\par
+\hlsection{Signature figure}
+\hlfig{\hlimg{ch05_vonmises}}{Load against apex deflection of the two-bar truss: the closed form, displacement control and arc length follow the curve past the load maximum.}
+\hlsection{Headline result}
+\begin{hlheadline}Load control fails at $1.1\,P_{max}$, because no equilibrium state of that branch exists. Displacement control follows the whole curve to \cnlTrussErrDC{} (relative error against the closed form) and arc length to \cnlTrussErrAL.\end{hlheadline}
+\hlsection{From the code}
+\begin{lstlisting}[style=hlpy]
+opts = NewtonOptions(tol=1e-10, max_iter=40, line_search=True)
+# one options object for a driver; the same keywords are shared
+# by load control, displacement control, arc length and Koiter-Newton
+\end{lstlisting}
+\hlsection{A stated limit}
+\begin{hllimit}Plasticity is small-strain with isotropic linear hardening: there is no kinematic hardening, rate dependence or finite-strain plasticity.\end{hllimit}
