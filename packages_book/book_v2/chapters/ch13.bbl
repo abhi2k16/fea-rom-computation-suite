@@ -1,0 +1,69 @@
+\begin{thebibliography}{8}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Farhat et~al.(2014)Farhat, Avery, Chapman, and
+  Cortial]{farhat2014ecsw}
+C.~Farhat, P.~Avery, T.~Chapman, and J.~Cortial.
+\newblock Dimensional reduction of nonlinear finite element dynamic models with
+  finite rotations and energy-based mesh sampling and weighting for
+  computational efficiency.
+\newblock \emph{International Journal for Numerical Methods in Engineering},
+  98\penalty0 (9), 2014.
+
+\bibitem[Farhat et~al.(2015)Farhat, Chapman, and Avery]{farhat2015ecsw}
+Charbel Farhat, Todd Chapman, and Philip Avery.
+\newblock Structure-preserving, stability, and accuracy properties of the
+  energy-conserving sampling and weighting method for the hyper reduction of
+  nonlinear finite element dynamic models.
+\newblock \emph{International Journal for Numerical Methods in Engineering},
+  102\penalty0 (5):\penalty0 1077--1110, 2015.
+
+\bibitem[Lawson and Hanson(1995)]{lawson1995lsq}
+Charles~L. Lawson and Richard~J. Hanson.
+\newblock \emph{Solving Least Squares Problems}, volume~15 of \emph{Classics in
+  Applied Mathematics}.
+\newblock SIAM, Philadelphia, 1995.
+\newblock \doi{10.1137/1.9781611971217}.
+
+\bibitem[Chaturantabut and Sorensen(2010)]{chaturantabut2010deim}
+Saifon Chaturantabut and Danny~C. Sorensen.
+\newblock Nonlinear model reduction via discrete empirical interpolation.
+\newblock \emph{SIAM Journal on Scientific Computing}, 32\penalty0
+  (5):\penalty0 2737--2764, 2010.
+
+\bibitem[Drma{\v{c}} and Gugercin(2016)]{drmac2016qdeim}
+Zlatko Drma{\v{c}} and Serkan Gugercin.
+\newblock A new selection operator for the discrete empirical interpolation
+  method -- improved a priori error bound and extensions.
+\newblock \emph{SIAM Journal on Scientific Computing}, 38\penalty0
+  (2):\penalty0 A631--A648, 2016.
+\newblock \doi{10.1137/15M1019271}.
+
+\bibitem[Balajewicz et~al.(2016)Balajewicz, Amsallem, and
+  Farhat]{balajewicz2016contact}
+Maciej Balajewicz, David Amsallem, and Charbel Farhat.
+\newblock Projection-based model reduction for contact problems.
+\newblock \emph{International Journal for Numerical Methods in Engineering},
+  106\penalty0 (8):\penalty0 644--663, 2016.
+
+\bibitem[Fauqu{\'e} et~al.(2018)Fauqu{\'e}, Rami{\`e}re, and
+  Ryckelynck]{fauque2018hybrid}
+Jules Fauqu{\'e}, Isabelle Rami{\`e}re, and David Ryckelynck.
+\newblock Hybrid hyper-reduced modeling for contact mechanics problems.
+\newblock \emph{International Journal for Numerical Methods in Engineering},
+  115\penalty0 (1):\penalty0 117--139, 2018.
+
+\bibitem[Nikiema et~al.(2026)Nikiema, Denis, Matzke, Gonzalez, Van Der~Veen,
+  and Mencik]{nikiema2026assembly}
+P.~Nikiema, V.~Denis, F.~Matzke, S.~Gonzalez, S.~Van Der~Veen, and J.-M.
+  Mencik.
+\newblock Model order reduction for structural assembly simulations with
+  contact and geometric nonlinearities.
+\newblock \emph{Finite Elements in Analysis and Design}, 260:\penalty0 104605,
+  2026.
+
+\end{thebibliography}

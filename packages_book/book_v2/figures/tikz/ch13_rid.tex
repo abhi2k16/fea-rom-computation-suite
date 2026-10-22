@@ -1,0 +1,11 @@
+\begin{tikzpicture}[font=\sffamily\scriptsize]
+\foreach \i in {0,...,11}{\foreach \j in {0,...,4}{ \draw[gray!40] (\i*0.8,\j*0.6+0.6) rectangle ++(0.8,0.6); }}
+\foreach \i in {4,...,8}{\foreach \j in {0,...,2}{ \fill[violet!20] (\i*0.8,\j*0.6+0.6) rectangle ++(0.8,0.6); \draw[violet!60!black] (\i*0.8,\j*0.6+0.6) rectangle ++(0.8,0.6);}}
+\foreach \i in {5,...,8}{\foreach \j in {1,...,3}{ \fill[violet!70!black] (\i*0.8,\j*0.6) circle (1.4pt);}}
+\foreach \i in {4,9}{\foreach \j in {1,...,3}{ \draw[violet!70!black] (\i*0.8,\j*0.6) circle (1.6pt);}}
+\foreach \i in {4,...,9}{ \draw[violet!70!black] (\i*0.8,3*0.6) circle (1.6pt);}
+\draw[very thick,red!70!black] (-0.3,0.15) -- (9.9,0.15); \node[red!70!black,anchor=west] at (9.95,0.15) {obstacle};
+\foreach \i in {5,...,8}{ \draw[red!70!black,-{Latex[length=1.6mm]}] (\i*0.8,0.5) -- (\i*0.8,0.2);}
+\draw[decorate,decoration={brace,amplitude=3pt}] (3.2,3.5) -- (7.2,3.5) node[midway,above=3pt] {reduced integration domain (RID)};
+\node[anchor=west,align=left] at (10.2,2.4) {\textbf{\textcolor{violet!70!black}{$\bullet$}} $P$: balance equation written\\\textbf{\textcolor{violet!70!black}{$\circ$}} $\mathrm{ext}\setminus P$: interface $\Gamma_I$,\\\phantom{\textbf{$\circ$}} data imposed from the basis\\\textcolor{red!70!black}{$\downarrow$} contact rows inside $P$\\unshaded cells: not evaluated};
+\end{tikzpicture}

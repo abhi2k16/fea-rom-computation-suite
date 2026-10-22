@@ -1,0 +1,7 @@
+\begin{tikzpicture}[font=\sffamily\scriptsize,node distance=8mm and 10mm]
+\node[cmFE,text width=3.1cm] (cb) {Craig--Bampton model\\$n_b$ interface unknowns\\+ $n_m$ modes per part};
+\node[cmPLAIN,right=of cb,text width=3.6cm] (eig) {interface eigenproblem\\$\bm K^r_{bb}\bm x=\lambda\bm M^r_{bb}\bm x$\\or Gram--Schmidt of mode rows};
+\node[cmROM,right=of eig,text width=3.3cm] (red) {$\bm u_b=\bm\Psi_\Gamma\bm q_\Gamma$\\$n_\Gamma\ll n_b$ interface\\coordinates};
+\node[cmCERT,below=9mm of eig,text width=5.0cm] (chk) {frequency errors and MAC against the full model;\\with all interface modes kept the model is unchanged};
+\draw[cmFlow] (cb)--(eig); \draw[cmFlow] (eig)--(red); \draw[cmFlow] (red)--++(0,-9mm)-|(chk.east);
+\end{tikzpicture}

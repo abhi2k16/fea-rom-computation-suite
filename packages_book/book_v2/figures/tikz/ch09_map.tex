@@ -1,0 +1,16 @@
+\begin{tikzpicture}[node distance=7mm and 9mm,font=\sffamily\scriptsize]
+\node[cmFE,text width=3.0cm] (full) {full model\\$\bm M,\bm C,\bm K$, port $\bm b,\bm c$};
+\node[cmPLAIN,right=14mm of full,text width=3.3cm,yshift=14mm] (mod) {modal truncation\\(pre-reduction)};
+\node[cmROM,right=of mod,text width=3.4cm] (bt) {balanced truncation\\Lyapunov solves, Hankel values\\bound $2\sum_{k>r}\sigma_k$};
+\node[cmROM,right=14mm of full,text width=3.3cm,yshift=-14mm] (kry) {Krylov / Arnoldi\\moments at $s_0$\\first-order, 2 sided possible};
+\node[cmROM,right=of kry,text width=3.4cm] (soar) {SOAR\\second-order, congruence\\passive by construction};
+\node[cmCERT,right=10mm of bt,text width=2.8cm] (chk) {check\\held-out response,\\poles, passivity};
+\draw[cmFlow] (full.east)--++(5mm,0)|-(mod.west);
+\draw[cmFlow] (full.east)--++(5mm,0)|-(kry.west);
+\draw[cmFlow] (mod)--(bt);
+\draw[cmFlow] (kry)--(soar);
+\draw[cmFlow] (bt)--(chk);
+\draw[cmFlow] (soar.east)--++(5mm,0)-|(chk.south);
+\node[cmWARN,below=8mm of kry,text width=3.3cm,xshift=0mm] (wn) {large sparse model: no dense Lyapunov solve};
+\draw[cmFb] (full.south)--++(0,-3mm)-|(wn.west) ;
+\end{tikzpicture}

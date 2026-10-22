@@ -1,0 +1,129 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\@writefile{toc}{\contentsline {chapter}{\numberline {8}Projection-based reduction: POD, Galerkin and affine sweeps}{75}{chapter.8}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:pod}{{8}{75}{Projection-based reduction: POD, Galerkin and affine sweeps}{chapter.8}{}}
+\newlabel{ch:pod@cref}{{[chapter][8][]8}{[1][75][]75}}
+\@writefile{toc}{\contentsline {section}{\numberline {8.1}The problem}{75}{section.8.1}\protected@file@percent }
+\newlabel{sec:pod-problem}{{8.1}{75}{The problem}{section.8.1}{}}
+\newlabel{sec:pod-problem@cref}{{[section][1][8]8.1}{[1][75][]75}}
+\newlabel{eq:pod-fom}{{8.1}{75}{The problem}{equation.8.1}{}}
+\newlabel{eq:pod-fom@cref}{{[equation][1][8]8.1}{[1][75][]75}}
+\@writefile{toc}{\contentsline {paragraph}{The model problem.}{75}{section*.150}\protected@file@percent }
+\citation{berkooz1993pod,hesthaven2016rb}
+\@writefile{toc}{\contentsline {section}{\numberline {8.2}Mathematical structure}{76}{section.8.2}\protected@file@percent }
+\newlabel{sec:pod-math}{{8.2}{76}{Mathematical structure}{section.8.2}{}}
+\newlabel{sec:pod-math@cref}{{[section][2][8]8.2}{[1][76][]76}}
+\@writefile{toc}{\contentsline {paragraph}{Snapshots and POD.}{76}{section*.151}\protected@file@percent }
+\newlabel{eq:pod-ey}{{8.2}{76}{Snapshots and POD}{equation.8.2}{}}
+\newlabel{eq:pod-ey@cref}{{[equation][2][8]8.2}{[1][76][]76}}
+\@writefile{toc}{\contentsline {paragraph}{Weighted POD.}{76}{section*.152}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Galerkin projection.}{76}{section*.153}\protected@file@percent }
+\newlabel{eq:pod-galerkin}{{8.3}{76}{Galerkin projection}{equation.8.3}{}}
+\newlabel{eq:pod-galerkin@cref}{{[equation][3][8]8.3}{[1][76][]76}}
+\@writefile{toc}{\contentsline {paragraph}{Affine parameter dependence.}{76}{section*.155}\protected@file@percent }
+\newlabel{eq:pod-affine}{{8.4}{76}{Affine parameter dependence}{equation.8.4}{}}
+\newlabel{eq:pod-affine@cref}{{[equation][4][8]8.4}{[1][76][]76}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8.1}{\ignorespaces Two projections of the same full-order solution onto the same subspace. The Euclidean projection is what the POD error \textup  {\hbox {\mathsurround \z@ \normalfont  (\ignorespaces \ref  {eq:pod-ey}\unskip \@@italiccorr )}} bounds; the Galerkin solution minimises the energy-norm error instead, so the two points differ and so do the two errors. Schematic, not computed.\relax }}{77}{figure.caption.154}\protected@file@percent }
+\newlabel{fig:pod-projection}{{8.1}{77}{Two projections of the same full-order solution onto the same subspace. The Euclidean projection is what the POD error \eqref {eq:pod-ey} bounds; the Galerkin solution minimises the energy-norm error instead, so the two points differ and so do the two errors. Schematic, not computed.\relax }{figure.caption.154}{}}
+\newlabel{fig:pod-projection@cref}{{[figure][1][8]8.1}{[1][76][]77}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8.2}{\ignorespaces The offline--online pipeline of \Cref  {lst:pod-run}. Blue: the full-order model; violet: the reduced-order model; grey: plain data; green: error measure; dashed: optional or validation only. Only the lift touches the full dimension $n$ online.\relax }}{78}{figure.caption.156}\protected@file@percent }
+\newlabel{fig:pod-pipeline}{{8.2}{78}{The offline--online pipeline of \Cref {lst:pod-run}. Blue: the full-order model; violet: the reduced-order model; grey: plain data; green: error measure; dashed: optional or validation only. Only the lift touches the full dimension $n$ online.\relax }{figure.caption.156}{}}
+\newlabel{fig:pod-pipeline@cref}{{[figure][2][8]8.2}{[1][78][]78}}
+\@writefile{toc}{\contentsline {section}{\numberline {8.3}Implementation in the packages}{78}{section.8.3}\protected@file@percent }
+\newlabel{sec:pod-impl}{{8.3}{78}{Implementation in the packages}{section.8.3}{}}
+\newlabel{sec:pod-impl@cref}{{[section][3][8]8.3}{[1][78][]78}}
+\newlabel{lst:pod-run}{{8.1}{78}{Offline--online pipeline on the two-region beam (matrices K1, K2 are the dense free-dof blocks; theta is the coefficient function)}{lstlisting.8.1}{}}
+\newlabel{lst:pod-run@cref}{{[listing][1][8]8.1}{[1][78][]78}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {8.1}Offline--online pipeline on the two-region beam (matrices K1, K2 are the dense free-dof blocks; theta is the coefficient function).}{78}{lstlisting.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8.4}Verification}{79}{section.8.4}\protected@file@percent }
+\newlabel{sec:pod-verif}{{8.4}{79}{Verification}{section.8.4}{}}
+\newlabel{sec:pod-verif@cref}{{[section][4][8]8.4}{[1][79][]79}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4.1}Singular values and the held-out error}{79}{subsection.8.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4.2}Weighted against Euclidean POD}{79}{subsection.8.4.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8.3}{\ignorespaces Left: normalised singular values of the 60\xspace  training snapshots. Right: worst relative error on 40\xspace  unseen parameters against the number of modes $r$, for the Euclidean projection error and for the Galerkin solve with Euclidean and with mass-weighted POD. Produced by \texttt  {scripts/ch08\_assets.py}.\relax }}{80}{figure.caption.158}\protected@file@percent }
+\newlabel{fig:pod-pod}{{8.3}{80}{Left: normalised singular values of the \cpdNSnap training snapshots. Right: worst relative error on \cpdNTest unseen parameters against the number of modes $r$, for the Euclidean projection error and for the Galerkin solve with Euclidean and with mass-weighted POD. Produced by \texttt {scripts/ch08\_assets.py}.\relax }{figure.caption.158}{}}
+\newlabel{fig:pod-pod@cref}{{[figure][3][8]8.3}{[1][79][]80}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4.3}How the snapshots are chosen}{80}{subsection.8.4.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8.4}{\ignorespaces Median Galerkin state error on 40\xspace  unseen parameters against the number of snapshots, optimal Latin hypercube against random sampling, five repetitions each.\relax }}{80}{figure.caption.159}\protected@file@percent }
+\newlabel{fig:pod-snap}{{8.4}{80}{Median Galerkin state error on \cpdNTest unseen parameters against the number of snapshots, optimal Latin hypercube against random sampling, five repetitions each.\relax }{figure.caption.159}{}}
+\newlabel{fig:pod-snap@cref}{{[figure][4][8]8.4}{[1][80][]80}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4.4}Modal analysis in the subspace}{80}{subsection.8.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4.5}Offline and online cost}{81}{subsection.8.4.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8.5}{\ignorespaces Time per query: reduced solve, full solve with affine assembly, full solve with re-assembly, at two sizes of the beam. Logarithmic axis; single runs on the sandbox used for the figures of this chapter (2 CPUs).\relax }}{81}{figure.caption.161}\protected@file@percent }
+\newlabel{fig:pod-sweep}{{8.5}{81}{Time per query: reduced solve, full solve with affine assembly, full solve with re-assembly, at two sizes of the beam. Logarithmic axis; single runs on \machine .\relax }{figure.caption.161}{}}
+\newlabel{fig:pod-sweep@cref}{{[figure][5][8]8.5}{[1][81][]81}}
+\@writefile{toc}{\contentsline {paragraph}{What the figures include.}{81}{section*.163}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8.6}{\ignorespaces Cumulative cost of $Q$ queries. The reduced model pays $T_{\mathrm  {off}}$ first and less per query afterwards; the lines cross at the break-even $Q^\ast $. Schematic: measured values are in \Cref  {tab:pod-cost}.\relax }}{82}{figure.caption.164}\protected@file@percent }
+\newlabel{fig:pod-breakeven}{{8.6}{82}{Cumulative cost of $Q$ queries. The reduced model pays $T_{\mathrm {off}}$ first and less per query afterwards; the lines cross at the break-even $Q^\ast $. Schematic: measured values are in \Cref {tab:pod-cost}.\relax }{figure.caption.164}{}}
+\newlabel{fig:pod-breakeven@cref}{{[figure][6][8]8.6}{[1][81][]82}}
+\@writefile{toc}{\contentsline {section}{\numberline {8.5}Limits and failure modes}{82}{section.8.5}\protected@file@percent }
+\newlabel{sec:pod-limits}{{8.5}{82}{Limits and failure modes}{section.8.5}{}}
+\newlabel{sec:pod-limits@cref}{{[section][5][8]8.5}{[1][82][]82}}
+\@writefile{toc}{\contentsline {section}{\numberline {8.6}Summary}{82}{section.8.6}\protected@file@percent }
+\newlabel{sec:pod-summary}{{8.6}{82}{Summary}{section.8.6}{}}
+\newlabel{sec:pod-summary@cref}{{[section][6][8]8.6}{[1][82][]82}}
+\bibstyle{unsrtnat}
+\bibdata{refs}
+\bibcite{berkooz1993pod}{{1}{1993}{{Berkooz et~al.}}{{Berkooz, Holmes, and Lumley}}}
+\bibcite{hesthaven2016rb}{{2}{2016}{{Hesthaven et~al.}}{{Hesthaven, Rozza, and Stamm}}}
+\newlabel{sec:pod-exercises}{{8.6}{83}{Exercises}{section*.165}{}}
+\newlabel{sec:pod-exercises@cref}{{[section][6][8]8.6}{[1][82][]83}}
+\@writefile{toc}{\contentsline {section}{References}{83}{section*.166}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {8.1}{\ignorespaces Where the concepts of this chapter live in the repository (tag \texttt  {release-fea1.0.1-rom0.2.0}). The last column says whether the chapter's script \texttt  {scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.\relax }}{84}{table.caption.157}\protected@file@percent }
+\newlabel{tab:pod-map}{{8.1}{84}{Where the concepts of this chapter live in the repository (tag \booktag ). The last column says whether the chapter's script \texttt {scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.\relax }{table.caption.157}{}}
+\newlabel{tab:pod-map@cref}{{[table][1][8]8.1}{[1][79][]84}}
+\@writefile{lot}{\contentsline {table}{\numberline {8.2}{\ignorespaces Relative error of the lowest frequencies of the reduced eigenproblem against the full model, for bases of $r$ POD modes of the static snapshots (a dash: fewer than five modes in the basis).\relax }}{84}{table.caption.160}\protected@file@percent }
+\newlabel{tab:pod-modal}{{8.2}{84}{Relative error of the lowest frequencies of the reduced eigenproblem against the full model, for bases of $r$ POD modes of the static snapshots (a dash: fewer than five modes in the basis).\relax }{table.caption.160}{}}
+\newlabel{tab:pod-modal@cref}{{[table][2][8]8.2}{[1][81][]84}}
+\@writefile{lot}{\contentsline {table}{\numberline {8.3}{\ignorespaces Offline cost and per-query cost on two sizes of the beam; break-even is the offline cost divided by the saving per query against re-assembly. Single runs on the sandbox used for the figures of this chapter (2 CPUs).\relax }}{85}{table.caption.162}\protected@file@percent }
+\newlabel{tab:pod-cost}{{8.3}{85}{Offline cost and per-query cost on two sizes of the beam; break-even is the offline cost divided by the saving per query against re-assembly. Single runs on \machine .\relax }{table.caption.162}{}}
+\newlabel{tab:pod-cost@cref}{{[table][3][8]8.3}{[1][81][]85}}
+\@setckpt{chapters/ch08}{
+\setcounter{page}{86}
+\setcounter{equation}{4}
+\setcounter{enumi}{7}
+\setcounter{enumii}{0}
+\setcounter{enumiii}{0}
+\setcounter{enumiv}{0}
+\setcounter{footnote}{0}
+\setcounter{mpfootnote}{0}
+\setcounter{part}{3}
+\setcounter{chapter}{8}
+\setcounter{section}{6}
+\setcounter{subsection}{0}
+\setcounter{subsubsection}{0}
+\setcounter{paragraph}{0}
+\setcounter{subparagraph}{0}
+\setcounter{figure}{6}
+\setcounter{table}{3}
+\setcounter{parentequation}{0}
+\setcounter{LT@tables}{2}
+\setcounter{LT@chunks}{3}
+\setcounter{caption@flags}{0}
+\setcounter{continuedfloat}{0}
+\setcounter{subfigure}{0}
+\setcounter{subtable}{0}
+\setcounter{tcbbreakpart}{1}
+\setcounter{tcblayer}{0}
+\setcounter{tcolorbox@number}{39}
+\setcounter{tcbrastercolumn}{1}
+\setcounter{tcbrasterrow}{1}
+\setcounter{tcbrasternum}{1}
+\setcounter{tcbraster}{0}
+\setcounter{lstnumber}{20}
+\setcounter{tcblisting}{0}
+\setcounter{NAT@ctr}{2}
+\setcounter{Item}{52}
+\setcounter{Hfootnote}{0}
+\setcounter{bookmark@seq@number}{86}
+\setcounter{proposition}{0}
+\setcounter{definition}{0}
+\setcounter{example}{0}
+\setcounter{remark}{0}
+\setcounter{tcb@cnt@algbox}{2}
+\setcounter{algline}{13}
+\setcounter{lstlisting}{1}
+\setcounter{section@level}{1}
+}

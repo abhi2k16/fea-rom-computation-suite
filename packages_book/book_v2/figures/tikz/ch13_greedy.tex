@@ -1,0 +1,10 @@
+\begin{tikzpicture}[node distance=8mm and 10mm,font=\sffamily\scriptsize]
+\node[cmPLAIN,text width=3.4cm] (c) {candidate parameters $\gamma$\\(obstacles, loads)};
+\node[cmFE,right=of c,text width=3.4cm] (f) {full-order contact solve\\at the chosen $\gamma$};
+\node[cmROM,right=of f,text width=3.4cm] (r) {rebuild the ROM\\from all snapshots so far};
+\node[cmCERT,below=12mm of r,text width=4.4cm] (i) {indicator for every remaining $\gamma$\\$I=\|\min(\bm B\bm u_r-\bm c,\bm0)\|^2$\\(reduced solve + one product)};
+\node[cmPLAIN,below=12mm of f,text width=3.4cm] (a) {choose $\gamma^\ast=\arg\max I$};
+\node[cmDASH,below=12mm of c,text width=3.4cm] (s) {stop if $\max I\le\mathrm{tol}$, or\\$\le \mathrm{rel\_tol}\cdot I^{(1)}_{\max}$, or\\the snapshot budget is spent};
+\draw[cmFlow] (c)--(f); \draw[cmFlow] (f)--(r); \draw[cmFlow] (r)--(i); \draw[cmFlow] (i)--(a); \draw[cmFlow] (a)--(f);
+\draw[cmFlow] (a)--(s);
+\end{tikzpicture}

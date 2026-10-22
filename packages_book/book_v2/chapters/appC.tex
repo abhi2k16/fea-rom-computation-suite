@@ -1,0 +1,175 @@
+\chapter{Glossary}\label{ch:gloss}
+
+\label{sec:gloss}
+
+The entries below cover the terms that the chapters and appendices use, in alphabetical order. Each entry gives the meaning in which the term is used in this book and, where useful, the chapter in which it is developed. Abbreviations and notation are listed at the front of the book.
+
+\begin{description}\small
+\item[A priori bound] An error bound known before the reduced model is evaluated: for balanced truncation, twice the sum of the discarded Hankel singular values (Chapter~\ref{ch:bt}).
+\item[Active set] The set of contact constraints that are closed (zero gap, positive force) in a solution (Chapter~\ref{ch:contact}).
+\item[Adjoint system] The linear system $\bm K_{\mathrm{eff}}^T\bm\lambda=-\bm g$ whose single solution gives the gradient of a loss with respect to every parameter, whatever their number (Appendix~\ref{ch:diff}).
+\item[Affine decomposition] A parameter-dependent matrix written as a sum of fixed matrices with scalar parameter-dependent coefficients, so that projection is done once offline (Chapter~\ref{ch:pod}).
+\item[Algorithm box] The framed pseudocode of a chapter, followed by its cost, the conditions under which it fails, the code that implements it and where it is verified.
+\item[Anchor, code anchor] A reference of the form \texttt{[Code: package.module.name]}: the importable name of the code that a passage describes, valid for the pinned release.
+\item[Arc-length method] A path-following driver for nonlinear statics that constrains a combination of load and displacement increments, so that it can pass a limit point (Chapter~\ref{ch:nonlin}).
+\item[Assembly] The summation of element matrices and vectors into the global matrices and vectors through the element-to-dof map (Chapter~\ref{ch:mesh}, Chapter~\ref{ch:batch}).
+\item[Automatic differentiation (autograd)] Computation of exact derivatives of code by recording its operations; used for element tangents and for gradients through a solve (Appendix~\ref{ch:diff}).
+\item[B-bar element] A solid element in which the volumetric part of the strain is replaced by its element average (mean dilatation) to avoid volumetric locking (Chapter~\ref{ch:elem}).
+\item[Backbone] The curve of the frequency of a nonlinear normal mode against its amplitude (Chapter~\ref{ch:nonint}).
+\item[Backend] The library that carries out a piece of linear algebra: SciPy (default), PyTorch, or an automatic choice; selected by the argument \code{backend} (Chapter~\ref{ch:arch}, Chapter~\ref{ch:batch}).
+\item[Balanced truncation] Reduction of a stable linear system by discarding the states that are weakly controllable and weakly observable, in a basis where the two Gramians are equal (Chapter~\ref{ch:bt}).
+\item[Batched path, batched kernel] Assembly of all elements of a block with array operations instead of a loop over elements; the loop remains the default and the reference (Chapter~\ref{ch:batch}).
+\item[BDF2] The second-order backward-difference time integrator used for contact dynamics (Chapter~\ref{ch:contact}).
+\item[Beam element] A one-dimensional structural element with bending: Euler--Bernoulli (no shear deformation) or Reissner (with shear deformation) (Chapter~\ref{ch:elem}).
+\item[Block (of a mesh)] The elements of one type with one material, assembled together; the unit of batching and of chunking (Chapter~\ref{ch:mesh}, Chapter~\ref{ch:batch}).
+\item[Break-even] The number of queries at which the offline cost of a reduced model is repaid by the saving per query, the lift included (Appendix~\ref{ch:conv}).
+\item[Cache] A quantity computed once per block and reused: reference shape-function gradients, the sparse pattern and its position map (Chapter~\ref{ch:batch}).
+\item[Certified bound] An error bound that holds wherever it is finite, built from the residual of the reduced solution and a lower bound of the smallest singular value of the system matrix (Chapter~\ref{ch:freq}).
+\item[Chunking] Splitting the elements of a block into pieces whose estimated working memory stays under a budget (Chapter~\ref{ch:batch}).
+\item[CMS] Component mode synthesis: reduction of substructures with physical interface unknowns (Craig--Bampton and relatives) (Chapter~\ref{ch:cms}).
+\item[Collocated port] An input force and an output velocity at the same degree of freedom, so that their product is the power delivered to the structure (Chapter~\ref{ch:bt}).
+\item[Complementarity condition] The relation that a contact force is zero where the gap is open, and the gap is zero where the force is positive (Chapter~\ref{ch:contact}).
+\item[Complex-step derivative] A derivative from $\mathrm{Im}\,\bm f(\bm u+\mathrm i h)/h$, which has no subtractive cancellation and so allows a step of the order of $10^{-30}$ (Appendix~\ref{ch:diff}).
+\item[Condensed problem] The contact problem after the free displacements have been eliminated, leaving the contact forces as unknowns (Chapter~\ref{ch:contact}).
+\item[Conformance test] A test that every registered element honours the interface of the engine: it is an \code{Element}, its sizes are positive integers, and for interpolated elements the shape functions sum to one and the derivative array has the right shape (Chapter~\ref{ch:arch}).
+\item[Conjugate gradients] An iterative solver for symmetric positive definite systems that uses only matrix--vector products; used with a Jacobi preconditioner in the PyTorch route (Chapter~\ref{ch:batch}).
+\item[Consistent mass matrix] The mass matrix obtained from the same shape functions as the stiffness, in contrast to a lumped one (Chapter~\ref{ch:elem}).
+\item[Consistent tangent] A tangent stiffness that is the exact derivative of the internal force that is used, so that Newton's method converges quadratically (Chapter~\ref{ch:nonlin}).
+\item[Contact set] A group of contact pairs handled in one call, with a spatial search for candidate pairs (Chapter~\ref{ch:batch}).
+\item[Contact-aware ECSW] ECSW whose training keeps the elements that carry contact, so that the reduced model sees the contact condition (Chapter~\ref{ch:hyper}).
+\item[Convergence order, observed order] The exponent $p$ with which an error falls, $e\sim h^p$, estimated from successive refinements and compared with the theory (Appendix~\ref{ch:conv}).
+\item[Correction (additive)] A trainable term $\bm f_\theta(\bm u)$ added to the internal force of a model and fitted to reference data (Appendix~\ref{ch:diff}).
+\item[Craig--Bampton] Substructure reduction with fixed-interface normal modes and static constraint modes of the interface (Chapter~\ref{ch:cms}).
+\item[Critical time step] The largest step for which an explicit integrator is stable, $2/\omega_{\max}$ for the central difference method (Chapter~\ref{ch:dyn}).
+\item[Damping, Rayleigh] A damping matrix $\bm C=\alpha\bm M+\beta\bm K$ (Chapter~\ref{ch:dyn}).
+\item[Decoupled engine] The design of \fea{} and \rom{}: the second depends on the first only through plain arrays and callables, never through imports (Chapter~\ref{ch:arch}).
+\item[Degree of freedom (dof)] One scalar unknown of the discrete model, such as a displacement component at a node.
+\item[DEIM, QDEIM, UDEIM] Approximation of a nonlinear force from its values at a few selected degrees of freedom; QDEIM selects them by a QR factorisation, UDEIM is an unsymmetric variant compared in Chapter~\ref{ch:verif} (Chapter~\ref{ch:hyper}).
+\item[Dense reference solver] A small, direct solver for contact (active set, Lemke, projected Gauss--Seidel) against which the sparse solver is checked (Chapter~\ref{ch:contact}).
+\item[Dispatcher] Code that picks one of several implementations at call time: the choice of linear-algebra backend (Chapter~\ref{ch:arch}) or of mesh generator from the element formulation (Chapter~\ref{ch:mesh}).
+\item[Domain partitioning] In this book, either the composition of a mesh from blocks (Chapter~\ref{ch:mesh}) or the static condensation of a linear zone onto its interface with a nonlinear zone (Chapter~\ref{ch:hyper}).
+\item[Dual basis] A basis for the contact forces (multipliers) of a reduced contact model, which must stay non-negative (Chapter~\ref{ch:hyper}).
+\item[ECSW] Energy-conserving sampling and weighting: a weighted sum over a few elements that reproduces the reduced internal force (Chapter~\ref{ch:hyper}).
+\item[Elastica] The large-deflection curve of a slender elastic rod; a benchmark with a known solution (Chapter~\ref{ch:nonlin}).
+\item[Element formulation] A class that supplies shape functions, stiffness, internal force, tangent and mass for one kind of element (Chapter~\ref{ch:arch}, Chapter~\ref{ch:elem}).
+\item[Energy gain (contact dynamics)] The growth of the discrete energy during an impact, an artefact of the time integration and not of the physics (Chapter~\ref{ch:contact}).
+\item[Equilibrium path] The curve of the response of a nonlinear structure against the load parameter (Chapter~\ref{ch:nonlin}).
+\item[Explicit integration] A time step that computes the new state from known quantities only, without solving a system; limited by the critical step (Chapter~\ref{ch:dyn}).
+\item[Extension point] A place where the engine accepts a new item (element, material, mesh generator, solver) by adding it in one place (Chapter~\ref{ch:arch}).
+\item[Fixed-interface modes] Normal modes of a substructure with its interface held fixed (Chapter~\ref{ch:cms}).
+\item[FOM] Full-order model: the model from which a reduced model is built and against which it is compared.
+\item[Free-interface reduction] Substructure reduction with normal modes of the substructure with a free interface, plus residual flexibility (Chapter~\ref{ch:cms}).
+\item[Frequency response function] The complex ratio of response to load at a circular frequency $\omega$ (Chapter~\ref{ch:dyn}, Chapter~\ref{ch:freq}).
+\item[Galerkin projection] Reduction by requiring the residual to be orthogonal to the reduction basis, giving $\bm V^T\bm K\bm V\bm q=\bm V^T\bm f$ (Chapter~\ref{ch:pod}).
+\item[Gauss point] An integration point of the Gauss quadrature rule of an element (Chapter~\ref{ch:elem}).
+\item[Gauss quadrature] Numerical integration by a weighted sum at special points; $n$ points per direction are exact for polynomials up to degree $2n-1$ (Chapter~\ref{ch:elem}).
+\item[Generalized eigenproblem] $\bm K\bm\phi=\lambda\bm M\bm\phi$: its eigenvalues $\lambda=\omega^2$ give the natural frequencies and its eigenvectors the mode shapes (Chapters~\ref{ch:elem} and~\ref{ch:dyn}).
+\item[Geometric nonlinearity] Nonlinearity from large displacements and rotations, with a linear or nonlinear material (Chapter~\ref{ch:nonlin}).
+\item[Geometry cache] The stored reference gradients and weights of a block, rebuilt if the coordinates, the connectivity or the quadrature order change (Chapter~\ref{ch:batch}).
+\item[Grading (of a mesh)] A mesh whose element size changes smoothly with position (Chapter~\ref{ch:mesh}).
+\item[Gramian] The matrix that measures how strongly a state is excited (controllability) or observed (observability) in a linear system (Chapter~\ref{ch:bt}).
+\item[Greedy training] Building a reduced basis one snapshot at a time, each time adding the parameter where an error indicator is largest (Chapter~\ref{ch:freq}, Chapter~\ref{ch:hyper}).
+\item[Guyan reduction] Static condensation of the interior degrees of freedom onto selected master degrees of freedom (Chapter~\ref{ch:cms}).
+\item[Hankel singular values] Quantities that measure the joint controllability and observability of the states of a linear system; their sum controls the truncation error (Chapter~\ref{ch:bt}).
+\item[Harmonic balance] A method for periodic responses that expands them in a Fourier series and solves for the coefficients; used for the backbone (Chapter~\ref{ch:nonint}).
+\item[History variable] A quantity that a path-dependent material stores from step to step, such as the plastic strain (Chapter~\ref{ch:nonlin}).
+\item[Hourglass mode] A deformation of a reduced-integration element that costs no energy, because the element sees no strain in it (Chapter~\ref{ch:elem}).
+\item[Hybrid hyper-reduction] A reduced model in which the balance equations are written only at the dofs whose elements lie in a reduced integration domain and the contact forces there are finite-element unknowns, so that no dual basis is needed (Chapter~\ref{ch:hyper}).
+\item[Hybrid modal model] A reduced model whose basis is the linear modes and whose nonlinear modal force is fitted by a polynomial or an RBF surrogate (Chapter~\ref{ch:nonint}).
+\item[Hyper-reduction] Approximating the nonlinear reduced force from a small part of the model, so that its cost no longer scales with the full mesh (Chapter~\ref{ch:hyper}).
+\item[Hyperelasticity] A material law derived from a strain-energy function, such as the neo-Hookean model (Chapter~\ref{ch:nonlin}).
+\item[ICE] Implicit condensation and expansion: fitting the nonlinear modal force of a geometrically nonlinear structure by a polynomial from static solves (Chapter~\ref{ch:nonint}).
+\item[Implicit integration] A time step that solves a system for the new state; Newmark's method is the example in this book (Chapter~\ref{ch:dyn}).
+\item[Indicator (error indicator)] A cheap quantity, such as the residual norm, used to choose snapshots; not a bound unless stated (Chapter~\ref{ch:freq}).
+\item[Inf--sup condition] A rank condition on the reduced constraints (here: full row rank of $\bm B_r$) that makes the reduced saddle-point problem well posed (Chapter~\ref{ch:hyper}).
+\item[Interface (substructure)] The degrees of freedom shared between two substructures (Chapter~\ref{ch:cms}).
+\item[Interface reduction] Reduction of the number of interface unknowns of a substructured model by a Craig--Bampton-type, joint-interface-mode or Fourier basis (Chapter~\ref{ch:cms}).
+\item[Internal force] The force that the deformed elements exert on the nodes, $\bm f_{int}(\bm u)$; equilibrium requires it to equal the external load (Chapter~\ref{ch:nonlin}).
+\item[Isoparametric element] An element whose geometry and displacement use the same shape functions, so that it is computed on a reference element and mapped (Chapter~\ref{ch:elem}).
+\item[$J_2$ plasticity] A rate-independent plasticity model with a von Mises yield function and a history variable (Chapter~\ref{ch:nonlin}).
+\item[Jacobi preconditioner] The diagonal of the matrix used as a preconditioner for conjugate gradients (Chapter~\ref{ch:batch}).
+\item[Jacobian] The matrix $\partial\bm x/\partial\bm\xi$ of the map from the reference to the physical element; its determinant must be positive at every Gauss point (Chapters~\ref{ch:mesh} and~\ref{ch:elem}).
+\item[KKT conditions] The Karush--Kuhn--Tucker conditions of a constrained minimisation: stationarity, feasibility, non-negative multipliers and complementarity (Chapter~\ref{ch:contact}).
+\item[Krylov subspace] The space spanned by repeated applications of a matrix to a vector; used to match the moments of a transfer function (Chapter~\ref{ch:bt}).
+\item[Lagrange multiplier] The force that enforces a constraint; for contact, the contact force (Chapter~\ref{ch:contact}).
+\item[Lawson--Hanson algorithm] The active-set method for non-negative least squares, used to fit ECSW weights (Chapter~\ref{ch:hyper}).
+\item[LCP] Linear complementarity problem, the small problem solved for the contact forces in each reduced step (Chapter~\ref{ch:hyper}).
+\item[Lift, lifting, reconstruction] The expansion of a reduced solution to the full state, $\bm u\approx\bm V\bm q$; its cost is counted separately (Appendix~\ref{ch:conv}).
+\item[Limit point] A point of an equilibrium path where the load reaches a maximum or minimum, so that the tangent is singular and load control fails (Chapter~\ref{ch:nonlin}).
+\item[Line search] A reduction of the Newton step when the full step does not decrease the residual (Chapter~\ref{ch:nonlin}).
+\item[Load control, displacement control] Following a response by prescribing the load or a displacement; displacement control passes some limit points, arc length passes more (Chapter~\ref{ch:nonlin}).
+\item[Locking] A spurious stiffening of an element in a regime such as bending, near-incompressibility or thin plates (Chapter~\ref{ch:elem}).
+\item[Loewner pencil] A matrix pair built from frequency-response samples whose generalised eigenvalues estimate the poles (Chapter~\ref{ch:nonint}).
+\item[Lumped mass matrix] A diagonal mass matrix obtained by assigning the element mass to its nodes (Chapter~\ref{ch:elem}).
+\item[MAC] Modal assurance criterion: a number between 0 and 1 that measures how well two mode shapes agree (Chapter~\ref{ch:verif}).
+\item[Mass-normalised modes] Modes scaled so that $\bm V^T\bm M\bm V=\bm I$ and $\bm V^T\bm K\bm V=\bm\Lambda$ (Chapter~\ref{ch:dyn}).
+\item[Mean dilatation] The element average of the volumetric strain used in B-bar elements (Chapter~\ref{ch:elem}).
+\item[Mesh, multi-block mesh] Nodes and an element-to-node map; a multi-block mesh composes several blocks, possibly of different element types (Chapter~\ref{ch:mesh}).
+\item[Metric-consistent step] A gradient step on a spatial field that is preconditioned by the mass matrix, obtained by training the Cholesky-transformed variable (Appendix~\ref{ch:diff}).
+\item[MITC] Mixed interpolation of tensorial components: transverse shear strains are interpolated from values at tying points on the element edges, which removes shear locking in plate and shell elements (Chapter~\ref{ch:elem}).
+\item[Modal superposition] The response written as a sum of a few normal modes; truncation and mode acceleration correct the neglected modes (Chapter~\ref{ch:dyn}).
+\item[Moment matching] Choosing a reduced model whose transfer function has the same leading Taylor coefficients about an expansion point as the full one (Chapter~\ref{ch:bt}).
+\item[Mortar tie] A coupling in which the interface values of a slave part are obtained from those of a master part by an operator $\bm P$, so that the two interface meshes need not match (Chapter~\ref{ch:cms}).
+\item[Newmark method] A family of implicit time integrators for second-order systems with parameters $\beta$ and $\gamma$ (Chapter~\ref{ch:dyn}).
+\item[Newton--Raphson iteration] The iteration $\bm u\leftarrow\bm u+\bm K_T^{-1}\bm R$, shared by all nonlinear drivers (Chapter~\ref{ch:nonlin}).
+\item[NMF] Non-negative matrix factorisation, used for a basis of contact forces that stays non-negative (Chapter~\ref{ch:hyper}).
+\item[NNM] Nonlinear normal mode; its amplitude--frequency curve is the backbone (Chapter~\ref{ch:nonint}).
+\item[Non-intrusive] A reduced model built from snapshots and evaluations of the full model without access to its internals (Chapter~\ref{ch:nonint}).
+\item[Offline, online] The two stages of a reduced model: the preparation (snapshots, basis, training) paid once, and the evaluation paid per query (Appendix~\ref{ch:conv}).
+\item[Operator inference] Fitting the matrices of a reduced model by least squares from snapshot data (Chapter~\ref{ch:nonint}).
+\item[Optional dependency] A package that the code uses only when asked, such as PyTorch: importing never requires it (Appendix~\ref{ch:diff}, Chapter~\ref{ch:batch}).
+\item[Passivity] A property of a reduced model that it cannot generate energy; important when it is coupled to others (Chapter~\ref{ch:bt}).
+\item[Patch test] A test that an element reproduces a constant-strain state exactly on an arbitrary mesh (Chapter~\ref{ch:elem}).
+\item[Penalty method] Enforcing a constraint by a stiff spring; an alternative to the exact contact treatment, with a trade-off between accuracy and conditioning (Chapter~\ref{ch:contact}).
+\item[Pipeline (integrated)] One run from mesh to a prediction on unseen loads, with the cost reported by offline, online and lift parts (Chapter~\ref{ch:verif}).
+\item[Plane stress, plane strain] Two reductions of a three-dimensional body to two dimensions: zero out-of-plane stress (thin body) and zero out-of-plane strain (long constrained body) (Chapter~\ref{ch:elem}).
+\item[Plate element] A two-dimensional bending element; the Mindlin plate includes transverse shear (Chapter~\ref{ch:elem}).
+\item[POD] Proper orthogonal decomposition: the basis of dominant singular vectors of a snapshot matrix (Chapter~\ref{ch:pod}).
+\item[Poles] The values of $s$ at which the transfer function of a linear system is infinite; they carry frequencies and damping (Chapter~\ref{ch:nonint}).
+\item[Preconditioner] A cheap approximation of the inverse of a matrix that speeds up an iterative solver (Chapter~\ref{ch:batch}).
+\item[Primal basis] The reduction basis for displacements in a contact problem, as opposed to the dual basis for the forces (Chapter~\ref{ch:hyper}).
+\item[Primal--dual active-set method] The method of Chapter~\ref{ch:contact} that alternates between a guess of the active set and a linear solve; it can use three routes (reduced, saddle, condensed).
+\item[PSD] Power spectral density of a random load (Chapter~\ref{ch:dyn}).
+\item[Quadrature (reduced, selective)] An integration rule with fewer points than needed for exact integration, used on some energy terms to avoid locking (Chapter~\ref{ch:elem}).
+\item[Random vibration] The response of a structure to a load described by its power spectral density (Chapter~\ref{ch:dyn}, Chapter~\ref{ch:freq}).
+\item[Rank condition] The requirement that the reduced constraint matrix have full row rank, checked and repaired by enriching the basis (Chapter~\ref{ch:hyper}).
+\item[RBF surrogate] A fit of a function by radial basis functions; used for the multi-fidelity nonlinear modal force (Chapter~\ref{ch:verif}).
+\item[Reduced integration domain (RID)] A small part of the mesh on which the equations are written in hybrid hyper-reduction (Chapter~\ref{ch:hyper}).
+\item[Reduced-order model (ROM)] A small model that approximates the response of a large one, built in an offline stage and evaluated online.
+\item[Reproduction (study)] Rebuilding a published method from its description and comparing with the published results, including where it fails (Chapter~\ref{ch:verif}).
+\item[Residual] The imbalance $\bm F_{ext}-\bm f_{int}(\bm u)$ of a trial state; its norm is the convergence measure and, for a reduced model, an error indicator (Chapter~\ref{ch:nonlin}, Chapter~\ref{ch:freq}).
+\item[Saddle-point matrix] The block matrix with $\bm K$ and the constraint matrix $\bm B$ that arises when multipliers are kept as unknowns (Chapter~\ref{ch:contact}).
+\item[Saved output (of a study)] The data that a reproduction study stored; the figures of Chapter~\ref{ch:verif} are redrawn from them.
+\item[SCM] Successive constraint method: a linear programme that gives a lower bound of the smallest singular value over a parameter range (Chapter~\ref{ch:freq}).
+\item[Selective reduced integration] Full integration for the energy terms that do not lock and a reduced rule for the term that does (Chapter~\ref{ch:elem}).
+\item[Shape function] A function $N_a$ that equals 1 at node $a$ and 0 at the others; displacement and geometry inside an element are sums of nodal values times shape functions (Chapter~\ref{ch:elem}).
+\item[Shear locking] Spurious stiffening of a bending element as it becomes thin, cured by selective reduced integration (Chapter~\ref{ch:elem}).
+\item[Singular value decomposition] The factorisation $\bm X=\bm U\bm\Sigma\bm V^T$ used for POD and for truncation (Chapter~\ref{ch:pod}).
+\item[Snap-through] Sudden change of a structure from one equilibrium to another at a limit point (Chapter~\ref{ch:nonlin}).
+\item[Snapshot] A full-order solution (displacement, multipliers, state) saved to build a reduced model (Chapter~\ref{ch:pod}).
+\item[SOAR] Second-order Arnoldi: moment matching that stays in the second-order form of structural dynamics (Chapter~\ref{ch:bt}).
+\item[Sparse pattern] The set of positions of the nonzero entries of a matrix, and for a batched assembly the map from each element entry to its position (Chapter~\ref{ch:batch}).
+\item[SPD] Symmetric positive definite: the property of a well-constrained linear-elastic stiffness matrix that conjugate gradients and Cholesky factorisation need.
+\item[Speed-up] The ratio of two timings under a stated rule; a speed-up of the online solve alone is not a speed-up of the workflow (Appendix~\ref{ch:conv}, Chapter~\ref{ch:verif}).
+\item[St.~Venant--Kirchhoff material] A hyperelastic law that is linear between the Green--Lagrange strain and the second Piola--Kirchhoff stress (Chapter~\ref{ch:nonlin}).
+\item[Static condensation] Elimination of degrees of freedom by solving for them in terms of the others, exactly for a linear zone (Chapter~\ref{ch:cms}, Chapter~\ref{ch:hyper}).
+\item[Stiffness matrix, tangent stiffness] The matrix that relates a displacement increment to a force increment; for a nonlinear model the tangent depends on the state (Chapter~\ref{ch:nonlin}).
+\item[Strain-displacement matrix $\bm B$ and material matrix $\bm D$] $\bm B$ gives the strains from the nodal values, $\bm\varepsilon=\bm B\bm u_e$; $\bm D$ gives the stresses from the strains, $\bm\sigma=\bm D\bm\varepsilon$ (Chapter~\ref{ch:elem}).
+\item[Stress recovery] Computation of stresses from a displacement field, element by element (Chapter~\ref{ch:elem}, Chapter~\ref{ch:batch}).
+\item[Structural element] An element with a kinematic assumption about a thin body: beam, plate or shell (Chapter~\ref{ch:elem}).
+\item[Substructure] A part of a structure that is reduced on its own and coupled to others at an interface (Chapter~\ref{ch:cms}).
+\item[Tangent consistency] The agreement of a coded tangent with the derivative of the coded internal force, checked by finite differences (Chapter~\ref{ch:nonlin}).
+\item[Test function, virtual displacement] An admissible function $v$ by which the equation is multiplied in the weak form; in mechanics, a virtual displacement (Chapter~\ref{ch:elem}).
+\item[Total Lagrangian] A formulation of large deformation that refers all quantities to the undeformed configuration; the strain is objective under rotation (Chapter~\ref{ch:nonlin}).
+\item[Training, validation and test sets] The states used to build a reduced model; the states used to choose its size; the states used only to report the final error (Chapter~\ref{ch:verif}).
+\item[Transfer function] The map from input to output of a linear system in the Laplace variable; its value on the imaginary axis is the frequency response (Chapter~\ref{ch:bt}).
+\item[Truncation (modal, balanced)] Discarding the modes or states that contribute least (Chapter~\ref{ch:dyn}, Chapter~\ref{ch:bt}).
+\item[Unseen (held-out)] Data (parameters, states) not used to build the reduced model and used only to test it (Appendix~\ref{ch:conv}).
+\item[Validation, verification] Verification checks that the equations are solved correctly; validation compares the model with experiments (none in this book); see the reading guide and Chapter~\ref{ch:verif}.
+\item[Verification level] One of the six kinds of evidence of Chapter~\ref{ch:verif}: unit test, closed-form benchmark, convergence and independent solvers, held-out reduced-model accuracy, reproduction, integrated run.
+\item[von Mises stress] A scalar equivalent stress computed from the deviatoric stress; the yield measure of $J_2$ plasticity (Chapter~\ref{ch:nonlin}).
+\item[Warm start] An initial guess for an iteration taken from a nearby solved problem, such as the active set of the previous step (Chapter~\ref{ch:contact}).
+\item[Weak form] The integral form of the equilibrium equations from which element matrices are derived (Chapter~\ref{ch:elem}).
+\item[Weighted POD] POD in which the inner product is a mass matrix, so that the basis is optimal in an energy-related norm (Chapter~\ref{ch:pod}).
+\item[Workflow speed-up] The ratio of the complete full-order and reduced workflows, including the recovery of the local quantities (Chapter~\ref{ch:verif}).
+\end{description}

@@ -1,0 +1,414 @@
+\chapter{Hyper-reduction and contact reduced-order models}\label{ch:hyper}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+Someone reduces a nonlinear model from 10\,000 unknowns to ten, runs it, and finds it is barely faster: every time step still asks every element of the full mesh for its internal force. Hyper-reduction removes that last dependence on the full mesh. Energy-conserving sampling and weighting (ECSW) replaces the sum over all elements by a weighted sum over a few, with weights from a non-negative least-squares fit. Contact makes it harder in two ways: the unilateral conditions must survive the reduction, which needs a basis for the contact forces that stays non-negative, and the reduced constraints must keep full rank. We derive these constructions and the reduced contact problem, and describe a snapshot-selection loop driven by the violation of the contact conditions, the hybrid reduced-integration-domain method, and the split of a model into a condensed linear zone and a nonlinear zone. Each is measured on small benchmarks, with parameters not used in training, and the failures are reported.\par\smallskip
+After it you should be able to fit ECSW weights and judge them on unseen states and out-of-range parameters, assemble and run a reduced contact problem with a non-negative dual basis, say what a small reduced KKT residual does and does not certify, check and repair the rank of the reduced constraints, and partition a model into a condensed linear and a nonlinear zone.
+\end{tcolorbox}
+
+\section{The problem}\label{sec:hy-problem}
+
+The straightforward way to evaluate a reduced force is to compute the force of the full model and project it. That costs one pass over all elements per evaluation, however few reduced unknowns there are, and it is the baseline of this chapter. The hardening chain of the benchmark, sixty springs with a rigid obstacle under part of it, is small enough to check every claim against that baseline and is the running example.
+
+Take the nonlinear reduced force $\bm f_r(\bm q)=\bm V^T\bm f_{int}(\bm V\bm q)$ of Chapter~\ref{ch:nonint}'s intrusive ROM. Evaluating it for one reduced state costs one pass over all $n_e$ elements, so the cost of a step does not fall with the number of reduced unknowns. Two problems follow. First, a reduced model with a cost proportional to the full model gives little speed-up, however small the basis. Second, in a contact problem the unknowns include the contact forces and the constraints $\bm B\bm u\ge\bm c$, and neither reduces like a displacement: a projection of the contact forces on a signed basis can pull on a surface, and a projection of the constraints can lose their rank. The chapter takes these in order.
+
+\section{Mathematical structure}\label{sec:hy-math}
+
+\begin{sidenote}{Hyper-reduction}
+Projecting a nonlinear model onto a small basis shrinks the unknowns but not the work of evaluating the nonlinear force, because that still loops over the full mesh. Hyper-reduction approximates the force evaluation itself by using only a few elements or a few degrees of freedom. The name is by analogy with reduction: it reduces the cost of the \emph{right-hand side}, not of the unknowns.
+\end{sidenote}
+
+\paragraph{Energy-conserving sampling and weighting.}
+Write the reduced force as a sum over elements, $\bm f_r(\bm q)=\sum_{e=1}^{n_e}\bm V_e^T\bm f_e(\bm V_e\bm q)$, where $\bm V_e$ holds the rows of $\bm V$ for the degrees of freedom of element $e$. ECSW looks for a sparse set of non-negative weights $w_e$ such that the same sum over a few elements,
+\begin{equation}\label{eq:hy-ecsw}
+\bm f_r(\bm q)\approx\sum_{e\in\mathcal E}w_e\,\bm V_e^T\bm f_e(\bm V_e\bm q),\qquad w_e>0,\quad |\mathcal E|\ll n_e,
+\end{equation}
+holds on training states $\bm q_1,\dots,\bm q_K$~\cite{farhat2014ecsw,farhat2015ecsw}. Stack the contributions into a matrix $\bm G$ whose column $e$ contains $\bm V_e^T\bm f_e(\bm V_e\bm q_k)$ for all $k$, and let $\bm b=\bm G\bm 1$ be the exact sum. Then
+\begin{equation}\label{eq:hy-nnls}
+\min_{\bm w\ge\bm 0}\ \|\bm G\bm w-\bm b\|\ \le\ \varepsilon\,\|\bm b\|,\qquad \text{stopped early,}
+\end{equation}
+a non-negative least-squares problem solved by the Lawson--Hanson active-set method~\cite{lawson1995lsq} with a stop at the relative tolerance $\varepsilon$ (the early stop is what keeps $|\mathcal E|$ small; $\bm w=\bm 1$ is always a solution, so the problem is feasible). Because the result is a positively weighted sum of real element contributions, it keeps the structure of the model: a symmetric reduced tangent, and, for positive-definite elements, a positive-definite reduced stiffness. The training matrix has $K\,r$ rows ($r$ reduced unknowns) and $n_e$ columns, so the offline cost is $K n_e$ element evaluations.
+
+A related family approximates the force vector itself from its values at a few degrees of freedom, $\bm f\approx\bm U(\bm P^T\bm U)^{-1}\bm P^T\bm f$ (DEIM and QDEIM~\cite{chaturantabut2010deim,drmac2016qdeim}). It works with a black-box force routine but does not keep the reduced tangent symmetric. The package contains it; it is not run in this chapter.
+
+\begin{algbox}{ECSW weight training}
+\begin{pseudo}
+\Require basis $\bm V$, training states $\bm u^{(1)},\dots,\bm u^{(K)}$, element force routines $\bm f_e$ and dof maps, tolerance $\varepsilon$, optional required set $\mathcal R$
+\For{$k=1,\dots,K$} \Comment{$K\,n_e$ element evaluations}
+  \For{$e=1,\dots,n_e$}
+    \State $\bm G_{(k),e}\gets\bm V_e^T\bm f_e(\bm u^{(k)}_e)$
+  \EndFor
+\EndFor
+\State $\bm b\gets\bm G\bm 1$;\ \ $\bm w\gets\bm 0$;\ \ $w_e\gets1$ for $e\in\mathcal R$;\ \ $\bm b\gets\bm b-\bm G_{\mathcal R}\bm 1$
+\State passive set $\mathcal P\gets\emptyset$;\ residual $\bm\rho\gets\bm b$
+\While{$\|\bm\rho\|>\varepsilon\|\bm b\|$ \textbf{and} $|\mathcal P|<$ cap}
+  \State $e^\ast\gets\arg\max_{e\notin\mathcal P}(\bm G^T\bm\rho)_e$;\ $\mathcal P\gets\mathcal P\cup\{e^\ast\}$
+  \State least squares on the columns $\mathcal P$; if some weight is not positive, step back to the boundary and drop that element \Comment{Lawson--Hanson inner loop}
+  \State $\bm\rho\gets\bm b-\bm G\bm w$
+\EndWhile
+\Ensure weights $\bm w\ge\bm 0$ with support $\mathcal E=\{e:w_e>0\}$
+\end{pseudo}
+\end{algbox}
+
+The training matrix costs $K\,n_e$ element evaluations, which is the dominant offline cost (\Cref{sec:hy-verif} measures the batched route); each active-set iteration solves a least-squares problem with $Kr$ rows and $|\mathcal P|$ columns. A very small tolerance brings more elements and no gain (\Cref{tab:hy-tol}), and the weights fail when the states that matter online lie outside the training states or when the training states stay on one contact configuration. The code is \anchor{rom_engine.hyper_reduction.ecsw_training_matrix}, \anchor{rom_engine.hyper_reduction.ecsw_weights} and \anchor{rom_engine.contact_hyper_reduction.fit_contact_aware_ecsw}; \Cref{tab:hy-tol}, \Cref{tab:hy-newton} and \Cref{fig:hy-ecsw} are the checks.
+
+\tikzfigure[0.95\linewidth]{ch13_ecsw}{Idea of ECSW on a chain of $14$ elements (schematic; the weights are illustrative). Top: the full reduced force sums all elements with weight one. Bottom: a few elements with positive weights reproduce it; in the contact-aware variant the elements at potential contact are kept at weight one.}{fig:hy-ecswidea}
+
+\begin{sidenote}{Active constraint and KKT}
+A contact constraint is \emph{active} when the surfaces touch and the contact force is not zero. The Karush--Kuhn--Tucker (KKT) conditions collect what must hold at a solution: no penetration, no pulling force, and a force only where there is contact. A residual of the KKT conditions says how well these are met by a candidate solution.
+\end{sidenote}
+
+\paragraph{Contact in a reduced model.}
+With the contact forces as Lagrange multipliers $\bm\lambda\ge\bm0$ the full-order problem is $\bm K\bm u=\bm f+\bm B^T\bm\lambda$, $\bm B\bm u\ge\bm c$, $\bm\lambda\ge\bm 0$, $\bm\lambda^T(\bm B\bm u-\bm c)=0$ (Chapter~\ref{ch:contact}). The displacement reduces by projection, $\bm u=\bm U\bm u_r$. The multipliers cannot be reduced by a signed basis: a singular-vector basis of multiplier snapshots does not keep the reduced multipliers non-negative, so the lifted contact force may be negative. A non-negative basis does: factor the multiplier snapshots as $\bm X_\lambda\approx\bm U_\lambda\bm V_\lambda$ with $\bm U_\lambda\ge\bm0$ (non-negative matrix factorisation, NMF) and require $\bm\lambda_r\ge\bm0$, so that $\bm\lambda=\bm U_\lambda\bm\lambda_r\ge\bm0$ by construction~\cite{balajewicz2016contact}. The reduced problem is
+\begin{equation}\label{eq:hy-redcontact}
+\bm A_r\bm u_r=\bm b_r+\bm B_r^T\bm\lambda_r,\quad \bm B_r\bm u_r\ge\bm c_r,\quad\bm\lambda_r\ge\bm0,\quad\text{complementarity},
+\end{equation}
+with $\bm A_r=\bm U^T\bm K\bm U$, $\bm B_r=\bm U_\lambda^T\bm B\bm U$, $\bm c_r=\bm U_\lambda^T\bm c$: a linear complementarity problem (LCP) of the size of the dual basis. Its saddle-point structure is well posed only if $\bm B_r$ has full row rank, which needs at least as many primal as dual vectors ($p\ge p_\lambda$) and, more strongly, independent reduced constraints (the discrete inf--sup condition of~\cite{fauque2018hybrid}). For dynamics, the reduced equation $\bm M_r\ddot{\bm u}_r+\bm A_r\bm u_r=\bm U^T\bm f(t)+\bm B_r^T\bm\lambda_r$ is advanced with BDF2 (Chapter~\ref{ch:dyn}), one small LCP per step; the effective matrices are factored once and the active set of the previous step warm-starts the next.
+
+\tikzfigure[0.98\linewidth]{ch13_contactrom}{Reduction of a contact problem. The primal basis is a POD of displacement snapshots; the dual basis must be non-negative. The rank of the reduced constraint matrix is checked before the reduced LCP is solved; the dashed box shows the failure of a signed basis measured in \Cref{sec:hy-verif}.}{fig:hy-contactrom}
+
+\begin{algbox}{Non-negative dual basis by hierarchical alternating least squares}
+\begin{pseudo}
+\Require non-negative multiplier snapshots $\bm X\in\mathbb R^{m\times N_a}$ (active columns only), rank $p_\lambda$, tolerance, iteration limit
+\State $(\bm W,\bm H)\gets$ NNDSVD start (non-negative parts of the leading singular vectors, zeros filled with a small mean)
+\Repeat
+  \For{$k=1,\dots,p_\lambda$}
+    \State $\bm w_k\gets\max\!\big(\epsilon,\ [(\bm X\bm H^T)_{:,k}-\bm W(\bm H\bm H^T)_{:,k}+\bm w_k(\bm H\bm H^T)_{kk}]/(\bm H\bm H^T)_{kk}\big)$
+  \EndFor
+  \For{$k=1,\dots,p_\lambda$}
+    \State $\bm h_k\gets\max\!\big(\epsilon,\ [(\bm W^T\bm X)_{k,:}-(\bm W^T\bm W)_{k,:}\bm H+(\bm W^T\bm W)_{kk}\bm h_k]/(\bm W^T\bm W)_{kk}\big)$
+  \EndFor
+  \State $\mathrm{err}\gets\|\bm X-\bm W\bm H\|_F/\|\bm X\|_F$
+\Until{the change of $\mathrm{err}$ is below the tolerance, or the iteration limit}
+\State scale the columns of $\bm W$ to unit norm (the scale moves into $\bm H$);\ $\bm U_\lambda\gets\bm W$
+\Ensure $\bm U_\lambda\ge\bm 0$, so that $\bm\lambda=\bm U_\lambda\bm\lambda_r\ge\bm0$ whenever $\bm\lambda_r\ge\bm0$
+\end{pseudo}
+\end{algbox}
+
+One sweep costs $O(m\,N_a\,p_\lambda)$ (\Cref{sec:hy-verif} gives the measured time, the largest part of the offline stage of the dynamic benchmark). Snapshots with negative entries are rejected with an error. The problem is not convex, so the fit depends on the start and can stay far from the data (relative error $0.29$ at $p_\lambda=30$ in the benchmark), and a dual basis larger than the rank the primal basis can carry causes trouble. The code is \anchor{rom_engine.contact_dual_basis.nonneg_dual_basis} and \anchor{rom_engine.contact_dual_basis.active_snapshot_columns}; \Cref{tab:hy-dyn} and \Cref{fig:hy-dyn} are the checks.
+
+\paragraph{Snapshot selection by the contact conditions.}
+A greedy loop that adds the training parameter with the largest error needs an indicator that does not require the full-order solution. The reduced solution can be checked against the contact conditions directly. With the weights $(1,0,0)$ the indicator is the violation of non-penetration, $I=\|\min(\bm B\bm u-\bm c,\bm0)\|^2$, which needs only a matrix--vector product~\cite{balajewicz2016contact}. At every round the loop solves the full-order problem at the parameter with the largest indicator over the remaining candidates and rebuilds the ROM.
+
+\begin{algbox}{Weak-greedy snapshot selection for contact}
+\begin{pseudo}
+\Require candidate parameters $\Gamma$, first candidate $\gamma_1$, full-order solver, ROM builder, indicator $I$, budget $N_{\max}$, tolerances $\mathrm{tol}$, $\mathrm{rel\_tol}$
+\State $\gamma^\ast\gets\gamma_1$
+\For{$j=1,\dots,N_{\max}$}
+  \State $(\bm u,\bm\lambda)\gets$ full-order solve at $\gamma^\ast$;\ append to the snapshot matrices
+  \State ROM $\gets$ build from all snapshots so far
+  \If{no candidates remain} \textbf{stop} \EndIf
+  \State $I_\gamma\gets I(\gamma,\mathrm{ROM}(\gamma))$ for every remaining $\gamma$ \Comment{reduced solves only}
+  \If{$\max I_\gamma\le\mathrm{tol}$ \textbf{or} ($j\ge2$ \textbf{and} $\max I_\gamma\le\mathrm{rel\_tol}\cdot I^{(1)}_{\max}$)} \textbf{stop} \EndIf
+  \State $\gamma^\ast\gets\arg\max_\gamma I_\gamma$
+\EndFor
+\Ensure the last ROM and the history of selected parameters
+\end{pseudo}
+\end{algbox}
+
+Each round costs one full-order solve, one ROM build, and one reduced solve plus one indicator evaluation for every remaining candidate. The indicator measures non-penetration only in its cheapest form, so it may not be informative for another quantity of interest, and the relative stopping rule is the author's reading of the source's printed inequality. The code is \anchor{rom_engine.contact_greedy.greedy_contact_sampling} and \anchor{rom_engine.contact_greedy.ContactConditionIndicator}; \Cref{tab:hy-greedy} and \Cref{fig:hy-greedy} are the checks.
+
+\tikzfigure[0.9\linewidth]{ch13_greedy}{The greedy loop of snapshot selection. The indicator needs only reduced solves, so scanning all candidates is cheap; the full-order model is called once per round.}{fig:hy-greedyloop}
+
+\paragraph{Contact-aware ECSW and the hybrid reduced domain.}
+Two further constructions are in the package. In \emph{contact-aware ECSW} the elements around the potential contact zone are pinned at weight one, and the remaining elements are fitted to $\bm b-\sum_{e\in\mathcal R}\bm G_e$; a constraint can be evaluated only if the elements it needs are present, so the set is completed by \code{complete_constraint_elements}; and the contact forces outside the sampled region are rebuilt from snapshots by a non-negative least-squares fit~\cite{fauque2018hybrid,nikiema2026assembly}. The \emph{hybrid hyper-reduction} of Fauque et al.\ writes the balance equations only on a small \emph{reduced integration domain} (RID) built from DEIM indices of the displacement and multiplier bases, keeps the contact forces on it as finite-element unknowns (no dual basis is needed), and appends unit vectors to the basis until the reduced constraints have full row rank~\cite{fauque2018hybrid}.
+
+\tikzfigure[0.95\linewidth]{ch13_rid}{Hybrid hyper-reduction on a reduced integration domain (schematic). Balance equations are written only at the dofs $P$ whose elements all lie in the RID; the contact forces on the RID are finite-element unknowns, so no dual basis is needed.}{fig:hy-rididea}
+
+\paragraph{Linear and nonlinear zones.}
+If the nonlinearity (contact, large rotation) is confined to a small zone $N$, the rest $L$ can be condensed onto the interface $B$ it shares with the zone: $\bm K^*=\bm K_{BB}-\bm K_{BI}\bm K_{II}^{-1}\bm K_{IB}$ and $\bm f_B^*=\bm f_B-\bm K_{BI}\bm K_{II}^{-1}\bm f_I$, where $I$ are the interior degrees of freedom of $L$. The nonlinear problem then lives on the degrees of freedom of $N$ only,
+\begin{equation}\label{eq:hy-part}
+\bm R_N(\bm u_N)=\bm f^{NL}_{int}(\bm u_N)+\bm E_B^T\bm K^*\bm E_B\bm u_N-\bm f^*_{ext,N}=\bm0,
+\end{equation}
+with $\bm E_B$ selecting the interface, and the interior is recovered afterwards by $\bm u_I=\bm K_{II}^{-1}(\bm f_I-\bm K_{IB}\bm u_B)$~\cite{nikiema2026assembly}. This is the sense of ``partitioning'' deferred from Chapter~\ref{ch:mesh}. Any hyper-reduction trained on this model sums over the nonlinear elements only, which shortens the offline stage. The package chooses the nonlinear zone by an indicator of the author's design (the source does not publish its own): for element $e$ and a set of states, $\kappa_e=\max\|\bm f_e(\bm u_e)-\bm K_{0,e}\bm u_e\|/\|\bm K_{0,e}\bm u_e\|$, the size of the nonlinear part of the element force relative to its linear part.
+
+\tikzfigure[0.85\linewidth]{ch13_partition}{Linear and nonlinear zones. The linear interior is condensed onto the interface; the nonlinear problem is solved on the unknowns of $N$ (including $B$) and the interior is recovered afterwards.}{fig:hy-partition}
+
+\begin{algbox}{Partition of a model and static condensation of the linear zone}
+\begin{pseudo}
+\Require elements and dof maps, nonlinear-zone elements $N$ (from $\kappa_e>$ threshold plus elements at potential contact), stiffness $\bm K_L$ of the linear elements, loads $\bm f$
+\State dofs of $N$: $D_N$;\ dofs of linear elements: $D_L$;\ interface $B\gets D_N\cap D_L$;\ interior $I\gets D_L\setminus D_N$
+\State factor $\bm K_{II}$ (sparse LU);\ $\bm K^\ast\gets\bm K_{BB}-\bm K_{BI}\bm K_{II}^{-1}\bm K_{IB}$ \Comment{dense $|B|\times|B|$}
+\State $\bm f^\ast_N\gets\bm f_N$ with $-\bm K_{BI}\bm K_{II}^{-1}\bm f_I$ added on $B$
+\State solve $\bm R_N(\bm u_N)=\bm 0$ by Newton or contact Newton, tangent $\bm K_{t,NL}+\bm E_B^T\bm K^\ast\bm E_B$
+\State $\bm u_I\gets\bm K_{II}^{-1}(\bm f_I-\bm K_{IB}\bm u_B)$
+\Ensure full displacement $\bm u$
+\end{pseudo}
+\end{algbox}
+
+One factorisation of $\bm K_{II}$ and $|B|$ solves give $\bm K^\ast$, and afterwards the nonlinear solve has only $|D_N|$ unknowns, while an ECSW training matrix has one column per nonlinear element. If the interface is large $\bm K^\ast$ is dense and the saving disappears; the method also fails if the ``linear'' zone is not linear for the loads considered, and the indicator $\kappa_e$ cannot see elements that do not deform, such as those held between two contact nodes. The code is \anchor{rom_engine.domain_partition.PartitionedModel} and \anchor{rom_engine.domain_partition.nonlinearity_indicator}; the partition experiment of \Cref{sec:hy-verif} gives an error to rounding on a one-dimensional chain.
+
+\begin{algbox}{Hyper-reduced contact ROM}
+\begin{pseudo}
+\Require full-order contact model, training parameters, basis sizes $p$, $p_\lambda$, tolerance $\varepsilon$
+\State \textbf{Offline:}
+\State solve the full-order contact problem at the training parameters; collect $\bm X_u$ and $\bm X_\lambda$ (every time step in dynamics)
+\State $\bm U\gets$ POD of $\bm X_u$;\ $\bm U_\lambda\gets$ NMF of the active columns of $\bm X_\lambda$ \Comment{previous algorithms}
+\State \textbf{if} the force is nonlinear \textbf{then} $\bm w\gets$ ECSW weights, contact elements pinned at weight one
+\If{$\operatorname{rank}\bm B_r<p_\lambda$}
+  \State reduce $p_\lambda$, or enrich $\bm U$ with unit vectors at constraint dofs
+\EndIf
+\State \textbf{Online, per load or BDF2 step:}
+\Repeat
+  \State evaluate $\bm f_r$ and $\bm K_r$ from the weighted element sum;\ solve the reduced LCP \eqref{eq:hy-redcontact} \Comment{statics: sequential linearisation; dynamics: one LCP per step}
+\Until{the residual and the step are below tolerance}
+\State $\bm u\gets\bm U\bm u_r$,\ \ $\bm\lambda\gets\bm U_\lambda\bm\lambda_r$
+\Ensure displacements and non-negative contact forces
+\end{pseudo}
+\end{algbox}
+
+Online, each step costs a weighted element sum over $|\mathcal E|$ elements, factorised $p\times p$ solves and an LCP of size $p_\lambda$, plus the lift. A reduced step that violates the contact conditions by more than $10^{-4}$ is reported with its step number, a rank-deficient $\bm B_r$ gives a message that points to \code{inf_sup_report}, and a small reduced KKT residual does not mean the full problem is solved if the dual basis is signed. The code is \anchor{rom_engine.contact_dual_basis.ContactROM} and \anchor{rom_engine.contact_hyper_reduction.solve_reduced_contact_newton}; \Cref{tab:hy-dyn}, \Cref{tab:hy-newton} and \Cref{sec:hy-verif} are the checks.
+
+\section{Implementation in the packages}\label{sec:hy-impl}
+
+\begin{lstlisting}[caption={A reduced contact model in dynamics, a contact-aware ECSW with a reduced contact Newton solve, and a partition (names as in the benchmarks of this chapter).},label={lst:hy-run}]
+from rom_engine import ContactROM, nonneg_dual_basis, active_snapshot_columns
+from rom_engine.hyper_reduction import ECSW
+from rom_engine.contact_hyper_reduction import fit_contact_aware_ecsw, solve_reduced_contact_newton
+from rom_engine.domain_partition import PartitionedModel
+
+# dynamic contact: POD primal basis, NMF dual basis, reduced BDF2 loop
+U = np.linalg.svd(X_u, full_matrices=False)[0][:, :p]
+act = active_snapshot_columns(X_lam)
+U_lam = nonneg_dual_basis(X_lam[:, act], p_lam).U
+rom = ContactROM(K, B, U, U_lam, M=M)
+res = rom.solve_dynamic(force, c, dt, n_steps)         # res.ok, res.u, res.lam, res.kkt_residual
+
+# static nonlinear contact: element weights, then a reduced contact Newton solve
+ecsw = fit_contact_aware_ecsw(U, snapshots, elem_dofs, elem_force, required_elements,
+                              elem_tangent, tol=1e-6)
+r = solve_reduced_contact_newton(ecsw, f_ext, U, B, c, U_lam=U_lam)   # r.converged, r.u, r.lam
+
+# linear/nonlinear partition: condense the linear zone onto the interface
+pm = PartitionedModel(elem_dofs, nonlinear_elements, K_linear, n_dof)
+f_N = pm.condensed_load(f_full)                        # then solve R_N(u_N) = 0 on pm.nl_dofs
+u = pm.expand(u_N, f_full)
+\end{lstlisting}
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l X >{\centering\arraybackslash}p{0.11\linewidth}@{}}
+\toprule
+Concept & Code & Script calls \\
+\midrule
+ECSW weights, training matrix, evaluation & \anchor{rom_engine.hyper_reduction.ecsw_weights}, \anchor{rom_engine.hyper_reduction.ecsw_training_matrix}, \anchor{rom_engine.hyper_reduction.ECSW} & yes \\
+batched training matrix and evaluation & \anchor{rom_engine.hyper_reduction.ecsw_training_matrix_batched}, \code{ECSW.fit_batched} & yes \\
+DEIM / QDEIM (not run here) & \anchor{rom_engine.hyper_reduction.DEIM} & no \\
+NMF dual basis, SVD alternative & \anchor{rom_engine.contact_dual_basis.nonneg_dual_basis}, \anchor{rom_engine.contact_dual_basis.svd_dual_basis} & yes \\
+reduced contact statics and dynamics & \anchor{rom_engine.contact_dual_basis.ContactROM}, \anchor{rom_engine.complementarity.solve_reduced_contact} & yes \\
+rank (inf--sup) report & \code{ContactROM.inf_sup_report}, \anchor{rom_engine.contact_hyper_reduction.rank_deficiency} & yes \\
+contact-aware ECSW, reduced Newton & \anchor{rom_engine.contact_hyper_reduction.fit_contact_aware_ecsw}, \anchor{rom_engine.contact_hyper_reduction.solve_reduced_contact_newton} & yes \\
+basis enrichment, force reconstruction & \anchor{rom_engine.contact_hyper_reduction.enrich_basis_for_constraints}, \anchor{rom_engine.contact_hyper_reduction.reconstruct_contact_forces} & yes \\
+greedy snapshot selection & \anchor{rom_engine.contact_greedy.greedy_contact_sampling}, \anchor{rom_engine.contact_greedy.ContactConditionIndicator} & yes \\
+hybrid reduced integration domain & \anchor{rom_engine.contact_rid.HybridHRContact} & yes \\
+linear/nonlinear partition & \anchor{rom_engine.domain_partition.PartitionedModel}, \anchor{rom_engine.domain_partition.nonlinearity_indicator} & yes \\
+worked example & \path{rom_engine/examples/gallery/rom_07_contact_rom_dynamics.py} & -- \\
+\bottomrule
+\end{tabularx}
+\caption{Where the concepts of this chapter live in the repository (tag \booktag). The hybrid RID and the partition are checked here on very small models only (\Cref{sec:hy-verif}). The last column says whether this chapter's own checks call, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:hy-map}
+\end{table}
+
+\section{Verification}\label{sec:hy-verif}
+
+All numbers were measured on \machine{}; timings are single runs (best of three, repeated runs varied by about $50\%$ at these small sizes).
+
+\paragraph{Try it.} \Cref{lst:hy-try} fits ECSW weights on the chain and checks the reduced force at three parameter pairs that were not used in training, against the naive evaluation that sums over all sixty elements.
+
+\begin{lstlisting}[caption={ECSW on the hardening chain: how many elements are needed, and the error against the full sum (run from \texttt{rom\_engine/tests} with both packages on the path).},label={lst:hy-try}]
+import numpy as np
+from contact_fixtures import NonlinearChainContact          # hardening chain with a rigid obstacle
+from rom_engine.hyper_reduction import ECSW, ecsw_training_matrix, ecsw_weights
+
+m = NonlinearChainContact()                                 # 60 hardening springs
+train = [(s, g) for s in (0.5, 1, 1.5, 2, 2.5, 3) for g in (-0.08, -0.15, -0.25)]
+Xu = np.array([m.solve(*p)[0] for p in train]).T            # full-order snapshots
+U = np.linalg.svd(Xu, full_matrices=False)[0][:, :8]        # 8-mode POD basis
+G, b = ecsw_training_matrix(U, Xu, m.elem_dofs, m.elem_force)
+
+held = [(1.25, -0.12), (2.2, -0.2), (0.8, -0.1)]            # parameters not used in training
+def worst_force_error(ec):
+    errs = []
+    for p in held:
+        q = U.T @ m.solve(*p)[0]
+        ref = U.T @ m.internal_force(U @ q)                 # naive: sum over all 60 elements
+        errs.append(np.linalg.norm(ec.reduced_force(q) - ref) / np.linalg.norm(ref))
+    return max(errs)
+
+for tol in (1e-2, 1e-4, 1e-8):
+    w, info = ecsw_weights(G, b, tol=tol)
+    ec = ECSW(U, m.elem_dofs, m.elem_force, w, m.elem_tangent, info)
+    print(f"tol {tol:.0e}: {ec.n_selected:2d} of {len(m.elem_dofs)} elements, worst force error {worst_force_error(ec):.1e}")
+\end{lstlisting}
+
+\begin{lstlisting}[numbers=none,language={},keywordstyle={},commentstyle={},frame=single,aboveskip=2pt]
+tol 1e-02:  9 of 60 elements, worst force error 6.3e-03
+tol 1e-04: 12 of 60 elements, worst force error 1.3e-06
+tol 1e-08: 13 of 60 elements, worst force error 2.4e-06
+\end{lstlisting}
+
+Nine to thirteen elements out of sixty reproduce the full reduced force. The surprise is in the last two lines: demanding a tolerance of $10^{-8}$ instead of $10^{-4}$ adds an element and makes the error on unseen states slightly worse. The weights have been fitted too closely to the training states, so the training residual is not the quantity to push to zero. The tolerance sweep of \Cref{tab:hy-tol} below gives the same test with more tolerances and out-of-range states.
+
+\subsection{Dynamic contact on an obstacle membrane}
+
+The model is a square membrane (five-point Laplacian, \chdN{} unknowns) pushed by a uniform load onto a rigid obstacle: a floor with two Gaussian bumps, the model problem of the contact-ROM literature on a much coarser mesh. The obstacle is parametrised by the position of the first bump and the height of the second. The full-order reference is \fea{}'s BDF2 contact dynamics ($\chdSteps$ steps, up to \chdMaxActive{} active constraints in a step). The reduced bases are trained on \chdNTrain{} trajectories at different obstacles, which gives \chdNCols{} displacement snapshots, \chdNAct{} of which have contact. The primal basis is the POD of the displacement snapshots; the dual basis is NMF (or SVD, for comparison) of the active multiplier snapshots. The error is the one of the package's tests, the squared norm of the trajectory error over the squared norm of the reference (a value of $0.05$ is a norm ratio of $0.22$, \Cref{tab:hy-dyn}).
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{rrrrrr}
+\toprule
+$p=p_\lambda$ & NMF, train & NMF, in & NMF, out & SVD, out & min.\ SVD $\lambda$ \\
+\midrule
+10 & \chdNmfTenTr & \chdNmfTenIn & \chdNmfTenOut & \chdSvdTenOut & \chdSvdTenOutMinLam \\
+20 & \chdNmfTwentyTr & \chdNmfTwentyIn & \chdNmfTwentyOut & \chdSvdTwentyOut & \chdSvdTwentyOutMinLam \\
+30 & \chdNmfThirtyTr & \chdNmfThirtyIn & \chdNmfThirtyOut & \chdSvdThirtyOut & \chdSvdThirtyOutMinLam \\
+40 & \chdNmfFortyTr & \chdNmfFortyIn & \chdNmfFortyOut & \chdSvdFortyOut & \chdSvdFortyOutMinLam \\
+\bottomrule
+\end{tabular}
+\caption{Squared relative trajectory error of the reduced contact dynamics against the full-order BDF2 reference. ``Train'' is one of the four training obstacles, ``in'' an obstacle between them, ``out'' one beyond the training range. The last column is the smallest lifted multiplier of the SVD basis (``out''); for the NMF basis it is $0$ in every case.}\label{tab:hy-dyn}
+\end{table}
+
+Four observations. First, with complete bases ($\bm U=\bm U_\lambda=\bm I$) the reduced loop reproduces the full-order trajectory to \chdComplete{} (largest difference of displacement), so the reduced scheme is the full-order one written on small matrices. Second, with the NMF basis the reduced contact conditions hold at every step (largest reduced KKT residual below $10^{-16}$ in all runs, all reduced constraints of full row rank) and the lifted multipliers are non-negative, but the trajectory error is several per cent of the squared norm even on a training obstacle, and falls only irregularly with $p$ (\chdNmfTenTr{} at $10$, \chdNmfThirtyTr{} at $30$ and \chdNmfFortyTr{} at $40$ on the training obstacle). This is much larger than the single-trajectory reproduction numbers that the repository's test reports (0.81\,\%, 0.20\,\%, 0.023\,\% for $p=p_\lambda=10,30,40$ when the basis is built from the very trajectory it is tested on), which shows how much of those numbers is reproduction. The NMF fit itself leaves a relative Frobenius error of \chdDualNmfErr{} at $p_\lambda=30$. Third, obstacles not used in training are generally worse than the training one, and the obstacle outside the training range is the worst of the three at every $p$ (by a factor $3$ against the obstacle inside at $p=30$; \Cref{fig:hy-dyn}, left). Fourth, the SVD dual basis fails badly: the reduced solves succeed and satisfy the \emph{reduced} contact conditions to $10^{-16}$, but the lifted multipliers are negative (down to \chdSvdTwentyOutMinLam{} at $p_\lambda=20$) and the displacement error is above $300$ in the squared measure, i.e.\ the reduced solution is far from the full-order one. The mechanism was not diagnosed here; the practical point is that a small reduced KKT residual certifies the reduced problem and nothing about the full one.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/ch13_dyn.pdf}
+\caption{Left: centre displacement for an obstacle outside the training range, full order and reduced with the NMF dual basis. Middle: trajectory error against $p=p_\lambda$. Right: smallest lifted multiplier for the NMF and SVD dual bases (outside obstacle, not used in training).}\label{fig:hy-dyn}
+\end{figure}
+
+\paragraph{Cost and local quantities.} For $p=p_\lambda=30$ the full-order solve took \chdTimeFom~ms and the reduced loop \chdTimeRom~ms; lifting the whole trajectory to the full state and multipliers adds \chdTimeLift~ms, and the setup of the reduced matrices \chdTimeSetup~ms. The speed-up is therefore \chdSpeed{} for the reduced loop alone and \chdSpeedLift{} with the lift, with the full-order solver as the baseline at \chdN{} unknowns, too small for a large factor. These factors exclude the offline cost: the $\chdNTrain$ training trajectories took \chdTimeTrajs~ms, the SVD \chdTimeSvd~ms and the NMF \chdTimeNmf~ms, \chdTimeOffline~ms in all, which is repaid after about \chdBreakEven{} trajectories at the saving per query. The non-negative factorisation dominates the preprocessing here. The warm start of the active set saves iterations (\chdItersWarm{} against \chdItersCold{} in total over the $\chdSteps$ steps) without changing the answer; this equality is also tested in the repository. For the two obstacles not used in training the error of the whole trajectory in the norm (the square root of the measure of \Cref{tab:hy-dyn}) is \chdGlobalIn{} (inside) and \chdGlobalOut{} (outside). Two local quantities are more favourable: the peak centre displacement is off by \chdPeakDispIn{} and \chdPeakDispOut, and the peak of the total contact force by \chdPeakForceIn{} and \chdPeakForceOut. Judged by the global norm the dynamic model is a poor one; judged by the peak contact force, an engineering quantity, it is within about $8\,\%$; neither is good enough to be called accurate, and the two should be read together.
+
+\subsection{Greedy snapshot selection}
+
+For the static problem on the same membrane the parameters are the same two numbers. The candidates are a $6\times6$ grid (\cgrNCand{} obstacles) and the test set is \cgrNTest{} obstacles not on the grid. The greedy loop starts at the first candidate and, in every round, solves the full-order problem at the candidate with the largest indicator $I$ (weights $(1,0,0)$). The comparison is with random selection of the same number of snapshots, repeated \cgrNRand{} times. \Cref{tab:hy-greedy} gives the mean relative error over the test set.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{rrrrr}
+\toprule
+snapshots & greedy & random, median & random, best of \cgrNRand & random, worst of \cgrNRand \\
+\midrule
+2 & \cgrTwoGreedy & \cgrTwoMed & \cgrTwoBest & \cgrTwoWorst \\
+4 & \cgrFourGreedy & \cgrFourMed & \cgrFourBest & \cgrFourWorst \\
+6 & \cgrSixGreedy & \cgrSixMed & \cgrSixBest & \cgrSixWorst \\
+8 & \cgrEightGreedy & \cgrEightMed & \cgrEightBest & \cgrEightWorst \\
+\bottomrule
+\end{tabular}
+\caption{Mean relative displacement error over six obstacles not used in training for a static contact ROM trained on greedy-selected or randomly selected snapshots.}\label{tab:hy-greedy}
+\end{table}
+
+The greedy choice is better than the median random choice at all four sizes (\cgrWinCount{} of 4), by a factor of about $1.4$ to $1.9$, but it is not the best choice available: only at $4$ and $8$ snapshots does it beat the best of the \cgrNRand{} random draws (\cgrBeatBestCount{} of 4). The indicator costs no full-order solve per candidate, which is its advantage; what it buys is protection against a poor draw, not an optimum. \Cref{fig:hy-greedy} shows the same comparison.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.6\linewidth]{figures/ch13_greedy.pdf}
+\caption{Static contact ROM: error against the number of snapshots for greedy selection and for random selection (median and range of \cgrNRand{} draws).}\label{fig:hy-greedy}
+\end{figure}
+
+\subsection{ECSW on a hardening chain with contact}
+
+The benchmark is a chain of \cecN{} hardening springs (force $k(d+k_3d^3)$ for elongation $d$) grounded at one end, loaded uniformly, with a rigid obstacle under a block of \cecNObs{} nodes. The full-order solver is \fea{}'s sequential-linearisation contact Newton. Training uses \cecNTrain{} solutions at load factors up to $3$ and obstacle depths up to $0.25$, and a basis of $r=\cecRank$ modes.
+
+\paragraph{Tolerance.} \Cref{tab:hy-tol} gives the number of selected elements and the largest relative error of the reduced force at unseen states (three parameter pairs inside the training range) and out-of-range states (load factors $4$ and $5$, depths $0.3$ and $0.4$).
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{rrrr}
+\toprule
+tolerance $\varepsilon$ & selected (of \cecNElem) & error, unseen & error, out of range \\
+\midrule
+$10^{-2}$ & \cecTwoEN & \cecTwoEErr & \cecTwoEErrOut \\
+$10^{-3}$ & \cecThreeEN & \cecThreeEErr & \cecThreeEErrOut \\
+$10^{-4}$ & \cecFourEN & \cecFourEErr & \cecFourEErrOut \\
+$10^{-6}$ & \cecSixEN & \cecSixEErr & \cecSixEErrOut \\
+$10^{-8}$ & \cecEightEN & \cecEightEErr & \cecEightEErrOut \\
+\bottomrule
+\end{tabular}
+\caption{Plain ECSW: elements selected and largest relative error of the reduced force at unseen and out-of-range states, against the training tolerance.}\label{tab:hy-tol}
+\end{table}
+
+A handful of elements out of \cecNElem{} reproduces the reduced force of the full model. The error at unseen states falls from \cecTwoEErr{} to \cecFourEErr{} between $\varepsilon=10^{-2}$ and $10^{-4}$ and then stops falling; tightening the tolerance below $10^{-4}$ adds an element and makes the error slightly worse (\cecEightEErr{} at $10^{-8}$), so the training residual is not the quantity to push to zero. The out-of-range error plateaus higher, at about $10^{-4}$.
+
+\paragraph{Plain against contact-aware weights.} At $\varepsilon=10^{-6}$ plain ECSW selects \cecPlainN{} elements and the contact-aware version \cecCaN, of which \cecNReq{} are the elements touching the contact block, pinned at weight one. The contact-aware set is therefore more than twice as large. \Cref{tab:hy-newton} shows what that buys: the reduced contact Newton solution, with the NMF dual basis ($p_\lambda=\cecRank$) and a hyper-reduced force, against the full-order contact solution. Both variants converge at all five parameter pairs, with a smallest gap above $-3\times10^{-14}$ (no penetration), and they are equally accurate. The accuracy is the same with all constraints kept instead of a dual basis, to the digits shown. In this test the contact-aware fit gave no accuracy benefit, only a structural one (the contact zone is evaluated exactly, which is needed if the contact conditions are evaluated on elements of the reduced domain).
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{lrrr}
+\toprule
+parameters (load factor, depth) & range & plain & contact-aware \\
+\midrule
+$1.25,\ 0.12$ & inside & \cecPlainNmfInErr & \cecCaNmfInErr \\
+$2.2,\ 0.2$ & inside & \cecPlainNmfInBErr & \cecCaNmfInBErr \\
+$0.8,\ 0.1$ & inside & \cecPlainNmfInCErr & \cecCaNmfInCErr \\
+$4,\ 0.3$ & outside & \cecPlainNmfOutErr & \cecCaNmfOutErr \\
+$5,\ 0.4$ & outside & \cecPlainNmfOutBErr & \cecCaNmfOutBErr \\
+\bottomrule
+\end{tabular}
+\caption{Relative error of the displacement from the reduced contact Newton solve (ECSW force, NMF dual basis, $\varepsilon=10^{-6}$) against the full-order solution.}\label{tab:hy-newton}
+\end{table}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/ch13_ecsw.pdf}
+\caption{Left: error of the reduced force against the number of selected elements. Right: the elements selected by plain and by contact-aware ECSW; the shaded band holds the elements that touch the contact block.}\label{fig:hy-ecsw}
+\end{figure}
+
+This is a mild test and it should be read as one. All \cecNActive{} potential contacts are active in every unseen and out-of-range state, so the active set never changes between training and test; whether weights fitted on one active set transfer to another was not tested, and the package's documentation says it is not guaranteed. The out-of-range parameters are $1.2$ to $1.7$ times the training maxima, not an order of magnitude beyond, and the model is one-dimensional.
+
+\paragraph{Offline, online and lift cost of the chain model.} The offline stage consists of the \cecNTrain{} full-order training solves (\cecTimeSolves~ms), the ECSW training matrix (\cecTimeG~ms), the non-negative least-squares fit (\cecTimeW~ms) and the NMF dual basis (\cecTimeN~ms): \cecTimeOffline~ms in all. One query not used in training takes \cecTimeFull~ms with the full-order contact Newton and \cecTimeRed~ms with the reduced contact Newton and the hyper-reduced force (a factor \cecSpeedOnline), plus \cecTimeLiftUs~$\mu$s for the lift $\bm u=\bm U\bm q$. Including the offline stage the reduced model is repaid after about \cecBreakEven{} queries. At \cecN{} unknowns the speed-up is small because the full-order model is already cheap, and the force evaluation that ECSW shortens is a minor part of a step. A local quantity, the total contact force, and the deepest displacement of the unseen state are reproduced to \cecLocForce{} and \cecLocPeak, the same as the global error of the state, \cecGlobU{}, so this test does not separate local from global accuracy.
+
+\paragraph{Reconstructing contact forces and the rank condition.} If the reduced model resolves only part of the contact zone, the forces elsewhere are rebuilt from snapshots by a non-negative least-squares fit. With $8$ of the \cecNActive{} active nodes resolved, the reconstruction matches the forces inside to \cecRecIn{} and the total force to \cecRecTotal; the result is too good to be informative, because on this chain all contact forces lie in the span of the multiplier snapshots, and the test does not show how the fit behaves when they do not. The rank condition is easier to break. With a $3$-mode basis the reduced constraint matrix of the \cecNObs{} contact nodes has a rank deficiency of \cecRankDef{} (its rank is $1$, since the contact nodes move together), the saddle-point problem is singular, and \code{enrich_basis_for_constraints} repairs it by appending \cecRankAdded{} unit vectors at constraint degrees of freedom, giving a basis of \cecRankCols{} columns and a deficiency of \cecRankAfter. The repair costs one basis vector per missing rank: the model a three-mode basis suggested is a seventeen-column one.
+
+\paragraph{Batched evaluation.} The offline cost of ECSW is dominated by the training matrix. On a distorted $40\times10$ plate of \cbtElems{} large-deflection quadrilateral elements (\cbtDofs{} degrees of freedom, $8$ snapshots, a $4$-mode basis; the package's own timing script), calling the element routine once per element and snapshot took \cbtPer~ms, and one call per snapshot with the batched kernel of Chapter~\ref{ch:batch} took \cbtBat~ms (a factor \cbtSpeed), with the same matrix to $5\times10^{-13}$ and the same \cbtSelected{} of \cbtElems{} elements selected at $\varepsilon=10^{-4}$. Evaluating the selected elements was faster by factors of \cbtForceSpeed{} (force) and \cbtTangentSpeed{} (tangent), and the nonlinearity indicator over three states by \cbtIndSpeed. These factors depend on the machine; the plan's earlier figure of $92\times$ was from the author's machine.
+
+\subsection{Linear and nonlinear zones}
+
+The chain of the previous section is changed so that the first \cptLinear{} springs are linear and the remaining ones hardening. The linear zone is condensed onto its single interface node: \cptInterior{} interior unknowns disappear, \cptNl{} of the \cptN{} unknowns remain, and the condensed stiffness is $K^*=\cptKstar$, equal to the series formula $k/\cptLinear=\cptKseries$ for \cptLinear{} springs in series. The contact problem solved on the \cptNl{} unknowns with the condensed residual \eqref{eq:hy-part}, and expanded to the interior, reproduces the full-order displacement to \cptErrU{} and the contact forces to \cptErrLam{} (largest relative error over three parameter pairs). The indicator $\kappa_e$ is below \cptKappaLin{} for every linear spring and above \cptKappaNlMin{} for every hardening spring that is stretched; \cptSelected{} of the hardening elements are selected, because the springs held between two nodes on the obstacle do not stretch and the indicator cannot see them. The ECSW training matrix over the nonlinear zone has \cptColsNl{} columns instead of \cptColsAll. The exactness is expected, since the condensation of a truly linear zone is exact; the experiment checks the implementation, not the method. The method pays off only if the interface is small, since $\bm K^*$ is dense.
+
+\subsection{Hybrid hyper-reduction on a reduced integration domain}
+
+The model is a one-dimensional rope of \crdN{} unknowns pushed against an obstacle, with a stiffness and an obstacle height as parameters (\crdNSnap{} training combinations, a basis of \crdBasis{} modes chosen by the information rate $10^{-8}$). The RID is built from the DEIM indices of the displacement and multiplier bases plus a number of layers of neighbouring elements. \Cref{tab:hy-rid} compares three RIDs on three parameter pairs not used in training; the error is measured at the degrees of freedom inside the RID.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{lrrrrr}
+\toprule
+RID & elements & contact rows & unknowns & error inside & active set correct \\
+\midrule
+whole domain & \crdFullElems & \crdFullRows & \crdFullUnk & \crdFullErr & \crdFullActive \\
+DEIM + 3 layers & \crdThreeElems & \crdThreeRows & \crdThreeUnk & \crdThreeErr & \crdThreeActive \\
+DEIM + 1 layer & \crdOneElems & \crdOneRows & \crdOneUnk & \crdOneErr & \crdOneActive \\
+\bottomrule
+\end{tabular}
+\caption{Hybrid hyper-reduction of a one-dimensional rope: size of the reduced integration domain (RID), the total number of unknowns (enriched basis vectors plus contact multipliers on the RID) and the error at the degrees of freedom inside the RID, for three parameter pairs not used in training.}\label{tab:hy-rid}
+\end{table}
+
+The method works as described: the error inside the RID is below $10^{-5}$ and the active set is right for the cases not used in training, and the enrichment restores full row rank in every case. It does not reduce this problem. Every node of the rope can touch the obstacle, so every degree of freedom in the RID carries a contact row, and the enrichment must add basis vectors until the number of basis vectors reaches the number of contact rows: \crdOneUnk{} unknowns for the smallest RID, more than the \crdN{} of the full model, and \crdFullUnk{} for the whole domain. The method has its use where few of the many degrees of freedom of the RID can be in contact; a model on which that is true was not built here. Only the part of the solution inside the RID is computed, and the error outside it was not measured.
+
+\section{Limits and failure modes}\label{sec:hy-limits}
+
+\begin{limitsbox}
+\begin{itemize}
+\item \textbf{The reduced contact dynamics were tested on one small problem.} A membrane of \chdN{} unknowns, frictionless contact, one load, parametrised only by the obstacle. The trajectory error was several per cent in the squared measure even on a training obstacle and irregular in the basis size, and the speed-up was a small factor.
+\item \textbf{A signed dual basis fails silently.} The SVD dual basis passed the reduced contact check at $10^{-16}$ and gave a solution far from the full-order one, so a reduced KKT residual does not certify the full problem.
+\item \textbf{Transfer of hyper-reduction was tested without a change of active set.} All contacts were active at all test points, and the out-of-range parameters were $1.2$ to $1.7$ times the training maxima. Weights fitted on one contact configuration and used on another, friction and large sliding were not tested; below $\varepsilon=10^{-4}$ a tighter tolerance did not improve the error.
+\item \textbf{The greedy indicator is a heuristic.} It beat the median random draw at every size and the best draw at two of four.
+\item \textbf{The hybrid RID and the partition were checked on one-dimensional models,} the RID without any saving and the partition with a trivial interface. Rank repair enlarges the model by one vector per missing rank. DEIM and QDEIM, the sparse-dictionary multiplier fit and the hyper-reduced harmonic-balance ROM of the package were not run for this book.
+\end{itemize}
+\end{limitsbox}
+
+\section{Summary}\label{sec:hy-summary}
+
+We started from a reduced model that is small but still touches every element of the full mesh. ECSW fixes that: it selected \cecFourEN{} of \cecNElem{} elements of a hardening chain with a force error of \cecFourEErr{} on states not used in training, and it stopped improving when the tolerance was pushed further. The offline cost is dominated by the training matrix, which the batched kernel of Chapter~\ref{ch:batch} cut by a factor above $100$ on a plate.
+
+Contact needs more than projection. A non-negative dual basis keeps the contact forces admissible, whereas an SVD basis returned a solution far from the full-order one while passing its own reduced checks. The reduced constraints must have full rank, and repairing a deficiency enlarges the basis. In the dynamic benchmark the reduced model satisfied the reduced contact conditions at every step, but its trajectory error was several per cent in the squared measure and was worse on obstacles not used in training; selecting snapshots by the contact violation improved on the median random choice without beating the best one. Condensing a linear zone onto its interface reproduced the full-order contact solution to rounding on a trivial case. This is the last method chapter; the next one reports the nine reproductions of published studies.
+
+\section*{Exercises}\label{sec:hy-exercises}
+\begin{enumerate}
+\item \emph{(Derivation)} Show that $\bm w=\bm 1$ is feasible for \eqref{eq:hy-nnls} for any tolerance, and that a solution with a smaller support exists when columns of $\bm G$ are linearly dependent on the training set.
+\item \emph{(Derivation)} Derive $\bm K^*$ and the recovery of $\bm u_I$ in \eqref{eq:hy-part} by eliminating the interior unknowns of $\bm K\bm u=\bm f$ with the interface held fixed, and show that for $L$ equal springs in series $K^*=k/L$.
+\item \emph{(Implementation)} Repeat \Cref{tab:hy-dyn} with training obstacles chosen by the greedy loop of \Cref{tab:hy-greedy} instead of by hand, using the same number of trajectories. Does the dynamic error fall?
+\item \emph{(Implementation)} Add a training state in which the contact block is only partly active (a shallower obstacle) to the chain benchmark and test the weights at a state where a different set of nodes is active. How does the error of \Cref{tab:hy-tol} change?
+\item \emph{(Interpretation)} The SVD dual basis in \Cref{tab:hy-dyn} passes the reduced KKT check and fails the full problem. State what the reduced KKT residual measures, propose a cheap check on the lifted solution that would have caught it, and say what it costs.
+\item \emph{(Interpretation)} In \Cref{tab:hy-rid} the number of unknowns exceeds the size of the full model. For what ratio of contact rows to RID degrees of freedom would you expect the hybrid method to pay off, and why?
+\end{enumerate}
+
+\chapterrefs

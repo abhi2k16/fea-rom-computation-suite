@@ -1,0 +1,15 @@
+\begin{tikzpicture}[font=\sffamily\scriptsize]
+\draw[fill=blue!8,thick] (0,0) rectangle (4.6,2.2);
+\node[align=center] at (2.3,1.7) {\textbf{linear zone $L$}};
+\node[align=center] at (2.3,0.95) {interior unknowns $I$\\(condensed away)};
+\draw[fill=green!15,thick] (4.6,0) rectangle (5.6,2.2);
+\node[rotate=90] at (5.1,1.1) {interface $B$};
+\draw[fill=orange!15,thick] (5.6,0) rectangle (9.4,2.2);
+\node[align=center] at (7.5,1.7) {\textbf{nonlinear zone $N$}};
+\node[align=center] at (7.5,0.95) {nonlinear elements,\\potential contact};
+\draw[decorate,decoration={brace,amplitude=4pt}] (4.6,2.45) -- (9.4,2.45) node[midway,above=4pt,align=center] {solved on $N\cup B$: $\bm R_N(\bm u_N)=\bm f^{NL}_{int}+\bm E_B^T\bm K^\ast\bm E_B\bm u_N-\bm f^\ast_{ext,N}=\bm0$};
+\draw[cmFlow] (1.4,-0.2) -- (1.4,-0.8) -- (5.1,-0.8) -- (5.1,-0.2);
+\node[cmLab,align=center] at (3.3,-1.35) {condense: $\bm K^\ast=\bm K_{BB}-\bm K_{BI}\bm K_{II}^{-1}\bm K_{IB}$\\$\bm f^\ast_B=\bm f_B-\bm K_{BI}\bm K_{II}^{-1}\bm f_I$};
+\draw[cmFlow] (6.5,-0.2) -- (6.5,-1.9) -- (0.6,-1.9) -- (0.6,-0.2);
+\node[cmLab,align=center] at (3.6,-2.4) {recover: $\bm u_I=\bm K_{II}^{-1}(\bm f_I-\bm K_{IB}\bm u_B)$};
+\end{tikzpicture}

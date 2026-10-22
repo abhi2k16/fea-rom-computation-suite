@@ -1,0 +1,9 @@
+\begin{tikzpicture}[font=\sffamily\scriptsize]
+\node[cmROM,text width=2.9cm] (r) {reduced solution\\$\bm x_r(\omega)$};
+\node[cmFE,right=9mm of r,text width=2.9cm] (res) {residual\\$\bm\rho=\bm F-\bm A\bm x_r$\\(full-size product)};
+\node[cmPLAIN,below=9mm of res,text width=3.9cm] (lb) {lower bound $\beta_{\mathrm{LB}}\le\sigma_{\min}(\bm A(\omega))$\\from exact values at reference $\omega_j$\\(Weyl, or SCM linear program)};
+\node[cmCERT,right=11mm of res,text width=3.4cm] (b) {$\|\bm x-\bm x_r\|\le\|\bm\rho\|/\beta_{\mathrm{LB}}$\\rigorous where $\beta_{\mathrm{LB}}>0$,\\else $+\infty$};
+\draw[cmFlow] (r)--(res); \draw[cmFlow] (res)--(b); \draw[cmFlow] (lb)-|(b);
+\node[cmDASH,left=9mm of lb,text width=3cm] (o) {offline: a few full singular value solves};
+\draw[cmFb] (o)--(lb);
+\end{tikzpicture}

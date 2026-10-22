@@ -1,0 +1,301 @@
+\chapter{Material and geometric nonlinearity}\label{ch:nonlin}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+A shallow two-bar truss is pushed down at its apex. At first it resists, then at a certain load it gives way and snaps through, and a solver that steps up the load in small increments simply stops converging just above that load. This chapter is about solvers that do not stop there. We state the Newton iteration that every nonlinear driver shares, derive the internal force and tangent of a truss and of a continuum element in the total-Lagrangian setting, add hyperelasticity and $J_2$ plasticity with history variables, and compare four ways of following a response: load control, displacement control, arc length and Koiter--Newton. Each statement about the code comes with a check: rotation invariance, the tangents against finite differences, the von Mises snap-through truss against its closed form, and a plastic load cycle against the hand solution.\par\smallskip
+After it you should be able to state the Newton iteration the drivers share, verify an element's force and tangent by rotation invariance and finite differences, choose among the four path-following methods for a response with a limit point, and check a plastic load cycle against a hand solution.
+\end{tcolorbox}
+
+\section{Why a nonlinear solver is different}\label{sec:nl-why}
+
+The two-bar truss of \Cref{sec:nl-paths} is the running example of this chapter. It is small enough to have a closed form, \eqref{eq:nl-vm}, so every claim below can be checked against it, and it shows the one thing that distinguishes nonlinear from linear analysis in practice: the load that the structure can carry has a maximum, and a solver that prescribes the load has no way to go beyond it.
+
+A linear model solves $\bm K\bm u=\bm f$ once. A nonlinear model has an internal force $\bm f_{int}(\bm u)$ that is not linear in $\bm u$, and equilibrium with a load $\lambda\bm f_{ref}$ is the residual equation
+\begin{equation}\label{eq:nl-residual}
+\bm r(\bm u,\lambda)=\bm f_{int}(\bm u)-\lambda\,\bm f_{ref}=\bm 0 .
+\end{equation}
+Two things change. First, the solution has to be found by iteration: Newton's method linearises \eqref{eq:nl-residual} with the tangent stiffness $\bm K_T(\bm u)=\partial\bm f_{int}/\partial\bm u$. Second, the response may have no unique answer for a given load: when the load-displacement curve turns back, there are several equilibrium states for one $\lambda$, and a method that prescribes $\lambda$ cannot follow the curve (\Cref{sec:nl-paths}). The standard references are \citet{zienkiewicz2013fem}, \citet{bathe2014fep} and, for inelasticity, \citet{simo1998inelasticity}.
+
+\begin{sidenote}{Tangent stiffness}
+The tangent $\bm K_T=\partial\bm f_{int}/\partial\bm u$ is the stiffness the structure has \emph{at the current deformation}: the slope of the force--displacement curve there. For a linear structure it is the constant $\bm K$ and Newton's method finishes in one iteration. For a nonlinear one it changes with $\bm u$, and when it becomes singular the structure has reached a limit point.
+\end{sidenote}
+
+\begin{algbox}{Newton iteration for one load step}
+\begin{pseudo}
+\Require converged state $(\bm u_n,\lambda_n)$, new load $\lambda_{n+1}$, tolerance
+\State $\bm u^0\gets\bm u_n$
+\For{$k=0,1,\dots$}
+  \State assemble $\bm f_{int}(\bm u^k)$;\ $\bm r^k\gets\bm f_{int}(\bm u^k)-\lambda_{n+1}\bm f_{ref}$ on the free unknowns
+  \If{$\|\bm r^k\|\le\mathrm{tol}$ (relative to the load)} \textbf{stop} \EndIf
+  \State assemble $\bm K_T(\bm u^k)$;\ solve $\bm K_T\Delta\bm u=-\bm r^k$ on the free unknowns
+  \State $\bm u^{k+1}\gets\bm u^k+\Delta\bm u$ \Comment{with a line search if the plain step fails}
+\EndFor
+\State commit the history variables once
+\Ensure converged state at $\lambda_{n+1}$
+\end{pseudo}
+\end{algbox}
+
+Each iteration costs one assembly and one factorisation, and convergence is quadratic only if $\bm K_T$ is the exact derivative of $\bm f_{int}$. The iteration fails beyond a limit point (use displacement control or arc length), converges slowly with an inconsistent tangent, and diverges if the step is too large. The code is \anchor{fea_engine.nonlinear_solver.solve_nonlinear_static} with \anchor{fea_engine.newton_options.NewtonOptions}; \Cref{tab:nl-tangent} (tangent against finite differences) and \Cref{fig:nl-vm} are the checks.
+
+\tikzfigure[0.7\linewidth]{ch05_newton}{One Newton iteration on a scalar equilibrium curve (schematic): the tangent at $\bm u^0$ is followed to the load level, and the new iterate is the foot of that line.}{fig:nl-newtonidea}
+
+Step~4 is why the tangent matters. If $\bm K_T$ is the exact derivative of $\bm f_{int}$, the iteration converges quadratically near the solution; if it is only approximate, convergence is slower or fails. \Cref{sec:nl-verif} measures how close the tangents of \fea{} are to the exact derivative.
+
+\section{Total-Lagrangian kinematics}\label{sec:nl-tl}
+
+All the geometrically nonlinear elements of \fea{} are written in the total-Lagrangian form: every quantity refers to the undeformed configuration with coordinates $\bm X$, and the displacement field gives the deformation gradient $\bm F=\bm I+\partial\bm u/\partial\bm X$. The strain measure is the Green--Lagrange strain
+\begin{equation}\label{eq:nl-gl}
+\bm E=\tfrac12\left(\bm F^{T}\bm F-\bm I\right),
+\end{equation}
+which is unchanged by a rigid rotation: for $\bm F=\bm R$ with $\bm R^T\bm R=\bm I$, $\bm E=\bm 0$. The conjugate stress is the second Piola--Kirchhoff stress $\bm S$, and the St.~Venant--Kirchhoff model used by the elements named \code{...TL} is the linear relation $\bm S=\bm D\bm E$ with the usual elasticity matrix $\bm D$. The internal force follows from the principle of virtual work, $\bm f_{int}=\int \bm B_{NL}(\bm u)^{T}\bm S\,dV_0$, where $\bm B_{NL}$ is the strain-displacement matrix of the current state, and its derivative is the sum of a material and a geometric part,
+\begin{equation}\label{eq:nl-tangent}
+\bm K_T=\int \bm B_{NL}^{T}\bm D\,\bm B_{NL}\,dV_0+\bm K_G(\bm S),
+\end{equation}
+where $\bm K_G$ depends on the stress that is already present. The geometric part is what makes a compressed bar buckle and a tensioned string stiff. Total-Lagrangian formulations of this type are treated in \citet{crisfield1981} and \citet{bathe2014fep}.
+
+\paragraph{The truss: the smallest complete example.}
+For a bar between nodes with reference positions $\bm X_1,\bm X_2$, reference length $L_0$ and current relative position $\bm d=(\bm X_2+\bm u_2)-(\bm X_1+\bm u_1)$, the Green--Lagrange strain is $E=(\bm d^T\bm d-L_0^2)/(2L_0^2)$, the stress is $S=EE_{GL}$ for Young's modulus $E$, and the internal force on node~2 is $\bm f_2=(SA/L_0)\,\bm d$, with $\bm f_1=-\bm f_2$. This is the whole of \anchor{fea_engine.elements.trusses.TrussTL2D}; \Cref{sec:nl-paths} uses it for the snap-through problem.
+
+\paragraph{Why total Lagrangian: rotation invariance.}
+A rigid rotation of an element must produce no force. Linear kinematics fail this test for any finite rotation, because the linear strain of a rotated body is not zero. \Cref{fig:nl-obj} rotates a unit-square plane-stress element ($E=1000$, $\nu=0.3$, unit thickness) rigidly about the origin and plots the norm of the internal force. The total-Lagrangian element, \anchor{fea_engine.elements.nonlinear_solids.Quad4PlaneStressTL}, returns at most \cnlObjTLMax over the whole range $0$--$180^\circ$. The linear element returns a force of norm \cnlObjLinTen at $10^\circ$ and \cnlObjLinNinety at $90^\circ$: it reads the rotation as strain.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.62\linewidth]{figures/ch05_objectivity.pdf}
+\caption{Force norm of a rigidly rotated unit-square element (a stress-free motion): linear kinematics against the total-Lagrangian element.}\label{fig:nl-obj}
+\end{figure}
+
+\section{Material nonlinearity}\label{sec:nl-material}
+
+\paragraph{Hyperelasticity.}
+For large strains, the St.~Venant--Kirchhoff law is replaced by a strain-energy function. \anchor{fea_engine.material.NeoHookeanMaterial} is the compressible neo-Hookean model with an isochoric--volumetric split, $W=\tfrac{\mu}{2}(\bar I_1-3)+\tfrac{\kappa}{2}(J-1)^2$ with $\bar I_1=J^{-2/3}\operatorname{tr}\bm C$, $\bm C=\bm F^T\bm F$ and $J=\det\bm F$. Its stress is $\bm S=\partial W/\partial\bm E$, and \anchor{fea_engine.elements.nonlinear_solids.Tet4NeoHookean} uses it with a closed-form internal force. One honest limit: the tangent of this element is \emph{not} analytic. It is a finite difference of the closed-form internal force, a choice the code documents because the consistent fourth-order tensor is easy to get wrong by hand; an automatic-differentiation tangent is available as an opt-in (Appendix~\ref{ch:diff}). \Cref{sec:nl-verif} therefore tests only the elements whose tangent is analytic.
+
+\paragraph{$J_2$ plasticity: history variables.}
+Plasticity depends on the path, not only on the current displacement: the stress is a function of the plastic strain accumulated so far. The material keeps a state, here $\{\varepsilon_p,\alpha\}$ (plastic strain and accumulated plastic strain), and the solver treats it in two phases. During a Newton iteration the element computes a \emph{trial} response from the state of the last converged step and does not change the state. Only when the step has converged, the solver calls the element's \code{commit_state} \emph{once}, which replays the same computation and stores the new state. If the state were changed during iterations, a step that is later rejected would leave a wrong history behind.
+
+For the uniaxial bar of \anchor{fea_engine.elements.trusses.TrussPlastic2D} with the material \anchor{fea_engine.material.PlasticMaterial1D} (modulus $E$, initial yield stress $\sigma_y$, isotropic hardening modulus $H$) the return map is closed form. The trial stress is $\sigma^{tr}=E(\varepsilon-\varepsilon_p^n)$ and the yield function is $f=|\sigma^{tr}|-(\sigma_y+H\alpha^n)$. If $f\le0$ the step is elastic; otherwise the plastic multiplier is $\Delta\gamma=f/(E+H)$, the stress becomes $\sigma=\sigma^{tr}-E\,\Delta\gamma\,\operatorname{sign}\sigma^{tr}$, and the consistent tangent is $E_T=EH/(E+H)$. The same structure, with a radial return in deviatoric space, is used by the continuum element \anchor{fea_engine.elements.nonlinear_solids.Hex8PlasticJ2}, \citep{simo1985tangent,simo1998inelasticity}.
+
+\begin{algbox}{Return map for a bar with isotropic hardening (closed form)}
+\begin{pseudo}
+\Require strain $\varepsilon$ of the trial step; stored $\varepsilon_p^n$, $\alpha^n$; $E,\ \sigma_y,\ H$
+\State $\sigma^{tr}\gets E(\varepsilon-\varepsilon_p^n)$;\ $f\gets|\sigma^{tr}|-(\sigma_y+H\alpha^n)$
+\If{$f\le0$}
+  \State $\sigma\gets\sigma^{tr}$;\ $E_T\gets E$ \Comment{elastic step}
+\Else
+  \State $\Delta\gamma\gets f/(E+H)$;\ $\sigma\gets\sigma^{tr}-E\Delta\gamma\,\mathrm{sign}\,\sigma^{tr}$;\ $E_T\gets EH/(E+H)$
+  \State trial state: $\varepsilon_p\gets\varepsilon_p^n+\Delta\gamma\,\mathrm{sign}\,\sigma^{tr}$,\ $\alpha\gets\alpha^n+\Delta\gamma$
+\EndIf
+\State \textbf{only} \texttt{commit\_state} after the Newton step has converged stores $(\varepsilon_p,\alpha)$
+\Ensure stress $\sigma$, consistent tangent $E_T$
+\end{pseudo}
+\end{algbox}
+
+The return map is a handful of scalar operations per element and iteration; the continuum element does the radial return in deviatoric space. It goes wrong if the state is changed during the iterations, because a rejected step would leave a wrong history, or if the tangent is not the consistent one, which loses quadratic convergence. The code is \anchor{fea_engine.elements.trusses.TrussPlastic2D} and \anchor{fea_engine.material.PlasticMaterial1D}; \Cref{fig:nl-plast} compares with the closed-form return map, and the load cycle is solved by hand.
+
+\Cref{fig:nl-plast} drives a bar with $E=200$ GPa, $\sigma_y=250$ MPa and $H=5$ GPa through a load cycle: tension to $1.8\sigma_y$, unloading, and compression into reverse yield. Four properties follow from the return map, and all are visible in the figure and checked against the hand solution. The stress at the peak is \cnlPlPeak$\,\sigma_y$. The first unloading is elastic with slope $\cnlPlUnloadSlope\,E$. The reversed branch leaves the elastic line at a compressive stress of \cnlPlReverseYield$\,\sigma_y$, equal to the hardened yield stress $\cnlPlHardenedYield\,\sigma_y$ reached on the way up: this is isotropic hardening, which has no Bauschinger effect. And the reversed branch continues with the slope $E_T=\cnlPlTangentSlope$ GPa. The whole stress history agrees with the closed form to \cnlPlErr (relative to the peak stress).
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.62\linewidth]{figures/ch05_plasticity.pdf}
+\caption{Stress--strain loop of \code{TrussPlastic2D} ($E=200$ GPa, $\sigma_y=250$ MPa, $H=5$ GPa): the element against the closed-form return map.}\label{fig:nl-plast}
+\end{figure}
+
+\begin{lstlisting}[caption={The same bar through the solver: \texttt{init\_state} once, a load history, and the state committed after every converged step.},label={lst:nl-plast}]
+mesh = Mesh(nodes=np.array([[0.0, 0.0], [1.0, 0.0]]),
+            elements=np.array([[0, 1]], dtype=int), dim=2)
+fes = FESystem(mesh, elmod.TrussPlastic2D())
+fes.fix_dofs([0], [0, 1]); fes.fix_dofs([1], [1])
+mat = (PlasticMaterial1D(E=E, sigma_y=sy, H=H), A)
+fes.add_nodal_force([1], 0, 1.8 * sy * A)          # reference load
+fes.init_state()                                   # virgin material
+load = np.concatenate([np.linspace(0, 1, 41), np.linspace(1, 0, 41)[1:]])
+_, U = nls.solve_nonlinear_static(fes, mat, load_factors=load,
+                                  tol=1e-9, max_iter=50)
+\end{lstlisting}
+
+Through \texttt{solve\_nonlinear\_static} the peak strain agrees with the hand solution to \cnlFesPeakErr and the permanent set after unloading is $\cnlFesSet\times10^{-3}$, equal to $(\sigma_{peak}-\sigma_y)/H$ to \cnlFesSetErr. Some elements also carry a second kind of state that is updated at every iteration rather than every step (a mixed-formulation stress, kept in \code{iter_state}); it is a separate mechanism and not needed for the elements of this chapter.
+
+\section{Verification of the elements}\label{sec:nl-verif}
+
+\paragraph{Tangent consistency.}
+For each element with an analytic tangent, \Cref{tab:nl-tangent} compares $\bm K_T$ with the central finite difference of $\bm f_{int}$ ($h=10^{-6}$) at a random displacement state, and checks its symmetry. The worst relative difference is \cnlTangentWorst, which is the size expected of a central difference with this step; the tangents are symmetric to rounding. The test shows that $\bm K_T$ is the derivative of the $\bm f_{int}$ of the \emph{same} element; it does not show that $\bm f_{int}$ itself is the right physics. That is what the rotation test of \Cref{fig:nl-obj}, the truss below and the elastica of \Cref{sec:nl-elastica} are for. The states are one random draw per element, not a sweep.
+
+\begin{table}[ht]
+\centering\small
+\input{tables/ch05_tangent}
+\caption{Analytic tangent against central finite differences of the internal force, one random displacement state per element.}\label{tab:nl-tangent}
+\end{table}
+
+\paragraph{Elastica.}\label{sec:nl-elastica}
+The large-deflection cantilever (the elastica) is the standard test of the beam element \anchor{fea_engine.elements.beams.Beam2DCorotational}. With 40 elements and a tip load the tip deflection $w/L$ differs from the reference $0.301721$ by $3.5\times10^{-6}$, and with 10 and 20 elements by $1.8\times10^{-3}$ and $3.6\times10^{-4}$; the shortening error is $2.2\times10^{-4}$ at 40 elements. These numbers are taken from the table of the companion paper (\texttt{paper/tables/tab\_elastica.tex}) and are not recomputed by this chapter's script.
+
+\section{Following the response}\label{sec:nl-paths}
+
+\paragraph{The snap-through truss.}
+The classic problem with a turning point is the von Mises truss: two bars of reference length $L_0=\sqrt{a^2+h_0^2}$ meet at an apex of height $h_0$ above the supports, loaded vertically. With the half-span $a=1$ m, $h_0=0.10$ m, $E=210$ GPa and $A=2\times10^{-4}$ m$^2$, the apex deflection $\delta$ and load $P$ satisfy exactly
+\begin{equation}\label{eq:nl-vm}
+P(\delta)=\frac{EA}{L_0^{3}}\,\delta\,(h_0-\delta)(2h_0-\delta),
+\end{equation}
+with a limit load $P_{max}=\cnlTrussPeak$ N at $\delta=\cnlTrussPeakDelta$ mm. Beyond this deflection the load \emph{decreases} while the displacement grows.
+
+\paragraph{Try it.} \Cref{lst:nl-vm} does what a first attempt would do, which is to prescribe a load $10\,\%$ above the limit load, and then the two ways out: prescribing the deflection instead, and arc length.
+
+\begin{lstlisting}[caption={The von Mises truss with \texttt{TrussTL2D}: load control past the limit load, displacement control and arc length (run with the package on the path).},label={lst:nl-vm}]
+import numpy as np
+from fea_engine import elements as elmod
+from fea_engine.mesh import Mesh
+from fea_engine.solver import FESystem
+from fea_engine import nonlinear_solver as nls
+
+E, A, h0 = 210e9, 2e-4, 0.10
+L0 = np.hypot(1.0, h0)
+P_exact = lambda d: E * A / L0**3 * d * (h0 - d) * (2 * h0 - d)   # closed form of the truss
+d_peak = h0 * (3 - np.sqrt(3)) / 3
+P_max = P_exact(d_peak)
+
+def truss():
+    nodes = np.array([[-1.0, 0.0], [0.0, h0], [1.0, 0.0]])
+    fes = FESystem(Mesh(nodes=nodes, elements=np.array([[0, 1], [1, 2]]), dim=2), elmod.TrussTL2D())
+    fes.fix_dofs([0, 2], [0, 1])
+    return fes, 1 * fes.npn + 1                       # the system and the apex's vertical dof
+
+print(f"limit load {P_max:.0f} N at apex deflection {d_peak*1e3:.2f} mm")
+
+# naive: prescribe the load, 10 % above the limit load
+fes, apex = truss()
+fes.add_nodal_force([1], 1, -1.1 * P_max)
+try:
+    nls.solve_nonlinear_static(fes, (E, A), n_steps=20, tol=1e-12)
+    print("load control at 1.1 P_max: converged")
+except RuntimeError as e:
+    print("load control at 1.1 P_max: failed -", str(e)[:60])
+
+# prescribe the deflection instead; the load comes back as the reaction
+fes, apex = truss()
+d = np.linspace(0, 0.2, 81)
+U, R = nls.solve_nonlinear_displacement_control(fes, (E, A), apex, -d, tol=1e-12, max_iter=50)
+err = np.max(np.abs(-R - P_exact(d))) / np.abs(R).max()
+print(f"displacement control: peak load {np.max(-R):.0f} N, worst error against the closed form {err:.1e}")
+
+# arc length: only the direction of the load is given
+fes, apex = truss()
+fes.add_nodal_force([1], 1, -1.0)
+lam, U = nls.solve_nonlinear_arc_length(fes, (E, A), delta_L=0.01, n_steps=60, tol=1e-10, max_iter=60)
+dal = -U[:, apex]
+keep = dal <= 2 * h0                                  # the path up to the inversion at 2 h0
+err = np.max(np.abs(lam[keep] - P_exact(dal[keep]))) / lam[keep].max()
+print(f"arc length: {keep.sum()} points up to {2*h0*1e3:.0f} mm, peak load {lam[keep].max():.0f} N, worst error {err:.1e}")
+\end{lstlisting}
+
+\begin{lstlisting}[numbers=none,language={},keywordstyle={},commentstyle={},frame=single,aboveskip=2pt]
+limit load 15926 N at apex deflection 42.26 mm
+load control at 1.1 P_max: failed - solve_nonlinear_static: Newton-Raphson failed to converge at
+displacement control: peak load 15926 N, worst error against the closed form 6.8e-14
+arc length: 20 points up to 200 mm, peak load 15889 N, worst error 4.9e-14
+\end{lstlisting}
+
+The first attempt fails, as it must, since above $P_{max}$ there is no equilibrium state on the branch that the solver is following. The other two follow the whole curve: displacement control recovers the load as the reaction and matches the closed form to rounding, and arc length, which prescribes neither load nor deflection, takes the points through the limit load, the snap and the inversion with a worst error of the same order. The arc-length peak of $15\,889$ N is a sampled point just below the exact $15\,926$ N, because the steps of fixed length do not land on the maximum.
+
+\Cref{fig:nl-vm} shows three results. Load control, which prescribes $P$, fails at a load of $1.1\,P_{max}$: it \cnlLoadCtrlFailed{} because no equilibrium state of the same branch exists. Displacement control prescribes $\delta$ and recovers the load as the reaction, and it follows the whole curve with a largest relative error of \cnlTrussErrDC against \eqref{eq:nl-vm}. Arc length prescribes neither: it takes steps of fixed length in the combined space of $(\bm u,\lambda)$, and the load factor is one of the unknowns. It follows the curve through the limit point and beyond the inversion at $\delta=2h_0$ with a largest relative error of \cnlTrussErrAL over all 60 steps; the figure shows the \cnlTrussALpts{} points up to $\delta=2h_0$.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.7\linewidth]{figures/ch05_vonmises.pdf}
+\caption{The von Mises truss: closed form \eqref{eq:nl-vm}, displacement control and arc length. Load control cannot pass the limit load. The problem is the one of \texttt{fea\_engine/examples/arc\_length\_snap\_through\_demo.py}.}\label{fig:nl-vm}
+\end{figure}
+
+\tikzfigure[0.95\linewidth]{ch05_snapthrough}{Following a response with a limit point (schematic). Load control cannot pass the limit load; displacement control follows a snap-through but not a snap-back; arc length constrains the step length and makes the load factor an unknown.}{fig:nl-pathsidea}
+
+\begin{algbox}{Crisfield cylindrical arc length for one step}
+\begin{pseudo}
+\Require converged $(\bm u_n,\lambda_n)$, arc radius $\Delta_L$, previous step increment
+\State $\delta\bm u_f\gets\bm K_T^{-1}\bm f_{ref}$;\ predictor $\Delta\bm u\gets\pm\Delta_L\,\delta\bm u_f/\|\delta\bm u_f\|$,\ $\Delta\lambda\gets\pm\Delta_L/\|\delta\bm u_f\|$ \Comment{sign: continue the previous direction}
+\Repeat
+  \State $\bm r\gets\bm f_{int}(\bm u)-\lambda\bm f_{ref}$;\ $\delta\bm u_r\gets-\bm K_T^{-1}\bm r$;\ $\delta\bm u_f\gets\bm K_T^{-1}\bm f_{ref}$
+  \State solve $\|\Delta\bm u+\delta\bm u_r+\delta\lambda\,\delta\bm u_f\|^2=\Delta_L^2$ for $\delta\lambda$ \Comment{quadratic, two roots}
+  \State take the root whose increment has the larger dot product with the increment accumulated in this step
+  \State $\Delta\bm u\gets\Delta\bm u+\delta\bm u_r+\delta\lambda\,\delta\bm u_f$;\ $\Delta\lambda\gets\Delta\lambda+\delta\lambda$;\ update $(\bm u,\lambda)$
+\Until{$\|\bm r\|$ below tolerance}
+\State commit the history variables once
+\Ensure next point $(\bm u_{n+1},\lambda_{n+1})$ on the path
+\end{pseudo}
+\end{algbox}
+
+Arc length takes two linear solves per iteration with the same tangent, at a fixed radius with no step adaptation. A radius $\Delta_L$ that is too large lets the predictor jump to another branch or the corrector fail, and the wrong root can be picked at a sharp turn. The code is \anchor{fea_engine.nonlinear_solver.solve_nonlinear_arc_length}; \Cref{fig:nl-vm} checks the von Mises truss against its closed form. Koiter--Newton, in the same module, is not verified in this book.
+
+\begin{sidenote}{Limit point and snap-through}
+A limit point is where the load--displacement curve reaches a maximum or minimum in the load. Past a maximum the structure can only be in equilibrium if the load \emph{drops}, so under a prescribed load it jumps to a distant state: snap-through. To follow the unstable part of the curve one must prescribe something other than the load.
+\end{sidenote}
+
+\paragraph{Choosing a driver.}
+\Cref{tab:nl-drivers} lists the drivers. Load control is the cheapest and the right default for a response that rises monotonically with the load. Displacement control suits a problem where the displacement of one point is the natural control (an indentation, a snap with one dominant dof). Arc length \citep{riks1979,crisfield1981} needs only a reference load and handles turning points in load and in displacement. Koiter--Newton \citep{liang2014koiternewton} replaces the linear predictor of arc length by a cubic one built from an asymptotic expansion; it is not exercised in this chapter.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.4\linewidth} X X@{}}
+\toprule
+driver & controls & use when \\
+\midrule
+\anchor{fea_engine.nonlinear_solver.solve_nonlinear_static} & the load factor (a list of factors, so unloading and reloading are possible) & the response is monotonic in the load, or the load history matters (plasticity) \\
+\anchor{fea_engine.nonlinear_solver.solve_nonlinear_displacement_control} & one displacement dof & the curve turns back in load but not in the control displacement \\
+\anchor{fea_engine.nonlinear_solver.solve_nonlinear_arc_length} & the length of the step in $(\bm u,\lambda)$ & turning points in load and displacement (snap-through, snap-back) \\
+\anchor{fea_engine.nonlinear_solver.solve_nonlinear_koiter_newton} & a cubic predictor from a Koiter expansion & a path with strongly nonlinear buckling behaviour, when a better predictor reduces the corrector work \\
+\bottomrule
+\end{tabularx}
+\caption{Static drivers of \fea{}. The nonlinear transient drivers are not covered in this book; Chapter~\ref{ch:dyn} treats linear dynamics.}\label{tab:nl-drivers}
+\end{table}
+
+\section{Solver settings}\label{sec:nl-options}
+
+The drivers repeat the same convergence keywords, and \anchor{fea_engine.newton_options.NewtonOptions} bundles them: the residual tolerance \code{tol}, the iteration limit \code{max_iter}, optional displacement and energy tolerances, the line search, and the sparse-tangent settings of Chapter~\ref{ch:batch}. A field left at \code{None} means ``the driver's own default'', a field a driver does not know is ignored, and a keyword passed to the driver always wins. The line search is on by default but is used only when the plain Newton step fails to reduce the residual, so a call that did not need it gives the same result as before.
+
+\begin{lstlisting}[caption={One options object for a driver; load control below the limit load of the truss.},label={lst:nl-opts}]
+opts = NewtonOptions(tol=1e-10, max_iter=40, line_search=True)
+fes.add_nodal_force([1], 1, -0.8 * P_max)
+lam, U = nls.solve_nonlinear_static(fes, mat, n_steps=8, options=opts)
+\end{lstlisting}
+
+Run on the truss, \Cref{lst:nl-opts} gives an apex deflection of $\cnlLCdelta$ mm at $0.8\,P_{max}$, which agrees with the root of \eqref{eq:nl-vm} on the first branch to \cnlLCerr.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l X >{\centering\arraybackslash}p{0.11\linewidth}@{}}
+\toprule
+Concept & Code & Script calls \\
+\midrule
+total-Lagrangian truss, plane-stress quad, hex, quadratic tetrahedron & \anchor{fea_engine.elements.trusses.TrussTL2D}, \anchor{fea_engine.elements.nonlinear_solids.Quad4PlaneStressTL}, \anchor{fea_engine.elements.hex_tl.Hex8SolidTL}, \anchor{fea_engine.elements.nonlinear_solids.Tet10SolidTL} & yes \\
+corotational beam & \anchor{fea_engine.elements.beams.Beam2DCorotational} & yes \\
+hyperelastic tetrahedron & \anchor{fea_engine.elements.nonlinear_solids.Tet4NeoHookean} & no \\
+plastic bar and continuum, with state & \anchor{fea_engine.elements.trusses.TrussPlastic2D}, \anchor{fea_engine.elements.nonlinear_solids.Hex8PlasticJ2} & part \\
+shared Newton settings & \anchor{fea_engine.newton_options.NewtonOptions} & yes \\
+\bottomrule
+\end{tabularx}
+\caption{Where the concepts of this chapter live in the repository (tag \booktag). The last column says whether this chapter's own checks call, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.}\label{tab:nl-map}
+\end{table}
+
+\begin{limitsbox}
+\begin{itemize}
+\item \textbf{Hyperelastic tangent.} \code{Tet4NeoHookean} uses a finite-difference tangent by default; it is not the exact derivative, and it costs extra internal-force evaluations.
+\item \textbf{Elastic law of the \code{...TL} elements.} St.~Venant--Kirchhoff is accurate for large rotations with small strains; for large strains it softens in compression, and a hyperelastic law should be used.
+\item \textbf{Small-strain plasticity.} \code{TrussPlastic2D} uses linear (small-displacement) kinematics and does not combine with the total-Lagrangian truss. Hardening is isotropic and linear; kinematic hardening, rate dependence and finite-strain plasticity are not covered.
+\item \textbf{Tangent test.} \Cref{tab:nl-tangent} is one random state per element: it checks consistency, not the physics, locking or mesh convergence.
+\item \textbf{Path following.} Arc length needs a step length chosen by the user, and a step that is too large can jump to another branch.
+\end{itemize}
+\end{limitsbox}
+
+\section{Summary}\label{sec:nl-summary}
+
+We started from a truss that snaps through and a solver that stops at its limit load. Nonlinear equilibrium \eqref{eq:nl-residual} is solved by Newton's method with the exact tangent \eqref{eq:nl-tangent}, and the total-Lagrangian elements of \fea{} are invariant under rigid rotation (\Cref{fig:nl-obj}) with tangents that match finite differences to about $10^{-10}$ (\Cref{tab:nl-tangent}). Plasticity adds history variables, updated once per converged step.
+
+The answer to the opening problem is to prescribe something other than the load. Load control cannot follow a response past a limit load; displacement control and arc length can, and both reproduce the von Mises truss to $10^{-13}$ (\Cref{fig:nl-vm}). The limits are in the box above: an approximate hyperelastic tangent, linear-kinematics plasticity, and path-following parameters that the user must choose. The next chapter is about making the assembly behind each Newton iteration fast.
+
+\section*{Exercises}\label{sec:nl-exercises}
+\begin{enumerate}
+\item \emph{(Implementation)} Rotate the element of \Cref{fig:nl-obj} about its own centre instead of the origin. Does the total-Lagrangian force stay at rounding? Does the linear force change?
+\item \emph{(Implementation)} Make the truss flatter ($h_0=0.05$ m). Compute $P_{max}$ from \eqref{eq:nl-vm} and check with arc length. Does load control at $1.1P_{max}$ still fail?
+\item \emph{(Implementation)} Change the load cycle of \Cref{lst:nl-plast} to $0\to1.8\sigma_y\to-1.8\sigma_y\to1.8\sigma_y$ and find the strain at which the third branch yields. With isotropic hardening, does the yield stress keep growing at each reversal?
+\item \emph{(Interpretation)} In \Cref{tab:nl-tangent} replace the finite-difference step $10^{-6}$ by $10^{-4}$ and $10^{-8}$ and explain the change of the worst difference (truncation against rounding).
+\item \emph{(Implementation)} Use \code{Tet4NeoHookean} for a block under uniaxial stretch and compare its finite-difference tangent with the autograd option of Appendix~\ref{ch:diff}.
+\item \emph{(Derivation)} Starting from the Green--Lagrange strain $E=(L^2-L_0^2)/(2L_0^2)$ of a two-node truss, show that the tangent stiffness is the sum of a material part and a part proportional to the axial force (the geometric stiffness).
+\end{enumerate}
+
+\chapterrefs

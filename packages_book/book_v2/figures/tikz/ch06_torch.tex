@@ -1,0 +1,16 @@
+\begin{tikzpicture}[font=\sffamily\scriptsize]
+\node[cmPLAIN,text width=4.3cm] (call) at (0,0) {\textbf{call in user code}\\[1pt]\texttt{rs.solve(backend="torch",}\\\texttt{\ \ device="cuda")}\\\texttt{fes.stress(U, backend="torch")}\\\texttt{assemble\_*\_torch(fes, \dots)}};
+\node[cmFE,text width=4.6cm] (np) at (8.6,2.0) {\textbf{default: NumPy / SciPy}\\Cholesky or sparse LU; loop or batched NumPy kernels (always the reference)};
+\node[cmROM,text width=2.7cm] (h2d) at (6.0,-1.9) {\textbf{1 to tensors}\\host arrays $\to$ \texttt{torch.Tensor} on \texttt{device}; CSR arrays shared};
+\node[cmROM,text width=3.3cm] (cmp) at (9.9,-1.9) {\textbf{2 compute (float64)}\\dense LU, Jacobi CG on a sparse CSR tensor, or the \texttt{einsum} kernels with \texttt{xp=torch}};
+\node[cmROM,text width=2.0cm] (d2h) at (13.4,-1.9) {\textbf{3 back to NumPy}\\\texttt{.cpu().numpy()}};
+\node[cmCERT,text width=3.0cm] (res) at (13.4,2.0) {NumPy result\\same shape and meaning;\\checked against the default};
+\draw[cmFlow] ([yshift=5mm]call.east) -- (np.west);
+\draw[cmFlow] ([yshift=-5mm]call.east) -- (h2d.west);
+\draw[cmFlow] (h2d)--(cmp); \draw[cmFlow] (cmp)--(d2h);
+\draw[cmFlow] (np.east)--(res.west);
+\draw[cmFlow] (d2h.north)--(res.south);
+\node[cmLab,text width=3.6cm,align=left] at (2.6,2.5) {\textbf{optional}: \texttt{torch} is imported only when a torch route is called};
+\node[cmDASH,text width=5.8cm] (keep) at (3.0,-4.3) {\textbf{not changed}: assembly of $\bm K$ and $\bm F$ (NumPy), the Newton drivers, the loops with \texttt{vectorized=False}};
+\node[cmWARN,text width=7.2cm] (ref) at (10.6,-4.3) {\textbf{refused, not approximated}: contact, springs, constraints, path-dependent state, an element without a torch kernel $\to$ \texttt{NotImplementedError}; CG on a matrix with a non-positive diagonal $\to$ \texttt{ValueError}};
+\end{tikzpicture}

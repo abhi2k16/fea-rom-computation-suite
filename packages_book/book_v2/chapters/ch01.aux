@@ -1,0 +1,114 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\@writefile{toc}{\contentsline {chapter}{\numberline {1}The design of a decoupled scientific engine}{2}{chapter.1}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:arch}{{1}{2}{The design of a decoupled scientific engine}{chapter.1}{}}
+\newlabel{ch:arch@cref}{{[chapter][1][]1}{[1][2][]2}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.1}One system, many problems}{2}{section.1.1}\protected@file@percent }
+\newlabel{sec:ar-system}{{1.1}{2}{One system, many problems}{section.1.1}{}}
+\newlabel{sec:ar-system@cref}{{[section][1][1]1.1}{[1][2][]2}}
+\newlabel{eq:ar-system}{{1.1}{2}{One system, many problems}{equation.1.1}{}}
+\newlabel{eq:ar-system@cref}{{[equation][1][1]1.1}{[1][2][]2}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.2}The flow and the layers}{2}{section.1.2}\protected@file@percent }
+\newlabel{sec:ar-flow}{{1.2}{2}{The flow and the layers}{section.1.2}{}}
+\newlabel{sec:ar-flow@cref}{{[section][2][1]1.2}{[1][2][]2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.1}{\ignorespaces The flow of an analysis in \texttt  {fea\_engine}{} (blue: package code; grey: data; violet: \texttt  {rom\_engine}{}; green: validation only; dashed: optional). The link to \texttt  {rom\_engine}{} is plain arrays, never an import.\relax }}{3}{figure.caption.8}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:ar-flow}{{1.1}{3}{The flow of an analysis in \fea {} (blue: package code; grey: data; violet: \rom {}; green: validation only; dashed: optional). The link to \rom {} is plain arrays, never an import.\relax }{figure.caption.8}{}}
+\newlabel{fig:ar-flow@cref}{{[figure][1][1]1.1}{[1][2][]3}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.3}The element interface}{3}{section.1.3}\protected@file@percent }
+\newlabel{sec:ar-interface}{{1.3}{3}{The element interface}{section.1.3}{}}
+\newlabel{sec:ar-interface@cref}{{[section][3][1]1.3}{[1][3][]3}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.2}{\ignorespaces The element interface. The base class owns the Gauss loop; a subclass supplies the interpolation and overrides only what differs.\relax }}{4}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:ar-interface}{{1.2}{4}{The element interface. The base class owns the Gauss loop; a subclass supplies the interpolation and overrides only what differs.\relax }{figure.caption.9}{}}
+\newlabel{fig:ar-interface@cref}{{[figure][2][1]1.2}{[1][3][]4}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.4}Extending the engine: a new element}{4}{section.1.4}\protected@file@percent }
+\newlabel{sec:ar-extend}{{1.4}{4}{Extending the engine: a new element}{section.1.4}{}}
+\newlabel{sec:ar-extend@cref}{{[section][4][1]1.4}{[1][4][]4}}
+\newlabel{lst:ar-bar}{{1.1}{4}{A new element by subclassing, and the one registry line. Nothing in \texttt {fea\_engine} is edited}{lstlisting.1.1}{}}
+\newlabel{lst:ar-bar@cref}{{[listing][1][1]1.1}{[1][4][]4}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {1.1}A new element by subclassing, and the one registry line. Nothing in \texttt  {fea\_engine} is edited.}{4}{lstlisting.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1.5}The six extension points}{5}{section.1.5}\protected@file@percent }
+\newlabel{sec:ar-points}{{1.5}{5}{The six extension points}{section.1.5}{}}
+\newlabel{sec:ar-points@cref}{{[section][5][1]1.5}{[1][5][]5}}
+\@writefile{lot}{\contentsline {table}{\numberline {1.1}{\ignorespaces Where each kind of extension enters \texttt  {fea\_engine}{}.\relax }}{5}{table.caption.10}\protected@file@percent }
+\newlabel{tab:ar-points}{{1.1}{5}{Where each kind of extension enters \fea {}.\relax }{table.caption.10}{}}
+\newlabel{tab:ar-points@cref}{{[table][1][1]1.1}{[1][5][]5}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.6}Does the interface hold? A conformance test}{6}{section.1.6}\protected@file@percent }
+\newlabel{sec:ar-conform}{{1.6}{6}{Does the interface hold? A conformance test}{section.1.6}{}}
+\newlabel{sec:ar-conform@cref}{{[section][6][1]1.6}{[1][5][]6}}
+\@writefile{lot}{\contentsline {table}{\numberline {1.2}{\ignorespaces Interface conformance of the registered elements, by family.\relax }}{6}{table.caption.11}\protected@file@percent }
+\newlabel{tab:ar-registry}{{1.2}{6}{Interface conformance of the registered elements, by family.\relax }{table.caption.11}{}}
+\newlabel{tab:ar-registry@cref}{{[table][2][1]1.2}{[1][6][]6}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.7}Two packages, one direction of dependence}{6}{section.1.7}\protected@file@percent }
+\newlabel{sec:ar-packages}{{1.7}{6}{Two packages, one direction of dependence}{section.1.7}{}}
+\newlabel{sec:ar-packages@cref}{{[section][7][1]1.7}{[1][6][]6}}
+\@writefile{lot}{\contentsline {table}{\numberline {1.3}{\ignorespaces Size of the packages: Python modules and lines (including comments and docstrings) in the source tree and in the tests.\relax }}{6}{table.caption.12}\protected@file@percent }
+\newlabel{tab:ar-packages}{{1.3}{6}{Size of the packages: Python modules and lines (including comments and docstrings) in the source tree and in the tests.\relax }{table.caption.12}{}}
+\newlabel{tab:ar-packages@cref}{{[table][3][1]1.3}{[1][6][]6}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.8}Backend dispatch and what it costs}{6}{section.1.8}\protected@file@percent }
+\newlabel{sec:ar-backend}{{1.8}{6}{Backend dispatch and what it costs}{section.1.8}{}}
+\newlabel{sec:ar-backend@cref}{{[section][8][1]1.8}{[1][6][]6}}
+\@writefile{toc}{\contentsline {paragraph}{Measured cost of the automatic choice.}{7}{section*.13}\protected@file@percent }
+\bibstyle{unsrtnat}
+\bibdata{refs}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.3}{\ignorespaces \code  {solve_static} time on a sparse plane-stress plate with \code  {backend="scipy"} and \code  {backend="auto"} (left), and the extra time of \code  {auto} (right). Minimum of three runs on the sandbox used for the figures of this chapter (2 CPUs){}. The torch path was not run (torch is not installed\xspace  {} in the sandbox), and none of the sizes exceeds the threshold at which \code  {auto} would choose it.\relax }}{8}{figure.caption.14}\protected@file@percent }
+\newlabel{fig:ar-dispatch}{{1.3}{8}{\code {solve_static} time on a sparse plane-stress plate with \code {backend="scipy"} and \code {backend="auto"} (left), and the extra time of \code {auto} (right). Minimum of three runs on \machine {}. The torch path was not run (torch is \cdeHasTorch {} in the sandbox), and none of the sizes exceeds the threshold at which \code {auto} would choose it.\relax }{figure.caption.14}{}}
+\newlabel{fig:ar-dispatch@cref}{{[figure][3][1]1.3}{[1][7][]8}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.9}Summary}{8}{section.1.9}\protected@file@percent }
+\newlabel{sec:ar-summary}{{1.9}{8}{Summary}{section.1.9}{}}
+\newlabel{sec:ar-summary@cref}{{[section][9][1]1.9}{[1][7][]8}}
+\newlabel{sec:ar-exercises}{{1.9}{8}{Exercises}{section*.16}{}}
+\newlabel{sec:ar-exercises@cref}{{[section][9][1]1.9}{[1][8][]8}}
+\@writefile{toc}{\contentsline {section}{References}{8}{section*.17}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1.4}{\ignorespaces Where the concepts of this chapter live in the repository (tag \texttt  {release-fea1.0.1-rom0.2.0}). The last column says whether the chapter's script \texttt  {scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.\relax }}{9}{table.caption.15}\protected@file@percent }
+\newlabel{tab:ar-map}{{1.4}{9}{Where the concepts of this chapter live in the repository (tag \booktag ). The last column says whether the chapter's script \texttt {scripts/chNN\_assets.py} calls, by name, the code listed in the row: yes (every name), part, or no. Code reached only through another routine counts as no, so the column is a lower bound on what this book exercises.\relax }{table.caption.15}{}}
+\newlabel{tab:ar-map@cref}{{[table][4][1]1.4}{[1][7][]9}}
+\@setckpt{chapters/ch01}{
+\setcounter{page}{10}
+\setcounter{equation}{1}
+\setcounter{enumi}{6}
+\setcounter{enumii}{0}
+\setcounter{enumiii}{0}
+\setcounter{enumiv}{0}
+\setcounter{footnote}{0}
+\setcounter{mpfootnote}{0}
+\setcounter{part}{1}
+\setcounter{chapter}{1}
+\setcounter{section}{9}
+\setcounter{subsection}{0}
+\setcounter{subsubsection}{0}
+\setcounter{paragraph}{0}
+\setcounter{subparagraph}{0}
+\setcounter{figure}{3}
+\setcounter{table}{4}
+\setcounter{parentequation}{0}
+\setcounter{LT@tables}{2}
+\setcounter{LT@chunks}{3}
+\setcounter{caption@flags}{0}
+\setcounter{continuedfloat}{0}
+\setcounter{subfigure}{0}
+\setcounter{subtable}{0}
+\setcounter{tcbbreakpart}{1}
+\setcounter{tcblayer}{0}
+\setcounter{tcolorbox@number}{4}
+\setcounter{tcbrastercolumn}{1}
+\setcounter{tcbrasterrow}{1}
+\setcounter{tcbrasternum}{1}
+\setcounter{tcbraster}{0}
+\setcounter{lstnumber}{22}
+\setcounter{tcblisting}{0}
+\setcounter{NAT@ctr}{0}
+\setcounter{Item}{6}
+\setcounter{Hfootnote}{0}
+\setcounter{bookmark@seq@number}{14}
+\setcounter{proposition}{0}
+\setcounter{definition}{0}
+\setcounter{example}{0}
+\setcounter{remark}{0}
+\setcounter{tcb@cnt@algbox}{2}
+\setcounter{algline}{9}
+\setcounter{lstlisting}{1}
+\setcounter{section@level}{1}
+}

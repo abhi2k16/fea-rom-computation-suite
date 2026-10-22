@@ -1,0 +1,19 @@
+\begin{tikzpicture}[font=\sffamily\scriptsize]
+% row 1: build and sample;  row 2: basis and choice of r;  row 3 (right to left): online query and report
+\node[cmFE,text width=2.7cm] (mesh) at (0,0) {two-block mesh,\\\code{FESystem}, supports};
+\node[cmFE,text width=2.7cm] (k) at (3.7,0) {affine parts $\bm K_1,\bm K_2$\\(unit moduli), load shapes};
+\node[cmPLAIN,text width=2.7cm] (s) at (7.4,0) {training pairs $(\bm\mu,\bm f)$:\\Latin hypercube, random load mixes};
+\node[cmFE,text width=2.7cm] (snap) at (11.1,0) {full-order solves\\$\to$ snapshots};
+\node[cmCERT,text width=2.7cm] (val) at (3.1,-2.3) {validation set (training kind): smallest $r$ with error $\le$ tol};
+\node[cmROM,text width=2.7cm] (pod) at (7.4,-2.3) {POD basis $\bm V$,\\$\bm V^T\bm K_q\bm V$ once};
+\node[cmROM,text width=2.7cm] (red) at (7.4,-4.6) {reduced solve $r\times r$,\\lift $\bm u=\bm V\bm q$};
+\node[cmPLAIN,text width=2.7cm] (q) at (11.1,-4.6) {query $(\bm\mu,\bm f)$: held-out parameters, held-out load shape};
+\node[cmFE,text width=2.7cm] (loc) at (3.7,-4.6) {local quantities: tip, peak von Mises, reaction, root moment};
+\node[cmCERT,text width=2.7cm] (rep) at (0,-4.6) {report (App.~\ref{ch:conv}): errors, offline / online / lift cost, break-even};
+\draw[cmFlow] (mesh)--(k); \draw[cmFlow] (k)--(s); \draw[cmFlow] (s)--(snap);
+\draw[cmFlow] (snap.south) |- (pod.east);
+\draw[cmFlow] ([yshift=2mm]pod.west)--([yshift=2mm]val.east);
+\draw[cmFb] ([yshift=-2mm]val.east)--node[cmLab,below] {raise $r$} ([yshift=-2mm]pod.west);
+\draw[cmFlow] (pod)--(red);
+\draw[cmFlow] (q)--(red); \draw[cmFlow] (red)--(loc); \draw[cmFlow] (loc)--(rep);
+\end{tikzpicture}

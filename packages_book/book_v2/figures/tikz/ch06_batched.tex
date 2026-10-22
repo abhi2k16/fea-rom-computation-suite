@@ -1,0 +1,10 @@
+\begin{tikzpicture}[node distance=6mm and 8mm,font=\sffamily\scriptsize]
+\node[cmWARN,text width=5.2cm] (l) {\textbf{loop (default, reference)}\\for each element: gather $\bm u_e$, evaluate Gauss points,\\scatter-add into the matrix\\cost dominated by Python calls};
+\node[cmFE,right=16mm of l,text width=6.2cm] (b) {\textbf{batched (opt-in)}\\coordinates $(E,n_{nodes},\dim)$, displacements $(E,n_{dof})$\\cached gradients and weights\\one contraction over elements and Gauss points};
+\node[cmROM,below=8mm of b,text width=6.2cm] (c) {chunks of elements under a memory budget\\(256 MB by default)};
+\node[cmROM,below=8mm of c,text width=6.2cm] (s) {cached CSR pattern and position map\\one \texttt{bincount} per assembly};
+\draw[cmFlow] (b)--(c); \draw[cmFlow] (c)--(s);
+\node[cmCERT,below=8mm of l,text width=5.2cm] (chk) {every batched result is compared\\with the loop, entry by entry};
+\draw[cmFb] (s.west) -| (chk.south);
+\draw[cmFb] (l.east) -- (b.west) node[midway,cmLab,above] {reference};
+\end{tikzpicture}

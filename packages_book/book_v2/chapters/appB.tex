@@ -1,0 +1,49 @@
+\chapter{Verification conventions and tolerances}\label{ch:conv}
+
+\section{A template for a convergence study}\label{sec:conv-template}
+
+A convergence study answers one question: does the error of a discretisation fall at the rate that the method promises? The studies of this book follow one template, and \Cref{ch:elem} to \Cref{ch:cms} use it where a mesh, a time step or a basis size is varied (the package provides \anchor{fea_engine.convergence.run_study} and \anchor{fea_engine.convergence.observed_order}).
+
+\begin{enumerate}
+\item \textbf{Fix the reference.} An exact solution, a closed form, or an independent computation (a different solver or a much finer model). A reference produced by the method under test shows only self-consistency.
+\item \textbf{Fix the quantity and the norm.} A global norm (relative $L_2$ error of the displacement) and a local quantity (a tip deflection, a reaction, a peak stress); the definition of the error is stated with the result.
+\item \textbf{Vary one parameter} over at least three values in the asymptotic range (mesh size $h$, step $\Delta t$, basis size $r$), keeping everything else fixed.
+\item \textbf{Compute the observed order} $p=\log(e_1/e_2)/\log(h_1/h_2)$ from successive pairs and compare it with the theoretical order; a rate that drifts, or an error that stops falling, is reported and explained (rounding floor, reference error, a floor set by the basis).
+\item \textbf{State what was held fixed and what was not tested}: the load, the boundary conditions, the other discretisation parameters, the range of the parameter.
+\end{enumerate}
+
+For reduced-order models the parameter of step 3 is the basis size, there is no asymptotic order to compare, and the template becomes: report the error on \emph{unseen} parameters (parameters not used to build the model) and not on the training set, and report both (\Cref{ch:pod,ch:contact}).
+
+\section{Tolerances used in the book}\label{sec:conv-tol}
+
+\Cref{tab:conv-tol} lists the numerical tolerances that decide whether a solve is called converged, as they appear in the listings of this book and in the defaults of the code that Chapters~\ref{ch:nonint} and~\ref{ch:hyper} call. A tolerance is a setting, not a measured accuracy: a result converged to $10^{-10}$ in the residual is accurate to the discretisation, not to $10^{-10}$.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.38\linewidth} >{\raggedright\arraybackslash}p{0.2\linewidth} X@{}}
+\toprule
+Where & Value & Meaning \\
+\midrule
+nonlinear static drivers (listings of Chapters~\ref{ch:nonlin}, \ref{ch:batch}) & \code{tol} $10^{-9}$ to $10^{-12}$ & relative residual at which Newton stops; \code{max_iter} 40--60 \\
+\code{lcp_active_set} & $10^{-12}$ (default) & tolerance of the active-set linear complementarity solver \\
+\code{ContactROM.solve_dynamic} & $10^{-4}$ (relative) & a reduced step whose contact conditions are violated by more than this is reported as a failure; a guard, not an accuracy claim \\
+\code{solve_reduced_contact_newton} & \code{tol} $10^{-9}$, \code{max_iter} 60 & residual and step of the reduced contact Newton iteration \\
+\code{ecsw_weights} & \code{tol} $10^{-6}$ (default) & relative training residual at which element selection stops (Chapter~\ref{ch:hyper} sweeps $10^{-2}$ to $10^{-8}$) \\
+\code{nonneg_dual_basis} & \code{tol} $10^{-9}$, 500 iterations & non-negative factorisation stop \\
+\code{rank_deficiency} & $10^{-10}$ (relative) & singular values below this fraction of the largest count as zero \\
+success criteria of the experiments & 1\,\% (Chapter~\ref{ch:pod}), 2\,\% (Chapter~\ref{ch:nonint}) & error on unseen parameters and frequency error used to call a basis or an identification adequate; chosen by the author, not by a standard \\
+\bottomrule
+\end{tabularx}
+\caption{Tolerances and thresholds.}\label{tab:conv-tol}
+\end{table}
+
+\section{What a reported ROM number states}\label{sec:conv-rom}
+
+A speed-up or error figure of a reduced-order model is meaningful only with its conditions. Each such number in this book should state:
+\begin{itemize}
+\item the full-order model, its size, its solver and whether the baseline is dense or sparse;
+\item the \emph{offline} cost (snapshots, basis, training, preprocessing), the \emph{online} cost per query, and, if the answer has to be lifted to the full space, the \emph{reconstruction} cost, each separately;
+\item whether a quoted speed-up includes the preprocessing: a speed-up of the online solve alone is not a speed-up of the workflow, and the break-even number of queries (offline cost divided by saving per query) is what connects them;
+\item the error on unseen parameters, with its definition, next to a \emph{local} quantity of engineering interest (a reaction, a peak stress or displacement), because a small global error can hide a large local one.
+\end{itemize}
+Chapters~\ref{ch:pod}, \ref{ch:freq}, \ref{ch:nonint} and~\ref{ch:hyper} follow this convention for their main reduced-order benchmarks: the offline, online and lift costs are given separately, the break-even number of queries includes the offline cost, and an error in a local quantity is given next to the error of the full state. The local quantities are the tip deflection (Chapter~\ref{ch:pod}), the peak tip amplitude at the resonances (Chapter~\ref{ch:freq}), the mid-span deflection (Chapter~\ref{ch:nonint}, where the full-state error is the larger) and the peak centre displacement and total contact force (Chapter~\ref{ch:hyper}). Chapter~\ref{ch:verif} reports the integrated pipeline by the same convention, with the tip deflection, the peak von Mises stress, the reaction and the root moment next to the full-state error; in the chapters before it no reaction or peak stress was computed. The benchmark models are small, the baselines are dense or small sparse solves, and the timings are single runs that vary by tens of per cent, so the speed-ups show orders of magnitude and not production performance. The remaining chapters of Part~III (Chapters~\ref{ch:bt} and~\ref{ch:cms}) report errors and sizes but do not apply the full convention.
