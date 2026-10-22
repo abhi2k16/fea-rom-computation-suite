@@ -2,6 +2,8 @@
 
 Reduced-order models are usually introduced through a method: a basis, a projection, an error estimate. Using one on a real structure raises a different set of questions. Where do the matrices come from, and in what form? What does the reduced model need from the finite element code, and what does it have to be told? Which part of a run is paid once and which part again for every query? And when the reduced answer is wrong, how would you know? This book is about those questions. It describes how a reduced-order modelling package, \rom{}, is built on top of a finite element package, \fea{}, for the analysis of structures, and it checks, one claim at a time, that the two packages do what is said of them.
 
+\input{chapters/why_book}
+
 \section*{Who should read this book}
 
 This book is not an introduction. We assume that you already know the finite element method well enough to write down the weak form of a beam or a plane-stress problem, to say what an element stiffness matrix is and how it is assembled, and to follow a Newton iteration. We assume that you have met reduced-order modelling: the idea of projecting a large system on a small basis, the proper orthogonal decomposition, modal truncation. And we assume that you read Python and NumPy without effort. Chapters on elements, dynamics, nonlinearity and contact therefore do not re-derive shape functions or time integrators. They concentrate on what is specific to the packages and on the places where a plausible result can be wrong.
