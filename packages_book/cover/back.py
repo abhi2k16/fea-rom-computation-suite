@@ -35,7 +35,7 @@ blurb = ("This book shows how a reduced-order modelling package is built on top 
          "the idea of model reduction, and who want to see how the two meet in working code.")
 ax.text(L, 0.815, "\n".join(textwrap.wrap(blurb, 62)), color=INK, fontsize=12, family=serif, linespacing=1.7, va="top")
 
-items = [("Full-order models", "beams, plates, shells and solids; nonlinear statics, dynamics, contact"),
+items = [("Full-order models", "beams, plates, shells and solids; nonlinear statics, transient dynamics, computational acceleration, contact"),
          ("Reduced-order models", "POD, balanced truncation, Krylov, frequency-domain, component mode synthesis, hyper-reduction"),
          ("Verification", "nine published studies rebuilt from the packages, with an honest account of how each came out"),
          ("Runnable listings", "every Try it listing was executed and its output printed under the code")]
