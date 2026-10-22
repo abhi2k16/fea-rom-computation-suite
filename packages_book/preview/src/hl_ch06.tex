@@ -2,7 +2,7 @@
 \hlbanner{Part II $\cdot$ Full-order physics}{6}{Computational acceleration: vectorised assembly and batched kernels}
 \hlsection{The question}
 \begin{hlquote}Profile a nonlinear run on a plate of a couple of thousand elements and nearly all the time goes into assembly, and nearly all of that into the Python interpreter, not into arithmetic.\end{hlquote}
-\vspace{8pt}\begin{hlsum}\textbf{Batching the elements removes the interpreter cost, and the loop stays as the reference.} The opt-in batched path computes all elements of a block with array operations, with caches, chunking and a support report for blocks it cannot handle. A whole Newton solve on a plate of \cbkNewtonNE{} elements runs \cbkNewtonRatio{} times faster, with the solutions agreeing to \cbkNewtonDiff. An optional PyTorch backend is patched in beside the default route and used only on request; its timings are records of the author's machine, since PyTorch is not installed where the book is built.\end{hlsum}
+\vspace{8pt}\begin{hlsum}\textbf{Batching the elements removes the interpreter cost, and the loop stays as the reference.} The opt-in batched path computes all elements of a block with array operations, with caches, chunking and a support report for blocks it cannot handle. A whole Newton solve on a plate of \cbkNewtonNE{} elements runs \cbkNewtonRatio{} times faster, with the solutions agreeing to \cbkNewtonDiff. An optional PyTorch backend is patched in beside the default route and used only on request; its timings are records of the author's machine, since PyTorch is not installed where the book is written.\end{hlsum}
 \hlsection{Key concepts}
 \begin{description}\setlength\itemsep{5pt}\setlength\parsep{0pt}\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\sffamily\bfseries\color{hlnavy}#1}
 \item[Vectorisation] array operations in compiled code replace the loop over elements
@@ -10,7 +10,7 @@
 \item[Sparse tangent] the tangent stays sparse so Newton can use a sparse factorisation
 \item[Chunking] the batch size is set to bound memory
 \item[Support report] says which blocks cannot be batched, and why
-\item[PyTorch backend] optional; not run where the book is built, and said so
+\item[PyTorch backend] optional; not run where the book is written, and said so
 \end{description}
 \hlsection{After this chapter you can}
 \begin{itemize}\setlength\itemsep{3pt}
@@ -18,8 +18,6 @@
 \item read the support report and set the chunk size to bound memory
 \item say what the optional PyTorch backend replaces, and at which sizes it pays off
 \end{itemize}
-\hlsection{Explained on the page, in short boxes}
-\noindent\small Interpreted loops and vectorisation; Assembly as a scatter-add; Batching and chunking; GPUs and floating-point precision.
 \newpage\thispagestyle{hl}
 \noindent{\sffamily\small\color{hlgrey}Chapter 6 \quad Computational acceleration: vectorised assembly and batched kernels}\par
 \hlfig{\hlimg{ch06_scaling}}{Assembly time of the element loop and the batched route against the number of elements (left), and the ratio of the two (right).}
@@ -46,5 +44,5 @@
 \item \textbf{Stress recovery and element kernels:} written once for an array namespace \texttt{xp}, so the NumPy and torch versions differ only in which module is passed.
 \end{itemize}
 \hlsection{What it leaves alone, and what it does not claim}
-\begin{hllimit}Assembly of $\bm K$ and $\bm F$ and the Newton drivers stay in NumPy, so a nonlinear analysis does not run on the GPU through this backend. PyTorch is not installed where the book is built: the CPU and GPU timings are records of the author's machine, not measured for the book. What was run here is the algebra: the kernels called with \texttt{xp=numpy} reproduce the batched element kernels to \bktShadowForce{} (force) and \bktShadowTangent{} (tangent).\end{hllimit}
+\begin{hllimit}Assembly of $\bm K$ and $\bm F$ and the Newton drivers stay in NumPy, so a nonlinear analysis does not run on the GPU through this backend. PyTorch is not installed where the book is written: the CPU and GPU timings are records of the author's machine, not measured for the book. What was run here is the algebra: the kernels called with \texttt{xp=numpy} reproduce the batched element kernels to \bktShadowForce{} (force) and \bktShadowTangent{} (tangent).\end{hllimit}
 

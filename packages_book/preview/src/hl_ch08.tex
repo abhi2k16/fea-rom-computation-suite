@@ -2,7 +2,7 @@
 \hlbanner{Part III $\cdot$ Reduced-order modelling}{8}{Projection-based reduction: POD, Galerkin and affine sweeps}
 \hlsection{The question}
 \begin{hlquote}You need the tip deflection of a beam for a thousand combinations of two stiffnesses and a load position. Each finite element solve is quick, but a thousand of them are not, and the answers are smooth functions of the parameters.\end{hlquote}
-\vspace{8pt}\begin{hlsum}\textbf{Projecting onto a few snapshot modes leaves a small system to solve for each parameter set.} For a beam of \cpdNFree{} unknowns, the worst error on \cpdNTest{} unseen parameter sets is \cpdGalerkinErrSix{} with 6 modes, \cpdGalerkinErrTwelve{} with 12 and \cpdGalerkinErrLast{} with 24. The chapter builds POD and Galerkin models with an affine parameter split, judges them only on parameters not used in training, and computes the break-even number of queries. The basis is only as good as its snapshots, and no certified bound is given here.\end{hlsum}
+\vspace{8pt}\begin{hlsum}\textbf{Projecting onto a few snapshot modes leaves a small system to solve for each parameter set.} For a beam of \cpdNFree{} unknowns, the worst error on \cpdNTest{} unseen parameter sets is \cpdGalerkinErrSix{} with 6 modes, \cpdGalerkinErrTwelve{} with 12 and \cpdGalerkinErrLast{} with 24. The chapter explains POD and Galerkin models with an affine parameter split, judges them only on parameters not used in training, and computes the break-even number of queries. The basis is only as good as its snapshots, and no certified bound is given here.\end{hlsum}
 \hlsection{Key concepts}
 \begin{description}\setlength\itemsep{5pt}\setlength\parsep{0pt}\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\sffamily\bfseries\color{hlnavy}#1}
 \item[Snapshots] full-order solutions at training parameters
@@ -18,8 +18,6 @@
 \item judge it on parameters it was not trained on
 \item compute the break-even number of queries from its offline and online costs
 \end{itemize}
-\hlsection{Explained on the page, in short boxes}
-\noindent\small Full-order model, reduced-order model, parameters; The singular value decomposition in words; Projection and the Galerkin condition; Offline and online; Unseen parameters; Sampling the parameter space.
 \newpage\thispagestyle{hl}
 \noindent{\sffamily\small\color{hlgrey}Chapter 8 \quad Projection-based reduction: POD, Galerkin and affine sweeps}\par
 \hlfig{\hlimg{ch08_pod}}{Singular values of the snapshot matrix (left) and error on unseen parameters against the number of modes (right).}
