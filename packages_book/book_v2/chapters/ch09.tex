@@ -208,7 +208,7 @@ full model sweep (48 unknowns, 400 frequencies): 29 ms
 a priori bound 3.8e-10, stable: True
 \end{lstlisting}
 
-Timings are one run on this machine. With only 48 unknowns the full sweep is already cheap and the reduced sweeps are not much faster, so speed is not the point of this example. The accuracy is: eight states reproduce the sweep to a few parts in $10^{6}$ or better. What is odd is the last line. The bound is $3.8\times10^{-10}$ and the measured error is $6.4\times10^{-6}$, four orders of magnitude larger. That is not a failure of the theorem, because the bound refers to the pre-reduced model and the error here is against the full one; the difference is the price of the modal pre-reduction, taken up in \Cref{sec:bt-raw}.
+Timings are one run. With only 48 unknowns the full sweep is already cheap and the reduced sweeps are not much faster, so speed is not the point of this example. The accuracy is: eight states reproduce the sweep to a few parts in $10^{6}$ or better. What is odd is the last line. The bound is $3.8\times10^{-10}$ and the measured error is $6.4\times10^{-6}$, four orders of magnitude larger. That is not a failure of the theorem, because the bound refers to the pre-reduced model and the error here is against the full one; the difference is the price of the modal pre-reduction, taken up in \Cref{sec:bt-raw}.
 
 \begin{table}[ht]
 \centering\small

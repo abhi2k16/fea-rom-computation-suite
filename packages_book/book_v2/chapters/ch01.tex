@@ -196,7 +196,7 @@ The probe costs $O(n^3)$ time and $O(n^2)$ memory on \emph{every} solve, includi
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/ch01_dispatch.pdf}
-\caption{\code{solve_static} time on a sparse plane-stress plate with \code{backend="scipy"} and \code{backend="auto"} (left), and the extra time of \code{auto} (right). Minimum of three runs on \machine{}. The torch path was not run (torch is \cdeHasTorch{} in the sandbox), and none of the sizes exceeds the threshold at which \code{auto} would choose it.}\label{fig:ar-dispatch}
+\caption{\code{solve_static} time on a sparse plane-stress plate with \code{backend="scipy"} and \code{backend="auto"} (left), and the extra time of \code{auto} (right). Minimum of three runs on \machine{}. The torch path was not run (torch is \cdeHasTorch{} in the reference setup), and none of the sizes exceeds the threshold at which \code{auto} would choose it.}\label{fig:ar-dispatch}
 \end{figure}
 
 \begin{table}[ht]

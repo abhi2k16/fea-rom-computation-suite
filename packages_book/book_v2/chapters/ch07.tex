@@ -302,8 +302,8 @@ The first check needs no reference solution. For the solution of \Cref{fig:ct-ob
 \caption{Wall time of the three routes against the number of unknowns (data of \Cref{tab:ct-scaling}).}\label{fig:ct-time}
 \end{figure}
 
-\paragraph{A larger case, measured on the author's machine.}
-The repository script \texttt{fea\_engine/tests/sparse\_contact\_timing.py} was run on the author's machine (12 CPUs) up to a mesh with $\ctcAuthN$ unknowns and $\ctcAuthActive$ active constraints. The \texttt{reduced} route needed $\ctcAuthIt$ iterations and $\ctcAuthRed$~s, the \texttt{saddle} route $\ctcAuthSad$~s, and the two agreed to \ctcAuthDiff. The dense route was not run: by the estimate of \Cref{sec:ct-math} it needs about $\ctcAuthDenseGB$~GB. These numbers were entered by hand from the printed output and are to be regenerated at the pinned release.
+\paragraph{A larger case.}
+The repository script \texttt{fea\_engine/tests/sparse\_contact\_timing.py} was run up to a mesh with $\ctcAuthN$ unknowns and $\ctcAuthActive$ active constraints. The \texttt{reduced} route needed $\ctcAuthIt$ iterations and $\ctcAuthRed$~s, the \texttt{saddle} route $\ctcAuthSad$~s, and the two agreed to \ctcAuthDiff. The dense route was not run: by the estimate of \Cref{sec:ct-math} it needs about $\ctcAuthDenseGB$~GB. These numbers were entered by hand from the printed output and are to be regenerated at the pinned release.
 
 \section{Contact dynamics}\label{sec:ct-dyn}
 
@@ -402,7 +402,7 @@ BDF2 is therefore more accurate on smooth motion and keeps more energy through a
 \item \textbf{Singular systems.} A \texttt{saddle} system with dependent active rows of $\bm B$, or a $\bm K_{FF}$ that is singular (a body with an unconstrained rigid-body mode), is reported as \texttt{singular}.
 \item \textbf{Dense route memory.} The \texttt{condensed} route needs about $8(nm+m^2)$ bytes; it is skipped under \code{fallback=True} when that exceeds \code{max_dense_bytes}, and it was not run at $\ctcAuthN$ unknowns.
 \item \textbf{BDF2 is not contact-stabilised.} Energy rises and forces spike during impact (\Cref{tab:ct-impact}); the rise grows as the step shrinks, up to about $0.7\%$ in the steps tested, and no energy result for BDF2 with contact is known to the author.
-\item \textbf{Not covered.} Friction in these solvers, Newmark contact dynamics, impact between two flexible bodies, and meshes with $10^5$ or more constraints. Timings are single runs; the large case was run on the author's machine.
+\item \textbf{Not covered.} Friction in these solvers, Newmark contact dynamics, impact between two flexible bodies, and meshes with $10^5$ or more constraints. Timings are single runs; the large case is a single run.
 \end{itemize}
 \end{limitsbox}
 
