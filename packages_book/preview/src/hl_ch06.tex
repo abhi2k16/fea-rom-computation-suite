@@ -32,7 +32,6 @@
 \noindent Interpreted loops and vectorisation; Assembly as a scatter-add; Batching and chunking; GPUs and floating-point precision.
 \newpage\thispagestyle{hl}
 \noindent{\sffamily\small\color{hlgrey}Chapter 6 \quad Computational acceleration: vectorised assembly and batched kernels}\par
-\hlsection{Signature figure}
 \hlfig{\hlimg{ch06_scaling}}{Assembly time of the element loop and the batched route against the number of elements (left), and the ratio of the two (right).}
 \hlsection{Headline result}
 \begin{hlheadline}A whole Newton solve on a plate of \cbkNewtonNE{} elements and \cbkNewtonN{} unknowns takes \cbkNewtonBatched{} s on the batched path against \cbkNewtonDefault{} s on the default path, a factor of \cbkNewtonRatio{}, and the solutions agree to \cbkNewtonDiff.\end{hlheadline}
@@ -45,3 +44,17 @@
 \end{itemize}}
 \hlsection{A stated limit}
 \begin{hllimit}The gain depends on the element: arithmetic-heavy hexahedra gain less than interpreter-bound plane elements, and once assembly is fast the sparse solve can dominate.\end{hllimit}
+\newpage\thispagestyle{hl}
+\noindent{\sffamily\small\color{hlgrey}Chapter 6 \quad Computational acceleration: vectorised assembly and batched kernels}\par
+\hlsection{Highlight: the optional PyTorch patch}
+\begin{hlquote}Nothing in the default path changes. A call without the two extra arguments runs the old code, and PyTorch is imported only when a torch route is asked for.\end{hlquote}
+\hlfig{\hltikz{ch06_torch}}{How the PyTorch backend is patched in. A call with \texttt{backend="torch"} leaves the default NumPy and SciPy route untouched and takes a separate path of three stages: conversion to tensors on the chosen device, computation in double precision, and conversion back to NumPy.}
+\hlsection{Three routes behind one switch}
+\begin{itemize}\setlength\itemsep{3pt}
+\item \textbf{Dense solve:} \texttt{torch.linalg.solve} on a dense tensor; any matrix, small systems and an independent reference.
+\item \textbf{Sparse conjugate gradients:} Jacobi-preconditioned CG on a sparse CSR tensor; needs a symmetric positive definite matrix, and a non-positive diagonal is refused.
+\item \textbf{Stress recovery and element kernels:} written once for an array namespace \texttt{xp}, so the NumPy and torch versions differ only in which module is passed.
+\end{itemize}
+\hlsection{What it leaves alone, and what it does not claim}
+\begin{hllimit}Assembly of $\bm K$ and $\bm F$ and the Newton drivers stay in NumPy, so a nonlinear analysis does not run on the GPU through this backend. PyTorch is not installed where the book is built: the CPU and GPU timings are records of the author's machine, not measured for the book. What was run here is the algebra: the kernels called with \texttt{xp=numpy} reproduce the batched element kernels to \bktShadowForce{} (force) and \bktShadowTangent{} (tangent).\end{hllimit}
+
