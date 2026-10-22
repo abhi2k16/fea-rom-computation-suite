@@ -17,6 +17,10 @@ Take the nonlinear reduced force $\bm f_r(\bm q)=\bm V^T\bm f_{int}(\bm V\bm q)$
 Projecting a nonlinear model onto a small basis shrinks the unknowns but not the work of evaluating the nonlinear force, because that still loops over the full mesh. Hyper-reduction approximates the force evaluation itself by using only a few elements or a few degrees of freedom. The name is by analogy with reduction: it reduces the cost of the \emph{right-hand side}, not of the unknowns.
 \end{sidenote}
 
+\begin{sidenote}{Non-negative least squares and sparsity}
+To select the elements, the contributions of every element to the reduced force at many training states are collected as columns of a matrix $\bm G$, and the weights $\bm w\ge\bm0$ are sought so that $\bm G\bm w$ matches the full sum, $\bm G\bm w\approx\bm b$. Requiring the weights to be non-negative has a useful side effect: the solution of the non-negative least-squares problem usually has few nonzero entries, so most elements receive weight zero and need not be evaluated online. The tolerance $\varepsilon$ is how far the match may be from exact, relative to $\|\bm b\|$.
+\end{sidenote}
+
 \paragraph{Energy-conserving sampling and weighting.}
 Write the reduced force as a sum over elements, $\bm f_r(\bm q)=\sum_{e=1}^{n_e}\bm V_e^T\bm f_e(\bm V_e\bm q)$, where $\bm V_e$ holds the rows of $\bm V$ for the degrees of freedom of element $e$. ECSW looks for a sparse set of non-negative weights $w_e$ such that the same sum over a few elements,
 \begin{equation}\label{eq:hy-ecsw}

@@ -24,6 +24,10 @@ A cantilever of $24$ Euler--Bernoulli elements (\cbtNDof{} free unknowns, \cbtNS
 The transfer function $H(s)$ says what comes out at the output for a unit sinusoidal force at frequency $\omega$, with $s=i\omega$. The state-space methods write the second-order equation as a first-order one with state $[\bm q;\dot{\bm q}]$, which has twice the unknowns; to compare methods fairly, sizes are counted in states, and a second-order model with $k$ unknowns has $2k$ states.
 \end{sidenote}
 
+\begin{sidenote}{Gramians and Hankel singular values in words}
+Think of a model with an input (a force) and an output (a measured displacement). Some states are easy to excite with the input but hardly visible in the output, and others show clearly in the output but are hard to excite. The \emph{controllability Gramian} measures how much input energy is needed to reach a state, and the \emph{observability Gramian} how much output energy a state produces. In balanced coordinates both are equal and diagonal, so every state is as hard to excite as it is to see, and its \emph{Hankel singular value} says how much it matters to the input--output behaviour. Truncation discards the states with the smallest values, and the error bound below is a multiple of their sum. The method requires a \emph{stable} system, one whose free response decays.
+\end{sidenote}
+
 \paragraph{Balanced truncation.}
 Write the first-order form $\dot{\bm x}=\bm A\bm x+\bm B u$, $y=\bm C_o\bm x$ with $\bm A$ stable. The controllability and observability Gramians solve two Lyapunov equations,
 \begin{equation}\label{eq:bt-lyap}
@@ -49,6 +53,10 @@ The bound is absolute (in the units of $H$, here m/N), holds for every frequency
 
 The cost is two dense Lyapunov solves, $O(N^3)$ in time and $O(N^2)$ in memory, with $N=2n$ states. The method fails when $\bm A$ is not stable, since then there are no Gramians, and when the Gramians are numerically singular or badly conditioned, as for the raw model of \Cref{sec:bt-raw}. The code is \anchor{rom_engine.balanced_truncation.BalancedTruncationROM} and \anchor{rom_engine.balanced_truncation.hankel_singular_values}; \Cref{fig:bt-bt} and \Cref{fig:bt-compare} are the checks.
 
+\begin{sidenote}{Moments and Krylov subspaces}
+The transfer function $H(s)$ can be expanded in a power series about a frequency $s_0$, and the coefficients are its \emph{moments}. A \emph{Krylov subspace} is spanned by a vector and its repeated images under a matrix, $\{\bm b,\bm A\bm b,\bm A^2\bm b,\dots\}$, and these images are, up to the factorisation of $s_0\bm E-\bm A$, the moments themselves. Projecting onto an $r$-dimensional Krylov subspace therefore reproduces the first moments of the full model, which makes the reduced model accurate near $s_0$ at the price of a single sparse factorisation. The accuracy is local, however, and there is no global error bound.
+\end{sidenote}
+
 \paragraph{Krylov moment matching.}
 Expand $H$ about a point $s_0$: $H(s_0+\sigma)=\sum_{j\ge0}m_j\sigma^j$. The moments $m_j$ are the entries of a Krylov sequence built with one sparse factorisation of $s_0\bm E-\bm A$ (the descriptor form $\bm E\dot{\bm x}=\bm A\bm x+\bm B u$ avoids inverting $\bm M$), so an orthonormal basis $\bm V$ of that Krylov subspace, used as a Galerkin projection $\bm A_r=\bm V^T\bm A\bm V$, $\bm E_r=\bm V^T\bm E\bm V$, makes the reduced transfer function match the first moments at $s_0$ exactly~\cite{besselink2013comparison}. A second basis $\bm W$ from the dual system gives the oblique (two-sided, Petrov--Galerkin) projection, which matches about twice as many moments for the same size. Matching is \emph{local}: exact in the limit at $s_0$, and nothing in the construction controls the error elsewhere, and the stability of the full model is not inherited.
 
@@ -68,6 +76,10 @@ Expand $H$ about a point $s_0$: $H(s_0+\sigma)=\sum_{j\ge0}m_j\sigma^j$. The mom
 \end{algbox}
 
 One sparse factorisation and $k$ back-substitutions are needed, plus $O(Nk^2)$ for the orthogonalisation. It fails if $s_0\bm E-\bm A$ is singular or the tolerance deflates early, so the number of returned vectors has to be checked; away from $s_0$ no error is controlled and stability is not inherited. The code is \anchor{rom_engine.krylov.arnoldi_basis} and \anchor{rom_engine.krylov.KrylovROM}; \Cref{fig:bt-locality} and \Cref{tab:bt-compare} are the checks.
+
+\begin{sidenote}{Second-order and first-order form}
+A structural model is naturally of second order, $\bm M\ddot{\bm q}+\bm C\dot{\bm q}+\bm K\bm q=\bm B\bm u$. The control literature uses the first-order form $\dot{\bm x}=\bm A\bm x+\bm B\bm u$, with the state $\bm x=[\bm q;\dot{\bm q}]$, which doubles the number of states and hides the physical structure of the matrices. Methods that work directly with $\bm M$, $\bm C$ and $\bm K$ keep the reduced model a mechanical system with its own mass, damping and stiffness.
+\end{sidenote}
 
 \paragraph{SOAR.}
 The first-order form doubles the state count. The second-order Arnoldi method of Bai and Su~\cite{bai2005soar} builds a basis of the same moments directly in the pencil $s^2\bm M+s\bm C+\bm K$, with the two-term recurrence $\bm r_j=\bm A_1\bm r_{j-1}+\bm A_2\bm r_{j-2}$, $\bm A_1=-\bm K_0^{-1}(\bm C+2s_0\bm M)$, $\bm A_2=-\bm K_0^{-1}\bm M$, $\bm K_0=\bm K+s_0\bm C+s_0^2\bm M$, and projects $\bm M,\bm C,\bm K$ by congruence. The reduced model is again second-order, with $k$ unknowns and $2k$ states.

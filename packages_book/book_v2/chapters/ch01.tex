@@ -13,6 +13,10 @@ Whatever the physical problem is (a membrane, a beam, a shell with contact), the
 \end{equation}
 or, for nonlinear problems, on the residual $\bm f_{int}(\bm u)-\bm F$ and its tangent (Chapter~\ref{ch:nonlin}). The vectors and matrices are plain NumPy or SciPy arrays. Everything that is specific to a problem is pushed into the construction of $\bm M,\bm C,\bm K$ (or of $\bm f_{int}$ and $\bm K_T$), and everything that is specific to a solution method is in the solvers. The question for this chapter is where the boundary between the two sits, and how narrow it can be made.
 
+\begin{sidenote}{The matrices of the semi-discrete equation}
+$\bm u$ collects the unknowns of the model, the displacements (and rotations) of all nodes, and dots denote time derivatives. $\bm M$ is the mass matrix, which turns accelerations into inertial forces, $\bm C$ the damping matrix, which turns velocities into dissipative forces, and $\bm K$ the stiffness matrix, which turns displacements into elastic forces; $\bm F$ is the vector of external loads. A static problem drops the first two terms and solves $\bm K\bm u=\bm F$. The matrix $\bm K$ is symmetric, \emph{sparse} (a node is coupled only to the nodes that share an element with it, so most entries are zero), and positive definite only once the supports have removed the rigid-body motions; for a free body it is singular, because the body can move without storing energy.
+\end{sidenote}
+
 \section{The flow and the layers}\label{sec:ar-flow}
 
 \Cref{fig:ar-flow} shows the flow of a typical analysis. A \emph{material} gives the constitutive matrix (for example \code{D_plane_stress(Material(...))}); a \emph{mesh} gives nodes and element connectivity (\code{Mesh}, or \code{MultiBlockMesh} for several element topologies, Chapter~\ref{ch:mesh}); an \emph{element} formulation turns coordinates and a material into element matrices or forces; the system \anchor{fea_engine.solver.FESystem} assembles them, applies boundary conditions and loads, and calls a \emph{solver}; \emph{post-processing} recovers stress, strain and fields from the result. A layer knows only the layer next to it: the mesh does not know which element will use it, and the solver does not know which element it is solving for.
@@ -147,6 +151,10 @@ A registry is only useful if every entry honours the interface. The test of this
 
 \Cref{tab:ar-packages} gives the size of the packages at the release of this book. The rule that \rom{} works on plain arrays and does not depend on \fea{} can be checked in the source: parsing every module of both packages for import statements shows \cdeFeaImportsRom{} imports of \rom{} in \fea{} and \cdeRomImportsFea{} imports of \fea{} in \rom{}. The tests of \rom{} do import \fea{} (in \cdeRomTestsImportFea{} of \cdeRomTestFiles{} test files), because that is where a reduced model is compared with the full model it came from. The consequence is that \rom{} can reduce a model from any finite element code, as long as the code provides $\bm M$, $\bm K$ and the force as arrays, and that the hooks for hyper-reduction (Chapters~\ref{ch:batch} and~\ref{ch:hyper}) take plain callables instead of an \fea{} object.
 
+\begin{sidenote}{Why the direction of a dependence matters}
+A package \emph{depends} on another if it imports it. Then it cannot be used or tested without the other, and a change in the other can break it. \rom{} works on the arrays $\bm M$, $\bm K$ and $\bm F$ and the snapshots of a solution, and never needs to know which program made them, so the same reduction can be applied to the output of \fea{}, of a commercial code, or of an experiment. This is the reason for the one-way rule checked below, and it is also what lets the two packages be installed, versioned and replaced separately.
+\end{sidenote}
+
 \begin{table}[ht]
 \centering\small
 \input{tables/ch01_packages}
@@ -157,6 +165,10 @@ A registry is only useful if every entry honours the interface. The test of this
 
 \begin{sidenote}{Backend}
 A \emph{backend} is the library that does the dense and sparse linear algebra, NumPy and SciPy by default and PyTorch optionally. The \code{auto} setting chooses between them for each call, and the choice itself has a cost, which this section measures.
+\end{sidenote}
+
+\begin{sidenote}{Sparse, dense, direct and iterative}
+A \emph{dense} matrix stores all $n^2$ entries; a \emph{sparse} one stores only the nonzeros, which is what makes systems of hundreds of thousands of unknowns possible. A \emph{direct} solver factorises the matrix (Cholesky, $\bm K=\bm L\bm L^T$, if it is symmetric positive definite, LU otherwise) and then solves by substitution; the result is exact up to rounding, and the cost and memory grow quickly with the problem size. An \emph{iterative} solver such as the conjugate-gradient (CG) method only needs products of the matrix with a vector and improves an approximate solution step by step; it is cheap per step, and the number of steps needed grows with the \emph{condition number} of the matrix, the ratio of its largest to its smallest eigenvalue. A matrix is symmetric positive definite (SPD) if $\bm x^T\bm K\bm x>0$ for every nonzero $\bm x$, which is the case for a properly supported elastic structure and is what CG requires.
 \end{sidenote}
 
 \code{FESystem(..., backend=...)} chooses the linear-algebra backend of \code{solve_static}: \code{"scipy"} (the default), \code{"torch"} (conjugate gradients on CPU or GPU) or \code{"auto"}. The automatic choice is made at solve time by \anchor{fea_engine.backend_dispatch.select_backend}: a free-dof block that is symmetric positive definite (SPD) and larger than \cdeDispThreshold{} dofs is routed to the torch conjugate-gradient path, everything else to SciPy; a non-SPD matrix is never given to the conjugate-gradient solver. The threshold is a documented rule of thumb and not a benchmark result.

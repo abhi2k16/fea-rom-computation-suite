@@ -9,6 +9,10 @@ After it you should be able to build a POD--Galerkin model with an affine parame
 
 Take a cantilever beam made of two regions with different stiffness, say a beam that has been reinforced or damaged over half its length. A designer wants the tip deflection under a fixed load for many pairs of region stiffnesses, and later for many load positions as well. The straightforward way is a loop: assemble the matrix for each pair and solve it. That works, and it is the baseline for everything in this chapter, but each query costs as much as the first one, however many came before, and the cost grows with the size of the model. The reduction below tries to avoid paying for the full model every time. This beam, and its tip deflection, is the example we carry through the chapter.
 
+\begin{sidenote}{Full-order model, reduced-order model, parameters}
+The \emph{full-order model} (FOM) is the finite element model at its usual size $n$, with one unknown per degree of freedom. A \emph{reduced-order model} (ROM) represents the solution by $r\ll n$ unknowns and is much cheaper to solve. The \emph{parameters} $\bm\mu$ are the quantities that change between runs (a modulus, a thickness, a load position). Reduction pays off in \emph{many-query} settings, such as design studies, uncertainty analysis or real-time use, where the cost of building the reduced model is spread over many solves.
+\end{sidenote}
+
 Let $\bm K(\bm\mu)\in\mathbb R^{n\times n}$ be a symmetric positive definite stiffness matrix that depends on parameters $\bm\mu$ (a modulus, a thickness, the position of a load), and let $\bm f(\bm\mu)$ be the load. The full-order model (FOM) is the parametric linear system
 \begin{equation}\label{eq:pod-fom}
 \bm K(\bm\mu)\,\bm u(\bm\mu)=\bm f(\bm\mu).
@@ -22,6 +26,10 @@ With a single tip load the solution of this beam is $\bm u=\bm u_a/\mu_1+\bm u_b
 
 \section{Mathematical structure}\label{sec:pod-math}
 
+\begin{sidenote}{The singular value decomposition in words}
+Every matrix $\bm S$ can be written $\bm S=\bm U\bm\Sigma\bm W^T$ with orthonormal columns in $\bm U$ and $\bm W$ and a diagonal $\bm\Sigma$ of non-negative \emph{singular values} $\sigma_1\ge\sigma_2\ge\cdots$. The columns of $\bm U$ are directions in the space of solutions, ordered by how much of the data they carry, and $\sigma_k$ measures that amount. The Eckart--Young theorem says that keeping the first $r$ terms gives the best approximation of $\bm S$ by a matrix of rank $r$, and that the error is set by the discarded singular values. If the $\sigma_k$ fall quickly, the solutions lie close to a low-dimensional subspace and a small basis will do; if they fall slowly, no small basis can work.
+\end{sidenote}
+
 \paragraph{Snapshots and POD.}
 Solve \eqref{eq:pod-fom} for $N$ training parameters $\bm\mu_1,\dots,\bm\mu_N$ and collect the solutions as the columns of the snapshot matrix $\bm S=[\bm u(\bm\mu_1)\ \cdots\ \bm u(\bm\mu_N)]\in\mathbb R^{n\times N}$. Its singular value decomposition $\bm S=\bm U\bm\Sigma\bm W^T$ gives the basis $\bm V=[\bm U_{:,1}\ \cdots\ \bm U_{:,r}]$ of the first $r$ left singular vectors. By the Eckart--Young theorem no matrix of rank $r$ is closer to $\bm S$ in the Frobenius norm than $\bm V\bm V^T\bm S$, and the distance is
 \begin{equation}\label{eq:pod-ey}
@@ -31,6 +39,10 @@ The singular values are therefore a computable bound on how well $r$ modes repre
 
 \paragraph{Weighted POD.}
 If the state carries physical units that differ between components (displacements and rotations, as here) or the mesh is non-uniform, the Euclidean inner product weights the unknowns arbitrarily. The mass-weighted variant replaces $\bm S$ by $\bm L^T\bm S$ with $\bm M=\bm L\bm L^T$, takes the SVD, and maps the vectors back, so that $\bm V^T\bm M\bm V=\bm I$ and the basis is optimal in the discrete $L^2$ norm. \anchor{rom_engine.pod.PodBasis} does this with \code{fit(S, M=M)}.
+
+\begin{sidenote}{Projection and the Galerkin condition}
+Writing the solution as $\bm u\approx\bm V\bm q$ means that it is searched in the subspace spanned by the columns of $\bm V$, with $r$ unknown coefficients $\bm q$. The residual $\bm f-\bm K\bm V\bm q$ cannot be made zero in general, so the \emph{Galerkin condition} asks that it be orthogonal to the subspace, $\bm V^T(\bm K\bm V\bm q-\bm f)=\bm0$. This gives the small system $\bm K_r\bm q=\bm f_r$ with $\bm K_r=\bm V^T\bm K\bm V$ and $\bm f_r=\bm V^T\bm f$. For a symmetric positive definite $\bm K$ it also finds the vector in the subspace with the smallest error measured in the energy norm $\sqrt{\bm e^T\bm K\bm e}$.
+\end{sidenote}
 
 \paragraph{Galerkin projection.}
 Approximate $\bm u\approx\bm V\bm q$ and require the residual to be orthogonal to the basis, $\bm V^T(\bm K\bm V\bm q-\bm f)=\bm 0$:
@@ -203,6 +215,10 @@ Mass-weighted POD has $\|\bm V^T\bm M\bm V-\bm I\|_{\max}$ equal to \cpdMassOrth
 \subsection{How the snapshots are chosen}
 
 \Cref{fig:pod-snap} compares an optimal (maximin) Latin hypercube with uniform random sampling at equal budget, with the basis size set to $\min(N,12)$ and five random repetitions for each size. The optimal design has the lower median error at \cpdOlhsBetterCount of the \cpdSnapCases sizes: at $N=20$ the median is \cpdSnapOlhsB against \cpdSnapRandB for random sampling, and at $N=10$ it is \cpdSnapOlhsA against \cpdSnapRandA. Five repetitions are few, and the one size where random wins shows that the ordering is not guaranteed; the dependence on the budget is the stronger result, since the error falls with $N$ until the basis size saturates at $12$.
+
+\begin{sidenote}{Sampling the parameter space}
+A grid with $k$ values in each of $p$ parameters needs $k^p$ solves, which quickly becomes too many. A random sample avoids that but can leave gaps. A \emph{Latin hypercube} divides the range of each parameter into $N$ bins and places exactly one of the $N$ samples in each bin of each parameter, which spreads the points evenly in every one-dimensional projection; an \emph{optimal} Latin hypercube also maximises the spacing between the points.
+\end{sidenote}
 
 \begin{figure}[ht]
 \centering

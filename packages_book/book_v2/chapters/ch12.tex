@@ -17,6 +17,10 @@ A beam that deflects by a few per cent of its span stiffens, and a linear model 
 An intrusive method opens up the solver: it needs the stiffness, mass and damping matrices, or the element routines, to project them. A non-intrusive method only calls the solver or reads its output, as one would with a commercial code. The price is that whatever the method cannot read has to be learned from data, and the data have to cover the cases of interest.
 \end{sidenote}
 
+\begin{sidenote}{Identification from frequency response data}
+System identification builds a model from measured or computed input--output data when the matrices of the system are not available. Here the data are samples of the frequency response $H(\omega)$ at a set of frequencies. The Loewner method arranges divided differences of these samples into a pair of matrices, and the singular values of the pencil show the order of the system: a sharp drop marks the number of states that the data support, and the reduced model is read off from the dominant part.
+\end{sidenote}
+
 \paragraph{Loewner identification.}
 For a linear system with transfer function $H(\omega)$ sampled at two disjoint sets of frequencies $\{\omega_\alpha\}$ and $\{\omega_\beta\}$ (each of size $n$) the Loewner pencil is built from divided differences of the data, with $\hat x$ the sampled response:
 \begin{equation}\label{eq:ni-loewner}
@@ -62,6 +66,10 @@ with the positive definiteness enforced through Cholesky parametrisation if the 
 The cost is one least-squares solve with as many unknowns as the operators; training needs trajectories, which are full-order runs. It fails when the training motion does not excite the operator entries that contact will need, and noise on the accelerations degrades the operators (\Cref{tab:ni-opinf}). The code is \anchor{rom_engine.operator_inference.infer_contact_operators}; \Cref{tab:ni-opinf} and \Cref{fig:ni-opinf} are the checks.
 
 \tikzfigure[0.98\linewidth]{ch12_hybrid}{Operator inference in the Craig--Bampton coordinates: reduced operators are fitted from signals and used in the unchanged contact problem.}{fig:ni-opinfidea}
+
+\begin{sidenote}{Why large deflection stiffens a beam}
+When a clamped beam deflects by a fraction of its depth, its axis stretches, which adds a restoring force that grows like the cube of the amplitude, $\ddot q+\omega^2q+\gamma q^3=f$. This is the Duffing form. The effective stiffness rises with the amplitude, so the beam becomes \emph{harder} as it bends (hardening), and its frequency of vibration rises with the amplitude. A linear model misses this effect, and a nonlinear modal model adds the terms that capture it to a small set of linear modes.
+\end{sidenote}
 
 \paragraph{Hybrid nonlinear modal models.}
 Take the linear modes $\bm V$ (mass-normalised, $\bm V^T\bm M\bm V=\bm I$, $\bm V^T\bm K\bm V=\bm\Lambda$) as the basis. For a static load with modal image $\hat{\bm f}=\bm V^T\bm f$ the reduced equation is

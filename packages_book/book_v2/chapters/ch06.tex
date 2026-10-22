@@ -15,6 +15,10 @@ In a Newton iteration (Chapter~\ref{ch:nonlin}) the code assembles the internal 
 \end{equation}
 then the element force $\bm f_e=\sum_g w_g J_{0,g}\,\bm B(\bm u_e)^{T}\bm S$ and tangent $\bm K_e=\sum_g w_gJ_{0,g}\,[\bm B^{T}\bm D\bm B+\text{geometric term}]$ (\Cref{eq:nl-tangent} of Chapter~\ref{ch:nonlin}). The arithmetic per element is small: a $3\times3$ or $2\times2$ matrix algebra. When the loop over elements is a Python loop, the cost per element is dominated by function calls and small-array overhead, not by floating-point work. That is the cost the batched path removes, and it is why the gain is large for small two-dimensional elements and smaller for elements that do a lot of arithmetic (\Cref{sec:bk-verif}).
 
+\begin{sidenote}{Interpreted loops and vectorisation}
+Python executes a loop one statement at a time, with a fixed overhead for every call, which for small element matrices exceeds the arithmetic. \emph{Vectorisation} moves the loop into compiled library code: a NumPy operation on an array runs the same arithmetic over all entries in one call. The cost of the loop over elements is then replaced by a few calls on arrays whose first axis is the element index. These are called \emph{batched} kernels, since many elements are processed as one batch.
+\end{sidenote}
+
 \paragraph{Try it.} \Cref{lst:bk-try} is the naive baseline, the default loop, set against the batched path on a plate of $48$, $192$ and $1728$ \code{Quad4PlaneStressTL} elements at a random displacement state. The plate is the running example of this chapter. The last two lines show what the batched call reports about itself.
 
 \begin{lstlisting}[caption={The default element loop against batched assembly of the internal force of a plate (run with the package on the path).},label={lst:bk-try}]
@@ -67,6 +71,10 @@ The batched path gives the same force to rounding ($10^{-15}$) and is faster by 
 \section{What the batched path does}\label{sec:bk-idea}
 
 All elements of one block (one element type with one material) share the reference shape-function gradients $\partial\bm N/\partial\bm X$ and the weights $w_gJ_{0,g}$ at each Gauss point, because they depend only on the undeformed mesh. The batched kernels therefore stack the coordinates into an array of shape $(E,\,n_{nodes},\,\dim)$ and the element displacements into $(E,\,n_{dof})$, and replace the loop over elements by contractions over the element and Gauss-point axes, the usual way to assemble finite element quantities in vector languages~\cite{cuvelier2014assemble}. An element opts in by setting \code{supports_batch} and providing \code{internal_force_batch} and \code{tangent_stiffness_batch}; the batched kernels use the same local degree-of-freedom order as the per-element methods, so one can be compared with the other entry by entry. Three things carry the gain.
+
+\begin{sidenote}{Assembly as a scatter-add}
+Assembly adds each element matrix into the global matrix at the rows and columns of the element's degrees of freedom, so entries from elements that share a node land in the same place and are summed. In the sparse \emph{coordinate} (COO) format the result is stored as three lists of row indices, column indices and values, in which repeated positions are summed when the matrix is converted; the batched path builds these lists for all elements at once.
+\end{sidenote}
 
 \paragraph{No Python loop over elements.} The element index is an array axis. This is the main gain for the two-dimensional elements.
 
@@ -158,6 +166,10 @@ A fast kernel is useless unless it is the same kernel. Every comparison below re
 \end{figure}
 
 \section{The optional PyTorch backend}\label{sec:bk-torch}
+
+\begin{sidenote}{GPUs and floating-point precision}
+A GPU has thousands of simple arithmetic units and is fastest on operations that apply the same instruction to large arrays, which is the shape of the batched kernels. PyTorch provides arrays (\emph{tensors}) that live on the CPU or on the GPU and run the same code on either. Precision matters as well: double precision (64-bit floats, about 16 digits) is used throughout this book, whereas many GPUs are much faster in single precision (about 7 digits), which is not enough for an ill-conditioned stiffness matrix.
+\end{sidenote}
 
 \paragraph{Purpose.} The batched path of this chapter runs on the CPU with NumPy. A second, optional backend repeats three pieces of work with PyTorch~\cite{paszke2019pytorch}: the linear solve of an assembled static system, the recovery of stresses from a displacement field, and the batched element kernels of the four families above. There are two reasons for it. The first is hardware: PyTorch tensors can live on a graphics processor, and its CPU routines use a thread pool. The second is differentiation: the kernels are written once, against an array namespace, so that the same algebra can be differentiated (Appendix~\ref{ch:diff}). It is not a replacement of the NumPy and SciPy path, which remains the default and, as everywhere in this chapter, the reference against which every torch result is compared.
 

@@ -9,6 +9,10 @@ After it you should be able to state the Newton iteration the drivers share, ver
 
 The two-bar truss of \Cref{sec:nl-paths} is the running example of this chapter. It is small enough to have a closed form, \eqref{eq:nl-vm}, so every claim below can be checked against it, and it shows the one thing that distinguishes nonlinear from linear analysis in practice: the load that the structure can carry has a maximum, and a solver that prescribes the load has no way to go beyond it.
 
+\begin{sidenote}{Residual, tangent and Newton's method}
+The \emph{residual} $\bm R(\bm u)=\bm f_{int}(\bm u)-\lambda\bm f_{ref}$ is the force by which a trial displacement misses equilibrium; the solution makes it zero. \emph{Newton's method} linearises it around the current guess: with the \emph{tangent stiffness} $\bm K_T=\partial\bm f_{int}/\partial\bm u$ it solves $\bm K_T\,\Delta\bm u=-\bm R$, updates $\bm u\leftarrow\bm u+\Delta\bm u$ and repeats until the residual is small. When $\bm K_T$ is the true derivative the error falls quadratically near the solution, so a handful of iterations suffice; when it is not, the iteration slows down. Where $\bm K_T$ becomes singular the structure has lost stiffness in some direction, and Newton's method has nothing to solve for there.
+\end{sidenote}
+
 A linear model solves $\bm K\bm u=\bm f$ once. A nonlinear model has an internal force $\bm f_{int}(\bm u)$ that is not linear in $\bm u$, and equilibrium with a load $\lambda\bm f_{ref}$ is the residual equation
 \begin{equation}\label{eq:nl-residual}
 \bm r(\bm u,\lambda)=\bm f_{int}(\bm u)-\lambda\,\bm f_{ref}=\bm 0 .
@@ -52,6 +56,10 @@ which is unchanged by a rigid rotation: for $\bm F=\bm R$ with $\bm R^T\bm R=\bm
 \end{equation}
 where $\bm K_G$ depends on the stress that is already present. The geometric part is what makes a compressed bar buckle and a tensioned string stiff. Total-Lagrangian formulations of this type are treated in \citet{crisfield1981} and \citet{bathe2014fep}.
 
+\begin{sidenote}{Reference and current configuration}
+A \emph{total-Lagrangian} description measures everything on the undeformed body; an \emph{updated-Lagrangian} one re-references to the latest configuration. The \emph{deformation gradient} $\bm F$ maps a small vector of the undeformed body to the same material vector in the deformed one; it contains both stretch and rotation. Small-strain theory uses $\bm\varepsilon=\tfrac12(\nabla\bm u+\nabla\bm u^T)$, which changes under a rigid rotation and so reports strain where there is none once rotations are large. The Green--Lagrange strain $\bm E$ removes the rotation from $\bm F$ and vanishes for rigid motion. The second Piola--Kirchhoff stress $\bm S$ is the stress measure that does work on $\bm E$ (it is \emph{work-conjugate} to it) and is also referred to the undeformed body; the \emph{Cauchy stress} is the true force per unit deformed area.
+\end{sidenote}
+
 \paragraph{The truss: the smallest complete example.}
 For a bar between nodes with reference positions $\bm X_1,\bm X_2$, reference length $L_0$ and current relative position $\bm d=(\bm X_2+\bm u_2)-(\bm X_1+\bm u_1)$, the Green--Lagrange strain is $E=(\bm d^T\bm d-L_0^2)/(2L_0^2)$, the stress is $S=EE_{GL}$ for Young's modulus $E$, and the internal force on node~2 is $\bm f_2=(SA/L_0)\,\bm d$, with $\bm f_1=-\bm f_2$. This is the whole of \anchor{fea_engine.elements.trusses.TrussTL2D}; \Cref{sec:nl-paths} uses it for the snap-through problem.
 
@@ -65,6 +73,10 @@ A rigid rotation of an element must produce no force. Linear kinematics fail thi
 \end{figure}
 
 \section{Material nonlinearity}\label{sec:nl-material}
+
+\begin{sidenote}{Elastic, hyperelastic and plastic}
+A material is \emph{elastic} if the stress depends only on the current strain, so that unloading retraces the loading. A \emph{hyperelastic} material is elastic with a stored-energy function $W$ from which the stress is derived, which is the usual way to model rubber at large strain. \emph{Plasticity} is different in kind: beyond the \emph{yield} limit part of the strain remains after unloading, and the stress depends on the history of loading. The $J_2$ (von Mises) model says that yield begins when the equivalent stress built from the deviatoric part of the stress reaches the yield stress, and \emph{hardening} raises that limit as plastic strain accumulates.
+\end{sidenote}
 
 \paragraph{Hyperelasticity.}
 For large strains, the St.~Venant--Kirchhoff law is replaced by a strain-energy function. \anchor{fea_engine.material.NeoHookeanMaterial} is the compressible neo-Hookean model with an isochoric--volumetric split, $W=\tfrac{\mu}{2}(\bar I_1-3)+\tfrac{\kappa}{2}(J-1)^2$ with $\bar I_1=J^{-2/3}\operatorname{tr}\bm C$, $\bm C=\bm F^T\bm F$ and $J=\det\bm F$. Its stress is $\bm S=\partial W/\partial\bm E$, and \anchor{fea_engine.elements.nonlinear_solids.Tet4NeoHookean} uses it with a closed-form internal force. One honest limit: the tangent of this element is \emph{not} analytic. It is a finite difference of the closed-form internal force, a choice the code documents because the consistent fourth-order tensor is easy to get wrong by hand; an automatic-differentiation tangent is available as an opt-in (Appendix~\ref{ch:diff}). \Cref{sec:nl-verif} therefore tests only the elements whose tangent is analytic.
@@ -116,6 +128,10 @@ Through \texttt{solve\_nonlinear\_static} the peak strain agrees with the hand s
 
 \section{Verification of the elements}\label{sec:nl-verif}
 
+\begin{sidenote}{Why the tangent has to be consistent}
+Newton's method converges quadratically only if the matrix $\bm K_T$ used is the derivative of the force that is actually computed. For a hand-derived tangent this is easy to get wrong in one term, and the symptom is not a wrong answer but a slower convergence, which can look like a difficult problem. The check compares $\bm K_T$ with a finite difference of $\bm f_{int}$, column by column, and also tests its symmetry.
+\end{sidenote}
+
 \paragraph{Tangent consistency.}
 For each element with an analytic tangent, \Cref{tab:nl-tangent} compares $\bm K_T$ with the central finite difference of $\bm f_{int}$ ($h=10^{-6}$) at a random displacement state, and checks its symmetry. The worst relative difference is \cnlTangentWorst, which is the size expected of a central difference with this step; the tangents are symmetric to rounding. The test shows that $\bm K_T$ is the derivative of the $\bm f_{int}$ of the \emph{same} element; it does not show that $\bm f_{int}$ itself is the right physics. That is what the rotation test of \Cref{fig:nl-obj}, the truss below and the elastica of \Cref{sec:nl-elastica} are for. The states are one random draw per element, not a sweep.
 
@@ -129,6 +145,10 @@ For each element with an analytic tangent, \Cref{tab:nl-tangent} compares $\bm K
 The large-deflection cantilever (the elastica) is the standard test of the beam element \anchor{fea_engine.elements.beams.Beam2DCorotational}. With 40 elements and a tip load the tip deflection $w/L$ differs from the reference $0.301721$ by $3.5\times10^{-6}$, and with 10 and 20 elements by $1.8\times10^{-3}$ and $3.6\times10^{-4}$; the shortening error is $2.2\times10^{-4}$ at 40 elements. These numbers are taken from the table of the companion paper (\texttt{paper/tables/tab\_elastica.tex}) and are not recomputed by this chapter's script.
 
 \section{Following the response}\label{sec:nl-paths}
+
+\begin{sidenote}{Limit points and path following}
+A structure loaded beyond a \emph{limit point}, where the load reaches a maximum on the load--displacement curve, can snap to a distant equilibrium state; the equilibrium path continues, but the load falls while the displacement grows. \emph{Load control} prescribes the load and loses the path at the limit point, where $\bm K_T$ is singular. \emph{Displacement control} prescribes one displacement instead and can pass a maximum of the load, but not a point where the displacement itself turns back. \emph{Arc-length} methods add the step length in the combined space of displacement and load as a constraint and let the load factor vary, so they can follow both.
+\end{sidenote}
 
 \paragraph{The snap-through truss.}
 The classic problem with a turning point is the von Mises truss: two bars of reference length $L_0=\sqrt{a^2+h_0^2}$ meet at an apex of height $h_0$ above the supports, loaded vertically. With the half-span $a=1$ m, $h_0=0.10$ m, $E=210$ GPa and $A=2\times10^{-4}$ m$^2$, the apex deflection $\delta$ and load $P$ satisfy exactly
@@ -247,6 +267,10 @@ driver & controls & use when \\
 \section{Solver settings}\label{sec:nl-options}
 
 The drivers repeat the same convergence keywords, and \anchor{fea_engine.newton_options.NewtonOptions} bundles them: the residual tolerance \code{tol}, the iteration limit \code{max_iter}, optional displacement and energy tolerances, the line search, and the sparse-tangent settings of Chapter~\ref{ch:batch}. A field left at \code{None} means ``the driver's own default'', a field a driver does not know is ignored, and a keyword passed to the driver always wins. The line search is on by default but is used only when the plain Newton step fails to reduce the residual, so a call that did not need it gives the same result as before.
+
+\begin{sidenote}{Convergence criteria and line search}
+Newton iterations stop when a norm falls below a tolerance: of the residual (the out-of-balance force), of the displacement increment, or of the energy $\Delta\bm u^T\bm R$. Which one is used matters, since a small residual does not guarantee a small displacement error when the structure is soft. A \emph{line search} shortens the Newton step $\Delta\bm u$ by a factor chosen to reduce the residual, which helps when the full step overshoots, and \code{max_iter} stops an iteration that does not converge.
+\end{sidenote}
 
 \begin{lstlisting}[caption={One options object for a driver; load control below the limit load of the truss.},label={lst:nl-opts}]
 opts = NewtonOptions(tol=1e-10, max_iter=40, line_search=True)

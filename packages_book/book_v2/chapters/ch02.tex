@@ -9,6 +9,10 @@ After it you should be able to generate and grade a structured mesh, join topolo
 
 A \anchor{fea_engine.mesh.Mesh} holds an array of node coordinates of shape $(n_{nodes},\dim)$ and an integer array of element connectivity of shape $(n_{el},n_{nodes/el})$, with node numbers indexing the first array. It does not know the element formulation: the same quadrilateral mesh serves a plane-stress element, a plate or a scalar field. \anchor{fea_engine.mesh.MultiBlockMesh} holds several connectivity arrays (blocks, for example a triangle block and a quadrilateral block) over \emph{one} shared node array. Nodes and elements are selected by coordinates (\code{nodes_on_line}, \code{select_nodes}) and by named node sets, which is how boundary conditions are applied without node numbers appearing in the analysis.
 
+\begin{sidenote}{Structured and unstructured meshes}
+In a \emph{structured} mesh the elements form a regular grid, so the neighbours of an element follow from index arithmetic and the connectivity is implicit; the generators of this chapter make such meshes, which are cheap to produce and to grade. An \emph{unstructured} mesh has arbitrary connectivity and can follow a complicated geometry; it comes from a meshing program and is read by the importers of \Cref{sec:me-io}. Both are stored in the same two arrays, so a solver does not need to know which kind it has been given.
+\end{sidenote}
+
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{figures/ch02_anatomy.pdf}
@@ -38,6 +42,10 @@ A mesh does not know its element formulation, but the connectivity rows only mea
 \section{Mesh quality}\label{sec:me-quality}
 
 The one property that the mesh must have for any element is a positive Jacobian determinant at every Gauss point: an inverted element gives a wrong or negative stiffness without any error being raised. \code{check_quality(element)} evaluates $\det\bm J$ at every Gauss point with the element's own shape functions and reports the ratio of the largest to the smallest value.
+
+\begin{sidenote}{Aspect ratio, angle and skewness}
+Besides the sign of the Jacobian determinant, three numbers describe how far an element is from an ideal shape. The \emph{aspect ratio} is the ratio of its longest to its shortest edge, and the \emph{smallest interior angle} (the ideal is $90^\circ$ for a quadrilateral and $60^\circ$ for a triangle) measures how sheared or squeezed it is; \emph{skewness} is the deviation of the angles from the ideal. An element can have a positive determinant and still be a poor one: its interpolation then represents the field less accurately, so these numbers guide the refinement even when no element is inverted.
+\end{sidenote}
 
 \begin{sidenote}{Connectivity order}
 Each row of the connectivity array lists the nodes of one element in a fixed order, counter-clockwise starting from the lower left for a quadrilateral. Reversing the order mirrors the element, which reverses the sign of the Jacobian determinant while leaving the element's area unchanged, so an area check cannot see it.
@@ -182,6 +190,10 @@ All \cmeGenNRows{} meshes of \Cref{tab:me-gen} have positive Jacobians. The stra
 
 Near a hole, a notch or a fillet the stress changes quickly, and the mesh should be fine there and coarse far away. The structured generators use the power-law partition $x_i=L\,(i/n)^p$ (\anchor{fea_engine.grading.graded_partition}), uniform for $p=1$ and clustered at one end for $p>1$. A clustering exponent chosen by hand hides the quantity that matters for accuracy, the ratio of the sizes of adjacent elements. For $n=20$ and $p=2$ this ratio is \cmeGradeRatioPTwo{} (against \cmeGradeRatioPOne{} for the uniform case), more than the value of about 1.2 that is commonly cited as the target, and more than the value above which \fea{} warns (1.5). The function \anchor{fea_engine.grading.grade_for_growth_ratio} turns the question around: given a target growth ratio it finds, by bisection, the largest exponent for which the realised ratio does not exceed it, which works because the ratio increases monotonically with $p$.
 
+\begin{sidenote}{Graded mesh and growth ratio}
+A mesh is \emph{graded} when the element size changes across the domain, small where the solution varies quickly (near a hole, a notch or a support) and larger elsewhere. The \emph{growth ratio} is the ratio $h_{i+1}/h_i$ of the sizes of neighbouring elements; a ratio near 1 changes the size gently, and a rule of thumb keeps it at about 1.2 or below, since an abrupt change of size is itself a source of error.
+\end{sidenote}
+
 \begin{algbox}{Grading to a target growth ratio by bisection}
 \begin{pseudo}
 \Require number of elements $n$, target growth ratio $\rho^\ast$, bracket $[p_{lo},p_{hi}]$ with $p_{lo}=1$
@@ -246,6 +258,10 @@ The bisection needs about $\log_2((p_{hi}-p_{lo})/\mathrm{tol})$ evaluations of 
 
 A \code{MultiBlockMesh} holds blocks of different topologies over one node array: \code{blocks} maps a name to a connectivity array, and \code{FESystem} takes a dictionary of the same keys with one element per block. Two blocks are joined only by \emph{shared node numbers} along their interface, so there is no separate interface object, and the interface condition (continuity of displacement) holds by construction. One constraint follows from numbering degrees of freedom per node: all blocks of one system must have the same \code{dofs_per_node}, so a membrane block and a plate-bending block cannot share a node.
 
+\begin{sidenote}{Conforming meshes and hanging nodes}
+A mesh is \emph{conforming} if every interior edge (in three dimensions, face) belongs to exactly two elements and is shared by both in full. If an element's corner lies in the middle of its neighbour's edge, that node is \emph{hanging}: unless it is tied to the edge by a constraint, the displacement can jump across the interface, and the elements no longer behave as one body. Where two blocks are joined, the check is that a uniform strain state is still reproduced exactly, which is the patch test of \Cref{sec:el-verif}.
+\end{sidenote}
+
 \paragraph{A patch test across the interface.} A rectangle $2\times1$ is built from a $4\times4$ block of quadrilaterals ($x<1$) and a triangulated block ($x>1$, each cell split into two triangles), with the interior nodes displaced randomly by up to 20\% of the cell size. The two blocks share \cmeMBShared{} nodes on the line $x=1$, and the mesh has \cmeMBQuads{} quadrilaterals and \cmeMBTris{} triangles. The boundary nodes are given a linear displacement field; a correct mixed mesh must reproduce it exactly at the interior nodes. The largest nodal error is \cmeMBErr{} relative to the largest displacement, which is rounding. This tests that the elements of the two blocks assemble into one consistent system through the shared nodes; it does not test the \emph{stress} continuity across the interface.
 
 \begin{figure}[ht]
@@ -300,6 +316,10 @@ Boundary conditions and loads are applied to sets of nodes. For a boundary that 
 \section{Exchange formats}\label{sec:me-io}
 
 \anchor{fea_engine.mesh_io.write_mesh} and \anchor{fea_engine.mesh_io.read_mesh} convert a \code{Mesh} or \code{MultiBlockMesh} to and from every format of the \code{meshio} package (an optional extra). \Cref{tab:me-meshio} writes a quadrilateral and a hexahedral mesh to the VTU and Abaqus INP formats and reads each back. In all four cases the nodes, the connectivity array and the set of elements (compared by the coordinates of their nodes, independent of numbering) are identical. The test is limited to two formats and two element types. For the quadratic elements, the node order of the package agrees with the order that \code{meshio} uses as its canonical order, as the package's own tests establish for the Gmsh format and a VTU round trip; it was not rerun here, and the package says that other formats have not been checked for quadratic elements.
+
+\begin{sidenote}{Mesh file formats}
+A mesh file stores the node coordinates, the connectivity and the element type of each block, and often node sets. The Abaqus input file (\texttt{.inp}) is a text file with keyword lines such as \texttt{*NODE} and \texttt{*ELEMENT}; Gmsh writes \texttt{.msh}; the VTK family (\texttt{.vtk}, \texttt{.vtu}) is used for results and for visualisation in ParaView. The library \texttt{meshio} reads and writes many of them. A format carries the mesh, not the physical model: loads, materials and boundary conditions are defined again in the analysis.
+\end{sidenote}
 
 \begin{table}[ht]
 \centering\small

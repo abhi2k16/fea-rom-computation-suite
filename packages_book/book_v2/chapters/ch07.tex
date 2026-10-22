@@ -16,6 +16,10 @@ Take a discretised elastic body with $n$ unknowns, a symmetric positive definite
 \end{equation}
 The four conditions say, in turn: equilibrium including the contact forces; no penetration; contact forces only push; and a contact force acts only where the gap is closed. The last condition is what makes the problem nonlinear, and it is the same condition throughout the book: the packages use this convention in \fea{} here and in the reduced models of Chapter~\ref{ch:hyper}~\cite{balajewicz2016contact}. For the formulation in a general setting see \citet{wriggers2006contact} and the survey of \citet{wohlmuth2011contact}.
 
+\begin{sidenote}{Gap, contact force and the three conditions}
+The \emph{gap} $g$ is the distance between the body and the obstacle at a point; $g\ge0$ means no penetration. The contact force $\lambda$ can only push, so $\lambda\ge0$. The third condition, $\lambda g=0$, says that a force can exist only where the gap is closed: at each point the body is either separated and free of force, or touching and pressed. Conditions of this kind are called \emph{complementarity} conditions, and they make contact a nonsmooth problem, since it is not known in advance which points touch.
+\end{sidenote}
+
 \begin{sidenote}{Lagrange multiplier and KKT}
 A Lagrange multiplier $\lambda_i$ is an extra unknown that stands for the force an inequality exerts when it is binding. Here it is the contact force at node $i$. The four conditions of \eqref{eq:ct-kkt} are the Karush--Kuhn--Tucker (KKT) conditions: equilibrium, feasibility, a sign condition on the force, and complementarity, which says that a force can only act where the gap is closed.
 \end{sidenote}
@@ -34,6 +38,10 @@ For this solution the contact conditions \eqref{eq:ct-kkt} hold to rounding: the
 \section{Why not a penalty?}\label{sec:ct-penalty}
 
 The usual way to avoid the inequality is to let the obstacle push back with a spring: for $\bm B=\bm I$, add the force $k_p\max(0,\,c_i-u_i)$ at every node that has penetrated. Then \eqref{eq:ct-kkt} is replaced by $\bm K\bm u=\bm f+k_p\max(0,\bm c-\bm u)$, an ordinary nonlinear equation, and a Newton iteration on the set $\mathcal A=\{i:u_i<c_i\}$ solves $(\bm K+k_p\bm P_{\mathcal A})\bm u=\bm f+k_p\bm P_{\mathcal A}\bm c$, where $\bm P_{\mathcal A}$ selects the penetrating nodes. The penalty method is simple, and \fea{} keeps it as the contact elements \code{GapContactPenalty} and \code{NodeToSegmentContact2D}. Its cost is a parameter that has no physical meaning.
+
+\begin{sidenote}{The penalty method}
+The penalty method lets the bodies overlap and charges for the overlap with a stiff spring of stiffness $k_p$ acting on the penetration. It needs no extra unknowns and no choice of an active set, which makes it popular. But the constraint is only satisfied approximately, with a penetration of order $1/k_p$; a larger $k_p$ reduces it, and also makes the system ill-conditioned (slow or inaccurate for iterative solvers) and, in dynamics, restricts the time step.
+\end{sidenote}
 
 \paragraph{Try it.} \Cref{lst:ct-penalty} builds the membrane of the model problem on a $30\times30$ mesh, solves it by the penalty method at three stiffnesses, and then solves it exactly. The penalty loop is the Newton iteration just described; \code{kp} is measured in units of the mean diagonal of $\bm K$.
 
@@ -122,6 +130,10 @@ Indeed, if $g_i>0$ the maximum is $0$ and the equation forces $\lambda_i=0$; if 
 
 \section{The primal-dual active-set method and its three routes}\label{sec:ct-pdas}
 
+\begin{sidenote}{Active set}
+At the solution, each potential contact point is either active (the gap is closed and a force acts) or inactive (the gap is open and the force is zero). The set of active points is the \emph{active set}. If it were known, contact would reduce to a linear problem with the active constraints treated as equalities; the difficulty is to find it. Active-set methods guess it, solve, and correct it from the signs of the forces and the gaps, until it no longer changes.
+\end{sidenote}
+
 \paragraph{The algorithm.}
 Let $\mathcal A_k$ be the set of constraints assumed active at iteration $k$. The Newton step for \eqref{eq:ct-nonsmooth} treats the constraints in $\mathcal A_k$ as equalities $(\bm B\bm u)_i=c_i$, sets $\lambda_i=0$ outside, solves the resulting linear system, and then reclassifies each constraint by the sign of $\lambda_i-c_pg_i$.
 
@@ -152,6 +164,10 @@ The constant $c_p$ sets the scale on which gap and force are compared; the imple
 
 \paragraph{Finite termination, and where it is not guaranteed.}
 For a stiffness matrix that is an M-matrix (positive definite with non-positive off-diagonal entries) the method is known to terminate after finitely many iterations~\cite{hintermuller2002pdas}. The membrane stiffness of this chapter satisfies the condition: on the mesh used for the agreement study ($\ctcAgreeN$ unknowns) the largest off-diagonal entry of $\bm K$ is $\ctcOffMax$ and its smallest eigenvalue is \ctcMinEig, so $\bm K$ is positive definite. The stiffness of an elastic solid generally does not, and for it the package gives \emph{no} guarantee. This is the reason for the failure reports of \Cref{sec:ct-impl}: when the iteration cycles or stalls, the solver says so.
+
+\begin{sidenote}{Linear complementarity problem}
+A linear complementarity problem (LCP) asks for a vector $\bm\lambda\ge\bm0$ such that $\bm w=\bm A\bm\lambda+\bm q\ge\bm0$ and $\bm\lambda^T\bm w=\bm0$. Eliminating the displacements from the contact problem, with $\bm A$ the contact flexibility matrix $\bm B\bm K^{-1}\bm B^T$, gives exactly this form, with the contact forces as unknowns. It is smaller than the full problem when there are fewer contact points than unknowns, but its matrix is dense.
+\end{sidenote}
 
 \paragraph{Three routes.}
 Step 2 is a sparse linear solve, and how it is done defines the routes of \anchor{fea_engine.contact_solvers.solve_contact_static_sparse}.

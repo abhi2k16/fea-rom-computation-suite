@@ -9,6 +9,10 @@ After it you should be able to train a frequency-domain model by greedy selectio
 
 Suppose we have a budget of five full-order solves to build a reduced model of a cantilever over a band that contains three resonances. The obvious plan is to spread the five evenly over the band. It is a fair baseline, but the beam does not care about even spacing: its response changes fast near resonances and slowly between them, so evenly spaced snapshots may miss exactly the places that matter. This chapter asks whether the loop can choose better, and how we would know. The beam of the example script is the running example.
 
+\begin{sidenote}{Frequency-domain response and complex unknowns}
+In the frequency domain a harmonic load $\bm F e^{i\omega t}$ produces a response $\bm x(\omega)e^{i\omega t}$ with $\bm x(\omega)$ complex, since damping shifts its phase. The unknown is therefore a complex vector at each frequency, obtained from one linear solve of the dynamic stiffness $\bm A(\omega)=-\omega^2\bm M+i\omega\bm C+\bm K$. A sweep over many frequencies repeats the solve, which is the cost the reduced model is meant to avoid.
+\end{sidenote}
+
 For harmonic excitation $\bm f(t)=\bm F\,e^{i\omega t}$ the steady response of $\bm M\ddot{\bm x}+\bm C\dot{\bm x}+\bm K\bm x=\bm f$ is $\bm x(\omega)e^{i\omega t}$ with
 \begin{equation}\label{eq:fr-fom}
 \bm A(\omega)\,\bm x(\omega)=\bm F,\qquad \bm A(\omega)=-\omega^2\bm M+i\omega\bm C+\bm K .
@@ -32,6 +36,10 @@ A modal basis (the lowest undamped modes) does not depend on the load; it repres
 
 \begin{sidenote}{Snapshot and column}
 A snapshot is one full-order solution, here the complex response at one frequency. The basis is the POD of the snapshots, and each of its columns is a complex vector. Counting columns is the fair way to compare bases of equal size, but the modal columns are real, so a complex column carries twice the numbers.
+\end{sidenote}
+
+\begin{sidenote}{The greedy idea}
+A \emph{greedy} algorithm makes the best choice available at each step without looking ahead. Here the choice is where to put the next full-order solve: at the frequency at which the current reduced model is judged worst. A new snapshot there is added to the basis, the reduced model is rebuilt, and the process repeats until the worst-case estimate is small enough. The result is a basis tuned to the frequencies where it is needed, at a cost of one full solve per added column.
 \end{sidenote}
 
 \paragraph{Greedy training.}
