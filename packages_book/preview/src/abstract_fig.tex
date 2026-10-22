@@ -1,0 +1,58 @@
+% graphical abstract: from a mesh to a verified reduced model (canvas about 17 x 27 cm)
+\begingroup\sffamily
+\usetikzlibrary{arrows.meta}
+\tikzset{
+ band/.style={rounded corners=6pt,draw=none},
+ lane/.style={font=\bfseries\scriptsize,text=hlnavy,anchor=north west},
+ chn/.style={minimum height=\nh,rounded corners=4pt,draw=hlblue,fill=white,line width=0.7pt,inner sep=3pt,align=left,text width={#1*1cm-6pt}},
+ flow/.style={-{Stealth[length=3mm]},line width=1.4pt,hlnavy},
+}
+\def\nh{3.4cm}
+\newcommand{\chn}[7]{% x y width number title image question
+ \node[chn=#3] (c#4) at (#1,#2) {\textbf{\color{hlblue}#4}\ \textbf{\small #5}\\[1pt]
+  \centering\includegraphics[width=\dimexpr#3cm-12pt\relax,height=2.1cm,keepaspectratio]{#6}\\[1pt]
+  \raggedright\scriptsize\itshape #7};}
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[anchor=west,font=\bfseries\LARGE,text=hlnavy] at (0,26.4) {From a mesh to a verified reduced model};
+\node[anchor=west,font=\small,text=hlgrey] at (0,25.6) {Implementing Reduced-Order Modeling In Computational Mechanics \ \textperiodcentered\ \ 14 chapters, one pipeline};
+% bands
+\fill[band,hlpale] (0,20.3) rectangle (17,24.9);
+\fill[band,blue!8] (0,15.3) rectangle (17,20.0);
+\fill[band,violet!9] (0,4.7) rectangle (17,14.7);
+\fill[band,green!9] (0,0.0) rectangle (17,4.4);
+\node[lane] at (0.2,24.8) {PART I \ \ ARCHITECTURAL FOUNDATIONS};
+\node[lane] at (0.2,19.9) {PART II \ \ FULL-ORDER PHYSICS (\texttt{fea\_engine})};
+\node[lane] at (0.2,14.6) {PART III \ \ REDUCED-ORDER MODELLING (\texttt{rom\_engine})};
+\node[lane] at (0.2,4.3) {PART IV \ \ VERIFICATION};
+% part I
+\def\nh{3.5cm}
+\chn{4.4}{22.45}{8}{1}{Engine design}{figures/architecture.png}{Add an element without editing a solver}
+\chn{12.6}{22.45}{8}{2}{Meshes}{figures/ch02_gallery2d.pdf}{A mesh whose areas add up can still be wrong}
+\draw[flow] (8.5,20.35) -- (8.5,19.95);
+% part II
+\def\nh{3.95cm}
+\chn{1.7}{17.35}{3.2}{3}{Elements}{figures/ch03_bending.pdf}{Why a thin plate comes out 200 times too stiff}
+\chn{5.1}{17.35}{3.2}{4}{Dynamics}{figures/ch04_explicit.pdf}{A step 1\,\% over the limit blows up}
+\chn{8.5}{17.35}{3.2}{5}{Nonlinearity}{figures/ch05_vonmises.pdf}{Following a response past a limit point}
+\chn{11.9}{17.35}{3.2}{6}{Speed}{figures/ch06_scaling.pdf}{Batched assembly: a Newton solve \cbkNewtonRatio\ times faster}
+\chn{15.3}{17.35}{3.2}{7}{Contact}{figures/ch07_obstacle.pdf}{Exact contact where a penalty fails}
+% interface
+\draw[flow] (8.5,15.25) -- (8.5,14.75);
+\node[fill=white,rounded corners=3pt,draw=hlnavy,inner sep=3pt,font=\scriptsize] at (8.5,15.0) {plain arrays: $\bm K,\ \bm M,\ \bm F$ and snapshots $\bm S$};
+% part III
+\chn{2.9}{12.15}{5.4}{8}{POD--Galerkin}{figures/ch08_pod.pdf}{Thousands of parameter queries from a small dense solve}
+\chn{8.5}{12.15}{5.4}{9}{Balanced truncation, Krylov, SOAR}{figures/ch09_compare.pdf}{Keep only the input--output map}
+\chn{14.1}{12.15}{5.4}{10}{Frequency domain, greedy}{figures/ch10_greedy.pdf}{Where to take the next snapshot, and how far to trust it}
+\chn{2.9}{7.75}{5.4}{11}{Substructuring}{figures/ch11_cb.pdf}{Reduce the parts, then join them}
+\chn{8.5}{7.75}{5.4}{12}{Non-intrusive, nonlinear}{figures/ch12_nlrom.pdf}{Models from data for a structure that bends a lot}
+\chn{14.1}{7.75}{5.4}{13}{Hyper-reduction, contact}{figures/ch13_ecsw.pdf}{Make the nonlinear force cheap; keep contact valid}
+\draw[<->,hlgrey,line width=0.6pt] (0.3,5.2) -- (16.7,5.2);
+\node[fill=violet!9,font=\tiny,text=hlgrey] at (4.2,5.2) {offline: build once};
+\node[fill=violet!9,font=\tiny,text=hlgrey] at (12.8,5.2) {online: small solve per query};
+% part IV
+\def\nh{2.9cm}
+\node[chn=15.5] (c14) at (8.5,1.95) {\textbf{\color{hlblue}14}\ \textbf{\small Verification: what a number proves}\\[2pt]
+ \begin{minipage}[c]{5.2cm}\centering\includegraphics[width=5.1cm,height=2.1cm,keepaspectratio]{figures/ch14_pipeline.pdf}\end{minipage}\hfill
+ \begin{minipage}[c]{8.6cm}\scriptsize\itshape Six levels of evidence, from a unit test to an integrated run. Nine published studies rebuilt from the packages, failures included. One pipeline from mesh to a prediction on loads never seen.\end{minipage}};
+\end{tikzpicture}
+\endgroup

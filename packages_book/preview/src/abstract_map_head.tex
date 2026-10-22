@@ -1,0 +1,17 @@
+% reader's map: which chapter answers which question (canvas 17 x 25 cm)
+\begingroup\sffamily
+\tikzset{
+ q/.style={rounded corners=4pt,draw=hlblue,fill=white,line width=0.6pt,minimum height=1.15cm,text width=11.3cm,inner xsep=6pt,align=left,font=\small},
+ bdg/.style={circle,minimum size=0.95cm,inner sep=0pt,font=\bfseries\small,text=white},
+}
+\definecolor{pI}{HTML}{5B6B7C}\definecolor{pII}{HTML}{2F7FC1}\definecolor{pIII}{HTML}{7A4FB0}\definecolor{pIV}{HTML}{2E9E6B}
+\newcommand{\qrow}[4]{% y question badges(list of col:num) 
+ \node[q,anchor=west] at (0,#1) {#2};
+ #3}
+\newcommand{\badge}[3]{\node[bdg,fill=#3] at (#1,#2) {};}
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[anchor=west,font=\bfseries\LARGE,text=hlnavy] at (0,25.9) {Which chapter answers your question?};
+\node[anchor=west,font=\small,text=hlgrey] at (0,25.1) {Start where your problem is. The chapters are written to be read in any order that your question needs.};
+\node[anchor=west,font=\scriptsize,text=hlgrey] at (0,24.3) {\textcolor{pI}{$\bullet$} Part I architecture \ \ \textcolor{pII}{$\bullet$} Part II full-order physics \ \ \textcolor{pIII}{$\bullet$} Part III reduced-order modelling \ \ \textcolor{pIV}{$\bullet$} Part IV verification};
+\end{tikzpicture}
+\endgroup

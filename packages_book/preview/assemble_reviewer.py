@@ -5,9 +5,9 @@ from pypdf import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.colors import Color
-front = PdfReader(sys.argv[1]); hl = PdfReader(sys.argv[2]); out = sys.argv[3]
+front = PdfReader(sys.argv[1]); hl = PdfReader(sys.argv[2]); out = sys.argv[3]; ab = PdfReader(sys.argv[4])
 W = PdfWriter()
-pages = [front.pages[i] for i in range(21)] + list(hl.pages)
+pages = [front.pages[i] for i in range(21)] + list(ab.pages) + list(hl.pages)
 def stamp(w, h):
     buf = io.BytesIO(); c = canvas.Canvas(buf, pagesize=(w, h))
     c.setFillColor(Color(0.36, 0.42, 0.49)); c.setFont("Helvetica", 7.5)
@@ -20,7 +20,7 @@ for i, p in enumerate(pages):
 W.add_metadata({"/Title": "Implementing Reduced-Order Modeling In Computational Mechanics: reviewer preview",
                 "/Author": "Abhijeet Kumar", "/Subject": "Preview edition for reviewers (confidential)"})
 W.add_outline_item("Cover", 0); W.add_outline_item("Front matter", 2); W.add_outline_item("Contents", 16)
-W.add_outline_item("The whole book", 21); W.add_outline_item("Chapter highlights", 23)
+W.add_outline_item("Graphical abstract", 21); W.add_outline_item("Which chapter answers your question?", 22); W.add_outline_item("The whole book", 23); W.add_outline_item("Chapter highlights", 25)
 W.add_outline_item("Request the full draft", len(pages) - 2)
 with open(out, "wb") as f: W.write(f)
 print("pages", len(pages))
