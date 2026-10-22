@@ -2,6 +2,7 @@
 \hlbanner{Part II $\cdot$ Full-order physics}{5}{Material and geometric nonlinearity}
 \hlsection{The question}
 \begin{hlquote}A shallow two-bar truss is pushed down at its apex. At first it resists, then at a certain load it gives way and snaps through, and a solver that steps up the load simply stops converging just above that load.\end{hlquote}
+\vspace{8pt}\begin{hlsum}\textbf{Load control cannot follow a response past a limit load; displacement control and arc length can.} On a snap-through truss, load control fails at $1.1\,P_{max}$, while displacement control and arc length follow the whole curve to \cnlTrussErrDC{} and \cnlTrussErrAL{} against the closed form. The chapter builds one Newton iteration shared by all drivers, verifies force and tangent by rotation invariance and finite differences, and adds small-strain plasticity checked against a hand solution. Kinematic hardening and finite-strain plasticity are not included.\end{hlsum}
 \hlsection{Key concepts}
 \begin{description}\setlength\itemsep{5pt}\setlength\parsep{0pt}\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\sffamily\bfseries\color{hlnavy}#1}
 \item[Newton iteration] residual and tangent stiffness, shared by every driver
@@ -17,18 +18,8 @@
 \item choose among four path-following methods for a response with a limit point
 \item check a plastic load cycle against a hand solution
 \end{itemize}
-\hlsection{In this chapter}
-{\begin{multicols}{2}\raggedright
-\textbf{5.1}\ Why a nonlinear solver is different\\
-\textbf{5.2}\ Total-Lagrangian kinematics\\
-\textbf{5.3}\ Material nonlinearity\\
-\textbf{5.4}\ Verification of the elements\\
-\textbf{5.5}\ Following the response\\
-\textbf{5.6}\ Solver settings\\
-\textbf{5.7}\ Summary
-\end{multicols}}
 \hlsection{Explained on the page, in short boxes}
-\noindent Residual, tangent and Newton's method; Tangent stiffness; Reference and current configuration; Elastic, hyperelastic and plastic; Why the tangent has to be consistent; Limit points and path following; Limit point and snap-through; Convergence criteria and line search.
+\noindent\small Residual, tangent and Newton's method; Tangent stiffness; Reference and current configuration; Elastic, hyperelastic and plastic; Why the tangent has to be consistent; Limit points and path following; Limit point and snap-through; Convergence criteria and line search.
 \newpage\thispagestyle{hl}
 \noindent{\sffamily\small\color{hlgrey}Chapter 5 \quad Material and geometric nonlinearity}\par
 \hlfig{\hlimg{ch05_vonmises}}{Load against apex deflection of the two-bar truss: the closed form, displacement control and arc length follow the curve past the load maximum.}

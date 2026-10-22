@@ -2,6 +2,7 @@
 \hlbanner{Part III $\cdot$ Reduced-order modelling}{11}{Substructuring and component reduction}
 \hlsection{The question}
 \begin{hlquote}A wing, an engine and a pylon come from different teams, and each team can reduce its own part. The difficulty is joining the reduced parts again: if the reduction hides the interface the parts cannot be connected, and if it keeps every interface unknown the interface dominates.\end{hlquote}
+\vspace{8pt}\begin{hlsum}\textbf{Component reduction joins separately reduced parts without losing the interface.} For a clamped--clamped beam of \ccmBeamFull{} unknowns split in two, Craig--Bampton with \ccmCbFiveSize{} unknowns has an error of \ccmCbFiveErr, while Guyan condensation at the same size errs by \ccmGuyTwelveErr, about twelve times more. The chapter builds and compares both, judges an assembly by its frequencies, and says what free-interface and interface reduction change. The tests are small (a beam, a membrane, a spring chain), with no solid, no shell and no assembly of more than two parts.\end{hlsum}
 \hlsection{Key concepts}
 \begin{description}\setlength\itemsep{5pt}\setlength\parsep{0pt}\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\sffamily\bfseries\color{hlnavy}#1}
 \item[Static (Guyan) condensation] eliminates interior unknowns statically; exact for statics, weak in dynamics
@@ -17,17 +18,8 @@
 \item judge an assembly by its frequencies
 \item say what free-interface and interface reduction change
 \end{itemize}
-\hlsection{In this chapter}
-{\begin{multicols}{2}\raggedright
-\textbf{11.1}\ The problem\\
-\textbf{11.2}\ Mathematical structure\\
-\textbf{11.3}\ Implementation in the packages\\
-\textbf{11.4}\ Verification\\
-\textbf{11.5}\ Limits and failure modes\\
-\textbf{11.6}\ Summary
-\end{multicols}}
 \hlsection{Explained on the page, in short boxes}
-\noindent Interface, boundary, internal; Static condensation; Constraint modes and fixed-interface modes; Fixed-interface and free-interface modes; Mortar coupling.
+\noindent\small Interface, boundary, internal; Static condensation; Constraint modes and fixed-interface modes; Fixed-interface and free-interface modes; Mortar coupling.
 \newpage\thispagestyle{hl}
 \noindent{\sffamily\small\color{hlgrey}Chapter 11 \quad Substructuring and component reduction}\par
 \hlfig{\hlimg{ch11_cb}}{Largest error of the first four frequencies of a two-part beam against reduced model size, for Craig--Bampton and Guyan condensation.}

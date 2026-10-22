@@ -2,6 +2,7 @@
 \hlbanner{Part I $\cdot$ Architectural foundations}{1}{The design of a decoupled scientific engine}
 \hlsection{The question}
 \begin{hlquote}A colleague asks for a new element and wants it in the static, modal and nonlinear solvers. Where each solver knows its elements, that means opening three solvers and adding a branch to each. Here it takes one subclass and one registry line, and no solver is touched.\end{hlquote}
+\vspace{8pt}\begin{hlsum}\textbf{A new element, material or backend is added by one subclass or one registry line, and no solver is touched.} The chapter follows the flow from material to post-processing, the small interface solvers use to talk to elements, and a twenty-line bar element that runs in the existing static and modal solvers. All \cdeRegTotal{} registered elements are put through an interface test, and \rom{} is shown never to import \fea{}. It also measures what the \code{auto} backend setting costs on sparse systems, a cost the documentation did not mention.\end{hlsum}
 \hlsection{Key concepts}
 \begin{description}\setlength\itemsep{5pt}\setlength\parsep{0pt}\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\sffamily\bfseries\color{hlnavy}#1}
 \item[Element interface] the small set of methods that every element provides to the solvers
@@ -17,20 +18,8 @@
 \item say why \rom{} does not import \fea{}, and how that is checked
 \item explain what the \code{auto} backend costs on sparse systems
 \end{itemize}
-\hlsection{In this chapter}
-{\begin{multicols}{2}\raggedright
-\textbf{1.1}\ One system, many problems\\
-\textbf{1.2}\ The flow and the layers\\
-\textbf{1.3}\ The element interface\\
-\textbf{1.4}\ Extending the engine: a new element\\
-\textbf{1.5}\ The six extension points\\
-\textbf{1.6}\ Does the interface hold? A conformance test\\
-\textbf{1.7}\ Two packages, one direction of dependence\\
-\textbf{1.8}\ Backend dispatch and what it costs\\
-\textbf{1.9}\ Summary
-\end{multicols}}
 \hlsection{Explained on the page, in short boxes}
-\noindent The matrices of the semi-discrete equation; Registry and base class; Why the direction of a dependence matters; Backend; Sparse, dense, direct and iterative.
+\noindent\small The matrices of the semi-discrete equation; Registry and base class; Why the direction of a dependence matters; Backend; Sparse, dense, direct and iterative.
 \newpage\thispagestyle{hl}
 \noindent{\sffamily\small\color{hlgrey}Chapter 1 \quad The design of a decoupled scientific engine}\par
 \hlfig{\hltikz{ch01_flow}}{The flow of an analysis: material, mesh, element, system, solver. The link to \rom{} is plain arrays, never an import.}

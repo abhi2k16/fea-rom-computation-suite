@@ -2,6 +2,7 @@
 \hlbanner{Part III $\cdot$ Reduced-order modelling}{12}{Non-intrusive identification and nonlinear ROMs}
 \hlsection{The question}
 \begin{hlquote}A vendor gives you a black-box solver for a structure that bends a lot. You can run it, but you cannot see its matrices. Everything so far projected matrices; here there are none to project.\end{hlquote}
+\vspace{8pt}\begin{hlsum}\textbf{When only a black-box solver is available, the reduced model is identified from its outputs.} At a mid-span deflection of \cnlDefl{} mm the nonlinear effect is \cnlNlEffectPct\%. With 3 modes a linear model errs by \cnlLinThree, a polynomial model by \cnlIceThree{} and an RBF surrogate by \cnlMfsThree. The chapter identifies modal frequencies from a frequency response, tests nonlinear force models against full-order solves not used in training, and traces a backbone by harmonic balance. Loewner identification proved fragile: a fifth of the random point choices missed a mode even without noise.\end{hlsum}
 \hlsection{Key concepts}
 \begin{description}\setlength\itemsep{5pt}\setlength\parsep{0pt}\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\sffamily\bfseries\color{hlnavy}#1}
 \item[Non-intrusive] models built from outputs only, without access to matrices
@@ -17,17 +18,8 @@
 \item build and test a polynomial or RBF modal force model against full-order solves not used in training
 \item trace and check a backbone by harmonic balance
 \end{itemize}
-\hlsection{In this chapter}
-{\begin{multicols}{2}\raggedright
-\textbf{12.1}\ The problem\\
-\textbf{12.2}\ Mathematical structure\\
-\textbf{12.3}\ Implementation in the packages\\
-\textbf{12.4}\ Verification\\
-\textbf{12.5}\ Limits and failure modes\\
-\textbf{12.6}\ Summary
-\end{multicols}}
 \hlsection{Explained on the page, in short boxes}
-\noindent Intrusive and non-intrusive; Identification from frequency response data; Why large deflection stiffens a beam; Backbone.
+\noindent\small Intrusive and non-intrusive; Identification from frequency response data; Why large deflection stiffens a beam; Backbone.
 \newpage\thispagestyle{hl}
 \noindent{\sffamily\small\color{hlgrey}Chapter 12 \quad Non-intrusive identification and nonlinear ROMs}\par
 \hlfig{\hlimg{ch12_nlrom}}{Mid-span deflection of a clamped--clamped beam against load for the full-order and reduced models (left), and largest error against retained modes (right).}

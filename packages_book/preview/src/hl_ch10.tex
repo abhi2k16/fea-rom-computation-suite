@@ -2,6 +2,7 @@
 \hlbanner{Part III $\cdot$ Reduced-order modelling}{10}{Frequency-domain ROMs, greedy training and certified bounds}
 \hlsection{The question}
 \begin{hlquote}Sweep a damped beam over frequency and the response is flat for long stretches and then jumps at each resonance. A reduced model needs full-order snapshots, each an expensive solve, and the question is where to take them: evenly spaced, or where the response is hardest.\end{hlquote}
+\vspace{8pt}\begin{hlsum}\textbf{Where to take the expensive snapshots decides the quality of a frequency-domain model.} With 5 basis columns the modal basis errs by \cfrModalNearFive{} near resonance, and greedy training reaches \cfrGreedyNearFive; uniform training gives \cfrUniformNearFive, comparable. Greedy gave a lower median error at \cfrGreedyWinsMed{} of \cfrRankCount{} sizes but a higher maximum error at four of seven. The residual norm is a good signal for the next snapshot, the certified bound is rigorous but loose, and a random-load response is computed from the reduced model.\end{hlsum}
 \hlsection{Key concepts}
 \begin{description}\setlength\itemsep{5pt}\setlength\parsep{0pt}\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\sffamily\bfseries\color{hlnavy}#1}
 \item[Frequency-dependent operator] $\bm A(\omega)=-\omega^2\bm M+i\omega\bm C+\bm K$ is nearly singular at resonance
@@ -17,17 +18,8 @@
 \item tell a cheap indicator from a certified bound
 \item compute a random-load response from a reduced model
 \end{itemize}
-\hlsection{In this chapter}
-{\begin{multicols}{2}\raggedright
-\textbf{10.1}\ The problem\\
-\textbf{10.2}\ Mathematical structure\\
-\textbf{10.3}\ Implementation in the packages\\
-\textbf{10.4}\ Verification\\
-\textbf{10.5}\ Limits and failure modes\\
-\textbf{10.6}\ Summary
-\end{multicols}}
 \hlsection{Explained on the page, in short boxes}
-\noindent Frequency-domain response and complex unknowns; Snapshot and column; The greedy idea; Indicator and bound.
+\noindent\small Frequency-domain response and complex unknowns; Snapshot and column; The greedy idea; Indicator and bound.
 \newpage\thispagestyle{hl}
 \noindent{\sffamily\small\color{hlgrey}Chapter 10 \quad Frequency-domain ROMs, greedy training and certified bounds}\par
 \hlfig{\hlimg{ch10_greedy}}{Frequency response with the greedy-selected frequencies (left), and largest error near the resonances against basis size for greedy, uniform and modal training (right).}

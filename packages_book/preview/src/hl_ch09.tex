@@ -2,6 +2,7 @@
 \hlbanner{Part III $\cdot$ Reduced-order modelling}{9}{Systems-and-control reduction: balanced truncation, Krylov and SOAR}
 \hlsection{The question}
 \begin{hlquote}A damped cantilever will be part of a larger system, and all that system will ever ask of it is one thing: apply a force at the tip, read the tip displacement, at many frequencies. Here the reduction looks only at that input--output map.\end{hlquote}
+\vspace{8pt}\begin{hlsum}\textbf{Reduction can look only at the input--output map of a damped structure.} The chapter compares modal truncation, balanced truncation, and Krylov and SOAR moment matching on a 24-element cantilever with a tip port. The a priori bound of balanced truncation holds at \cbtBoundHolds{} of the \cbtBoundCases{} orders tested; the one exception is at rounding level (\cbtMissErr{} against a bound of \cbtMissBound). Moment matching is accurate only near its expansion point, and the ranking of the methods may change for another port.\end{hlsum}
 \hlsection{Key concepts}
 \begin{description}\setlength\itemsep{5pt}\setlength\parsep{0pt}\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\sffamily\bfseries\color{hlnavy}#1}
 \item[Transfer function, port] the input--output map that the reduced model must keep
@@ -17,17 +18,8 @@
 \item check the bound and the stability of a reduced model
 \item know that moment matching is accurate only near its expansion point
 \end{itemize}
-\hlsection{In this chapter}
-{\begin{multicols}{2}\raggedright
-\textbf{9.1}\ The problem\\
-\textbf{9.2}\ Mathematical structure\\
-\textbf{9.3}\ Implementation in the packages\\
-\textbf{9.4}\ Verification\\
-\textbf{9.5}\ Limits and failure modes\\
-\textbf{9.6}\ Summary
-\end{multicols}}
 \hlsection{Explained on the page, in short boxes}
-\noindent Transfer function and state count; Gramians and Hankel singular values in words; Moments and Krylov subspaces; Second-order and first-order form; Passive.
+\noindent\small Transfer function and state count; Gramians and Hankel singular values in words; Moments and Krylov subspaces; Second-order and first-order form; Passive.
 \newpage\thispagestyle{hl}
 \noindent{\sffamily\small\color{hlgrey}Chapter 9 \quad Systems-and-control reduction: balanced truncation, Krylov and SOAR}\par
 \hlfig{\hlimg{ch09_compare}}{Largest and mean relative error of the response against the reduced state count for modal truncation, balanced truncation, Krylov and SOAR models.}

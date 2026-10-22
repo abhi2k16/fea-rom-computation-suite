@@ -2,6 +2,7 @@
 \hlbanner{Part I $\cdot$ Architectural foundations}{2}{Mesh topologies and structural domain partitioning}
 \hlsection{The question}
 \begin{hlquote}A hand-written unit square passes the first check anyone would write, because its element areas add up to exactly 1. One of its elements is listed clockwise and gives a negative stiffness, and no error is raised.\end{hlquote}
+\vspace{8pt}\begin{hlsum}\textbf{A mesh is node coordinates plus element connectivity, and a check of total area is not enough to trust it.} A clockwise element leaves the area at 1.000 and gives a negative stiffness, and only the Jacobian check reports it. The chapter covers structured generators with grading, joining different element topologies, interior-edge checks, file exchange, and reading results per node. It reports a hole-mesh generator that was non-conforming at four of six hole positions in the tagged release and is conforming after the correction.\end{hlsum}
 \hlsection{Key concepts}
 \begin{description}\setlength\itemsep{5pt}\setlength\parsep{0pt}\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\sffamily\bfseries\color{hlnavy}#1}
 \item[Connectivity] an integer array listing the nodes of each element; node numbers index the coordinate array
@@ -17,23 +18,8 @@
 \item check a mesh for positive Jacobians and for unshared interior edges
 \item exchange a mesh through a file format and draw it, with a result, in two and three dimensions
 \end{itemize}
-\hlsection{In this chapter}
-{\begin{multicols}{2}\raggedright
-\textbf{2.1}\ What a mesh is\\
-\textbf{2.2}\ Element topologies and node ordering\\
-\textbf{2.3}\ Mesh quality\\
-\textbf{2.4}\ Generators\\
-\textbf{2.5}\ Grading\\
-\textbf{2.6}\ Several element types in one mesh\\
-\textbf{2.7}\ Building meshes from parts\\
-\textbf{2.8}\ Boundary and node sets\\
-\textbf{2.9}\ Exchange formats\\
-\textbf{2.10}\ Visualising meshes and results\\
-\textbf{2.11}\ The mesh dispatcher\\
-\textbf{2.12}\ Summary
-\end{multicols}}
 \hlsection{Explained on the page, in short boxes}
-\noindent Structured and unstructured meshes; Aspect ratio, angle and skewness; Connectivity order; Graded mesh and growth ratio; Conforming meshes and hanging nodes; Mesh file formats.
+\noindent\small Structured and unstructured meshes; Aspect ratio, angle and skewness; Connectivity order; Graded mesh and growth ratio; Conforming meshes and hanging nodes; Mesh file formats.
 \newpage\thispagestyle{hl}
 \noindent{\sffamily\small\color{hlgrey}Chapter 2 \quad Mesh topologies and structural domain partitioning}\par
 \hlfig{\hlimg{ch02_gallery2d}}{Structured meshes from the generators of \fea{}: rectangles, plates with holes, notches and fillets, with node and element counts.}
