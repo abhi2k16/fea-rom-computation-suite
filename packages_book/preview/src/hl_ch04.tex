@@ -2,7 +2,7 @@
 \hlbanner{Part II $\cdot$ Full-order physics}{4}{Dynamics: modal, transient, harmonic and random response}
 \hlsection{The question}
 \begin{hlquote}An explicit simulation runs for a week. Someone refines the mesh a little, the time step ends up one per cent above the limit, and in six hundred steps the displacements reach $10^{68}$ m. Nothing complained: the stability limit is sharp, not gradual.\end{hlquote}
-\vspace{8pt}\begin{hlsum}\textbf{The stability limit of an explicit method is sharp, not gradual.} For a plane-stress bar with lumped mass the critical step is \cdyDtcLumped{} s; the response stays bounded up to $0.99\,\Delta t_c$ and grows by a factor \cdyGrowJustOver{} at $1.01\,\Delta t_c$. The chapter compares the five dynamic solvers, and checks modal truncation and frequency response against independent references. The code does not check stability itself, so the step is the user's responsibility.\end{hlsum}
+\vspace{8pt}\begin{hlsum}\textbf{The stability limit is sharp, so a step 1\% above it is already unstable.} For a plane-stress bar with lumped mass the critical step is \cdyDtcLumped{} s; the response stays bounded up to $0.99\,\Delta t_c$ and grows by a factor \cdyGrowJustOver{} at $1.01\,\Delta t_c$. The chapter compares the five dynamic solvers and checks modal truncation and frequency response against independent references. The code does not check stability itself, so the step is the user's responsibility.\end{hlsum}
 \hlsection{Key concepts}
 \begin{description}\setlength\itemsep{5pt}\setlength\parsep{0pt}\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\sffamily\bfseries\color{hlnavy}#1}
 \item[Natural frequencies and modes] $\bm K\bm\phi=\omega^2\bm M\bm\phi$, with mass-normalised shapes
