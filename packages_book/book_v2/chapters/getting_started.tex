@@ -1,0 +1,173 @@
+\chapter*{Getting started}
+\addcontentsline{toc}{chapter}{Getting started}
+\markboth{Getting started}{Getting started}
+
+This chapter has two parts. The first gets the two packages running on your machine, so that every listing in the book can be executed as it is printed. The second is a map of the book: what each chapter answers, how the chapters depend on one another, and where to start if you do not want to read it from the first page. Nothing here needs more than a few minutes, and the install steps were run in a fresh environment before they were written down.
+
+\section*{Part A. Installing the packages}
+
+\paragraph{What you need.} Python 3.9 or newer, Git, and two Python libraries: NumPy (1.22 or newer) and SciPy (1.8 or newer). These are the only required dependencies of \fea{} and of \rom{}. Everything else in this chapter is optional and is installed only when a chapter says it is needed.
+
+\paragraph{Get the code at the release of the book.} Every listing, number and code anchor in the book refers to one tagged release of the repository, \booktag{}. Clone the repository and check out the tag, so that the output you see is the output printed here:
+\begin{lstlisting}[language={},numbers=none,keywordstyle={},commentstyle={},frame=single]
+git clone https://github.com/abhi2k16/fea-rom-computation-suite.git
+cd fea-rom-computation-suite
+git checkout release-fea1.0.1-rom0.2.0
+\end{lstlisting}
+Git will say that you are in a detached \texttt{HEAD} state; that is expected for a tag. \texttt{git checkout main} returns to the current development branch, which moves on and may differ from the book. If you prefer SSH, clone \texttt{git@github.com:abhi2k16/fea-rom-computation-suite.git} instead.
+
+\paragraph{Create an isolated environment.} A virtual environment keeps the two packages and their dependencies apart from the rest of your system. On Linux and macOS:
+\begin{lstlisting}[language={},numbers=none,keywordstyle={},commentstyle={},frame=single]
+python -m venv .venv
+source .venv/bin/activate
+\end{lstlisting}
+On Windows, in PowerShell:
+\begin{lstlisting}[language={},numbers=none,keywordstyle={},commentstyle={},frame=single]
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+\end{lstlisting}
+If PowerShell refuses to run the activation script, run \texttt{Set-ExecutionPolicy -Scope CurrentUser RemoteSigned} once. With Anaconda, \texttt{conda create -n fea-rom python=3.11} followed by \texttt{conda activate fea-rom} does the same job.
+
+\paragraph{Install both packages.} Install them in editable mode, so that a change you make to the source takes effect without a reinstall:
+\begin{lstlisting}[language={},numbers=none,keywordstyle={},commentstyle={},frame=single]
+pip install -e fea_engine
+pip install -e rom_engine
+\end{lstlisting}
+To run the package tests and the plotting examples as well, install the extras instead:
+\begin{lstlisting}[language={},numbers=none,keywordstyle={},commentstyle={},frame=single]
+pip install -e "fea_engine[plot,dev]"
+pip install -e "rom_engine[fea,dev]"
+\end{lstlisting}
+The \texttt{fea} extra of \rom{} only installs \fea{} for the examples and tests; the library code of \rom{} never imports it (Chapter~\ref{ch:arch}).
+
+\paragraph{Check the install.} One line confirms that both packages import and that you are on the release of the book:
+\begin{lstlisting}[language={},numbers=none,keywordstyle={},commentstyle={},frame=single]
+python -c "import fea_engine, rom_engine; print(fea_engine.__version__, rom_engine.__version__)"
+\end{lstlisting}
+It prints \texttt{1.0.1 0.2.0}.
+
+\paragraph{A first run.} \Cref{lst:gs-first} solves a small plane-stress cantilever with the package. It is the shortest complete problem of the book: a mesh, an element, a material, two boundary conditions, a load and a solve. Save it as \texttt{first\_run.py} and run it with \texttt{python first\_run.py}; Chapter~\ref{ch:mesh} reads the same solution node by node.
+\begin{lstlisting}[caption={A first complete problem: a plane-stress cantilever loaded at its tip.},label={lst:gs-first}]
+import numpy as np
+from fea_engine import Quad4PlaneStress
+from fea_engine.material import Material, D_plane_stress
+from fea_engine.mesh import rectangle_mesh
+from fea_engine.solver import FESystem
+
+mesh = rectangle_mesh(4.0, 1.0, 4, 3)                  # 20 nodes, 12 elements
+s = FESystem(mesh, Quad4PlaneStress())
+s.assemble_stiffness(D_plane_stress(Material(E=2.1e11, nu=0.3, rho=7850.0)))
+s.fix_dofs(mesh.select_nodes(x=0.0, name="root"), [0, 1])
+s.add_nodal_force(mesh.select_nodes(x=4.0, name="tip"), dof_index=1, total_force=-1000.0)
+U = s.solve_static()
+print("n_nodes, dim:", mesh.nodes.shape, " n_dof:", U.shape[0])
+print("uy at the tip nodes:", np.round(U.component("uy", nodes="tip"), 9))
+\end{lstlisting}
+\begin{lstlisting}[numbers=none,language={},keywordstyle={},commentstyle={},frame=single,aboveskip=2pt]
+n_nodes, dim: (20, 2)  n_dof: 40
+uy at the tip nodes: [-9.01e-07 -9.00e-07 -9.00e-07 -9.01e-07]
+\end{lstlisting}
+
+\paragraph{Optional packages.} The core of both packages needs only NumPy and SciPy, and a plain \texttt{import fea\_engine} or \texttt{import rom\_engine} never needs the libraries below.
+
+{\small\renewcommand{\arraystretch}{1.25}\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.30\linewidth}@{\hspace{10pt}}>{\raggedright\arraybackslash}p{0.64\linewidth}@{}}
+\hline
+\textbf{You want} & \textbf{Install} \\ \hline\endhead
+Plots & \texttt{matplotlib} (the \texttt{plot} extra of \fea{}). \\ \hline
+Mesh file input and output & \texttt{pip install meshio}. \\ \hline
+Three-dimensional figures, animations and slices & \texttt{pip install pyvista imageio} (the \texttt{viz} extra of \fea{}); used for the figures of Chapter~\ref{ch:mesh}. \\ \hline
+PyTorch, CPU only & \texttt{pip install torch --index-url https://download.pytorch.org/whl/cpu} \\ \hline
+PyTorch with an NVIDIA GPU & \texttt{pip install torch --index-url https://download.pytorch.org/whl/cu126}; match \texttt{cu126} to your driver. \\ \hline
+\end{longtable}}
+
+There is no single \texttt{torch} extra, because the right wheel depends on your hardware. PyTorch is needed only for the parts of the book that say so (the optional backend of Chapter~\ref{ch:batch} and Appendix~\ref{ch:diff}); the tests that need it skip themselves when it is not installed.
+
+\paragraph{Run the tests.} The package tests are run from each package folder:
+\begin{lstlisting}[language={},numbers=none,keywordstyle={},commentstyle={},frame=single]
+cd fea_engine && pytest tests/ -q
+cd ../rom_engine && pytest tests/ -q
+\end{lstlisting}
+The test collection imports \texttt{matplotlib}, so install the \texttt{plot} and \texttt{dev} extras first, as above. The full suites take several minutes; a single file runs in a moment, for example \texttt{pytest tests/test\_backend\_selection.py -q} in the \fea{} folder, which reports four passed tests. Appendix~\ref{ch:map} says which test files cover which chapter, and the suites compare against analytic solutions, independent implementations and theorems.
+
+\paragraph{If something goes wrong.} Four problems account for most failed starts:
+\begin{itemize}
+\item \texttt{ModuleNotFoundError: No module named 'matplotlib'} when running the tests: install the \texttt{plot} and \texttt{dev} extras.
+\item PowerShell refuses to activate the environment: set the execution policy as described above, or use Anaconda.
+\item A bare \texttt{pip install torch} on a machine without an NVIDIA driver installs a CUDA-linked wheel that fails on \texttt{import torch}: use the CPU index of the table.
+\item On Windows with an Anaconda installation, loading NumPy and a pip-installed PyTorch in one process can stop with \texttt{OMP: Error \#15}. Setting \texttt{KMP\_DUPLICATE\_LIB\_OK=TRUE} is a quick workaround, and a fresh environment is the lasting fix. Recent PyTorch CUDA builds have also dropped support for Pascal-generation GPUs; the user guide below names the last version that still supports them.
+\end{itemize}
+
+\paragraph{Where the rest of the documentation is.} The repository, \url{\repourl}, also has the reference material that a book should not repeat. The table below says which file to open for which question. The links point to the \texttt{main} branch, which moves; the numbers of this book belong to the tag \booktag{}, so when a page of the repository and a number of the book differ, the tag decides and the \ghfile{CHANGELOG.md}{changelog} says what changed.
+
+{\small\renewcommand{\arraystretch}{1.3}\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.34\linewidth}@{\hspace{10pt}}>{\raggedright\arraybackslash}p{0.60\linewidth}@{}}
+\hline
+\textbf{Open} & \textbf{When you want to} \\ \hline\endfirsthead
+\hline
+\textbf{Open} & \textbf{When you want to} \\ \hline\endhead
+\hline\endfoot
+\ghfile{USER_GUIDE.md}{\texttt{USER\_GUIDE.md}} & install the packages, learn the concepts, and run worked examples, including multi-core and GPU use and performance notes. Read it next to Chapters~\ref{ch:arch} and~\ref{ch:mesh}. \\ \hline
+\ghfile{API_REFERENCE.md}{\texttt{API\_REFERENCE.md}} & look up the signature of a class or function cited in the text as \anchor{importable.name}; its first part answers which API a given task needs, and its examples are short and runnable. \\ \hline
+\ghfile{README.md}{\texttt{README.md}}\newline\ghfile{fea_engine/README.md}{\texttt{fea\_engine/README.md}}\newline\ghfile{rom_engine/README.md}{\texttt{rom\_engine/README.md}} & see what each package contains, and how the two fit together. \\ \hline
+\ghdir{fea_engine/examples}{\texttt{fea\_engine/examples}}\newline\ghdir{rom_engine/examples}{\texttt{rom\_engine/examples}} & read complete scripts, with the example galleries in their \texttt{gallery} subfolders: cantilever, modal analysis, contact, plasticity, POD bases, and more. Use them after Chapters~\ref{ch:elem} to~\ref{ch:contact} and Chapters~\ref{ch:pod} to~\ref{ch:hyper}. \\ \hline
+\ghfile{CHANGELOG.md}{\texttt{CHANGELOG.md}} & find out what changed between the tagged release and now, for example the correction of \code{hole_in_rectangle_mesh} of Chapter~\ref{ch:mesh}. \\ \hline
+\ghfile{CITATION.cff}{\texttt{CITATION.cff}}\newline\ghfile{LICENSE}{\texttt{LICENSE}} & cite the software, and check the terms of the code (MIT). \\ \hline
+\href{\repourl/issues}{Issues page} & report an error in the code or in this book. \\
+\end{longtable}}
+
+\section*{Part B. Overview of the book}
+
+\paragraph{The book in one table.} The book has four parts and four appendices. The table gives, for each chapter, the question it answers; the Preface describes the parts in more detail.
+
+{\small\renewcommand{\arraystretch}{1.25}\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.17\linewidth}@{\hspace{8pt}}>{\raggedright\arraybackslash}p{0.12\linewidth}@{\hspace{8pt}}>{\raggedright\arraybackslash}p{0.62\linewidth}@{}}
+\hline
+\textbf{Part} & \textbf{Chapter} & \textbf{The question it answers} \\ \hline\endhead
+\hline\endfoot
+I\ \ Foundations & \ref{ch:arch} & How is a finite element engine structured so that a new element, material or solver does not touch the others? \\
+ & \ref{ch:mesh} & What is a mesh, how is it checked, and how do I read results node by node? \\ \hline
+II\ \ Full-order physics & \ref{ch:elem} & How does a weak form become an element matrix, and why does the integration rule matter? \\
+ & \ref{ch:dyn} & How do I compute frequencies and transient, harmonic and random responses, and how large may the time step be? \\
+ & \ref{ch:nonlin} & How are nonlinear materials and large deflections solved, including past a limit point? \\
+ & \ref{ch:batch} & How is nonlinear assembly made fast, and what does an optional PyTorch backend add? \\
+ & \ref{ch:contact} & How is contact enforced exactly instead of with a stiff spring? \\ \hline
+III\ \ Reduced-order modelling & \ref{ch:pod} & How do I build a reduced model for many parameter values from snapshots? \\
+ & \ref{ch:bt} & How do I reduce a system through its input and output alone? \\
+ & \ref{ch:freq} & Where should the expensive frequency snapshots be taken, and how far can the result be trusted? \\
+ & \ref{ch:cms} & How do I reduce the parts of an assembly separately and join them again? \\
+ & \ref{ch:nonint} & How do I reduce a nonlinear model when only a solver is available? \\
+ & \ref{ch:hyper} & How do I make the reduced model cheap to evaluate, including with contact? \\ \hline
+IV\ \ Verification & \ref{ch:verif} & How much does each number in the book prove, and does the whole pipeline hold on unseen loads? \\ \hline
+Appendices & \ref{ch:diff}--\ref{ch:map} & Differentiable assembly, conventions and tolerances, a glossary, and a map from chapters to the package tests. \\
+\end{longtable}}
+
+\paragraph{How the chapters depend on each other.} \Cref{fig:gs-deps} shows how the parts depend on each other.
+\begin{figure}[t]
+\centering
+\begin{adjustbox}{max width=\linewidth}
+\begin{tikzpicture}[x=1cm,y=1cm,font=\sffamily\scriptsize,
+  box/.style={draw,rounded corners=2pt,minimum width=0.7cm,minimum height=0.6cm,fill=white},
+  grp/.style={draw,rounded corners=3pt,inner sep=4pt,line width=0.7pt},
+  dep/.style={-{Stealth[length=1.8mm]},draw=black!60,line width=0.6pt}]
+\foreach \n/\x in {1/0,2/0.85,3/2.4,4/3.25,5/4.1,6/4.95,7/5.8,8/7.35,9/8.2,10/9.05,11/9.9,12/10.75,13/11.6,14/13.15}{\node[box] (c\n) at (\x,0) {\n};}
+\node[grp,draw=gray!70,fill=gray!8,fit=(c1)(c2),label={[font=\sffamily\scriptsize]above:Part I}] (p1) {};
+\node[grp,draw=gray!70,fill=gray!8,fit=(c3)(c7),label={[font=\sffamily\scriptsize]above:Part II}] (p2) {};
+\node[grp,draw=blue!55!black,fill=blue!6,fit=(c8)(c13),label={[font=\sffamily\scriptsize]above:Part III}] (p3) {};
+\node[grp,draw=orange!60!black,fill=orange!10,fit=(c14),label={[font=\sffamily\scriptsize]above:Part IV}] (p4) {};
+\foreach \n in {1,...,14}{\node[box] at (c\n) {\n};}
+\draw[dep] (p1.east)--(p2.west); \draw[dep] (p2.east)--(p3.west); \draw[dep] (p3.east)--(p4.west);
+\draw[dep,dashed] (c5.south) to[out=-60,in=-120] node[below,pos=0.5]{nonlinear and contact models are reduced} (c12.south);
+\draw[dep,dashed] (c7.south) to[out=-45,in=-135] (c13.south);
+\end{tikzpicture}
+\end{adjustbox}
+\caption{How the parts depend on each other. Part~I is used everywhere, Part~III needs Part~II only for the models it reduces, and Chapter~\ref{ch:verif} uses the whole book. The dashed arrows mark the one place where a later chapter needs a specific earlier one: Chapters~\ref{ch:nonint} and~\ref{ch:hyper} reduce the nonlinear and contact models of Chapters~\ref{ch:nonlin} and~\ref{ch:contact}.}\label{fig:gs-deps}
+\end{figure}
+
+\paragraph{Three ways through the book.}
+\begin{itemize}
+\item \emph{You know finite elements and want the reduction methods.} Read this chapter and Chapter~\ref{ch:arch}, then start at Chapter~\ref{ch:pod}. Return to Chapters~\ref{ch:nonlin} and~\ref{ch:contact} when Chapters~\ref{ch:nonint} and~\ref{ch:hyper} need them.
+\item \emph{You want to understand or extend the finite element package.} Read Parts~I and~II and stop there. Chapter~\ref{ch:arch} shows how to add an element, and the test map in Appendix~\ref{ch:map} tells you which tests to run afterwards.
+\item \emph{You are deciding how far to trust a number.} Read the section \emph{How to read the verification sections} after this chapter, then Chapter~\ref{ch:verif}, and go back to the Verification section of any chapter whose result you want to rely on.
+\end{itemize}
+
+\paragraph{How a chapter is laid out.} A chapter opens with a box that says what it is about and what you should be able to do afterwards, and then with a concrete problem. The technical sections follow the same order throughout: the problem, the mathematical structure, the implementation in the packages, then a \emph{Verification} section, a box of limits, a summary and exercises. Because the layout is the same in the full-order and the reduced-order chapters, a reader who has met one chapter knows where to look in the next.
+
+\paragraph{What the marks in the text mean.} Algorithms are given as pseudocode, and a short paragraph after each says what it costs, how it fails and where the code is. Listings headed \emph{Try it} are complete, and the output printed under them is what the code produced. Definitions and detours sit in blue side-note boxes and can be skipped on a first reading. Code is cited as \anchor{importable.name}, and the code-map table near the end of each technical chapter says which names the chapter's own checks call: yes for every name, part for some, no for none. Code that is only reached through another routine counts as no, so that column is a lower bound on what the book exercises.

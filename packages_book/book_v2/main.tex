@@ -16,37 +16,13 @@
 \include{chapters/copyright}
 \include{chapters/about_author}
 \include{chapters/preface}
+\include{chapters/getting_started}
 \chapter*{Reading guide}
-This book explains how the two packages of the companion repository, \fea{} and \rom{}, are built, and checks that they do what is claimed for them. It is meant to be read with the repository open. This guide says how the two fit together, how a chapter is laid out, and what the marks in the text mean.
+This book explains how the two packages of the companion repository, \fea{} and \rom{}, are written, and checks that they do what is claimed for them. It is meant to be read with the repository open. The chapter \emph{Getting started} before this guide covers installation, the map of the book, how a chapter is laid out and what the marks in the text mean. This guide says how the book relates to the repository, what the limits boxes and exercises are for, and where the numbers come from.
 
 \section*{Working with the repository}
 
-The book is tied to one pinned release of the repository, tag \booktag{}: every listing, number and code anchor refers to that release. Check out the tag before you run anything, or the output you see may differ from the output printed here. The two packages depend only on NumPy and SciPy. Either install them from the repository (each has its own \texttt{pyproject.toml}) or put the two \texttt{src} directories on the Python path. PyTorch is optional and is needed only for the parts that say so; PyVista is used for the three-dimensional figures of Chapter~\ref{ch:mesh}. The listings that print output assume the working directory named in their caption, and nothing else. The package tests are run with \texttt{pytest} from the repository root, and Appendix~\ref{ch:map} lists, chapter by chapter, which test files cover the topic. The installation steps, the API reference and the example scripts are in the repository; the section \emph{Documentation on GitHub} below says where.
-
-\section*{Documentation on GitHub}
-
-The book describes the design of the two packages and tests it. The repository that holds them, \url{\repourl}, also has the reference material that a book should not repeat, and the table below says which file to open for which question. The links point to the \texttt{main} branch, which moves; the numbers of this book belong to the tag \booktag, so when a page of the repository and a number of the book differ, the tag decides and the \ghfile{CHANGELOG.md}{changelog} says what changed.
-
-{\small\renewcommand{\arraystretch}{1.3}\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.34\linewidth}@{\hspace{10pt}}>{\raggedright\arraybackslash}p{0.60\linewidth}@{}}
-\hline
-\textbf{Open} & \textbf{When you want to} \\ \hline\endfirsthead
-\hline
-\textbf{Open} & \textbf{When you want to} \\ \hline\endhead
-\hline\endfoot
-\ghfile{USER_GUIDE.md}{\texttt{USER\_GUIDE.md}} & install the packages, learn the concepts, and run worked examples, including multi-core and GPU use and performance notes. Read it next to Chapters~\ref{ch:arch} and~\ref{ch:mesh}. \\ \hline
-\ghfile{API_REFERENCE.md}{\texttt{API\_REFERENCE.md}} & look up the signature of a class or function cited in the text as \anchor{importable.name}; its first part answers which API a given task needs, and its examples are short and runnable. \\ \hline
-\ghfile{README.md}{\texttt{README.md}}\newline\ghfile{fea_engine/README.md}{\texttt{fea\_engine/README.md}}\newline\ghfile{rom_engine/README.md}{\texttt{rom\_engine/README.md}} & see what each package contains, and how the two fit together. \\ \hline
-\ghdir{fea_engine/examples}{\texttt{fea\_engine/examples}}\newline\ghdir{rom_engine/examples}{\texttt{rom\_engine/examples}} & read complete scripts, with the example galleries in their \texttt{gallery} subfolders: cantilever, modal analysis, contact, plasticity, POD bases, and more. Use them after Chapters~\ref{ch:elem} to~\ref{ch:contact} and Chapters~\ref{ch:pod} to~\ref{ch:hyper}. \\ \hline
-\ghfile{CHANGELOG.md}{\texttt{CHANGELOG.md}} & find out what changed between the tagged release and now, for example the correction of \code{hole_in_rectangle_mesh} of Chapter~\ref{ch:mesh}. \\ \hline
-\ghfile{CITATION.cff}{\texttt{CITATION.cff}}\newline\ghfile{LICENSE}{\texttt{LICENSE}} & cite the software, and check the terms of the code (MIT). \\ \hline
-\href{\repourl/issues}{Issues page} & report an error in the code or in this book. \\
-\end{longtable}}
-
-\section*{How a chapter is laid out}
-
-A chapter opens with a box that says what it is about and what you should be able to do afterwards, and then with a concrete problem. The technical sections follow the same order throughout: the problem, the mathematical structure, the implementation in the packages, then a \emph{Verification} section, a box of limits, a summary and exercises. Because the layout is the same in the full-order and the reduced-order chapters, a reader who has met one chapter knows where to look in the next. Chapter~\ref{ch:contact} was written first, and the other chapters follow its layout.
-
-Algorithms are given as pseudocode, and a short paragraph after each says what it costs, how it fails and where the code is. Listings headed \emph{Try it} are complete, and the output printed under them is what the code produced; where the naive version is shown first, it is meant to be run too. Definitions and detours sit in blue sidenote boxes and can be skipped on a first reading. Code is cited as \anchor{importable.name}, and the code-map table near the end of each technical chapter says which names the chapter's own checks call: yes for every name, part for some, no for none. Code that is only reached through another routine counts as no, so that column is a lower bound on what the book exercises.
+The book is tied to one pinned release of the repository, tag \booktag{}: every listing, number and code anchor refers to that release. The chapter \emph{Getting started} before this guide says how to install the two packages at that tag, and where the API reference, the user guide and the example scripts are. The listings that print output assume the working directory named in their caption, and nothing else. The package tests are run with \texttt{pytest} from each package folder, and Appendix~\ref{ch:map} lists, chapter by chapter, which test files cover the topic.
 
 \section*{What the limits boxes and exercises are for}
 
@@ -55,10 +31,6 @@ The box on limits at the end of each chapter lists what was not tested, so that 
 \section*{Where the numbers come from}
 
 Numbers in the text are generated by scripts that live with the book sources and enter the book as macros, so the number in the text is the one that was measured. The exception is the nine reproduction studies of Chapter~\ref{ch:verif}: their numbers are quoted from the author's reports and were not regenerated at the tag, and the text says so each time. Read the next section before you rely on any number in a Verification section.
-
-\section*{Reading paths}
-
-You can read straight through, but the book does not have to be read that way. A reader who comes for the reduction methods can start at Chapter~\ref{ch:pod} and go back to Chapters~\ref{ch:nonlin} and~\ref{ch:contact} when Chapters~\ref{ch:nonint} and~\ref{ch:hyper} need them. A reader who wants to extend the finite element package needs Parts~I and~II and can stop there. A reader who is deciding how far to trust the results should read the next section and Chapter~\ref{ch:verif}, which says what kind of evidence each number is.
 
 \chapter*{How to read the verification sections}
 Each chapter closes its technical part with a \emph{Verification} section, and three words are used there in a fixed sense. A \emph{unit test} is an automatic check in the package's test suite. \emph{Verification} asks whether the code solves the stated equations correctly, judged against an exact solution, an independent computation or an observed rate of convergence. \emph{Validation} asks whether the equations describe reality, judged against experiments. Nothing in this book is validation. A small error against a reference shows that the code does what the equations say; it does not show that the equations suit a particular structure, or that the code is right for cases nobody ran.
