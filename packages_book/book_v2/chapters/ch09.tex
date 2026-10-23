@@ -1,6 +1,6 @@
 \chapter{Systems-and-control reduction: balanced truncation, Krylov and SOAR}\label{ch:bt}
 
-\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+\begin{tcolorbox}[colback=hpale,colframe=hnavy!60,coltitle=white,colbacktitle=hnavy!85,title={In this chapter}]
 A damped cantilever is going to be part of a larger system, and all the larger system will ever ask of it is one thing: apply a force at the tip, read the tip displacement, at many frequencies. Chapter~\ref{ch:pod} reduced a model by looking at its solutions; here we look only at that input--output map. Three families do it. Balanced truncation keeps the states that are both easy to excite and easy to see, and comes with an error bound known in advance. Krylov methods match the response exactly at one frequency and need no Lyapunov solve. SOAR does the same without leaving the second-order form of structural dynamics. We run them on the beam against an independent full-order sweep and measure the bound, the accuracy at equal size, how local moment matching is, a scale problem in the SOAR code, and stability and passivity.\par\smallskip
 After it you should be able to choose among the three for a given port, check the bound and the stability of a reduced model, and know that moment matching is accurate only near its expansion point.
 \end{tcolorbox}

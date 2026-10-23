@@ -1,6 +1,6 @@
 \chapter{Substructuring and component reduction}\label{ch:cms}
 
-\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+\begin{tcolorbox}[colback=hpale,colframe=hnavy!60,coltitle=white,colbacktitle=hnavy!85,title={In this chapter}]
 Real structures are rarely built, meshed and owned by one person: a wing, an engine and a pylon come from different teams, and each team can reduce its own part. The difficulty is joining the reduced parts again. If the reduction hides the interface, the parts cannot be connected; if it keeps every interface unknown, the interface can dominate the model. Component mode synthesis reduces each part separately while keeping the interface degrees of freedom physical, so the reduced parts couple like finite elements. We derive static (Guyan) condensation and the Craig--Bampton method, say what free-interface and interface reduction change, and describe the component-wise POD of non-matching nonlinear parts tied by a mortar operator. Each is measured: coupled halves of a beam against the full model, Guyan at equal size, the effect of reducing the interface of a membrane, what free-interface models do and do not carry, and component POD with a reused basis. The meaning of ``partitioning'' used here is the one deferred from Chapter~\ref{ch:mesh}.\par\smallskip
 After it you should be able to build and compare Guyan and Craig--Bampton models, judge an assembly by its frequencies, and say what free-interface and interface reduction change.
 \end{tcolorbox}

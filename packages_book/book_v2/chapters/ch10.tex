@@ -1,6 +1,6 @@
 \chapter{Frequency-domain ROMs, greedy training and certified bounds}\label{ch:freq}
 
-\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+\begin{tcolorbox}[colback=hpale,colframe=hnavy!60,coltitle=white,colbacktitle=hnavy!85,title={In this chapter}]
 Sweep a damped beam over frequency and the response is flat for long stretches and then jumps at each resonance. A reduced model needs full-order snapshots, each one an expensive solve, and the question is where to take them: evenly spaced, or where the response is hardest. We build the frequency-domain machinery step by step. The matrix $\bm A(\omega)=-\omega^2\bm M+i\omega\bm C+\bm K$ is nearly singular at every resonance, so a greedy loop is used to choose frequencies; an error indicator or a certified bound is used to decide how far to trust the result without solving the full model; and the reduced model is used for a random load described by a power spectral density. Everything is measured against the full-order frequency solver of \fea{}, and the certified bound, the one rigorous error statement in the package, is tested for how conservative it is.\par\smallskip
 After it you should be able to train a frequency-domain model by greedy selection, tell a cheap indicator from a certified bound, and compute a random-load response from a reduced model.
 \end{tcolorbox}

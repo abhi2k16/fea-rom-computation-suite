@@ -1,6 +1,6 @@
 \chapter{Exact unilateral contact: sparse active sets and BDF2}\label{ch:contact}
 
-\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+\begin{tcolorbox}[colback=hpale,colframe=hnavy!60,coltitle=white,colbacktitle=hnavy!85,title={In this chapter}]
 A membrane is pressed down onto a bumpy floor. The obvious way to keep it from passing through is to put a stiff spring at every node that has sunk below the floor, and it works, until the spring gets stiff enough for the answer to be good and the matrix gets too ill-conditioned to solve. Contact is the first place where the solver cannot be a single linear solve, because the set of points in contact is unknown and has to be found. This chapter enforces frictionless contact exactly, with Lagrange multipliers, for models with tens of thousands of unknowns. It measures what the penalty costs, derives the primal-dual active-set method as a semismooth Newton iteration, explains the three sparse routes of \anchor{fea_engine.contact_solvers.solve_contact_static_sparse} and how the solver reports a route that does not suit the problem, and then adds a second-order time scheme (BDF2) for impact. Each claim is followed by the measurement that supports it, with the limits stated beside the results.\par\smallskip
 After it you should be able to explain why a penalty parameter is the wrong tool for contact, state the primal-dual active-set method and choose among the sparse routes, and run an impact with BDF2 and read its energy behaviour.
 \end{tcolorbox}

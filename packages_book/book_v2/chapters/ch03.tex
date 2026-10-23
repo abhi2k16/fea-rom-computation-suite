@@ -1,6 +1,6 @@
 \chapter{Linear continua and structural elements}\label{ch:elem}
 
-\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+\begin{tcolorbox}[colback=hpale,colframe=hnavy!60,coltitle=white,colbacktitle=hnavy!85,title={In this chapter}]
 A thin steel strip is meshed with a standard plate element, loaded at the tip, and solved. The answer comes out two hundred times too stiff, and no setting is wrong: the element is simply too stiff for thin plates under the integration rule that looks the most careful. This chapter starts from that failure. It first shows how a weak form becomes a stiffness and a mass matrix, and which element families \fea{} offers for scalar fields, plane and solid continua, beams, plates and shells. It does not re-derive shape functions. It then looks at the places where an element can be wrong while looking plausible, namely locking, integration rules and the choice of mass matrix, and tests each against an independent reference: patch tests on distorted meshes, pure bending, a slender cantilever of a nearly incompressible material, beam frequencies against closed forms, and a plate against the shell that must reproduce it.\par\smallskip
 After it you should be able to say how a weak form becomes a stiffness and a mass matrix, recognise locking or a wrong integration rule from a test with an independent reference, and choose between a consistent and a lumped mass matrix, knowing the frequency error of each.
 \end{tcolorbox}

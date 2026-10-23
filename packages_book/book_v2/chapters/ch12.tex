@@ -1,6 +1,6 @@
 \chapter{Non-intrusive identification and nonlinear ROMs}\label{ch:nonint}
 
-\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+\begin{tcolorbox}[colback=hpale,colframe=hnavy!60,coltitle=white,colbacktitle=hnavy!85,title={In this chapter}]
 A vendor gives you a black-box solver for a structure that bends a lot: you can run it, but you cannot see its matrices. Everything so far projected matrices; here there are none to project. We take two ways out. The first is identification from data alone: a Loewner pencil reads natural frequencies and damping from sampled frequency responses, and operator inference learns reduced mass and stiffness matrices from states, accelerations and forces. The second is a hybrid for geometric nonlinearity: the linear part stays intrusive in a small modal basis and only the nonlinear restoring force is fitted from full-order solves, by a polynomial (the ICE family) or a radial-basis surrogate (the multi-fidelity method of He et al.). A harmonic-balance continuation then turns such a model into a nonlinear normal mode backbone. We state what each method was and was not tested on.\par\smallskip
 After it you should be able to identify modal frequencies from a frequency response and know when to distrust the result, build and test a polynomial or RBF modal force model against full-order solves not used in training, trace and check a backbone by harmonic balance, and learn positive definite reduced operators from data for contact dynamics.
 \end{tcolorbox}

@@ -1,6 +1,6 @@
 \chapter{Projection-based reduction: POD, Galerkin and affine sweeps}\label{ch:pod}
 
-\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+\begin{tcolorbox}[colback=hpale,colframe=hnavy!60,coltitle=white,colbacktitle=hnavy!85,title={In this chapter}]
 Suppose you need the tip deflection of a beam for a thousand combinations of two stiffnesses and a load position. Each finite element solve is quick, but a thousand of them are not, and the answers are smooth functions of the parameters that each new solve largely repeats. This chapter builds the simplest reduced-order model that exploits that, the one the rest of Part~III refines: collect solutions (snapshots), extract a basis from them with the singular value decomposition (POD), and project the equations onto it (Galerkin). When the stiffness depends on the parameters through a sum of fixed matrices, the projection is done once and every new parameter costs a small dense solve. We then measure what this buys and what it does not: how fast the singular values fall, how the error of the reduced solution follows the projection error, whether the choice of snapshots and of the inner product matters, and where the offline cost is repaid.\par\smallskip
 After it you should be able to build a POD--Galerkin model with an affine parameter split, judge it on parameters it was not trained on, and compute the break-even number of queries from its offline and online costs.
 \end{tcolorbox}

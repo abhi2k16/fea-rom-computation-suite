@@ -1,6 +1,6 @@
 \chapter{Material and geometric nonlinearity}\label{ch:nonlin}
 
-\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title={In this chapter}]
+\begin{tcolorbox}[colback=hpale,colframe=hnavy!60,coltitle=white,colbacktitle=hnavy!85,title={In this chapter}]
 A shallow two-bar truss is pushed down at its apex. At first it resists, then at a certain load it gives way and snaps through, and a solver that steps up the load in small increments simply stops converging just above that load. This chapter is about solvers that do not stop there. We state the Newton iteration that every nonlinear driver shares, derive the internal force and tangent of a truss and of a continuum element in the total-Lagrangian setting, add hyperelasticity and $J_2$ plasticity with history variables, and compare four ways of following a response: load control, displacement control, arc length and Koiter--Newton. Each statement about the code comes with a check: rotation invariance, the tangents against finite differences, the von Mises snap-through truss against its closed form, and a plastic load cycle against the hand solution.\par\smallskip
 After it you should be able to state the Newton iteration the drivers share, verify an element's force and tangent by rotation invariance and finite differences, choose among the four path-following methods for a response with a limit point, and check a plastic load cycle against a hand solution.
 \end{tcolorbox}
