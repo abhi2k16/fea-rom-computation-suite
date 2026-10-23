@@ -1,9 +1,0 @@
-\begin{tikzpicture}[node distance=6mm and 6mm,font=\sffamily\scriptsize]
-\node[cmPLAIN,text width=3.0cm] (w) {weak form\\$\int\kappa\nabla v\cdot\nabla u\,\mathrm d\Omega=\int vq\,\mathrm d\Omega$};
-\node[cmPLAIN,right=of w,text width=2.6cm] (i) {interpolation\\$u\approx\sum N_au_a$};
-\node[cmFE,right=of i,text width=3.4cm] (g) {element matrix\\$\bm K_e=\int\bm B^T\bm D\bm B\,\mathrm d\Omega$\\by Gauss quadrature};
-\node[cmFE,right=of g,text width=2.6cm] (a) {assembly\\sparse $\bm K$, $\bm M$};
-\draw[cmFlow] (w)--(i); \draw[cmFlow] (i)--(g); \draw[cmFlow] (g)--(a);
-\node[cmWARN,below=9mm of g,text width=7.6cm] (c) {where an element can be wrong while looking plausible:\\$\bm N$ (locking), $\bm D$ (incompressibility), quadrature rule (rank, locking), mass (consistent or lumped)};
-\draw[cmFb] (g)--(c);
-\end{tikzpicture}

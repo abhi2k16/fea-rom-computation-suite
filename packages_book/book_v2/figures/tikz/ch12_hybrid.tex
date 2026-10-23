@@ -1,7 +1,0 @@
-\begin{tikzpicture}[font=\sffamily\scriptsize,node distance=7mm and 9mm]
-\node[cmFE,text width=3.2cm] (full) {full model\\operators $\bm M,\bm K$, signals $\bm x_t,\bm a_t,\bm f_t$};
-\node[cmROM,right=of full,text width=3.4cm] (cbs) {reduced coordinates\\$\bm x=[\bm u_b;\bm q]$\\(Craig--Bampton structure)};
-\node[cmPLAIN,right=of cbs,text width=3.4cm] (ls) {least squares\\$\min\sum\|\bm M\bm a+\bm K\bm x-\bm f\|^2$\\Cholesky if not SPD};
-\node[cmCERT,below=9mm of ls,text width=4.0cm] (c) {reduced contact dynamics: same complementarity problem as Chapter~\ref{ch:contact}};
-\draw[cmFlow] (full)--(cbs); \draw[cmFlow] (cbs)--(ls); \draw[cmFlow] (ls)--(c);
-\end{tikzpicture}

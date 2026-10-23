@@ -41,3 +41,6 @@ tensormesh_comparative_analysis.md
 /paper/
 # Written by the test suite on every run
 /fea_engine/tests/*.png
+
+# Book sources and builds are kept locally only
+packages_book/

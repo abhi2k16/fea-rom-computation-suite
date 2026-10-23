@@ -1,9 +1,0 @@
-\begin{tikzpicture}[node distance=5mm and 8mm,font=\sffamily\scriptsize]
-\node[cmPLAIN,text width=3.4cm] (q) {linear dynamic\\problem $\bm M\ddot{\bm u}+\bm C\dot{\bm u}+\bm K\bm u=\bm f(t)$};
-\node[cmFE,right=14mm of q,yshift=17mm,text width=4.4cm] (a) {periodic load, steady state\\\texttt{solve\_harmonic}, sweep};
-\node[cmFE,below=3mm of a,text width=4.4cm] (b) {stationary random load\\\texttt{solve\_random\_vibration}};
-\node[cmFE,below=3mm of b,text width=4.4cm] (c) {few modes dominate,\\many load cases\\\texttt{solve\_modal\_superposition}};
-\node[cmFE,below=3mm of c,text width=4.4cm] (d) {structural dynamics, accuracy-limited step\\\texttt{solve\_transient\_implicit}};
-\node[cmFE,below=3mm of d,text width=4.4cm] (e) {waves, impact, lumped mass;\\step $\le\Delta t_c$\\\texttt{solve\_transient\_explicit}};
-\foreach \n in {a,b,c,d,e}{\draw[cmFlow] (q.east) -- ++(5mm,0) |- (\n.west);}
-\end{tikzpicture}

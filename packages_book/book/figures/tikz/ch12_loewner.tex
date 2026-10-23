@@ -1,8 +1,0 @@
-\begin{tikzpicture}[node distance=8mm and 9mm,font=\sffamily\scriptsize]
-\node[cmFE,text width=3.0cm] (d) {sampled response $\hat x$ at one dof, two disjoint frequency sets $\omega_\alpha,\omega_\beta$};
-\node[cmPLAIN,right=of d,text width=3.4cm] (p) {Loewner pencil $(\tilde A,\tilde E)$\\divided differences};
-\node[cmROM,right=of p,text width=3.1cm] (e) {generalised eigenvalues\\$\lambda_i\approx\omega_i^2$};
-\node[cmWARN,below=9mm of e,text width=3.3cm] (s) {screen: in band, positive damping (some eigenvalues are spurious)};
-\node[cmCERT,below=9mm of p,text width=3.4cm] (o) {$f_i=\mathrm{Re}\,\omega_i/2\pi$\\$\eta_i=\mathrm{Im}\,\omega_i/\mathrm{Re}\,\omega_i$};
-\draw[cmFlow] (d)--(p); \draw[cmFlow] (p)--(e); \draw[cmFlow] (e)--(s); \draw[cmFlow] (s)--(o);
-\end{tikzpicture}

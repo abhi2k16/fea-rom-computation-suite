@@ -1,9 +1,0 @@
-\begin{tikzpicture}[node distance=7mm and 9mm,font=\sffamily\scriptsize]
-\node[cmFE,text width=3.4cm] (t) {full nonlinear solves at training loads $\hat{\bm f}$};
-\node[cmPLAIN,right=of t,text width=3.4cm] (q) {$\bm q_{nl}=\bm V^T\bm u$\\$\bm f_{nl}=\hat{\bm f}-\bm\Lambda\bm q_{nl}$\\$\bm q_l=\bm\Lambda^{-1}\hat{\bm f}$};
-\node[cmROM,above right=3mm and 9mm of q,text width=4.1cm] (p) {ICE-type: polynomial $\bm f_{nl}(\bm q_{nl})$\\evaluate by Newton on $\bm\Lambda\bm q+\bm f_{nl}=\hat{\bm f}$};
-\node[cmROM,below right=3mm and 9mm of q,text width=4.1cm] (s) {surrogate: RBF $\bm f_{nl}(\bm q_l)$\\one evaluation, no Newton\\$\bm q_{nl}=\bm q_l-\bm\Lambda^{-1}\bm f_{nl}$};
-\node[cmCERT,right=22mm of q,text width=2.8cm] (h) {held-out full solves,\\linear model as baseline};
-\draw[cmFlow] (t)--(q); \draw[cmFlow] (q)--(p); \draw[cmFlow] (q)--(s);
-\draw[cmFlow] (p)-|(h.north); \draw[cmFlow] (s)-|(h.south);
-\end{tikzpicture}
