@@ -1,0 +1,41 @@
+% colors.tex -- colour scheme of the book (loaded after macros.tex)
+\definecolor{hnavy}{HTML}{0B2A4A}   % chapter titles, running heads
+\definecolor{hblue}{HTML}{2F7FC1}   % accent: rules, chapter labels
+\definecolor{hsec}{HTML}{1B5E9B}    % section titles
+\definecolor{hteal}{HTML}{138A7B}   % subsection titles, captions, code anchors
+\definecolor{hamber}{HTML}{A35F00}  % run-in paragraph titles
+\definecolor{hlink}{HTML}{B03A2E}   % cross references
+\definecolor{hcite}{HTML}{1E8449}   % citations
+\definecolor{hurl}{HTML}{7D3C98}    % web and file links
+\definecolor{hpale}{HTML}{EAF2FB}
+\usepackage{titlesec}
+\usepackage{colortbl}
+\hypersetup{linkcolor=hlink,citecolor=hcite,urlcolor=hurl,filecolor=hurl}
+\titleformat{\part}[display]{\centering\sffamily\bfseries}{\color{hblue}\fontsize{18}{20}\selectfont PART \thepart}{10pt}{\color{hnavy}\fontsize{26}{30}\selectfont}
+\titleformat{\chapter}[display]{\sffamily\bfseries\color{hnavy}}{\color{hblue}\fontsize{13}{15}\selectfont\MakeUppercase{\chaptertitlename}\ \thechapter}{4pt}{\huge\color{hnavy}}[\vspace{3pt}{\color{hblue}\titlerule[1.4pt]}]
+\titleformat{name=\chapter,numberless}[block]{\sffamily\bfseries\huge\color{hnavy}}{}{0pt}{}[\vspace{3pt}{\color{hblue}\titlerule[1.4pt]}]
+\titlespacing*{\chapter}{0pt}{10pt}{22pt}
+\titleformat{\section}{\sffamily\Large\bfseries\color{hsec}}{\thesection}{0.7em}{}
+\titleformat{name=\section,numberless}{\sffamily\Large\bfseries\color{hsec}}{}{0pt}{}
+\titleformat{\subsection}{\sffamily\large\bfseries\color{hteal}}{\thesubsection}{0.7em}{}
+\titleformat{\subsubsection}{\sffamily\normalsize\bfseries\color{hteal}}{\thesubsubsection}{0.7em}{}
+\titleformat{\paragraph}[runin]{\normalfont\normalsize\bfseries\color{hamber}}{\theparagraph}{1em}{}
+\titlespacing*{\paragraph}{0pt}{1.2ex plus .3ex}{0.8em}
+\renewcommand{\headrule}{{\color{hblue}\hrule width\headwidth height\headrulewidth}}
+\renewcommand{\headrulewidth}{0.6pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyhead[LE,RO]{\color{hnavy}\bfseries\thepage}
+\fancyhead[RE]{\small\color{hnavy}\nouppercase{\leftmark}}
+\fancyhead[LO]{\small\color{hnavy}\nouppercase{\rightmark}}
+\captionsetup{labelfont={bf,color=hteal},textfont={small},labelsep=period}
+\arrayrulecolor{hblue}
+\setlist[itemize]{label=\color{hblue}\textbullet}
+\setlist[enumerate]{label=\color{hblue}\arabic*.}
+\lstset{rulecolor=\color{hblue!55}}
+\DeclareRobustCommand{\anchor}[1]{{\color{hteal}\sffamily[Code:\,}{\color{hteal}\path{#1}}{\color{hteal}\sffamily]}}
+\renewcommand{\cftchapfont}{\bfseries\color{hnavy}}
+\renewcommand{\cftchappagefont}{\bfseries\color{hnavy}}
+\renewcommand{\cftpartfont}{\Large\bfseries\color{hblue}}
+\renewcommand{\cftsecfont}{\color{hsec}}
+\renewcommand{\cftfigfont}{\color{black}}
+\setlength{\headheight}{14.5pt}
