@@ -7,6 +7,7 @@
 \definecolor{hlink}{HTML}{B03A2E}   % cross references
 \definecolor{hcite}{HTML}{1E8449}   % citations
 \definecolor{hurl}{HTML}{7D3C98}    % web and file links
+\definecolor{hdeep}{HTML}{14407A}   % code anchors
 \definecolor{hpale}{HTML}{EAF2FB}
 \usepackage{titlesec}
 \usepackage{colortbl}
@@ -33,7 +34,7 @@
 \setlist[itemize]{label=\color{hblue}\textbullet}
 \setlist[enumerate]{label=\color{hblue}\arabic*.}
 \lstset{rulecolor=\color{hblue!55}}
-\DeclareRobustCommand{\anchor}[1]{{\color{hteal}\sffamily[Code:\,}{\color{hteal}\path{#1}}{\color{hteal}\sffamily]}}
+\DeclareRobustCommand{\anchor}[1]{{\color{hdeep}\sffamily[Code:\,}{\color{hdeep}\path{#1}}{\color{hdeep}\sffamily]}}
 \renewcommand{\cftchapfont}{\bfseries\color{hnavy}}
 \renewcommand{\cftchappagefont}{\bfseries\color{hnavy}}
 \renewcommand{\cftpartfont}{\Large\bfseries\color{hblue}}
