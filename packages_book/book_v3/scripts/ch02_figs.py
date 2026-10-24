@@ -502,23 +502,7 @@ def fig_plan():
     closed = max(abs(G.grade_for_growth_ratio(n_, t_) - np.log2(1 + t_)) for n_ in (6, 12, 20) for t_ in (1.1, 1.2, 1.5, 2.0))
     num("cmeGradeClosedDiff", sci(closed)); print("closed-form p = log2(1+rho) max diff", closed)
     num("cmePlanWarnLow", str(len(P.warnings))); num("cmePlanWarnHigh", str(len(P2.warnings)))
-    fig, axs = plt.subplots(1, 2, figsize=(7.4, 2.7), gridspec_kw={"width_ratios": [1, 1.15]})
-    ax = axs[0]
-    tg = np.linspace(1.05, 2.0, 40)
-    for n, col in zip((6, 12, 20), (GREEN, BLUE, ORANGE)):
-        ax.plot(tg, [G.grade_for_growth_ratio(n, t) for t in tg], color=col, label=f"$n={n}$")
-    ax.axvline(1.2, color="0.6", ls=":", lw=0.8); ax.axvline(1.5, color=RED, ls=":", lw=0.8)
-    ax.text(1.51, 1.1, "warning\nthreshold", fontsize=6, color=RED)
-    ax.set_xlabel("target growth ratio", fontsize=8); ax.set_ylabel("exponent $p$ returned", fontsize=8)
-    ax.legend(fontsize=7, frameon=False); ax.grid(alpha=0.25); ax.tick_params(labelsize=7); ax.set_title("(a)", fontsize=8)
-    ax = axs[1]
-    n = 12; y = 0
-    for lab, p in [("uniform", 1.0)] + [(f"target {t}", G.grade_for_growth_ratio(n, t)) for t in (1.1, 1.2, 1.5, 2.0)]:
-        x = G.graded_partition(0.0, 1.0, n, p)
-        ax.plot(x, np.full_like(x, y), "|", ms=10, color=BLUE)
-        ax.text(1.03, y, f"{lab}, $p={p:.2f}$", fontsize=6.5, va="center"); y -= 1
-    ax.set_xlim(-0.03, 1.5); ax.set_ylim(y + 0.2, 0.8); ax.axis("off"); ax.set_title("(b) the 12-element partition of a hole ring", fontsize=8)
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch02_plan.pdf")); plt.close(fig)
+    # the figure figures/ch02_plan.pdf is drawn by scripts/ch02_plan_fig.py
     print("plan rows", rows, "warnings", len(P.warnings), len(P2.warnings))
 
 
