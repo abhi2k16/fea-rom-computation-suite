@@ -60,3 +60,4 @@ packages_book/**/*.jpeg
 packages_book/**/*.jfif
 packages_book/**/listings/
 packages_book/plan/
+packages_book/README.md
