@@ -112,10 +112,10 @@ def figure(mesh, U, s):
         for k in range(len(zs)):
             out.append(P[grid[:, k]])
         return out
-    fig, axs = plt.subplots(3, 1, figsize=(7.0, 5.0), gridspec_kw={"height_ratios": [0.55, 1.35, 1.0], "hspace": 0.35})
+    fig, axs = plt.subplots(3, 1, figsize=(7.0, 4.6), gridspec_kw={"height_ratios": [0.5, 0.9, 1.0], "hspace": 0.35})
     # (a) the model as read
     ax = axs[0]
-    ax.add_collection(LineCollection(edges(P0), colors=NAVY, linewidths=0.7)); ax.set_aspect("equal")
+    ax.add_collection(LineCollection(edges(P0), colors=NAVY, linewidths=0.7)); ax.set_aspect("equal", adjustable="datalim")
     ax.fill_between([-0.35, 0], -0.3, 1.3, color="0.8", hatch="////", edgecolor="0.5", lw=0)
     ax.annotate("", (L, 1.0), (L, 1.7), arrowprops=dict(arrowstyle="-|>", color=RED, lw=1.6)); ax.text(L - 0.1, 1.55, "P = 1000 N (downward, over the face $x=L$)", color=RED, ha="right", va="center", fontsize=7.5)
     ax.text(-0.2, -0.05, "clamped $x=0$", fontsize=7.5, ha="center", va="top", color="0.3")
@@ -127,7 +127,7 @@ def figure(mesh, U, s):
     tc = ax.tripcolor(tri, vm[face] / 1e3, shading="gouraud", cmap="viridis")
     ax.add_collection(LineCollection(edges(P1), colors="white", linewidths=0.5, alpha=0.6))
     ax.add_collection(LineCollection(edges(P0), colors="0.55", linewidths=0.6, linestyles="--"))
-    ax.set_aspect("equal"); ax.set_xlim(-0.4, L + 0.4); ax.set_ylim(P1[:, 1].min() - 0.3, 1.3); ax.axis("off")
+    ax.set_aspect("equal", adjustable="datalim"); ax.set_xlim(-0.4, L + 0.4); ax.set_ylim(P1[:, 1].min() - 0.3, 1.3); ax.axis("off")
     cax = ax.inset_axes([0.03, 0.18, 0.27, 0.06]); cb = fig.colorbar(tc, cax=cax, orientation="horizontal"); cb.ax.set_title("nodal von Mises stress (kPa)", fontsize=7.5, pad=3); cb.ax.tick_params(labelsize=7)
     ax.set_title(f"(b) Deformed shape, magnified {scale:.0f} times (dashed grey: undeformed), coloured by von Mises stress", fontsize=8.5, fontweight="bold", color=NAVY, loc="left")
     # (c) tip deflection against Euler-Bernoulli along the axis
