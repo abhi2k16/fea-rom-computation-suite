@@ -147,13 +147,7 @@ def exp_grading():
     real = [G.growth_ratio_of_partition(G.graded_partition(0.0, 1.0, n, p)) for p in chosen]
     for t, p, r in zip(targets, chosen, real):
         print(f"target growth {t}: grade {p:.3f}, realised {r:.4f}", flush=True)
-    fig, ax = plt.subplots(1, 2, figsize=(8.2, 3.0))
-    ax[0].plot(ps, gr); ax[0].set_xlabel("exponent $p$ of $x_i=L(i/n)^p$"); ax[0].set_ylabel("largest ratio of adjacent sizes ($n=20$)")
-    ax[0].grid(alpha=0.3)
-    x = G.graded_partition(0.0, 1.0, n, chosen[1])
-    ax[1].plot(x, np.zeros_like(x), "|", ms=14); ax[1].plot(G.graded_partition(0.0, 1.0, n, 1.0), np.full(n + 1, 0.3), "|", ms=14)
-    ax[1].set_yticks([0, 0.3]); ax[1].set_yticklabels([f"target 1.2 ($p={chosen[1]:.2f}$)", "uniform"]); ax[1].set_xlabel("position")
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch02_grading.pdf")); plt.close(fig)
+    # the figure itself (figures/ch02_grading.pdf) is drawn by scripts/ch02_grading.py
     num("cmeGradeForTarget", f"{chosen[1]:.2f}"); num("cmeGradeRealTarget", f"{real[1]:.3f}")
     num("cmeGradeWorstOver", f"{max(r / t - 1 for r, t in zip(real, targets)) * 100:.2f}")
     num("cmeGradeRatioPTwo", f"{gr[np.argmin(abs(ps - 2.0))]:.2f}")
