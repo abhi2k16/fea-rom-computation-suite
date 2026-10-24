@@ -1,0 +1,16 @@
+{"case": "plate", "n_jobs": 1, "backend": "process", "blas": "1", "time": 1.7379071000004842, "n_items": 12, "check": 1.782321682311127e-06}
+{"case": "plate", "n_jobs": 2, "backend": "process", "blas": "1", "time": 0.9075435999993715, "n_items": 12, "check": 1.782321682311127e-06}
+{"case": "plate", "n_jobs": 4, "backend": "process", "blas": "1", "time": 0.9760048000007373, "n_items": 12, "check": 1.782321682311127e-06}
+{"case": "plate", "n_jobs": 2, "backend": "thread", "blas": "1", "time": 1.0968797999994422, "n_items": 12, "check": 1.782321682311127e-06}
+{"case": "plate", "n_jobs": 1, "backend": "process", "blas": "2", "time": 1.6841433999998117, "n_items": 12, "check": 1.782321682311127e-06}
+{"case": "plate", "n_jobs": 2, "backend": "process", "blas": "2", "time": 0.9946715999994922, "n_items": 12, "check": 1.782321682311127e-06}
+{"case": "plate", "n_jobs": 4, "backend": "process", "blas": "2", "time": 1.0078738000001977, "n_items": 12, "check": 1.782321682311127e-06}
+{"case": "plate", "n_jobs": 2, "backend": "thread", "blas": "2", "time": 1.133262399999694, "n_items": 12, "check": 1.782321682311127e-06}
+{"case": "tiny", "n_jobs": 1, "backend": "process", "blas": "1", "time": 0.0005086000001028879, "n_items": 400, "check": 0.0}
+{"case": "tiny", "n_jobs": 2, "backend": "process", "blas": "1", "time": 0.09700809999958437, "n_items": 400, "check": 0.0}
+{"case": "tiny", "n_jobs": 4, "backend": "process", "blas": "1", "time": 0.10148329999992711, "n_items": 400, "check": 0.0}
+{"case": "tiny", "n_jobs": 2, "backend": "thread", "blas": "1", "time": 0.007366599999841128, "n_items": 400, "check": 0.0}
+{"case": "dense", "n_jobs": 1, "backend": "process", "blas": "1", "time": 1.3425814000001992, "n_items": 12, "check": 0.6339761973680633}
+{"case": "dense", "n_jobs": 2, "backend": "process", "blas": "1", "time": 0.7559438999996928, "n_items": 12, "check": 0.6339761973680633}
+{"case": "dense", "n_jobs": 1, "backend": "process", "blas": "2", "time": 1.156569999999192, "n_items": 12, "check": 0.6339761973680633}
+{"case": "dense", "n_jobs": 2, "backend": "process", "blas": "2", "time": 1.0982392000005348, "n_items": 12, "check": 0.6339761973680633}
