@@ -2,7 +2,7 @@
 
 Working title unchanged: *Implementing Reduced-Order Modeling In Computational Mechanics*.
 Baseline: `book_v2` (341 pages, `book_draft_v2_full_i.pdf`). `book_v2` and `book` (v1) stay as they are; v3 is written in this folder only.
-Status: plan for confirmation. Nothing has been copied or changed yet.
+Status: decisions 1 to 5 confirmed. Phase 0 and Phase 1 done (see section 10). Next: Phase 2.
 
 ## 1. Why a third version
 
@@ -91,3 +91,9 @@ Each phase is built and checked before the next; v2 is the reference for every n
 - Renumbering chapters changes every "Chapter n" in the reviewer preview and its generated pages; they are regenerated from the chapter order.
 - Moving measurements between chapters (`auto` backend) requires moving the figure, table and number macros together.
 - Splitting Chapter 13 and trimming Chapter 14 can drop a claim that other chapters cite; a reference search is part of each phase.
+
+## 10. Progress log
+
+- **Phase 0 (done).** `book_v2` sources copied into `book_v3`. New file `v3.tex` (loaded after `colors.tex`) with: `implnote` box, `\lmethod` and `\limpl` tags for limits items, `\chopen{question}{result}{needs}` opening box, `\studycard{...}` for reproduction studies. Builds with 0 undefined references (344 pages, v2 had 341).
+- **Phase 1 (done).** Chapter 14 opening box now says the numbers of the nine studies are quoted from the author's reports and not regenerated at the tag. Each of the nine studies opens with a summary card: original question, method reproduced, evidence, result status, number status. Result status: reproduced (Balajewicz 2016; He 2023 for the beam and shell wing, partly for the solid wing), partly (Yang 2019, Hollkamp 2008, Liang 2024, Yang 2025, Fauque 2018, Nikiema 2026), and Liu 2026 reproduced against the author's own reference model. Number status is the same for all nine.
+- The numbers are taken from Table 14.2 of v2 and from the text of the chapter; no number was changed.
