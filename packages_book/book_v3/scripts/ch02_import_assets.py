@@ -86,17 +86,62 @@ def figure(mesh, U, s):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    plt.rcParams.update({"font.size": 9, "figure.dpi": 150})
+    import matplotlib.tri as mtri
+    from matplotlib.collections import LineCollection
+    plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 8, "pdf.fonttype": 42})
+    NAVY, RED = "#1b3a5c", "#c0392b"
     vm = np.asarray(s.von_mises(U)).ravel()
     X = mesh.nodes; D = U.reshape(-1, 3)
-    face = np.abs(X[:, 1]) < 1e-9
+    face = np.where(np.abs(X[:, 1]) < 1e-9)[0]
+    xf, zf = X[face, 0], X[face, 2]
+    xs, zs = np.unique(np.round(xf, 9)), np.unique(np.round(zf, 9))
+    grid = -np.ones((len(xs), len(zs)), int)
+    for loc, (a, b) in enumerate(zip(xf, zf)):
+        grid[np.argmin(abs(xs - a)), np.argmin(abs(zs - b))] = loc
     scale = 0.25 * L / np.abs(D[:, 2]).max() / 4
-    fig, ax = plt.subplots(figsize=(7.2, 2.0))
-    sc = ax.scatter(X[face, 0] + scale * D[face, 0], X[face, 2] + scale * D[face, 2], c=vm[face] / 1e3, s=14, cmap="viridis")
-    ax.scatter(X[face, 0], X[face, 2], s=3, color="0.75", zorder=0)
-    ax.set_aspect("equal"); ax.set_xlabel("x (m)"); ax.set_ylabel("z (m)")
-    cb = fig.colorbar(sc, ax=ax, pad=0.01); cb.set_label("von Mises (kPa)")
-    fig.tight_layout(); fig.savefig(os.path.join(BOOK, "figures", "ch02_import.pdf")); plt.close(fig)
+    tris, segs0, segs1 = [], [], []
+    for i in range(len(xs) - 1):
+        for k in range(len(zs) - 1):
+            a, b, c, d = grid[i, k], grid[i + 1, k], grid[i + 1, k + 1], grid[i, k + 1]
+            tris += [[a, b, c], [a, c, d]]
+    P0 = np.c_[xf, zf]; P1 = np.c_[xf + scale * D[face, 0], zf + scale * D[face, 2]]
+    def edges(P):
+        out = []
+        for i in range(len(xs)):
+            out.append(P[grid[i, :]])
+        for k in range(len(zs)):
+            out.append(P[grid[:, k]])
+        return out
+    fig, axs = plt.subplots(3, 1, figsize=(7.0, 5.0), gridspec_kw={"height_ratios": [0.55, 1.35, 1.0], "hspace": 0.35})
+    # (a) the model as read
+    ax = axs[0]
+    ax.add_collection(LineCollection(edges(P0), colors=NAVY, linewidths=0.7)); ax.set_aspect("equal")
+    ax.fill_between([-0.35, 0], -0.3, 1.3, color="0.8", hatch="////", edgecolor="0.5", lw=0)
+    ax.annotate("", (L, 1.0), (L, 1.7), arrowprops=dict(arrowstyle="-|>", color=RED, lw=1.6)); ax.text(L - 0.1, 1.55, "P = 1000 N (downward, over the face $x=L$)", color=RED, ha="right", va="center", fontsize=7.5)
+    ax.text(-0.2, -0.05, "clamped $x=0$", fontsize=7.5, ha="center", va="top", color="0.3")
+    ax.set_xlim(-0.6, L + 0.4); ax.set_ylim(-0.2, 1.9); ax.axis("off")
+    ax.set_title("(a) The imported mesh (face $y=0$): 20 $\\times$ 2 element faces, 10 m $\\times$ 1 m", fontsize=8.5, fontweight="bold", color=NAVY, loc="left", pad=6)
+    # (b) deformed, coloured
+    ax = axs[1]
+    tri = mtri.Triangulation(P1[:, 0], P1[:, 1], tris)
+    tc = ax.tripcolor(tri, vm[face] / 1e3, shading="gouraud", cmap="viridis")
+    ax.add_collection(LineCollection(edges(P1), colors="white", linewidths=0.5, alpha=0.6))
+    ax.add_collection(LineCollection(edges(P0), colors="0.55", linewidths=0.6, linestyles="--"))
+    ax.set_aspect("equal"); ax.set_xlim(-0.4, L + 0.4); ax.set_ylim(P1[:, 1].min() - 0.3, 1.3); ax.axis("off")
+    cax = ax.inset_axes([0.03, 0.18, 0.27, 0.06]); cb = fig.colorbar(tc, cax=cax, orientation="horizontal"); cb.ax.set_title("nodal von Mises stress (kPa)", fontsize=7.5, pad=3); cb.ax.tick_params(labelsize=7)
+    ax.set_title(f"(b) Deformed shape, magnified {scale:.0f} times (dashed grey: undeformed), coloured by von Mises stress", fontsize=8.5, fontweight="bold", color=NAVY, loc="left")
+    # (c) tip deflection against Euler-Bernoulli along the axis
+    ax = axs[2]
+    mid = face[np.abs(X[face, 2] - 0.5 * H) < 1e-9] if np.any(np.abs(X[face, 2] - 0.5 * H) < 1e-9) else face
+    order = np.argsort(X[mid, 0]); xm = X[mid, 0][order]; wm = D[mid, 2][order]
+    EI = 2.1e11 * H ** 4 / 12.0; Pn = 1000.0
+    xx = np.linspace(0, L, 200); web = -Pn * xx ** 2 * (3 * L - xx) / (6 * EI)
+    ax.plot(xx, web * 1e3, color="0.45", lw=2.2, label="Euler--Bernoulli beam theory")
+    ax.plot(xm, wm * 1e3, "o", color="#2f7fc1", ms=3.5, label="imported mesh, 8-node hexahedra")
+    ax.set_xlabel("$x$ (m)"); ax.set_ylabel("vertical displacement (mm)"); ax.legend(frameon=False, fontsize=7.5, loc="lower left")
+    ax.set_title("(c) Centre line: the mesh is stiffer than the beam, as the text explains (two elements through the depth)", fontsize=8.5, fontweight="bold", color=NAVY, loc="left")
+    for sp in ["top", "right"]: ax.spines[sp].set_visible(False)
+    fig.savefig(os.path.join(BOOK, "figures", "ch02_import.pdf"), bbox_inches="tight"); plt.close(fig)
     num("cmiScale", f"{scale:.0f}")
     num("cmiVmMax", f"{vm.max() / 1e3:.1f}")
 
