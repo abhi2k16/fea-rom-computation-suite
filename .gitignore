@@ -42,5 +42,21 @@ tensormesh_comparative_analysis.md
 # Written by the test suite on every run
 /fea_engine/tests/*.png
 
-# Book sources and builds are kept locally only
-packages_book/
+# packages_book: tracked, except the files that hold the content of the book
+packages_book/**/*.tex
+packages_book/**/*.bib
+packages_book/**/*.bbl
+packages_book/**/*.blg
+packages_book/**/*.aux
+packages_book/**/*.toc
+packages_book/**/*.lof
+packages_book/**/*.lot
+packages_book/**/*.out
+packages_book/**/*.fls
+packages_book/**/*.fdb_latexmk
+packages_book/**/*.png
+packages_book/**/*.jpg
+packages_book/**/*.jpeg
+packages_book/**/*.jfif
+packages_book/**/listings/
+packages_book/plan/
