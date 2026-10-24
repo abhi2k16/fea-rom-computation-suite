@@ -46,10 +46,10 @@ def beam(ax, L, n, unit, probe=None, loadtxt=None, xlabel=None):
 
 
 def mfs():
-    fig = plt.figure(figsize=(8.8, 4.4))
+    fig = plt.figure(figsize=(6.4, 4.3))
     a = fig.add_subplot(2, 1, 1)
     beam(a, 228.6, 40, "mm", loadtxt="uniform pressure $P\\in[-2000,2000]$ Pa")
-    a.set_title("(a) flat beam: 228.6 x 12.7 x 0.787 mm, 40 corotational beam elements, 117 free dofs", fontsize=8.5)
+    a.set_title("(a) flat beam: 228.6 x 12.7 x 0.787 mm, 40 corotational beam elements, 117 free dofs", fontsize=7.5)
     b = fig.add_subplot(2, 1, 2)
     pts = [(0, -8), (220, -25), (280, -25), (280, 25), (220, 25), (0, 8)]
     b.add_patch(Polygon(pts, closed=True, fc="#dfe6f5", ec=BLUE, lw=1.4))
@@ -61,13 +61,13 @@ def mfs():
     b.text(-4, 0, "16 mm", ha="right", va="center", fontsize=8); b.text(300, 0, "", fontsize=8); b.text(250, -31, "50 mm", ha="center", fontsize=8, color=GREY)
     b.set(xlim=(-30, 310), ylim=(-50, 45)); b.set_aspect("equal"); b.set_yticks([]); b.set_xlabel("x (mm); thickness 1.15 mm, T7050 aluminium")
     b.spines["left"].set_visible(False)
-    b.set_title("(b) wing planform reconstructed from the dimensioned schematic: shell reference model, 140 elements", fontsize=8.5)
+    b.set_title("(b) wing planform reconstructed from the dimensioned schematic: shell reference model, 140 elements", fontsize=7.5)
     save(fig, "ch14_geom_mfs.pdf")
 
 
 def hyrom_panel():
     R, L, half = 2540.0, 508.0, 0.1
-    fig = plt.figure(figsize=(7.4, 3.6))
+    fig = plt.figure(figsize=(6.4, 4.2))
     ax = fig.add_subplot(1, 2, 1, projection="3d")
     n = 10; xs = np.linspace(0, L, n + 1); th = np.linspace(-half, half, n + 1)
     X, T = np.meshgrid(xs, th, indexing="ij"); Y = R * np.sin(T); Z = R * np.cos(T)
@@ -78,7 +78,7 @@ def hyrom_panel():
     ax.plot(X[~edge], Y[~edge], Z[~edge], ".", color=BLUE, ms=3, label="free nodes")
     c = n // 2; ax.plot(X[c - 1:c + 2, c - 1:c + 2].ravel(), Y[c - 1:c + 2, c - 1:c + 2].ravel(), Z[c - 1:c + 2, c - 1:c + 2].ravel(), "s", color=RED, ms=4, label="crown load patch (9 nodes)")
     ax.set(xlabel="x (mm)", ylabel="y (mm)", zlabel=""); ax.set_zticks([]); ax.view_init(28, -62); ax.legend(fontsize=6.5, loc="upper left")
-    ax.set_title("(a) 10 x 10 mesh: 121 nodes, 726 dofs", fontsize=8.5)
+    ax.set_title("(a) 10 x 10 mesh: 121 nodes, 726 dofs", fontsize=7.5)
     b = fig.add_subplot(1, 2, 2)
     t = np.linspace(-half, half, 60); b.plot(R * np.sin(t), R * np.cos(t) - R * np.cos(half), color=BLUE, lw=3)
     b.plot([R * np.sin(half)] * 2, [0, -60], color="k", lw=0.8); b.plot([-R * np.sin(half)] * 2, [0, -60], color="k", lw=0.8)
@@ -87,19 +87,19 @@ def hyrom_panel():
     b.annotate("crown load\n5000 N, 2.5 Hz", (0, 12.7), (0, 38), ha="center", color=RED, fontsize=8, arrowprops=dict(arrowstyle="<-", color=RED))
     b.text(0, -28, "$R=2540$ mm, $t=12.5$ mm", ha="center", fontsize=8, color=GREY)
     b.set(xlim=(-290, 290), ylim=(-70, 50)); b.set_yticks([]); b.spines["left"].set_visible(False); b.set_xlabel("section through the crown line")
-    b.set_title("(b) hinged on all four edges", fontsize=8.5)
+    b.set_title("(b) hinged on all four edges", fontsize=7.5)
     save(fig, "ch14_geom_hyrom.pdf")
 
 
 def ice():
-    fig, ax = plt.subplots(figsize=(8.4, 1.9))
+    fig, ax = plt.subplots(figsize=(6.4, 2.0))
     beam(ax, 18.0, 36, "in", probe=4.0, loadtxt="spatially uniform random pressure, 0--1500 Hz band")
-    ax.set_title("18 x 1 x 0.09 in aluminium beam, clamped at both ends, immovable ends; 36 elements, $\\Delta x=0.5$ in", fontsize=8.5)
+    ax.set_title("18 x 1 x 0.09 in aluminium beam, clamped at both ends, immovable ends; 36 elements, $\\Delta x=0.5$ in", fontsize=7.5)
     save(fig, "ch14_geom_ice.pdf")
 
 
 def fdpinn():
-    fig, ax = plt.subplots(1, 2, figsize=(8.6, 2.7), gridspec_kw={"width_ratios": [1.6, 1]})
+    fig, ax = plt.subplots(1, 2, figsize=(6.4, 2.7), gridspec_kw={"width_ratios": [1.6, 1]})
     a = ax[0]; L = 20.0
     a.plot([0, L], [0, 0], color=BLUE, lw=5, solid_capstyle="butt")
     for x in (0, L):
@@ -107,17 +107,17 @@ def fdpinn():
     a.annotate("", (6, 0.2), (6, 2.0), arrowprops=dict(arrowstyle="->", color=ORANGE, lw=1.6)); a.text(6, 2.2, "$p=12$ kN at $x=vt$", ha="center", color=ORANGE, fontsize=8)
     a.annotate("", (9.5, 1.3), (6.5, 1.3), arrowprops=dict(arrowstyle="<-", color=ORANGE)); a.text(8.0, 1.6, "$v$", color=ORANGE, ha="center", fontsize=8)
     a.plot([L / 2], [0], "s", color=RED, ms=7); a.text(L / 2, -1.9, "sensor at $L/2$ (inverse problem)", ha="center", color=RED, fontsize=8)
-    a.annotate("", (0, -2.9), (L, -2.9), arrowprops=dict(arrowstyle="<->")); a.text(L / 2, -3.7, "$L=20$ m, $EI=2.4\\times10^9$ N m$^2$, $m=3000$ kg/m, damping ratio 0.025", ha="center", fontsize=8)
-    a.set(xlim=(-2, 22), ylim=(-4.3, 3.2)); a.set_aspect("equal"); a.axis("off"); a.set_title("(a) simply supported beam under a moving load", fontsize=8.5)
+    a.annotate("", (0, -2.9), (L, -2.9), arrowprops=dict(arrowstyle="<->")); a.text(L / 2, -3.3, "$L=20$ m, $EI=2.4\\times10^9$ N m$^2$,\n$m=3000$ kg/m, damping ratio 0.025", ha="center", va="top", fontsize=7.5)
+    a.set(xlim=(-2, 22), ylim=(-6.2, 3.2)); a.set_aspect("equal"); a.axis("off"); a.set_title("(a) simply supported beam under a moving load", fontsize=7.5)
     b = ax[1]; b.set(xlim=(0, 1), ylim=(0, 1)); b.add_patch(plt.Rectangle((0, 0), 1, 1, fc="#eef2fb", ec=BLUE))
     rng = np.random.default_rng(1); b.plot(rng.random(70), rng.random(70), ".", color=GREY, ms=3)
     b.set(xlabel="$x/L$", ylabel="$\\omega$ (band 0--5 Hz)"); b.set_xticks([0, 1]); b.set_yticks([0, 1]); b.set_yticklabels(["0", "$\\omega_{\\max}$"])
-    b.set_title("(b) network domain $(x,\\omega)$, collocation points", fontsize=8.5)
+    b.set_title("(b) network domain $(x,\\omega)$", fontsize=7.5)
     save(fig, "ch14_geom_fdpinn.pdf")
 
 
 def frino():
-    fig = plt.figure(figsize=(7.6, 3.4)); ax = fig.add_subplot(111, projection="3d")
+    fig = plt.figure(figsize=(6.4, 3.0)); ax = fig.add_subplot(111, projection="3d")
     L, W, T = 60.0, 15.0, 1.5; nx, ny, nz = 14, 8, 2
     xs, ys, zs = np.linspace(0, L, nx + 1), np.linspace(0, W, ny + 1), np.linspace(0, T, nz + 1)
     for z in zs:
@@ -131,13 +131,13 @@ def frino():
     ax.quiver(L, W / 2, T, 0, 0, 5, color=ORANGE, lw=2, arrow_length_ratio=0.4); ax.text(L, W / 2, T + 7, "point load (transverse)", color=ORANGE, fontsize=8, ha="center")
     ax.text(0, W / 2, -5, "clamped end", color=BLUE, fontsize=8)
     ax.set(xlabel="x (mm)", ylabel="y (mm)"); ax.set_zticks([]); ax.set_yticks([0, 15]); ax.set_box_aspect((4, 1, 0.6)); ax.view_init(22, -62)
-    ax.set_title("Cantilever $60\\times15\\times1.5$ mm, $14\\times8\\times2$ Hex20: 4239 dofs", fontsize=8.5)
+    ax.set_title("Cantilever $60\\times15\\times1.5$ mm, $14\\times8\\times2$ Hex20: 4239 dofs", fontsize=7.5)
     save(fig, "ch14_geom_frino.pdf")
 
 
 def rope():
     x = np.linspace(0, 1, 100)
-    fig, ax = plt.subplots(1, 2, figsize=(8.6, 2.8), gridspec_kw={"width_ratios": [1.7, 1]})
+    fig, ax = plt.subplots(1, 2, figsize=(6.4, 2.8), gridspec_kw={"width_ratios": [1.7, 1]})
     a = ax[0]
     for m2, c in ((-0.05, BLUE), (0.17, VIOLET), (0.5, GREEN)):
         d = 0.2 * (np.sin(np.pi * x) - np.sin(3 * np.pi * x)) + 0.5 - m2 * (x - 0.5)
@@ -147,13 +147,13 @@ def rope():
     for xx in np.linspace(0.04, 0.96, 16):
         a.annotate("", (xx, 0.02), (xx, 0.12), arrowprops=dict(arrowstyle="->", color=ORANGE, lw=0.8))
     a.text(0.5, 0.135, "load $f$ (towards the obstacle)", ha="center", color=ORANGE, fontsize=8)
-    a.set(xlim=(0, 1), ylim=(-0.05, 1.2), xlabel="$x$", ylabel="$u$, $d$"); a.legend(fontsize=7, loc="upper center", ncol=3)
-    a.set_title("(a) rope (100 nodes, $u(0)=u(1)=0$) and the parametric obstacle", fontsize=8.5)
+    a.set(xlim=(0, 1), ylim=(-0.05, 1.2), xlabel="$x$", ylabel="$u$, $d$"); a.legend(fontsize=6, loc="upper center", ncol=1, frameon=False)
+    a.set_title("(a) rope (100 nodes, $u(0)=u(1)=0$) and the parametric obstacle", fontsize=7.5)
     b = ax[1]
     for m1, c in ((0.05, BLUE), (0.15, VIOLET), (0.25, GREEN)):
         b.plot([0, 0.5, 0.5, 1], [m1, m1, 0.15, 0.15], color=c, lw=1.3, label=f"$\\mu_1={m1}$")
     b.set(xlabel="$x$", ylabel="$\\nu(x,\\mu_1)$", ylim=(0, 0.3)); b.legend(fontsize=7)
-    b.set_title("(b) stiffness coefficient", fontsize=8.5)
+    b.set_title("(b) stiffness coefficient", fontsize=7.5)
     save(fig, "ch14_geom_rope.pdf")
 
 

@@ -43,7 +43,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 BOOK = os.path.dirname(HERE)
 FIG, TAB = os.path.join(BOOK, "figures"), os.path.join(BOOK, "tables")
 os.makedirs(FIG, exist_ok=True); os.makedirs(TAB, exist_ok=True)
-plt.rcParams.update({"font.size": 9, "axes.grid": True, "grid.alpha": 0.3, "figure.dpi": 150,
+plt.rcParams.update({"font.size": 8, "axes.grid": True, "grid.alpha": 0.3, "figure.dpi": 150,
                      "axes.spines.top": False, "axes.spines.right": False})
 BLUE, VIOLET, GREEN, ORANGE, GREY = "#2b4c9b", "#6a3d9a", "#2e8b57", "#d2691e", "#555555"
 NUM, CHECKS = {}, []
@@ -107,7 +107,7 @@ def rerun(study, root, jobs, scratch):
 # ------------------------------------------------------------------------------------------------ MFS-NLROM (He et al.)
 def fig_mfs(d):
     z = np.load(os.path.join(d, "results", "mfs_nlrom_reproduction_results.npz"), allow_pickle=True)
-    fig, ax = plt.subplots(1, 3, figsize=(10.6, 3.2))
+    fig, ax = plt.subplots(1, 3, figsize=(6.4, 2.8))
     ax[0].plot(z["Pvals"], z["w_lin"] * 1e3, "--", color=GREY, label="linear")
     ax[0].plot(z["Pvals"], z["w_nl_fe"] * 1e3, "-", color="k", lw=2.5, alpha=0.35, label="nonlinear FE")
     ax[0].plot(z["Pvals"], z["w_mfs"] * 1e3, "o", color=VIOLET, ms=3.5, label="MFS-NLROM")
@@ -122,7 +122,7 @@ def fig_mfs(d):
     ax[2].plot(a, z["omega_fe_backbone"] / 2 / np.pi, "s-", color="k", ms=4, label="FE free vibration")
     ax[2].plot(a, z["omega_mfs_backbone"] / 2 / np.pi, "o--", color=VIOLET, ms=4, label="MFS-NLROM (HBM)")
     ax[2].plot(a, z["omega_ice_backbone"] / 2 / np.pi, "x:", color=ORANGE, ms=5, label="ICE (HBM)")
-    ax[2].set(xlabel="master-mode amplitude ($10^{-6}$)", ylabel="frequency (Hz)", title="(c) backbone"); ax[2].legend(fontsize=7)
+    ax[2].set(xlabel="mode amplitude ($10^{-6}$)", ylabel="frequency (Hz)", title="(c) backbone"); ax[2].legend(fontsize=6, loc="upper left")
     save(fig, "ch14_mfs.pdf")
     f1 = z["freq_hz"]; num("cvfMfsRtwoMfs", f"{float(z['r2_static_mfs']):.4f}"); num("cvfMfsRtwoIce", f"{float(z['r2_static_ice']):.4f}")
     ra = r2(z["q_nl_fe_case_a"][:, 0], z["q_nl_mfs_case_a"][:, 0]); rb = r2(z["q_nl_fe_case_b"][:, 0], z["q_nl_mfs_case_b"][:, 0])
@@ -138,7 +138,7 @@ def fig_mfs(d):
 def fig_hyrom(d):
     c2 = json.load(open(os.path.join(d, "results_case2", "case2_backbone_check.json")))["results"]
     c1 = json.load(open(os.path.join(d, "results_case1", "case1_backbone_check.json")))["results"]
-    fig, ax = plt.subplots(1, 2, figsize=(8.4, 3.1))
+    fig, ax = plt.subplots(1, 2, figsize=(6.4, 3.4))
     a2 = np.array([r["q1_0"] for r in c2 if not r["failed"]]); o = np.argsort(a2)
     fo = np.array([r["6modes"]["ratio_fom"] for r in c2 if not r["failed"]])[o]; ro = np.array([r["6modes"]["ratio_rom"] for r in c2 if not r["failed"]])[o]
     ax[0].plot(a2[o], (fo - 1) * 100, "s-", color="k", ms=4, label="full-order"); ax[0].plot(a2[o], (ro - 1) * 100, "o--", color=VIOLET, ms=4, label="ROM, 6 modes")
@@ -159,7 +159,7 @@ def fig_hyrom(d):
 # ------------------------------------------------------------------------------------------------ ICE (Hollkamp et al.)
 def fig_ice(d):
     z = np.load(os.path.join(d, "reproduce_flat_beam_results.npz"))
-    fig, ax = plt.subplots(2, 2, figsize=(8.8, 5.0))
+    fig, ax = plt.subplots(2, 2, figsize=(6.4, 5.3))
     for i, lv in enumerate(("low", "high")):
         t = z[f"{lv}_t"]; m = t <= 0.2
         ax[i, 0].plot(t[m], z[f"{lv}_v_fom"][m], color="k", lw=2.5, alpha=0.35, label="full-order"); ax[i, 0].plot(t[m], z[f"{lv}_v_rom"][m], color=VIOLET, lw=0.9, label="one-mode ROM")
@@ -175,7 +175,7 @@ def fig_ice(d):
 def fig_fdpinn(d):
     rows = list(csv.DictReader(open(os.path.join(d, "band_study.csv"))))
     bands = [float(k) for k in rows[0] if k not in ("case", "model")]
-    fig, ax = plt.subplots(1, 2, figsize=(8.6, 3.1))
+    fig, ax = plt.subplots(1, 2, figsize=(6.4, 3.3))
     col = {"case1": BLUE, "case2": GREEN, "case3": ORANGE}
     for r in rows:
         if r["model"] == "full" and r["case"] in col:
@@ -200,7 +200,7 @@ def fig_fdpinn(d):
 def fig_hyb(d):
     z = json.load(open(os.path.join(d, "results", "rope_results_L3e10.json")))
     g = z["greedy_eta"]; k = np.arange(1, len(g["hr_u2"]) + 1)
-    fig, ax = plt.subplots(1, 3, figsize=(10.4, 3.1))
+    fig, ax = plt.subplots(1, 3, figsize=(6.4, 2.8))
     ax[0].semilogy(k, g["hr_u2"], "o-", color=VIOLET, ms=3, label="hybrid (HR)"); ax[0].semilogy(k, g["pb_u2"], "s--", color=BLUE, ms=3, label="projection (PB)")
     ax[0].set(xlabel="greedy iteration", ylabel="displacement error (%, 2-norm)", title="(a) displacement"); ax[0].legend(fontsize=7)
     ax[1].semilogy(k, g["hr_lam2"], "o-", color=VIOLET, ms=3); ax[1].semilogy(k, g["pb_lam2"], "s--", color=BLUE, ms=3)
@@ -220,7 +220,7 @@ def fig_asm(d):
     rows = [r for r in rows if r["method"] in ("POD", "DEIM", "UDEIM", "ECSW")]
     meth = ["POD", "ECSW", "DEIM", "UDEIM"]; sty = {"POD": ("o", BLUE), "ECSW": ("s", GREEN), "DEIM": ("^", ORANGE), "UDEIM": ("v", VIOLET)}
     eps = ["1e-05", "1e-06", "1e-09"]
-    fig, ax = plt.subplots(1, 2, figsize=(8.8, 3.2))
+    fig, ax = plt.subplots(1, 2, figsize=(6.4, 3.4))
     for i, m in enumerate(meth):
         for j, e in enumerate(eps):
             r = [x for x in rows if x["method"] == m and x["eps"] == e][0]
@@ -246,7 +246,7 @@ def fig_asm(d):
 # ------------------------------------------------------------------------------------------------ projection-based contact ROM (Balajewicz et al.)
 def fig_bal(d):
     v = json.load(open(os.path.join(d, "results", "v2_dynamic_40.json")))
-    fig, ax = plt.subplots(1, 3, figsize=(10.6, 3.1))
+    fig, ax = plt.subplots(1, 3, figsize=(6.4, 2.7))
     names = {"1,1,1": "$\\alpha=(1,1,1)$", "1,1,0": "$\\alpha=(1,1,0)$", "1,0,0": "$\\alpha=(1,0,0)$", "true": "true error"}
     for key, c in zip(names, (BLUE, GREEN, VIOLET, GREY)):
         e = v["greedy"][key]["emax"]; ax[0].semilogy(range(1, len(e) + 1), e, "o-", ms=3, color=c, label=names[key])
