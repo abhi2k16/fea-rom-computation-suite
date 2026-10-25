@@ -57,5 +57,5 @@ ax.set_xlabel(r'frequency $\omega/\omega_1$'); ax.set_ylabel('amplitude'); ax.se
 ax.set_xlim(0.95,back(0.09)+0.1); ax.set_ylim(0,0.108)
 ax.set_title('(b) Forced response: a fold in amplitude',fontsize=8.5,fontweight='bold',color=NAVY,loc='left')
 for s_ in ['top','right']: ax.spines[s_].set_visible(False)
-import os; fig.savefig(os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','figures','ch12_nnm.pdf'),bbox_inches='tight')
+import os; fig.savefig(os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','figures','ch12_nnm_sketch.pdf'),bbox_inches='tight')
 print(fl,fr,hi[:,1].max())
