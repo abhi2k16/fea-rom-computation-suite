@@ -27,4 +27,8 @@ ax.grid(alpha=0.25,which='both',lw=0.4); fig.tight_layout()
 out=os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','figures' if os.environ.get('FINAL') else 'preview_figs')
 fig.savefig(os.path.join(out,'ch04_mass.pdf')); fig.savefig(os.path.join(out,'ch04_mass.png'),dpi=130)
 oc,ol,oa=[cv.observed_order(h,np.abs(err[k])) for k in 'cla']
+sci=lambda x: ('$%.1f\\times10^{%d}$'%(abs(x)/10**np.floor(np.log10(abs(x))),int(np.floor(np.log10(abs(x))))))
+mac={'cdyMassConsCoarse':'%.2f\\,\\%%'%(100*err['c'][0]),'cdyMassLumpCoarse':'%.2f\\,\\%%'%(100*abs(err['l'][0])),'cdyMassConsFine':sci(err['c'][-1]),'cdyMassLumpFine':sci(err['l'][-1]),'cdyMassAvgFine':sci(err['a'][-1]),'cdyMassConsOrder':'%.1f'%oc,'cdyMassLumpOrder':'%.1f'%ol,'cdyMassAvgOrder':'%.1f'%oa,'cdyMassNFine':str(ns[-1])}
+open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','tables','numbers_ch04_mass.tex'),'w').write(''.join('\\newcommand{\\%s}{%s\\xspace}\n'%(k,v) for k,v in mac.items()))
+print(mac)
 print('fine',err['c'][-1],err['l'][-1],err['a'][-1],'orders',oc,ol,oa,'coarse',err['c'][0],err['l'][0])
