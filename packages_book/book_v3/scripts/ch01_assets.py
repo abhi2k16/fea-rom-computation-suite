@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Abhijeet <abhijeetshandilya19@gmail.com>
 # SPDX-License-Identifier: MIT
 """
-ch01_assets.py -- figures, tables and number macros of Chapter 1 (the design of a decoupled scientific engine).
+ch01_assets.py -- figures, tables and number macros of Chapter 1 (architectural design of the packages).
 
 Writes into book/:
     figures/ch01_dispatch.pdf     solve time with backend="scipy" and backend="auto" against the problem size
