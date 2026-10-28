@@ -161,6 +161,21 @@ def exp_vonmises():
     err_al = np.max(np.abs(lam - ref)[sig] / np.abs(ref)[sig])
     num("cnlTrussErrDC", sci(err_dc)); num("cnlTrussErrAL", sci(err_al))
     num("cnlTrussALpts", f"{int((dal <= 2.0 * H0).sum())}")
+    # Koiter--Newton: reference load = the limit load, so lambda is of order one; cubic predictor, chord corrector
+    def run_kn(**kw):
+        f, c_ = truss(); f.add_nodal_force([1], 1, -Ppk)
+        l_, U_ = nls.solve_nonlinear_koiter_newton(f, (E_, A_), delta_L=0.01, n_steps=60, tol=1e-9, max_iter=60, **kw)
+        d_ = -U_[:, c_]; P_ = l_ * Ppk
+        return d_, P_
+    dkn, Pkn = run_kn(max_growth_iters=0)
+    kn_keep = dkn <= 2.0 * H0
+    kn_sig = np.abs(P_cf(dkn)) > 1e-4 * np.abs(P_cf(dkn)).max()
+    err_kn = np.max((np.abs(Pkn - P_cf(dkn))[kn_sig & kn_keep]) / np.abs(P_cf(dkn))[kn_sig & kn_keep])
+    num("cnlTrussErrKN", sci(err_kn)); num("cnlTrussKNpts", f"{int(kn_keep.sum())}")
+    dkd, Pkd = run_kn()                       # default settings: the step grows by 2**6 at every step
+    num("cnlTrussKNdefStep", f"{dkd[1] * 1e3:.0f}")
+    num("cnlTrussKNdefErr", sci(np.max(np.abs(Pkd - P_cf(dkd))[1:] / np.abs(P_cf(dkd))[1:])))
+    print(f"koiter-newton: fixed step {int(kn_keep.sum())} pts err {err_kn:.1e}; default growth first step {dkd[1]*1e3:.0f} mm", flush=True)
     print(f"truss: P_peak {Ppk:.1f} N at {dpk*1e3:.2f} mm; load control past peak {'fails' if failed else 'converges'}; "
           f"disp-control err {err_dc:.1e}; arc-length err {err_al:.1e}, delta up to {dal.max()*1e3:.1f} mm", flush=True)
     d = np.linspace(0, 2 * H0, 400)
@@ -169,6 +184,7 @@ def exp_vonmises():
     ax.plot(dd * 1e3, Pdc / 1e3, "o", ms=3, mfc="none", label="displacement control")
     keep = dal <= 2.0 * H0
     ax.plot(dal[keep] * 1e3, lam[keep] / 1e3, "x", ms=3.5, label="arc length")
+    ax.plot(dkn[kn_keep] * 1e3, Pkn[kn_keep] / 1e3, "+", ms=4, color="tab:green", label="Koiter\u2013Newton")
     ax.axhline(Ppk / 1e3, color="r", ls=":", lw=0.8)
     ax.annotate("limit load: load control cannot pass", (dpk * 1e3 + 4, Ppk / 1e3), fontsize=8, color="r", va="bottom")
     ax.set_xlabel("apex deflection $\\delta$ (mm)"); ax.set_ylabel("load $P$ (kN)")
