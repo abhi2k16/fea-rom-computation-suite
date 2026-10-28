@@ -193,7 +193,7 @@ def exp_vonmises():
           f"disp-control err {err_dc:.1e}; arc-length err {err_al:.1e}, delta up to {dal.max()*1e3:.1f} mm", flush=True)
     d = np.linspace(0, 2 * H0, 400)
     fig, ax = plt.subplots(figsize=(5.4, 3.3))
-    ax.plot(d * 1e3, P_cf(d) / 1e3, "k", lw=1, label="closed form")
+    ax.plot(d * 1e3, P_cf(d) / 1e3, "k", lw=1, label="hand solution")
     ax.plot(dd * 1e3, Pdc / 1e3, "o", ms=3, mfc="none", label="displacement control")
     ax.plot(dal[keep] * 1e3, lam[keep] / 1e3, "x", ms=3.5, label="arc length")
     ax.plot(dkn[kn_keep] * 1e3, Pkn[kn_keep] / 1e3, "+", ms=4, color="tab:green", label="Koiter\u2013Newton")
@@ -221,15 +221,12 @@ def exp_plasticity():
         st = el.commit_state(X, u, mat, st)
         epsp.append(st["eps_p"])
     sig = np.array(sig)
-    # closed form
-    s_ref = np.empty_like(path); sp_ = 0.0; ep = 0.0; al = 0.0
-    for k, e in enumerate(path):
-        s_tr = E * (e - ep)
-        fy = abs(s_tr) - (sy + H * al)
-        if fy > 0:
-            dg = fy / (E + H); s_tr -= E * dg * np.sign(s_tr); ep += dg * np.sign(s_tr if s_tr != 0 else 1); al += dg
-            ep = e - s_tr / E
-        s_ref[k] = s_tr
+    # hand solution: the loop is a polygon whose corners follow from E, sigma_y, H alone (no return map)
+    ET, e_y = E * H / (E + H), sy / E
+    e_rev = e_peak - 2 * peak / E                       # strain at which the reversed branch yields (at -peak)
+    up, dn = path[:n1 + 1], path[n1 + 1:]
+    s_ref = np.concatenate([np.where(up <= e_y, E * up, sy + ET * (up - e_y)),
+                            np.where(dn >= e_rev, peak - E * (e_peak - dn), -peak + ET * (dn - e_rev))])
     err = np.abs(sig - s_ref).max() / peak
     slope = np.diff(sig) / np.diff(path)
     rev = n1 + 1 + int(np.flatnonzero(slope[n1:] < 0.9 * E)[0]) if (slope[n1:] < 0.9 * E).any() else None
@@ -246,7 +243,7 @@ def exp_plasticity():
           f"eps_p end {ep_end:.4e}", flush=True)
     fig, ax = plt.subplots(figsize=(5.2, 3.3))
     ax.plot(path * 1e3, sig / 1e6, label="TrussPlastic2D")
-    ax.plot(path[::40] * 1e3, s_ref[::40] / 1e6, "k.", ms=3, label="closed form")
+    ax.plot(path[::40] * 1e3, s_ref[::40] / 1e6, "k.", ms=3, label="hand solution")
     ax.set_xlabel("strain ($10^{-3}$)"); ax.set_ylabel("stress (MPa)"); ax.legend(); fig.tight_layout()
     fig.savefig(os.path.join(FIG, "ch05_plasticity.pdf")); plt.close(fig)
 
