@@ -172,7 +172,7 @@ def exp_vonmises():
     # Koiter--Newton: reference load = the limit load, so lambda is of order one; cubic predictor, chord corrector
     def run_kn(**kw):
         f, c_ = truss(); f.add_nodal_force([1], 1, -Ppk)
-        l_, U_ = nls.solve_nonlinear_koiter_newton(f, (E_, A_), delta_L=0.01, n_steps=60, tol=1e-9, max_iter=60, **kw)
+        l_, U_ = nls.solve_nonlinear_koiter_newton(f, (E_, A_), delta_L=0.01, n_steps=60, tol=1e-10, max_iter=60, **kw)
         d_ = -U_[:, c_]; P_ = l_ * Ppk
         return d_, P_
     dkn, Pkn = run_kn(max_growth_iters=0)
