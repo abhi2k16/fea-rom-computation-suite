@@ -175,7 +175,13 @@ def exp_vonmises():
         l_, U_ = nls.solve_nonlinear_koiter_newton(f, (E_, A_), delta_L=0.01, n_steps=60, tol=1e-10, max_iter=60, **kw)
         d_ = -U_[:, c_]; P_ = l_ * Ppk
         return d_, P_
-    dkn, Pkn = run_kn(max_growth_iters=0)
+    import io, contextlib
+    _buf = io.StringIO()
+    with contextlib.redirect_stdout(_buf):                # the corrector's own log: iterations and retries
+        dkn, Pkn = run_kn(max_growth_iters=0, verbose=True)
+    _log = _buf.getvalue().splitlines()
+    num("cnlTrussKNits", str(sum(l.strip().startswith("it ") for l in _log)))
+    num("cnlTrussKNretries", str(sum("shrinking and retrying" in l for l in _log)))
     kn_keep = dkn <= 2.0 * H0
     err_kn = np.max(np.abs(Pkn - P_cf(dkn))[kn_keep]) / Pkn[kn_keep].max()
     num("cnlTrussErrKN", sci(err_kn)); num("cnlTrussKNpts", f"{int(kn_keep.sum())}")
