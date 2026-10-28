@@ -1,0 +1,4 @@
+limit load 15926 N at apex deflection 42.26 mm
+load control at 1.1 P_max: failed - solve_nonlinear_static: Newton-Raphson failed to converge at
+displacement control: peak load 15926 N, worst error against the closed form 6.8e-14
+arc length: 20 points up to 200 mm, peak load 15889 N, worst error 4.9e-14

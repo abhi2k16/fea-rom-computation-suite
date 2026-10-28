@@ -143,9 +143,9 @@ def exp_vonmises():
     fes.add_nodal_force([1], 1, -1.1 * Ppk)
     try:
         nls.solve_nonlinear_static(fes, (E_, A_), n_steps=20, tol=1e-12)
-        failed = False
-    except RuntimeError:
-        failed = True
+        failed = False; msg = ""
+    except RuntimeError as exc:
+        failed = True; msg = str(exc)
     num("cnlLoadCtrlFailed", "fails" if failed else "converges")
     fes, cd = truss()
     dd = np.linspace(0.0, 2 * H0, 81)
@@ -158,8 +158,16 @@ def exp_vonmises():
     dal = -Ual[:, cd]
     ref = P_cf(dal)
     sig = np.abs(ref) > 1e-4 * np.abs(ref).max()
-    err_al = np.max(np.abs(lam - ref)[sig] / np.abs(ref)[sig])
+    keep = dal <= 2.0 * H0                    # the path up to the inversion at 2 h0 (the points of the listing and the figure)
+    err_al = np.max(np.abs(lam[keep] - ref[keep])) / lam[keep].max()      # one measure for all methods: error / peak load
+    num("cnlTrussALPeak", f"{lam[keep].max():.0f}")
     num("cnlTrussErrDC", sci(err_dc)); num("cnlTrussErrAL", sci(err_al))
+    # the output block printed under the listing of the chapter: the lines of that listing, run here
+    with open(os.path.join(TAB, "ch05_vm_output.txt"), "w") as fh:
+        fh.write(f"limit load {Ppk:.0f} N at apex deflection {dpk*1e3:.2f} mm\n")
+        fh.write(f"load control at 1.1 P_max: {'failed - ' + msg[:60] if failed else 'converged'}\n")
+        fh.write(f"displacement control: peak load {np.max(Pdc):.0f} N, worst error against the closed form {err_dc:.1e}\n")
+        fh.write(f"arc length: {int(keep.sum())} points up to {2*H0*1e3:.0f} mm, peak load {lam[keep].max():.0f} N, worst error {err_al:.1e}\n")
     num("cnlTrussALpts", f"{int((dal <= 2.0 * H0).sum())}")
     # Koiter--Newton: reference load = the limit load, so lambda is of order one; cubic predictor, chord corrector
     def run_kn(**kw):
@@ -169,8 +177,7 @@ def exp_vonmises():
         return d_, P_
     dkn, Pkn = run_kn(max_growth_iters=0)
     kn_keep = dkn <= 2.0 * H0
-    kn_sig = np.abs(P_cf(dkn)) > 1e-4 * np.abs(P_cf(dkn)).max()
-    err_kn = np.max((np.abs(Pkn - P_cf(dkn))[kn_sig & kn_keep]) / np.abs(P_cf(dkn))[kn_sig & kn_keep])
+    err_kn = np.max(np.abs(Pkn - P_cf(dkn))[kn_keep]) / Pkn[kn_keep].max()
     num("cnlTrussErrKN", sci(err_kn)); num("cnlTrussKNpts", f"{int(kn_keep.sum())}")
     dkd, Pkd = run_kn()                       # default settings: the step grows by 2**6 at every step
     num("cnlTrussKNdefStep", f"{dkd[1] * 1e3:.0f}")
@@ -182,7 +189,6 @@ def exp_vonmises():
     fig, ax = plt.subplots(figsize=(5.4, 3.3))
     ax.plot(d * 1e3, P_cf(d) / 1e3, "k", lw=1, label="closed form")
     ax.plot(dd * 1e3, Pdc / 1e3, "o", ms=3, mfc="none", label="displacement control")
-    keep = dal <= 2.0 * H0
     ax.plot(dal[keep] * 1e3, lam[keep] / 1e3, "x", ms=3.5, label="arc length")
     ax.plot(dkn[kn_keep] * 1e3, Pkn[kn_keep] / 1e3, "+", ms=4, color="tab:green", label="Koiter\u2013Newton")
     ax.axhline(Ppk / 1e3, color="r", ls=":", lw=0.8)
