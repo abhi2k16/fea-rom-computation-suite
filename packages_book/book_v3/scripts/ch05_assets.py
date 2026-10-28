@@ -301,6 +301,7 @@ def exp_elastica():
     w_ref = abs(cumulative_trapezoid(np.sin(phi), ss, initial=0.0)[-1]) / L
     sh_ref = 1.0 - cumulative_trapezoid(np.cos(phi), ss, initial=0.0)[-1] / L
     num("cnlElasticaRef", f"{w_ref:.6f}")
+    num("cnlElasticaTipAngle", f"{abs(np.degrees(sol.sol(L)[0])):.0f}")      # tip rotation of the reference, degrees
     num("cnlElasticaShortRef", f"{sh_ref:.6f}")
     rows = []
     for ne in (10, 20, 40):
