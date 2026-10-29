@@ -429,9 +429,200 @@ def exp_radius():
     num("cnlALradFollow", fmt(rows["follows"])); num("cnlALradFail", fmt(rows["fails"])); num("cnlALradFar", fmt(rows["far"]))
     print("arc-length radius:", rows, flush=True)
 
+# ------------------------------------------------------------------------------------------ (F) nonlinear transient response
+TR_CODE = """import numpy as np
+from fea_engine import elements as elmod
+from fea_engine.mesh import Mesh
+from fea_engine.solver import FESystem
+from fea_engine.loads import LoadPattern, TimeHistoryLoad
+from fea_engine.damping import RayleighDamping
+from fea_engine import nonlinear_solver as nls
+
+E, A, h0, rho = 210e9, 2e-4, 0.10, 7850.0
+L0 = np.hypot(1.0, h0)
+mesh = Mesh(nodes=np.array([[-1.0, 0.0], [0.0, h0], [1.0, 0.0]]),
+            elements=np.array([[0, 1], [1, 2]]), dim=2)
+fes = FESystem(mesh, elmod.TrussTL2D())
+fes.fix_dofs([0, 2], [0, 1])
+fes.assemble_mass(rho * np.eye(2), thickness=A)            # consistent mass
+fes.assemble_damping(RayleighDamping(alpha=0.0, beta=0.0))   # no damping
+fes.assemble_stiffness((E, A))
+free = np.asarray(fes.free_dofs)
+w2 = np.linalg.eigvals(np.linalg.solve(fes.M[np.ix_(free, free)], fes.K[np.ix_(free, free)])).real
+T = 2 * np.pi / np.sqrt(w2.min())                          # period of the vertical vibration of the apex
+P_dyn = 8 / 27 * E * A * h0**3 / L0**3                     # critical step load from the energy argument
+
+pattern = LoadPattern(node_ids=np.array([1]), dof_index=1)
+for frac in (0.95, 1.05):
+    load = TimeHistoryLoad(pattern=pattern, time_fn=lambda t, P=frac * P_dyn: -P)
+    t, U = nls.solve_nonlinear_transient(fes, (E, A), load, 3 * T, T / 200, tol=1e-9, max_iter=50)
+    d = -U[:, 3]                                           # apex deflection history
+    print(f"step load {frac:.2f} P_dyn: largest deflection {1e3 * d.max():.2f} mm,",
+          "snaps through" if d.max() > h0 else "stays on the first branch")
+"""
+
+
+def exp_transient():
+    import io, contextlib
+    from scipy.optimize import brentq
+    from fea_engine.loads import LoadPattern, TimeHistoryLoad
+    from fea_engine.damping import RayleighDamping
+    rho = 7850.0
+    c = E_ * A_ / L0 ** 3
+    dpk = H0 * (3 - np.sqrt(3)) / 3
+    Pmax = P_cf(dpk)
+    Pdyn = 8.0 / 27.0 * c * H0 ** 3
+    W = lambda d: c * (H0 ** 2 * d ** 2 - H0 * d ** 3 + d ** 4 / 4)       # strain energy of the truss at apex deflection d
+    pat = LoadPattern(node_ids=np.array([1]), dof_index=1)
+
+    def build(lumped=False, alpha=0.0):
+        f, _ = truss()
+        f.assemble_mass(rho * np.eye(2), thickness=A_)
+        if lumped:
+            f.assemble_lumped_mass(rho * np.eye(2), thickness=A_)
+        f.assemble_stiffness((E_, A_))
+        f.assemble_damping(RayleighDamping(alpha=alpha, beta=0.0))
+        return f
+
+    def run(P0, Tend, dt, f=None, explicit=False, u0=None, ramp=0.0):
+        f = f or build()
+        load = TimeHistoryLoad(pattern=pat, time_fn=lambda t: -P0 * (min(t / ramp, 1.0) if ramp > 0 else 1.0))
+        if explicit:
+            return f, *nls.solve_transient_explicit_nonlinear(f, (E_, A_), load, Tend, dt, u0=u0)[::1]
+        t, U = nls.solve_nonlinear_transient(f, (E_, A_), load, Tend, dt, tol=1e-9, max_iter=50, u0=u0)
+        return f, t, U
+
+    free = np.array([2, 3])
+    f0 = build()
+    Mf = np.asarray(f0.M)[np.ix_(free, free)]; Kf = np.asarray(f0.K)[np.ix_(free, free)]
+    Tn = 2 * np.pi / np.sqrt(np.linalg.eigvals(np.linalg.solve(Mf, Kf)).real.min())
+    num("cnlTrPeriod", f"{Tn * 1e3:.2f}"); num("cnlTrPdyn", f"{Pdyn:.0f}"); num("cnlTrPdynRatio", f"{Pdyn / Pmax:.3f}")
+    num("cnlTrPdynDelta", f"{2 * H0 / 3 * 1e3:.1f}")
+
+    # listing: the code of the chapter, run here
+    ns = {}
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        exec(compile(TR_CODE, "tr_listing", "exec"), ns)
+    with open(os.path.join(TAB, "ch05_tr_code.py"), "w") as fh:
+        fh.write(TR_CODE)
+    with open(os.path.join(TAB, "ch05_tr_output.txt"), "w") as fh:
+        fh.write(buf.getvalue())
+    print(buf.getvalue(), end="", flush=True)
+
+    # (1) linear limit
+    lin = []
+    for fr in (1e-6, 1e-3, 1e-2):
+        P0 = fr * Pmax; dt = Tn / 100
+        f, t, U = run(P0, 4 * Tn, dt)
+        f2 = build()
+        load = TimeHistoryLoad(pattern=pat, time_fn=lambda t, P0=P0: -P0)
+        t2, U2 = f2.solve_transient_implicit(load, 4 * Tn, dt)
+        lin.append(np.abs(U - U2).max() / np.abs(U2).max())
+    for k, v in zip("ABC", lin):
+        num("cnlTrLin" + k, sci(v))
+    # (2) energy
+    en = []
+    for n in (20, 50, 100):
+        dt = Tn / n; d0 = 0.3 * H0; u0 = np.zeros(6); u0[3] = -d0
+        f, t, U = run(0.0, 20 * Tn, dt, u0=u0)
+        Fint = np.array([np.asarray(f.assemble_internal_force(u, (E_, A_)))[free] for u in U])
+        Acc = -np.linalg.solve(Mf, Fint.T).T
+        V = np.zeros_like(Acc)
+        for k in range(len(U) - 1):
+            V[k + 1] = V[k] + 0.5 * dt * (Acc[k] + Acc[k + 1])
+        Etot = 0.5 * np.einsum("ti,ij,tj->t", V, Mf, V) + W(-U[:, 3])
+        en.append(np.abs(Etot - W(d0)).max() / W(d0))
+    for k, v in zip("ABC", en):
+        num("cnlTrEn" + k, sci(v))
+    # (3) dynamic snap-through: bisection on the step load
+    errs = []
+    for n in (50, 100, 200, 400):
+        dt = Tn / n
+        lo, hi = 0.5 * Pdyn, Pmax
+        for _ in range(28):
+            mid = 0.5 * (lo + hi)
+            f, t, U = run(mid, 6 * Tn, dt)
+            if (-U[:, 3]).max() > H0: hi = mid
+            else: lo = mid
+        errs.append(abs(hi - Pdyn) / Pdyn)
+        print(f"bisection dt=T/{n}: P_crit {hi:.2f} closed {Pdyn:.2f} err {errs[-1]:.1e}", flush=True)
+    for k, v in zip("ABCD", errs):
+        num("cnlTrCrit" + k, sci(v))
+    # (4) explicit: lumped limit, amplitude, stability
+    fl = build(lumped=True)
+    Ml = np.asarray(fl.M_lumped)[np.ix_(free, free)]
+    dtl = 2 / np.sqrt(np.linalg.eigvals(np.linalg.solve(Ml, Kf)).real.max())
+    dtc = fl.critical_timestep()
+    num("cnlTrDtLumped", f"{dtl * 1e6:.0f}"); num("cnlTrDtConsistent", f"{dtc * 1e6:.0f}"); num("cnlTrDtRatio", f"{dtl / dtc:.1f}")
+    P0 = 0.5 * Pdyn
+    turn = brentq(lambda d: W(d) - P0 * d, 1e-6, 2 * H0 / 3 * 0.999)
+    amp = {}
+    for fac in (0.9, 0.99, 1.01, 1.1):
+        u0 = np.zeros(6); u0[2] = 1e-8
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            f, t, U = run(P0, 3 * Tn, fac * dtl, f=build(lumped=True), explicit=True, u0=u0)
+        amp[fac] = np.abs(U[:, 3]).max()
+    num("cnlTrExAmp", sci(abs(amp[0.99] - turn) / turn))
+    num("cnlTrExBlow", f"{amp[1.01]:.2f}" if np.isfinite(amp[1.01]) else "not finite")
+    num("cnlTrExBlowTen", "not a number" if not np.isfinite(amp[1.1]) else f"{amp[1.1]:.1e}")
+    # (5) implicit at large steps
+    big = {}
+    for fac in (10, 50):
+        u0 = np.zeros(6); u0[2] = 1e-8
+        f, t, U = run(P0, 3 * Tn, fac * dtc, u0=u0)
+        big[fac] = np.abs(U[:, 3]).max()
+    ref = np.abs(run(P0, 3 * Tn, 1.1 * dtl, u0=u0)[2][:, 3]).max()
+    num("cnlTrImpTen", f"{100 * (big[10] / ref - 1):.1f}"); num("cnlTrImpFifty", f"{100 * (big[50] / ref - 1):.1f}")
+    num("cnlTrImpTenFac", f"{dtc * 10 / dtl:.1f}")
+    # (6) displacement control in time
+    def dcrun(Tramp, alpha):
+        f = build(alpha=alpha)
+        tgt = lambda tt: -2 * H0 * min(tt / Tramp, 1.0)
+        return nls.solve_transient_displacement_control(f, (E_, A_), 3, tgt, Tramp, Tramp / 800, tol=1e-9, max_iter=50)
+    dcerr = {}
+    for lab, Tr, al in (("Fast", 0.5 * Tn, 0.0), ("Med", 2 * Tn, 0.0), ("Slow", 500 * Tn, 2 * 0.9 * 2 * np.pi / Tn)):
+        t, U, R = dcrun(Tr, al)
+        d = -U[:, 3]
+        m = (d <= 1.2 * dpk) & (d > 1e-4)
+        dcerr[lab] = np.max(np.abs(-R[m] - P_cf(d[m]))) / Pmax
+        num("cnlTrDc" + lab, sci(dcerr[lab]))
+    # table
+    with open(os.path.join(TAB, "ch05_transient.tex"), "w") as fh:
+        fh.write("\\begin{tabularx}{\\linewidth}{@{}>{\\raggedright\\arraybackslash}p{0.19\\linewidth}>{\\raggedright\\arraybackslash}p{0.24\\linewidth}X@{}}\n\\toprule\n")
+        fh.write("check & reference & measured \\\\\n\\midrule\n")
+        fh.write(f"linear limit & linear Newmark of Chapter~\\ref{{ch:dyn}} on dynamics & relative difference {sci(lin[0])}, {sci(lin[1])} and {sci(lin[2])} at loads of $10^{{-6}}$, $10^{{-3}}$ and $10^{{-2}}$ of $P_{{max}}$ \\\\\n")
+        fh.write(f"energy & initial strain energy, release from $0.3\\,h_0$, 20 periods & largest relative deviation {sci(en[0])}, {sci(en[1])} and {sci(en[2])} at $\\Delta t=T/20$, $T/50$ and $T/100$ \\\\\n")
+        fh.write(f"dynamic snap-through & closed-form step load $P_{{dyn}}$ of equation~\\eqref{{eq:nl-pdyn}} & relative error of the critical step load {sci(errs[0])}, {sci(errs[1])}, {sci(errs[2])} and {sci(errs[3])} at $\\Delta t=T/50$, $T/100$, $T/200$ and $T/400$ \\\\\n")
+        fh.write(f"explicit amplitude & turning point of the energy argument & relative error {sci(abs(amp[0.99] - turn) / turn)} at $0.99$ times the lumped limit \\\\\n")
+        fh.write(f"explicit stability & $2/\\omega_{{max}}$ of the lumped system & largest deflection {amp[0.9]*1e3:.2f} mm at $0.9$ and {amp[0.99]*1e3:.2f} mm at $0.99$ times the limit; {'not finite' if not np.isfinite(amp[1.01]) else f'{amp[1.01]:.2f} m'} at $1.01$ times \\\\\n")
+        fh.write(f"displacement control & equation~\\eqref{{eq:nl-vm}} & error relative to $P_{{max}}$ {sci(dcerr['Fast'])} and {sci(dcerr['Med'])} for ramps of $T/2$ and $2T$ (undamped), {sci(dcerr['Slow'])} for a ramp of $500\\,T$ with heavy damping \\\\\n")
+        fh.write("\\bottomrule\n\\end{tabularx}\n")
+    # figure
+    fig, ax = plt.subplots(1, 2, figsize=(7.0, 3.0))
+    dt = Tn / 200
+    for fr, col in ((0.95, "tab:blue"), (1.05, "tab:red")):
+        f, t, U = run(fr * Pdyn, 3 * Tn, dt)
+        ax[0].plot(t / Tn, -U[:, 3] / H0, color=col, label=f"{fr:.2f} $P_{{dyn}}$")
+    ax[0].axhline(1.0, color="k", ls=":", lw=0.8); ax[0].text(0.05, 1.03, "bars flat ($\\delta=h_0$)", fontsize=7)
+    ax[0].set_xlabel("time $t/T$"); ax[0].set_ylabel("apex deflection $\\delta/h_0$"); ax[0].legend(loc="upper right", fontsize=7)
+    d = np.linspace(0, 2 * H0 / 3 * 1.0, 300); dd = np.linspace(0, 1.4 * H0, 400)
+    ax[1].plot(dd / H0, P_cf(dd) / Pmax, "k", lw=1)
+    ax[1].axhline(Pdyn / Pmax, color="tab:green", lw=0.9); ax[1].axhline(1.0, color="r", ls=":", lw=0.8)
+    du = 2 * H0 / 3
+    x1 = np.linspace(0, du, 300)
+    ax[1].fill_between(x1 / H0, Pdyn / Pmax, P_cf(x1) / Pmax, where=P_cf(x1) >= Pdyn, color="tab:green", alpha=0.25)
+    ax[1].fill_between(x1 / H0, Pdyn / Pmax, P_cf(x1) / Pmax, where=P_cf(x1) < Pdyn, color="tab:orange", alpha=0.35)
+    ax[1].text(1.0 * 0.05, 0.43, "$P_{dyn}$", color="tab:green", fontsize=8); ax[1].text(0.78, 1.02, "$P_{max}$", color="r", fontsize=8)
+    ax[1].set_xlabel("apex deflection $\\delta/h_0$"); ax[1].set_ylabel("load $P/P_{max}$")
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch05_transient.pdf")); plt.close(fig)
+
+
 def main():
     print(platform.platform(), "numpy", np.__version__, flush=True)
-    exp_objectivity(); exp_tangent(); exp_vonmises(); exp_plasticity(); exp_drivers(); exp_elastica(); fig_truss_geometry(); tab_options(); exp_hyper(); exp_radius()
+    exp_objectivity(); exp_tangent(); exp_vonmises(); exp_plasticity(); exp_drivers(); exp_elastica(); fig_truss_geometry(); tab_options(); exp_hyper(); exp_radius(); exp_transient()
     num("cnlMachine", f"{platform.system()} {platform.release()}, {os.cpu_count()} CPUs, NumPy {np.__version__}")
     with open(os.path.join(TAB, "numbers_ch05.tex"), "w") as fh:
         fh.write("% generated by scripts/ch05_assets.py -- do not edit\n")

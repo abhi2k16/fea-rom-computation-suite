@@ -1,0 +1,2 @@
+step load 0.95 P_dyn: largest deflection 50.13 mm, stays on the first branch
+step load 1.05 P_dyn: largest deflection 268.10 mm, snaps through
