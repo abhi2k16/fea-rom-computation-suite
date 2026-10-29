@@ -130,6 +130,25 @@ def exp_penalty():
     free[ex.active] = False
     cond_exact = np.linalg.cond(K.toarray()[np.ix_(free, free)])
     cond_K = np.linalg.cond(K.toarray())
+    # what the large condition number costs the solve: plain CG iterations and a single-precision direct solve
+    def cg_count(A, b):
+        n_it = [0]
+        def cb(xk): n_it[0] += 1
+        scipy.sparse.linalg.cg(sp.csr_matrix(A), b, rtol=1e-10, atol=0, maxiter=20000, callback=cb)
+        return n_it[0]
+    def f32_error(A, b):
+        x64 = np.linalg.solve(A, b)
+        return float(np.linalg.norm(np.linalg.solve(A.astype(np.float32), b.astype(np.float32)).astype(float) - x64) / np.linalg.norm(x64))
+    cg_its, f32_errs = {}, []
+    for tag, i in (("Two", 2), ("Four", 4), ("Six", 6), ("Eight", 8)):
+        u_i, Kp_i, _ = penalty_solve(K, f, c, ratios[i] * kd)
+        P_i = sp.diags((u_i < c).astype(float)); A_i = (K + ratios[i] * kd * P_i).toarray(); b_i = f + ratios[i] * kd * (P_i @ c)
+        cg_its[tag] = cg_count(A_i, b_i); f32_errs.append(f32_error(A_i, b_i))
+    Kd_ = K.toarray(); bF = f[free] - Kd_[np.ix_(free, ~free)] @ c[~free]; Kff = Kd_[np.ix_(free, free)]
+    cg_its["Exact"] = cg_count(Kff, bF); f32_errs.append(f32_error(Kff, bF))
+    for tag, v in cg_its.items():
+        num("ctcPenCg" + tag, v)
+    num("ctcPenSingleMax", sci(max(f32_errs)))
     fig, ax = plt.subplots(1, 2, figsize=(6.4, 2.7))
     ax[0].loglog(ratios, np.maximum(pen, 1e-18), "o-", label="penalty")
     ax[0].axhline(max(pen_exact, 1e-18), color="k", ls="--", label="exact (Lagrange)")
@@ -276,6 +295,7 @@ def exp_agreement():
     off = Kd - np.diag(np.diag(Kd))
     num("ctcOffMax", f"{off.max():.1f}"); num("ctcMinEig", sci(float(np.linalg.eigvalsh(Kd).min())))
     rows = []
+    pgs_setdiff, pgs_pen = [], []
     for name, c in six_obstacles(X).items():
         r = solve_contact_static_sparse(K, f, B, c, route="reduced")
         s = solve_contact_static_sparse(K, f, B, c, route="saddle")
@@ -283,6 +303,9 @@ def exp_agreement():
         dl = solve_contact_static(Kd, f, Bd, c, method="lemke")
         dp = solve_contact_static(Kd, f, Bd, c, method="pgs")
         err = lambda a, b: max(np.abs(a.u - b.u).max(), np.abs(a.lam - b.lam).max())
+        for thr in (1e-10, 1e-8, 1e-6):                      # PGS against the dense active-set solver: same active set?
+            pgs_setdiff.append(int(((dp.lam > thr) != (da.lam > thr)).sum()))
+        pgs_pen.append(max(0.0, float(-(dp.u - c).min())))   # B = I: gap = u - c
         rows.append((name, int((r.lam > 1e-10).sum()), r.iterations, s.iterations, err(r, da), err(s, da), err(dl, da), err(dp, da)))
         print(name, rows[-1][1:], flush=True)
     with open(os.path.join(TAB, "ch07_agreement.tex"), "w") as fh:
@@ -293,6 +316,7 @@ def exp_agreement():
     num("ctcAgreeN", N)
     num("ctcAgreeRedMax", sci(max(r[4] for r in rows))); num("ctcAgreeSadMax", sci(max(r[5] for r in rows)))
     num("ctcAgreeLemkeMax", sci(max(r[6] for r in rows))); num("ctcAgreePgsMax", sci(max(r[7] for r in rows)))
+    num("ctcAgreePgsSetDiff", max(pgs_setdiff)); num("ctcAgreePgsPen", sci(max(pgs_pen)))
     num("ctcAgreeActMin", min(r[1] for r in rows)); num("ctcAgreeActMax", max(r[1] for r in rows))
 
 
@@ -416,7 +440,7 @@ def exp_impact():
     num("ctcImpBdfEndMin", f"{min(ends_b):.2f}"); num("ctcImpBdfEndMax", f"{max(ends_b):.2f}")
     num("ctcImpTwoEndMin", f"{min(ends_2):.2f}"); num("ctcImpTwoEndMax", f"{max(ends_2):.2f}")
     with open(os.path.join(TAB, "ch07_impact_force.tex"), "w") as fh:
-        fh.write("\\begin{tabular}{rrrrr}\n\\toprule\n & \\multicolumn{2}{c}{largest wall force} & \\multicolumn{2}{c}{free bar: energy kept} \\\\\n\\cmidrule(lr){2-3}\\cmidrule(lr){4-5}\n$\\Delta t$ & two-step & BDF2 & two-step & BDF2 \\\\\n\\midrule\n")
+        fh.write("\\begin{tabular}{rrrrr}\n\\toprule\n & \\multicolumn{2}{c}{largest wall force} & \\multicolumn{2}{c}{bar without obstacle: energy kept} \\\\\n\\cmidrule(lr){2-3}\\cmidrule(lr){4-5}\n$\\Delta t$ & two-step & BDF2 & two-step & BDF2 \\\\\n\\midrule\n")
         for h in res:
             q = res[h]; fd = free_bar_energy(h)
             fh.write(f"{h:g} & {q['L2'].max():.2f} & {q['Lb'].max():.2f} & {fd[1]:.4f} & {fd[0]:.4f} \\\\\n")
