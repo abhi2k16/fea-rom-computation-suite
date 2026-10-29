@@ -388,7 +388,7 @@ def tab_options():
         return inspect.signature(g).parameters[k].default
     def pw(x):
         return "$10^{%d}$" % int(round(np.log10(x)))
-    rows = [("residual tolerance (relative to the load)", [pw(default(n, "tol")) for n in names]),
+    rows = [("residual tolerance (relative to the norm of the applied load; absolute, in force units, for displacement control)", [pw(default(n, "tol")) for n in names]),
             ("maximum iterations per step", [str(default(n, "max_iter")) for n in names])]
     with open(os.path.join(TAB, "ch05_options.tex"), "w") as fh:
         fh.write("\\begin{tabular}{lcccc}\n\\toprule\nsetting & load control & displacement control & arc length & Koiter--Newton \\\\\n\\midrule\n")
