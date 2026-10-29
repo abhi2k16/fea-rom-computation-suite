@@ -1,0 +1,4 @@
+penalty kp = 1e+02 x mean diag: penetration 2.8e-04, condition number 2.6e+03
+penalty kp = 1e+04 x mean diag: penetration 2.8e-06, condition number 2.6e+05
+penalty kp = 1e+06 x mean diag: penetration 2.8e-08, condition number 2.6e+07
+exact:  penetration 0.0e+00, condition number of K 1.8e+02, of K_FF 3.8e+01, route reduced, 10 iterations, 172 active

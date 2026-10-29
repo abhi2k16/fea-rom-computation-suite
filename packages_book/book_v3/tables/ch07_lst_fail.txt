@@ -1,0 +1,3 @@
+False max_iter saddle
+route 'reduced' failed (max_iter): no convergence in 1 iterations. Try route='saddle'.
+True condensed ['reduced', 'saddle']
