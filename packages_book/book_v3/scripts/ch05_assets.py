@@ -698,14 +698,11 @@ def exp_transient():
             mm = _re2.match(r"\s*step\s+(\d+)\s+it\s+(\d+)\s+\|R\|=([0-9.e+-]+)", ln)
             if mm: HH.setdefault(int(mm.group(1)), []).append(float(mm.group(3)))
         k = np.array([len(v) - 1 for v in HH.values()]); cnt.append((1.0 / n, k.mean(), k.max()))
-        if n == 50:
-            h1 = HH[sorted(HH)[len(HH) // 2]]
-            num("cnlTrNewtonDrop", f"{h1[0] / h1[1]:.0e}".replace("e+0", "e").replace("e+", "e"))
     cnt = np.array(cnt)
     num("cnlTrItSmall", int(cnt[2, 2])); num("cnlTrItMean", f"{cnt[-1, 1]:.1f}"); num("cnlTrItMax", int(cnt[-1, 2]))
     num("cnlTrItBigDt", f"{cnt[-1, 0]:.1f}")
     e_ = np.array(ex); i_ = np.array(im)
-    num("cnlTrImpErrOne", sci(i_[4, 1])); num("cnlTrExpErrLim", sci(e_[5, 1]))
+    num("cnlTrImpErrTwenty", sci(i_[-1, 1])); num("cnlTrImpErrOne", sci(i_[4, 1])); num("cnlTrExpErrLim", sci(e_[5, 1]))
     fig, ax = plt.subplots(1, 2, figsize=(7.0, 3.1))
     ok = np.isfinite(e_[:, 1]) & (e_[:, 1] < 2)
     ax[0].loglog(e_[ok, 0], np.maximum(e_[ok, 1], 1e-8), "o-", ms=3, label="explicit")
