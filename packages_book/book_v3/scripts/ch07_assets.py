@@ -190,6 +190,8 @@ def exp_obstacle():
     num("ctcObsGapMin", sci(gap_min) if gap_min != 0 else "$0$"); num("ctcObsLamMin", sci(lam_min) if lam_min != 0 else "$0$")
     num("ctcObsComp", sci(comp) if comp != 0 else "$0$")
     num("ctcObsRS", sci(max(np.abs(r.u - s.u).max(), np.abs(r.lam - s.lam).max())))
+    num("ctcObsResid", sci(float(np.linalg.norm(K @ r.u - f - B.T @ r.lam) / np.linalg.norm(f))))   # equilibrium residual, relative to the load
+    num("ctcObsOpenGap", sci(float(r.gap[r.lam <= 1e-10].min())))                                    # nearest open node
     # traces
     cr, chg_r, itr = active_trace(K, f, B, c, "reduced")
     cs, chg_s, its = active_trace(K, f, B, c, "saddle")
