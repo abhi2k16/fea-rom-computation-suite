@@ -333,7 +333,7 @@ def fig_truss_geometry():
               (dstar, "tab:red", "--", 1.0, "limit load, $\\delta=%.2f\\,h_0$" % (dstar / h0)),
               (h0, "tab:blue", "--", 1.0, "bars flat, $P=0$, $\\delta=h_0$"),
               (2 * h0, "tab:green", "--", 1.0, "mirror position, $P=0$, $\\delta=2h_0$")]
-    fig, ax = plt.subplots(figsize=(6.2, 3.2))
+    fig, ax = plt.subplots(figsize=(6.2, 3.3))
     ax.grid(False)
     for d, col, ls, lw, lab in states:
         ax.plot([-a, 0, a], [0, h0 - d, 0], color=col, ls=ls, lw=lw, label=lab)
@@ -341,18 +341,34 @@ def fig_truss_geometry():
     for x in (-a, a):                                           # pinned supports
         ax.plot([x, x - 0.035, x + 0.035, x], [0, -0.028, -0.028, 0], "k", lw=1, solid_joinstyle="miter")
         ax.plot([x - 0.06, x + 0.06], [-0.028, -0.028], "k", lw=1)
+    ext = dict(color="0.45", lw=0.6, ls=":")
     ax.annotate("", (0, h0 + 0.005), xytext=(0, h0 + 0.075), arrowprops=dict(arrowstyle="-|>", color="k", lw=1.4))
     ax.text(0.025, h0 + 0.045, "load $P$", ha="left", va="center", fontsize=8.5)
-    ax.annotate("", (-a, -0.07), xytext=(0, -0.07), arrowprops=dict(arrowstyle="<->", lw=0.8))
-    ax.text(-a / 2, -0.078, "half-span $a$", ha="center", va="top", fontsize=8)
-    ax.annotate("", (0.62, 0), xytext=(0.62, h0), arrowprops=dict(arrowstyle="<->", lw=0.8))
-    ax.text(0.65, h0 / 2, "$h_0$", ha="left", va="center", fontsize=8.5)
-    ax.text(-0.5, 0.072, "bar of length $L_0$", ha="center", va="bottom", fontsize=8)
-    ax.annotate("", (-0.1, h0), xytext=(-0.1, h0 - dstar), arrowprops=dict(arrowstyle="<->", lw=0.9, color="tab:red"))
-    ax.text(-0.12, h0 - dstar / 2, "$\\delta$", ha="right", va="center", fontsize=9, color="tab:red")
-    ax.set_xlim(-1.2, 1.2); ax.set_ylim(-0.17, 0.2)
+    # half-span a: dimension line below everything, with extension lines to the support and to the apex axis
+    ya = -0.14
+    ax.plot([-a, -a], [-0.03, ya - 0.01], **ext); ax.plot([0, 0], [-h0 - 0.012, ya - 0.01], **ext)
+    ax.annotate("", (-a, ya), xytext=(0, ya), arrowprops=dict(arrowstyle="<->", lw=0.8))
+    ax.text(-a / 2, ya - 0.008, "half-span $a$", ha="center", va="top", fontsize=8)
+    # apex height h0: dimension line at the right, with extension lines from the apex and from the support level
+    xh = 0.66
+    ax.plot([0, xh + 0.03], [h0, h0], **ext); ax.plot([a * 0.45, xh + 0.03], [0, 0], **ext)
+    ax.annotate("", (xh, 0), xytext=(xh, h0), arrowprops=dict(arrowstyle="<->", lw=0.8))
+    ax.text(xh + 0.025, h0 / 2, "$h_0$", ha="left", va="center", fontsize=8.5)
+    ax.text(-0.62, 0.062, "bar of length $L_0$", ha="center", va="bottom", fontsize=8)
+    # deflection delta, drawn for the limit-load position
+    xd = -0.16
+    ax.plot([xd - 0.02, 0], [h0, h0], **ext); ax.plot([xd - 0.02, 0], [h0 - dstar, h0 - dstar], **ext)
+    ax.annotate("", (xd, h0 - dstar), xytext=(xd, h0), arrowprops=dict(arrowstyle="<->", lw=0.9, color="tab:red"))
+    ax.text(xd - 0.025, h0 - dstar / 2, "$\\delta$", ha="right", va="center", fontsize=9, color="tab:red")
+    ax.set_xlim(-1.2, 1.2); ax.set_ylim(-0.2, 0.2)
     ax.set_xlabel("horizontal position (m)"); ax.set_ylabel("height (m)")
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2, fontsize=7.5, frameon=False, title="apex position (vertical scale exaggerated)", title_fontsize=7.5)
+    leg = ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2, fontsize=7.5, frameon=False, title="apex position", title_fontsize=7.5)
+    fig.tight_layout(); fig.canvas.draw()
+    bb = ax.get_window_extent()
+    exag = (bb.height / 0.4) / (bb.width / 2.4)                 # vertical against horizontal scale (data units per pixel)
+    num("cnlTrussGeomExag", f"{exag:.1f}")
+    num("cnlTrussRise", f"{h0/a:.1f}")
+    leg.set_title(f"apex position (vertical scale exaggerated {exag:.1f} times)")
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch05_trussgeom.pdf")); plt.close(fig)
 
 
