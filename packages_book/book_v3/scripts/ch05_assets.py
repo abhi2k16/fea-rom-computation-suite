@@ -605,27 +605,119 @@ def exp_transient():
         fh.write(f"explicit stability & $2/\\omega_{{max}}$ of the lumped system & largest deflection {amp[0.9]*1e3:.2f} mm at $0.9$ and {amp[0.99]*1e3:.2f} mm at $0.99$ times the limit; {'not finite' if not np.isfinite(amp[1.01]) else f'{amp[1.01]:.2f} m'} at $1.01$ times \\\\\n")
         fh.write(f"displacement control & equation~\\eqref{{eq:nl-vm}} & error relative to $P_{{max}}$ {sci(dcerr['Fast'])} and {sci(dcerr['Med'])} for ramps of $T/2$ and $2T$ (undamped), {sci(dcerr['Slow'])} for a ramp of $500\\,T$ with heavy damping \\\\\n")
         fh.write("\\bottomrule\n\\end{tabularx}\n")
-    # figure
-    fig, ax = plt.subplots(1, 2, figsize=(7.0, 3.0))
-    dt = Tn / 200
-    for fr, col in ((0.95, "tab:blue"), (1.05, "tab:red")):
-        f, t, U = run(fr * Pdyn, 3 * Tn, dt)
+    # ---- figures
+    import warnings, re as _re2
+    mapex = float(np.asarray(f0.M)[3, 3]); wlin = 2 * np.pi / Tn; du = 2 * H0 / 3
+    Kt = lambda d: c * (2 * H0 ** 2 - 6 * H0 * d + 3 * d ** 2)            # tangent stiffness of the apex
+    dtreg = 2 * np.sqrt(mapex / (-Kt(H0)))                                # K_eff > 0 for dt below this
+    num("cnlTrRegDt", f"{dtreg / Tn:.2f}")
+    # Figure A: why a dynamic step is regular
+    dtA = Tn / 4; a0 = 4 / dtA ** 2; Pt = 1.1 * Pmax
+    dd = np.linspace(0, 2 * H0, 500)
+    fig, ax = plt.subplots(1, 2, figsize=(7.0, 3.1))
+    ax[0].plot(dd / H0, P_cf(dd) / Pmax, "k", lw=1); ax[0].axhline(Pt / Pmax, color="r", lw=0.9)
+    x = 0.0; xs = [x]
+    for _ in range(3):
+        xn = x + (Pt - P_cf(x)) / Kt(x)
+        ax[0].plot([x / H0, xn / H0], [P_cf(x) / Pmax, Pt / Pmax], color="tab:blue", lw=0.9)
+        ax[0].plot([x / H0, x / H0], [Pt / Pmax, P_cf(x) / Pmax], color="tab:blue", lw=0.6, ls=":")
+        x = xn; xs.append(x)
+    ax[0].plot(np.array(xs)[:-1] / H0, [P_cf(v) / Pmax for v in xs[:-1]], "o", ms=3, color="tab:blue")
+    ax[0].set_xlim(-0.05, 2.05); ax[0].set_ylim(-1.1, 1.4)
+    ax[0].set_xlabel("apex deflection $\\delta/h_0$"); ax[0].set_ylabel("force / $P_{max}$")
+    ax[0].text(1.05, Pt / Pmax + 0.05, "load $1.1\\,P_{max}$", color="r", fontsize=8)
+    ax[0].text(0.05, -0.95, "(a) static: no root near the first branch", fontsize=8)
+    Feff = lambda d: P_cf(d) + a0 * mapex * d
+    tgt = 2 * Pt                                                          # step load plus the inertia of the state at rest
+    ax[1].plot(dd / H0, Feff(dd) / Pmax, "k", lw=1); ax[1].axhline(tgt / Pmax, color="r", lw=0.9)
+    x = 0.0; its = [x]
+    for _ in range(8):
+        r = Feff(x) - tgt; xn = x - r / (Kt(x) + a0 * mapex)
+        ax[1].plot([x / H0, xn / H0], [Feff(x) / Pmax, tgt / Pmax], color="tab:blue", lw=0.9)
+        ax[1].plot([x / H0, x / H0], [tgt / Pmax, Feff(x) / Pmax], color="tab:blue", lw=0.6, ls=":")
+        x = xn; its.append(x)
+        if abs(r) < 1e-9 * tgt: break
+    ax[1].plot(np.array(its)[:-1] / H0, [Feff(v) / Pmax for v in its[:-1]], "o", ms=3, color="tab:blue")
+    ax[1].set_xlim(-0.02, 0.62); ax[1].set_ylim(-0.2, 4.4)
+    ax[1].set_xlabel("apex deflection $\\delta/h_0$"); ax[1].set_ylabel("internal + inertia force / $P_{max}$")
+    ax[1].text(0.02, 3.9, "(b) one step, $\\Delta t=T/4$: slope $K_{eff}=K_T+a_0m>0$", fontsize=8)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch05_tr_regularisation.pdf")); plt.close(fig)
+    ffA = build()
+    ldA = TimeHistoryLoad(pattern=pat, time_fn=lambda t: -Pt)
+    tA, UA = nls.solve_nonlinear_transient(ffA, (E_, A_), ldA, dtA, dtA, tol=1e-12, max_iter=50)
+    num("cnlTrRegIters", len(its) - 1)
+    num("cnlTrRegDelta", f"{its[-1] / H0:.3f}")
+    num("cnlTrRegCheck", sci(abs(-UA[1, 3] - its[-1]) / its[-1]))
+    # Figure B: time history, energy barrier, phase portrait
+    fig, ax = plt.subplots(1, 3, figsize=(7.4, 2.9))
+    for fr, col in ((0.95, "tab:purple"), (1.05, "tab:red")):
+        ff, t, U = run(fr * Pdyn, 3 * Tn, Tn / 200)
         ax[0].plot(t / Tn, -U[:, 3] / H0, color=col, label=f"{fr:.2f} $P_{{dyn}}$")
-    ax[0].axhline(1.0, color="k", ls=":", lw=0.8); ax[0].text(0.05, 1.03, "bars flat ($\\delta=h_0$)", fontsize=7)
+    ax[0].axhline(1.0, color="k", ls=":", lw=0.8); ax[0].text(0.05, 1.04, "bars flat", fontsize=7)
     ax[0].set_xlabel("time $t/T$"); ax[0].set_ylabel("apex deflection $\\delta/h_0$"); ax[0].legend(loc="upper right", fontsize=7)
-    d = np.linspace(0, 2 * H0 / 3 * 1.0, 300); dd = np.linspace(0, 1.4 * H0, 400)
-    ax[1].plot(dd / H0, P_cf(dd) / Pmax, "k", lw=1)
-    ax[1].axhline(Pdyn / Pmax, color="tab:green", lw=0.9); ax[1].axhline(1.0, color="r", ls=":", lw=0.8)
-    du = 2 * H0 / 3
-    x1 = np.linspace(0, du, 300)
-    ax[1].fill_between(x1 / H0, Pdyn / Pmax, P_cf(x1) / Pmax, where=P_cf(x1) >= Pdyn, color="tab:green", alpha=0.25)
-    ax[1].fill_between(x1 / H0, Pdyn / Pmax, P_cf(x1) / Pmax, where=P_cf(x1) < Pdyn, color="tab:orange", alpha=0.35)
-    ax[1].axvline(du / H0, color="gray", ls=":", lw=0.8)
-    ax[1].text(du / H0 + 0.02, -0.8, "$\\delta_u=2h_0/3$", fontsize=7, color="gray")
-    ax[1].text(1.0, 0.8, "$P_{dyn}$", color="tab:green", fontsize=8); ax[1].text(1.0, 1.04, "$P_{max}$", color="r", fontsize=8)
-    ax[1].set_ylim(-0.95, 1.15)
-    ax[1].set_xlabel("apex deflection $\\delta/h_0$"); ax[1].set_ylabel("load $P/P_{max}$")
+    dd = np.linspace(0, 1.3 * H0, 500)
+    for fr, col in ((0.9, "tab:blue"), (1.0, "tab:green"), (1.1, "tab:red")):
+        ax[1].plot(dd / H0, (W(dd) - fr * Pdyn * dd) / (Pdyn * H0), color=col, label=f"{fr:.1f} $P_{{dyn}}$")
+    ax[1].axhline(0, color="k", lw=0.8, ls=":"); ax[1].axvline(du / H0, color="gray", ls=":", lw=0.8)
+    ax[1].text(du / H0 + 0.03, 0.09, "$\\delta_u$", fontsize=8, color="gray")
+    ax[1].set_xlabel("apex deflection $\\delta/h_0$"); ax[1].set_ylabel("$(W-P_0\\delta)/(P_{dyn}h_0)$"); ax[1].legend(fontsize=7, loc="lower left")
+    for fr, col in ((0.8, "tab:blue"), (0.95, "tab:purple"), (1.0, "tab:green"), (1.05, "tab:red")):
+        P0_ = fr * Pdyn; V = lambda d, P0_=P0_: W(d) - P0_ * d
+        if fr < 1.0:
+            dmax = brentq(V, 1e-4, du); dm = np.linspace(0, dmax, 800)
+            vv = np.sqrt(np.maximum(-2 * V(dm) / mapex, 0))
+            ax[2].plot(dm / H0, vv / (wlin * H0), color=col, lw=1); ax[2].plot(dm / H0, -vv / (wlin * H0), color=col, lw=1)
+        else:
+            d_ = np.linspace(0, 1.45 * H0, 2000); ke = -V(d_)
+            vv = np.sqrt(np.where(ke >= 0, 2 * ke / mapex, np.nan))
+            ax[2].plot(d_ / H0, vv / (wlin * H0), color=col, lw=1); ax[2].plot(d_ / H0, -vv / (wlin * H0), color=col, lw=1)
+    for fr in (0.95, 1.05):
+        ff, t, U = run(fr * Pdyn, 3 * Tn, Tn / 200)
+        ax[2].plot((-U[:, 3])[::6] / H0, (-np.gradient(U[:, 3], t))[::6] / (wlin * H0), ".", ms=2, color="k")
+    ax[2].set_xlabel("apex deflection $\\delta/h_0$"); ax[2].set_ylabel("velocity $\\dot\\delta/(\\omega h_0)$")
+    ax[2].set_xlim(-0.02, 1.45); ax[2].set_ylim(-0.55, 0.55)
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch05_transient.pdf")); plt.close(fig)
+    # Figure D: error against the step, and Newton iterations per step
+    ex, im = [], []
+    for fac in (0.05, 0.1, 0.2, 0.5, 0.9, 0.99, 1.01, 1.1, 1.5):
+        u0 = np.zeros(6); u0[2] = 1e-8
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ff, t, U = run(P0, 3 * Tn, fac * dtl, f=build(lumped=True), explicit=True, u0=u0)
+        amx = np.abs(U[:, 3]).max(); ex.append((fac, abs(amx - turn) / turn if np.isfinite(amx) else np.nan))
+    for fac in (0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20):
+        ff, t, U = run(P0, 3 * Tn, fac * dtl); amx = np.abs(U[:, 3]).max(); im.append((fac, abs(amx - turn) / turn))
+    cnt = []
+    for n in (200, 100, 50, 25, 10, 5):
+        ff = build(); ld = TimeHistoryLoad(pattern=pat, time_fn=lambda t: -1.05 * Pdyn)
+        bf = io.StringIO()
+        with contextlib.redirect_stdout(bf):
+            nls.solve_nonlinear_transient(ff, (E_, A_), ld, 3 * Tn, Tn / n, tol=1e-9, max_iter=50, verbose=True)
+        HH = {}
+        for ln in bf.getvalue().splitlines():
+            mm = _re2.match(r"\s*step\s+(\d+)\s+it\s+(\d+)\s+\|R\|=([0-9.e+-]+)", ln)
+            if mm: HH.setdefault(int(mm.group(1)), []).append(float(mm.group(3)))
+        k = np.array([len(v) - 1 for v in HH.values()]); cnt.append((1.0 / n, k.mean(), k.max()))
+        if n == 50:
+            h1 = HH[sorted(HH)[len(HH) // 2]]
+            num("cnlTrNewtonDrop", f"{h1[0] / h1[1]:.0e}".replace("e+0", "e").replace("e+", "e"))
+    cnt = np.array(cnt)
+    num("cnlTrItSmall", int(cnt[2, 2])); num("cnlTrItMean", f"{cnt[-1, 1]:.1f}"); num("cnlTrItMax", int(cnt[-1, 2]))
+    num("cnlTrItBigDt", f"{cnt[-1, 0]:.1f}")
+    e_ = np.array(ex); i_ = np.array(im)
+    num("cnlTrImpErrOne", sci(i_[4, 1])); num("cnlTrExpErrLim", sci(e_[5, 1]))
+    fig, ax = plt.subplots(1, 2, figsize=(7.0, 3.1))
+    ok = np.isfinite(e_[:, 1]) & (e_[:, 1] < 2)
+    ax[0].loglog(e_[ok, 0], np.maximum(e_[ok, 1], 1e-8), "o-", ms=3, label="explicit")
+    ax[0].loglog(e_[~ok, 0], np.full((~ok).sum(), 3.0), "x", color="tab:blue", ms=6, label="explicit, diverged")
+    ax[0].loglog(i_[:, 0], np.maximum(i_[:, 1], 1e-8), "s-", ms=3, label="implicit")
+    ax[0].axvline(1.0, color="k", ls=":", lw=0.8); ax[0].text(1.06, 1e-6, "lumped limit", fontsize=7, rotation=90, va="bottom")
+    ax[0].axvline(dtc / dtl, color="gray", ls=":", lw=0.8)
+    ax[0].text(dtc / dtl * 0.93, 1e-6, "critical_timestep()", fontsize=7, rotation=90, ha="right", va="bottom", color="gray")
+    ax[0].set_xlabel("time step / lumped explicit limit"); ax[0].set_ylabel("relative error of the largest deflection"); ax[0].legend(fontsize=7, loc="upper left")
+    ax[1].semilogx(cnt[:, 0], cnt[:, 1], "o-", ms=3, label="mean"); ax[1].semilogx(cnt[:, 0], cnt[:, 2], "s--", ms=3, label="largest")
+    ax[1].set_xlabel("time step $\\Delta t/T$"); ax[1].set_ylabel("Newton iterations per step"); ax[1].legend(fontsize=7); ax[1].set_ylim(0, cnt[:, 2].max() + 1)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch05_tr_stepsize.pdf")); plt.close(fig)
 
 
 def main():
