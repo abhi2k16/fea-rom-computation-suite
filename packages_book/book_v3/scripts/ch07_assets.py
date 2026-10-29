@@ -383,6 +383,14 @@ def exp_impact():
         num("ctcImpBdfForce" + tag, f"{q['Lb'].max():.1f}"); num("ctcImpTwoForce" + tag, f"{q['L2'].max():.1f}")
         fd = free_bar_energy(h)
         num("ctcFreeBdf" + tag, f"{fd[0]:.4f}"); num("ctcFreeTwo" + tag, f"{fd[1]:.4f}")
+        num("ctcFreeBdfPct" + tag, f"{100 * fd[0]:.0f}"); num("ctcFreeTwoPct" + tag, f"{100 * fd[1]:.0f}")
+        num("ctcImpBdfGain" + tag, f"{100 * (q['Eb'].max() / E0 - 1):.2f}")
+    gains = [100 * (res[h]["Eb"].max() / res[h]["Eb"][0] - 1) for h in res]
+    for i in range(3):
+        num("ctcImpBdfInc" + "ABC"[i], f"{gains[i + 1] - gains[i]:.2f}")
+    ends_b = [res[h]["Eb"][-1] / res[h]["Eb"][0] for h in res]; ends_2 = [res[h]["E2"][-1] / res[h]["Eb"][0] for h in res]
+    num("ctcImpBdfEndMin", f"{min(ends_b):.2f}"); num("ctcImpBdfEndMax", f"{max(ends_b):.2f}")
+    num("ctcImpTwoEndMin", f"{min(ends_2):.2f}"); num("ctcImpTwoEndMax", f"{max(ends_2):.2f}")
     with open(os.path.join(TAB, "ch07_impact_force.tex"), "w") as fh:
         fh.write("\\begin{tabular}{rrrrr}\n\\toprule\n & \\multicolumn{2}{c}{largest wall force} & \\multicolumn{2}{c}{free bar: energy kept} \\\\\n\\cmidrule(lr){2-3}\\cmidrule(lr){4-5}\n$\\Delta t$ & two-step & BDF2 & two-step & BDF2 \\\\\n\\midrule\n")
         for h in res:
