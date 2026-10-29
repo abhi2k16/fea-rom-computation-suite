@@ -263,7 +263,7 @@ def exp_figs72():
             a.annotate("", xy=(0.4 + 0.8 + (q + 1) * 1.2, 5.25 - e * 0.9), xytext=(0.4 + 1.8 + q * 1.2, 5.25 - e * 0.9),
                        arrowprops=dict(arrowstyle="->", color="tab:red", lw=0.8))
     a.text(3.3, 0.35, "$E\\,n_g$ steps, each a few NumPy calls\non a $2\\times2$ or $3\\times3$ array", ha="center", fontsize=8, color="tab:red")
-    a.add_patch(mp.FancyBboxPatch((7.6 + 0.7, 1.35), 5.0, 4.4, boxstyle="round,pad=0.05", fc="none", ec="tab:green", lw=1.8))
+    a.add_patch(mp.FancyBboxPatch((7.6 + 0.7, 1.35), 5.0, 4.15, boxstyle="round,pad=0.05", fc="none", ec="tab:green", lw=1.8))
     a.text(10.5, 0.1, "$F_{eqij}=\\delta_{ij}+\\sum_a u_{eai}\\,(\\partial N_a/\\partial X_j)_{eq}$\none call over the axes $e$ and $q$", ha="center", fontsize=8, color="tab:green")
     a.text(0.0, 6.5, "(a)", fontsize=10, weight="bold")
     b = ax[1]; b.set_xlim(0, 14); b.set_ylim(0, 6.0); b.axis("off"); b.grid(False)
