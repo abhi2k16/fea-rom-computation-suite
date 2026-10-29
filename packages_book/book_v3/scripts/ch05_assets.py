@@ -509,6 +509,9 @@ def exp_transient():
     with open(os.path.join(TAB, "ch05_tr_output.txt"), "w") as fh:
         fh.write(buf.getvalue())
     print(buf.getvalue(), end="", flush=True)
+    import re as _re
+    vals = _re.findall(r"largest deflection ([0-9.]+) mm", buf.getvalue())
+    num("cnlTrLow", vals[0]); num("cnlTrHigh", vals[1])
 
     # (1) linear limit
     lin = []
@@ -567,6 +570,8 @@ def exp_transient():
         amp[fac] = np.abs(U[:, 3]).max()
     num("cnlTrExAmp", sci(abs(amp[0.99] - turn) / turn))
     num("cnlTrExBlow", f"{amp[1.01]:.2f}" if np.isfinite(amp[1.01]) else "not finite")
+    num("cnlTrExBlowRatio", f"{amp[1.01] / turn:.0f}")
+    num("cnlTrExTurn", f"{turn * 1e3:.2f}")
     num("cnlTrExBlowTen", "not a number" if not np.isfinite(amp[1.1]) else f"{amp[1.1]:.1e}")
     # (5) implicit at large steps
     big = {}
@@ -576,7 +581,7 @@ def exp_transient():
         big[fac] = np.abs(U[:, 3]).max()
     ref = np.abs(run(P0, 3 * Tn, 1.1 * dtl, u0=u0)[2][:, 3]).max()
     num("cnlTrImpTen", f"{100 * (big[10] / ref - 1):.1f}"); num("cnlTrImpFifty", f"{100 * (big[50] / ref - 1):.1f}")
-    num("cnlTrImpTenFac", f"{dtc * 10 / dtl:.1f}")
+    num("cnlTrImpTenFac", f"{dtc * 10 / dtl:.1f}"); num("cnlTrImpFiftyFac", f"{dtc * 50 / dtl:.0f}")
     # (6) displacement control in time
     def dcrun(Tramp, alpha):
         f = build(alpha=alpha)
@@ -615,7 +620,10 @@ def exp_transient():
     x1 = np.linspace(0, du, 300)
     ax[1].fill_between(x1 / H0, Pdyn / Pmax, P_cf(x1) / Pmax, where=P_cf(x1) >= Pdyn, color="tab:green", alpha=0.25)
     ax[1].fill_between(x1 / H0, Pdyn / Pmax, P_cf(x1) / Pmax, where=P_cf(x1) < Pdyn, color="tab:orange", alpha=0.35)
-    ax[1].text(1.0 * 0.05, 0.43, "$P_{dyn}$", color="tab:green", fontsize=8); ax[1].text(0.78, 1.02, "$P_{max}$", color="r", fontsize=8)
+    ax[1].axvline(du / H0, color="gray", ls=":", lw=0.8)
+    ax[1].text(du / H0 + 0.02, -0.8, "$\\delta_u=2h_0/3$", fontsize=7, color="gray")
+    ax[1].text(1.0, 0.8, "$P_{dyn}$", color="tab:green", fontsize=8); ax[1].text(1.0, 1.04, "$P_{max}$", color="r", fontsize=8)
+    ax[1].set_ylim(-0.95, 1.15)
     ax[1].set_xlabel("apex deflection $\\delta/h_0$"); ax[1].set_ylabel("load $P/P_{max}$")
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch05_transient.pdf")); plt.close(fig)
 
