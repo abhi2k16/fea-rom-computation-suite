@@ -110,7 +110,7 @@ a3.set_title('(c) Many-core system',fontweight='bold',fontsize=8,loc='left',colo
 a3.grid(alpha=0.25,which='both',lw=0.4)
 for s in ('top','right'): a3.spines[s].set_visible(False)
 
-fig.savefig(os.path.join(ROOT,'figures','ch06_multicore.pdf'))
+fig.savefig(os.path.join(ROOT,'figures','ch06_multicore.pdf'),bbox_inches='tight',pad_inches=0.03)
 # ---- macros ----
 heavy_ms=1000*hv[1]/48
 tiny={r['n_jobs']:r['time'] for r in H if r['case']=='tiny'}
