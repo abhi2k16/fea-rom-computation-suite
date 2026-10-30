@@ -389,45 +389,72 @@ def exp_figs72():
         num(f"cbkVar{tag}RatioFold", f"{t[2] / t[3]:.1f}"); num(f"cbkVar{tag}RatioAll", f"{t[0] / t[3]:.0f}")
     num("cbkVarQuadN", Eq); num("cbkVarHexN", Eh); num("cbkVarAgree", sci(max(agree_q, agree_h)))
 
-    # ------------------------------------------------------------ figure 3: scatter-add schematic
+    # ------------------------------------------------------------ figure 3: scatter-add schematic (local to global, position map, sum)
     two = np.array([[0, 1, 4, 3], [1, 2, 5, 4]])
     pat = bk.build_sparse_pattern(two, 6)                      # one degree of freedom per node
-    fig, ax = plt.subplots(1, 2, figsize=(7.4, 3.6), gridspec_kw={"width_ratios": [1, 1.7]})
-    m = ax[0]; m.axis("off"); m.grid(False); m.set_xlim(-0.3, 4.3); m.set_ylim(-0.7, 2.6)
-    xy = {0: (0, 0), 1: (2, 0), 2: (4, 0), 3: (0, 2), 4: (2, 2), 5: (4, 2)}
-    for el, col in ((0, "#5b8fc7"), (1, "#c0504d")):
-        pts = np.array([xy[i] for i in two[el]]); order = [0, 1, 2, 3]
-        m.add_patch(mp.Polygon(pts[order], closed=True, fc=col, alpha=0.18, ec=col, lw=1.2))
-    for i, (x, y) in xy.items():
-        m.plot(x, y, "ko", ms=5); m.text(x + (0.12 if i % 3 != 2 else 0.12), y + (-0.3 if y == 0 else 0.15), f"node {i + 1}", fontsize=7)
-    m.text(1.0, 1.0, "element 1", ha="center", fontsize=8, color="#2f5f9f"); m.text(3.0, 1.0, "element 2", ha="center", fontsize=8, color="#a03030")
-    m.text(2.0, -0.55, "shared nodes 2 and 5", ha="center", fontsize=7)
-    m.set_title("two elements, one degree of freedom per node", fontsize=8)
-    r = ax[1]; r.axis("off"); r.grid(False); r.set_xlim(0, 10); r.set_ylim(-0.8, 9.2)
-    shared = [(1, 1), (1, 4), (4, 1), (4, 4)]               # global (i,j), 0-based, shared by both elements
-    pos_of = {}
-    for el in (0, 1):
-        for a_i in range(4):
-            for b_i in range(4):
-                gi, gj = two[el][a_i], two[el][b_i]
-                pos_of[(el, gi, gj)] = int(pat.pos[el, a_i, b_i])
-    r.text(1.4, 8.8, "entries of the\nelement matrices", ha="center", fontsize=8, weight="bold"); r.text(8.4, 8.8, "slots of the CSR\ndata array", ha="center", fontsize=8, weight="bold")
-    slots = sorted({pos_of[(0, gi, gj)] for gi, gj in shared})
-    ys_slot = {sp_: 7.2 - k * 1.4 for k, sp_ in enumerate(slots)}
-    k = 0
-    for el, col in ((0, "#5b8fc7"), (1, "#c0504d")):
-        for gi, gj in shared:
-            y = 7.7 - k * 0.95; k += 1
-            r.add_patch(mp.FancyBboxPatch((0.2, y - 0.3), 2.5, 0.6, boxstyle="round,pad=0.02", fc=col, alpha=0.25, ec=col))
-            r.text(1.45, y, f"element {el + 1}: ({gi + 1},{gj + 1})", ha="center", va="center", fontsize=7)
-            sp_ = pos_of[(el, gi, gj)]
-            r.annotate("", xy=(7.0, ys_slot[sp_]), xytext=(2.75, y), arrowprops=dict(arrowstyle="->", color=col, lw=0.9))
-    for sp_, y in ys_slot.items():
-        r.add_patch(mp.Rectangle((7.0, y - 0.38), 2.8, 0.76, fc="#e2f0d9", ec="#548235", lw=1.0))
-        gi, gj = [(a_, b_) for a_, b_ in shared if pos_of[(0, a_, b_)] == sp_][0]
-        r.text(8.4, y, f"slot {sp_}: $K_{{{gi + 1}{gj + 1}}}$", ha="center", va="center", fontsize=8)
-    r.text(5.0, -0.5, "one bincount adds all arrows that end in the same slot", ha="center", fontsize=8, color="tab:green")
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch06_scatter.pdf")); plt.close(fig)
+    with plt.rc_context({"font.size": 8, "mathtext.fontset": "dejavusans"}):
+        fig, ax = plt.subplots(figsize=(7.4, 4.3)); ax.axis("off"); ax.set_aspect("equal"); ax.set_xlim(0, 15); ax.set_ylim(-0.2, 9.2)
+        C1, C2 = "#5b8fc7", "#c0504d"
+        slotcol = ["#e08a1e", "#2e8b57", "#8e44ad", "#c0392b"]           # one colour per shared slot
+        # ---------------- mesh with local numbering
+        xy = {0: (0.3, 2.2), 1: (1.9, 2.2), 2: (3.5, 2.2), 3: (0.3, 4.4), 4: (1.9, 4.4), 5: (3.5, 4.4)}
+        for el, col in ((0, C1), (1, C2)):
+            pts = np.array([xy[i] for i in two[el]]); ax.add_patch(mp.Polygon(pts, closed=True, fc=col, alpha=0.18, ec=col, lw=1.2))
+        for i, (x, y) in xy.items():
+            ax.plot(x, y, "ko", ms=4); ax.text(x, y + (-0.45 if y < 3 else 0.35), f"{i + 1}", ha="center", va="center", fontsize=8, weight="bold")
+        for el, col, dx in ((0, C1, 0.28), (1, C2, 0.28)):
+            for a_i, g in enumerate(two[el]):
+                x, y = xy[g]; sx = 1 if a_i in (0, 3) and el == 0 or a_i in (0, 3) and el == 1 else -1
+                # inward offset: towards the element centre
+                cx = np.mean([xy[k][0] for k in two[el]]); cy = np.mean([xy[k][1] for k in two[el]])
+                ax.text(x + 0.38 * np.sign(cx - x), y + 0.38 * np.sign(cy - y), f"{a_i + 1}", ha="center", va="center", fontsize=7, color=col, weight="bold")
+        ax.text(1.1, 3.3, "element 1", ha="center", fontsize=8, color=C1, rotation=90); ax.text(2.7, 3.3, "element 2", ha="center", fontsize=8, color=C2, rotation=90)
+        ax.text(1.9, 6.0, "mesh: global node numbers (black),\nlocal numbers (coloured)", ha="center", va="center", fontsize=7.5)
+        ax.text(1.9, 1.2, "nodes 2 and 5 are shared", ha="center", fontsize=7.5)
+        # ---------------- element matrices
+        s = 0.52
+        def matrix(x0, ytop, el, col, hl):
+            for r in range(4):
+                for c in range(4):
+                    h = (r, c) in hl
+                    ax.add_patch(mp.Rectangle((x0 + c * s, ytop - (r + 1) * s), s, s, fc=slotcol[hl[(r, c)]] if h else "#f2f2f2", ec="white" if not h else "k", lw=0.8 if not h else 0.9, alpha=0.9 if h else 1))
+            ax.add_patch(mp.Rectangle((x0, ytop - 4 * s), 4 * s, 4 * s, fc="none", ec=col, lw=1.6))
+            for k in range(4):
+                ax.text(x0 + k * s + s / 2, ytop + 0.18, str(k + 1), ha="center", va="center", fontsize=6.5, color="#555")
+                ax.text(x0 - 0.18, ytop - k * s - s / 2, str(k + 1), ha="center", va="center", fontsize=6.5, color="#555")
+            ax.text(x0 + 2 * s, ytop + 0.55, f"element {el + 1}: $k^{{({el + 1})}}$", ha="center", fontsize=8, color=col, weight="bold")
+        x0m = 6.0
+        hl1 = {(1, 1): 0, (1, 2): 1, (2, 1): 2, (2, 2): 3}          # element 1: local nodes 2,3 are global 2,5
+        hl2 = {(0, 0): 0, (0, 3): 1, (3, 0): 2, (3, 3): 3}          # element 2: local nodes 1,4 are global 2,5
+        y1, y2 = 8.0, 4.6
+        matrix(x0m, y1, 0, C1, hl1); matrix(x0m, y2, 1, C2, hl2)
+        ax.text(x0m + 2 * s, 1.7, "same colour: same global\nentry, hence the same slot", ha="center", va="center", fontsize=7.5)
+        # ---------------- slots
+        pos_of = {}
+        for el in (0, 1):
+            for a_i in range(4):
+                for b_i in range(4): pos_of[(el, a_i, b_i)] = int(pat.pos[el, a_i, b_i])
+        names = [(1, 1), (1, 4), (4, 1), (4, 4)]
+        slot_p = [pos_of[(0, 1, 1)], pos_of[(0, 1, 2)], pos_of[(0, 2, 1)], pos_of[(0, 2, 2)]]
+        assert slot_p == [pos_of[(1, 0, 0)], pos_of[(1, 0, 3)], pos_of[(1, 3, 0)], pos_of[(1, 3, 3)]]
+        xs0 = 10.2; ys = [7.6, 5.7, 3.8, 1.9]
+        ax.text(xs0 + 2.4, 8.95, "CSR data array", ha="center", fontsize=8.5, weight="bold")
+        for k, (p, (gi, gj)) in enumerate(zip(slot_p, names)):
+            ax.add_patch(mp.FancyBboxPatch((xs0, ys[k] - 0.4), 4.5, 0.8, boxstyle="round,pad=0.02", fc=slotcol[k], alpha=0.25, ec=slotcol[k], lw=1.4))
+            ax.text(xs0 + 0.15, ys[k] + 0.17, f"data[{p}]", fontsize=7, va="center", color="#333")
+        lab = [("22", "22", "11"), ("25", "23", "14"), ("52", "32", "41"), ("55", "33", "44")]
+        for k, (K, a, b) in enumerate(lab):
+            ax.text(xs0 + 4.35, ys[k] - 0.14, f"$K_{{{K}}}=k^{{(1)}}_{{{a}}}+k^{{(2)}}_{{{b}}}$", fontsize=8, ha="right", va="center")
+        # arrows
+        for k in range(4):
+            for el, hl, ytop in ((0, hl1, y1), (1, hl2, y2)):
+                (r, c) = [rc for rc, v in hl.items() if v == k][0]
+                ax.annotate("", xy=(xs0 - 0.02, ys[k] + (0.2 if el == 0 else -0.2)), xytext=(x0m + 4 * s + 0.05, ytop - r * s - s / 2 if True else 0),
+                            arrowprops=dict(arrowstyle="->", color=slotcol[k], lw=1.1, shrinkA=0, shrinkB=0))
+        ax.text(9.35, 9.0, "position map", ha="center", va="center", fontsize=8, style="italic")
+        ax.text(xs0 + 2.25, 0.5, "one bincount adds all arrows\nthat end in the same slot", ha="center", va="center", fontsize=8, color="#2e6b2e")
+        fig.savefig(os.path.join(FIG, "ch06_scatter.pdf"), bbox_inches="tight", pad_inches=0.03); plt.close(fig)
+    slots = slot_p; shared = names
     num("cbkScatterSlots", len(slots)); num("cbkScatterEntries", 2 * len(shared))
 
     # ------------------------------------------------------------ figure 4: chunk size
