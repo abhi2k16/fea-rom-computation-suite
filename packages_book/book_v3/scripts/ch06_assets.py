@@ -265,22 +265,22 @@ def exp_figs72():
                     hl = numbers and e == 1 and q == 1
                     a.add_patch(mp.Rectangle((x, y), cw, ch, fc="#ffd9d9" if hl else fc, ec=TR if hl else ec, lw=1.6 if hl else 0.8))
                     if numbers:
-                        lab = "$En_g$" if (e == nE - 1 and q == nQ - 1) else ("$\\cdots$" if (e == nE - 2 and q == nQ - 1) else str(n + 1))
+                        lab = "$N_en_g$" if (e == nE - 1 and q == nQ - 1) else ("$\\cdots$" if (e == nE - 2 and q == nQ - 1) else str(n + 1))
                         a.text(x + cw / 2, y + ch / 2, lab, ha="center", va="center", fontsize=7, color=TR if hl else "#444")
                     n += 1
             for q in range(nQ):
                 a.text(x0 + q * (cw + gx) + cw / 2, 5.4, f"$q={q+1}$" if q < nQ - 1 else "$q=n_g$", ha="center", fontsize=7)
             for e in range(nE):
-                a.text(x0 - 0.15, 4.45 - e * (ch + gy) + ch / 2, f"$e={e+1}$" if e < nE - 1 else "$e=E$", ha="right", va="center", fontsize=7)
+                a.text(x0 - 0.15, 4.45 - e * (ch + gy) + ch / 2, f"$e={e+1}$" if e < nE - 1 else "$e=N_e$", ha="right", va="center", fontsize=7)
         gl, gr = 1.0, 8.4
         grid(gl, BLUF, BLU, numbers=True); grid(gr, GRNF, GRN)
         a.text(gl + 2.6, 6.1, "loop: one cell at a time", ha="center", va="center", fontsize=9, weight="bold")
         a.text(gr + 2.6, 6.1, "batched: all cells in one array", ha="center", va="center", fontsize=9, weight="bold")
-        a.text(0.4, 0.2, "$E\\,n_g$ steps, each a separate Python call chain", ha="left", va="center", fontsize=8, color=TR)
+        a.text(0.4, 0.2, "$N_e\\,n_g$ steps, each a separate Python call chain", ha="left", va="center", fontsize=8, color=TR)
         a.text(0.4, -0.3, "highlighted: step 6, a few NumPy calls", ha="left", va="center", fontsize=7.5, color=TR)
         x1, x2 = gr - 0.12, gr + 4 * cw + 3 * gx + 0.12
         a.add_patch(mp.FancyBboxPatch((x1, 4.45 - 4 * (ch + gy) - 0.12), x2 - x1, 5 * ch + 4 * gy + 0.24, boxstyle="round,pad=0.03", fc="none", ec=GRN, lw=1.8))
-        a.text(gr + 2.6, 0.2, "one array of shape $(E,\\,n_g,\\,\\ldots)$, one call", ha="center", va="center", fontsize=8, color=GRN)
+        a.text(gr + 2.6, 0.2, "one array of shape $(N_e,\\,n_g,\\,\\ldots)$, one call", ha="center", va="center", fontsize=8, color=GRN)
         a.text(gr + 2.6, -1.0, "$F_{eqij}=\\delta_{ij}+\\sum_a u_{eai}\\,(\\partial N_a/\\partial X_j)_{eq}$", ha="center", va="center", fontsize=8, color=GRN)
 
         # ------------------------------------------------ (b)

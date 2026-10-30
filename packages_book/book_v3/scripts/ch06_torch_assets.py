@@ -146,6 +146,10 @@ def torch_free():
         b2, d2 = select_backend(rs.K, dof_threshold=1000)
         picks.append((rs.n_free, b, b2, d["spd"]))
     num("bktAutoThr", f"{AUTO_DOF_THRESHOLD:,}".replace(",", "\\,"))
+    import re as _re
+    _src = open(os.path.join(ROOT, "fea_engine", "src", "fea_engine", "linear_system.py")).read()
+    _m = _re.search(r'method = "dense" if self\.n_free < (\d+) else "cg"', _src)
+    num("bktMethodThr", f"{int(_m.group(1)):,}".replace(",", "\\,"))
     num("bktAutoSmallN", f"{picks[0][0]:,}".replace(",", "\\,")); num("bktAutoBigN", f"{picks[1][0]:,}".replace(",", "\\,"))
     assert picks[0][1] == "scipy" and picks[1][1] == "scipy" and picks[0][2] == "torch" and picks[0][3]
     A = np.diag([1.0, 2.0, -3.0, 4.0])                                 # symmetric, indefinite
