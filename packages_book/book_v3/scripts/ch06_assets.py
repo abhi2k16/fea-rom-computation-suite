@@ -294,13 +294,13 @@ def exp_figs72():
         def triple(x0, g):
             R(x0, y1, 0.42, H, REDF, RED); R(x0 + 0.57, y1 + H - 0.42, 0.42, 0.42, YELF, YEL); R(x0 + 1.14, y1 + H - 0.42, H, 0.42, REDF, RED)
             return x0 + 1.14 + H
-        xs = [0.3, 3.3, 7.3]
+        xs = [0.3, 3.3, 7.7]
         for x0, lab in zip(xs, ("1", "2", "n_g")):
             xe = triple(x0, lab)
             T(x0 + 0.21, y1 - 0.3, f"$B_{{{lab}}}^T$"); T(x0 + 0.78, y1 + H - 0.42 - 0.3, "$D$"); T(x0 + 1.14 + H / 2, y1 + H - 0.42 - 0.3, f"$B_{{{lab}}}$")
-        T(2.9, y1 + H / 2 + 0.15, "$+$", fontsize=11); T(5.9, y1 + H / 2 + 0.15, "$+\\ \\cdots\\ +$", fontsize=11)
-        T(9.95, y1 + H / 2 + 0.15, "$=$", fontsize=11); R(10.45, y1, H, H, GRNF, GRN); T(10.45 + H / 2, y1 - 0.3, "$K_e$")
-        T(11.9, y1 + H / 2, "$K_e=\\sum_{g=1}^{n_g} c_g\\,B_g^T D\\,B_g$", fontsize=8, ha="left")
+        T(2.9, y1 + H / 2 + 0.15, "$+$", fontsize=11); T(6.6, y1 + H / 2 + 0.15, "$+\\ \\cdots\\ +$", fontsize=11)
+        T(10.3, y1 + H / 2 + 0.15, "$=$", fontsize=11); R(10.75, y1, H, H, GRNF, GRN); T(10.75 + H / 2, y1 - 0.3, "$K_e$")
+        T(12.15, y1 + H / 2, "$K_e=\\sum_{g=1}^{n_g} c_g\\,B_g^T D\\,B_g$", fontsize=8, ha="left")
         T(5.0, y1 + H + 0.45, "$n_g$ small products, each contracting over $s$ entries", color="#444", fontsize=8)
         # fold arrow
         b.annotate("", xy=(3.2, 3.55), xytext=(3.2, 4.9), arrowprops=dict(arrowstyle="-|>", color="#333", lw=1.2))
