@@ -1,0 +1,9 @@
+{"machine": "Intel64 Family 6 Model 158 Stepping 10, GenuineIntel", "logical_cpus": 12, "system": "Windows-10-10.0.26300-SP0", "python": "3.10.18"}
+{"nx": 384, "ny": 96, "n_elements": 36864, "n_jobs": 1, "time": 89.59784969999964, "n_items": 24, "check": 1.7841313379287666e-06}
+{"nx": 384, "ny": 96, "n_elements": 36864, "n_jobs": 4, "time": 36.363592300000164, "n_items": 24, "check": 1.7841313379287666e-06}
+{"nx": 384, "ny": 96, "n_elements": 36864, "n_jobs": 8, "time": 35.058533100000204, "n_items": 24, "check": 1.7841313379287666e-06}
+{"nx": 384, "ny": 96, "n_elements": 36864, "n_jobs": 12, "time": 38.23831269999937, "n_items": 24, "check": 1.7841313379287666e-06}
+{"nx": 480, "ny": 120, "n_elements": 57600, "n_jobs": 1, "time": 134.97829610000008, "n_items": 24, "check": 1.7841653477134512e-06}
+{"nx": 480, "ny": 120, "n_elements": 57600, "n_jobs": 4, "time": 61.46899630000007, "n_items": 24, "check": 1.7841653477134512e-06}
+{"nx": 480, "ny": 120, "n_elements": 57600, "n_jobs": 8, "time": 54.481352400000105, "n_items": 24, "check": 1.7841653477134512e-06}
+{"nx": 480, "ny": 120, "n_elements": 57600, "n_jobs": 12, "time": 57.409512399999585, "n_items": 24, "check": 1.7841653477134512e-06}
