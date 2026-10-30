@@ -124,6 +124,6 @@ lo4,hi4=cross(4); lo8,hi8=cross(8)
 m={'cmCpus':'%d'%12,'cmMaxWorkers':'8','cmSpdTwo':'%.1f'%(hv[1]/hv[2]),'cmSpdFour':'%.1f'%(hv[1]/hv[4]),'cmSpdEight':'%.1f'%(hv[1]/hv[8]),
  'cmPlateau':'%.1f'%plateau,'cmBreakLo':'%.0f'%max(lo4,lo8),'cmBreakHi':'%.0f'%min(hi4,hi8),
  'cmStartTwo':'%.0f'%tiny[2],'cmStartEight':'%.0f'%tiny[8],'cmHeavySolve':'%.1f'%(heavy_ms/1000),
- 'cmBigElems':'{:,}'.format(max(nes)).replace(',','\\,'),'cmBigSolve':'%.1f'%D[max(nes),1],'cmBaseVar':'%.0f'%(100*(D[20736,1]*48/hv[1]-1))}
+ 'cmBaseElems':'20\\,736','cmBreakTwoS':'%.2f'%(tiny[2]*2/(1*48)),'cmBreakEightS':'%.2f'%(tiny[8]*8/(7*48)),'cmBigElems':'{:,}'.format(max(nes)).replace(',','\\,'),'cmBigSolve':'%.1f'%D[max(nes),1],'cmBaseVar':'%.0f'%(100*(D[20736,1]*48/hv[1]-1))}
 open(os.path.join(ROOT,'tables','numbers_ch06_cores.tex'),'w').write("".join("\\newcommand{\\%s}{%s}\n"%(k,v) for k,v in m.items()))
 print(m)
