@@ -77,9 +77,10 @@ def main():
         pat = r"\\newcommand\{\\%s\}\{[^\n]*\}" % name
         if re.search(pat, s): s = re.sub(pat, lambda m: line, s)
         else: s += line + "\n"
-    setm("cbkNewtonDefault", f"{times[0]:.1f}"); setm("cbkNewtonBatched", f"{times[3]:.1f}"); setm("cbkNewtonRatio", f"{times[0] / times[3]:.0f}")
+    setm("cbkNewtonDefault", f"{times[0]:.1f}"); setm("cbkNewtonBatched", f"{times[3]:.2f}"); setm("cbkNewtonRatio", f"{times[0] / times[3]:.0f}")
     setm("cbkNewtonDiff", A.sci(diff))
     setm("cbkNewtonBatchedOnly", f"{times[1]:.1f}"); setm("cbkNewtonSparseOnly", f"{times[2]:.1f}")
+    setm("cbkNewtonBatchedOnlyRatio", f"{times[0] / times[1]:.1f}"); setm("cbkNewtonDenseCost", f"{times[1] - times[3]:.1f}")
     open(p, "w").write(s)
     print("times", times, "diff", diff)
 

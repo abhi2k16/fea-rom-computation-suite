@@ -135,7 +135,7 @@ def exp_newton():
     diff = np.abs(U1 - U2).max() / np.abs(U1).max()
     tip = 2 * ny * (nx + 1) + 0                      # not used; report max displacement instead
     num("cbkNewtonN", f"{nd:,}".replace(",", "\\,")); num("cbkNewtonNE", str(nx * ny))
-    num("cbkNewtonDefault", f"{t1:.1f}"); num("cbkNewtonBatched", f"{t2:.1f}"); num("cbkNewtonRatio", f"{t1 / t2:.0f}")
+    num("cbkNewtonDefault", f"{t1:.1f}"); num("cbkNewtonBatched", f"{t2:.2f}"); num("cbkNewtonRatio", f"{t1 / t2:.0f}")
     num("cbkNewtonDiff", sci(diff)); num("cbkNewtonMax", f"{np.abs(U1[-1]).max():.2f}")
     fig, ax = plt.subplots(figsize=(3.6, 2.8))
     ax.bar(["default", "batched\n+ sparse"], [t1, t2], color=["C0", "C1"]); ax.set_ylabel("wall time (s)")
