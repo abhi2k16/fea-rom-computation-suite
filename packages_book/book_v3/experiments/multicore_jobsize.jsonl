@@ -1,0 +1,21 @@
+{"machine": "Intel64 Family 6 Model 158 Stepping 10, GenuineIntel", "logical_cpus": 12, "system": "Windows-10-10.0.26300-SP0", "python": "3.10.18"}
+{"nx": 48, "ny": 12, "n_elements": 576, "n_jobs": 1, "time": 1.6406467999995584, "n_items": 48, "check": 1.7767253366676029e-06}
+{"nx": 48, "ny": 12, "n_elements": 576, "n_jobs": 4, "time": 5.794855000000098, "n_items": 48, "check": 1.7767253366676029e-06}
+{"nx": 48, "ny": 12, "n_elements": 576, "n_jobs": 8, "time": 7.662732300000243, "n_items": 48, "check": 1.7767253366676029e-06}
+{"nx": 48, "ny": 12, "n_elements": 576, "n_jobs": 12, "time": 11.069341399999757, "n_items": 48, "check": 1.7767253366676029e-06}
+{"nx": 96, "ny": 24, "n_elements": 2304, "n_jobs": 1, "time": 8.398545699999886, "n_items": 48, "check": 1.7823216823117206e-06}
+{"nx": 96, "ny": 24, "n_elements": 2304, "n_jobs": 4, "time": 8.96125630000006, "n_items": 48, "check": 1.7823216823117206e-06}
+{"nx": 96, "ny": 24, "n_elements": 2304, "n_jobs": 8, "time": 10.589262499999677, "n_items": 48, "check": 1.7823216823117206e-06}
+{"nx": 96, "ny": 24, "n_elements": 2304, "n_jobs": 12, "time": 13.643388499999674, "n_items": 48, "check": 1.7823216823117206e-06}
+{"nx": 144, "ny": 36, "n_elements": 5184, "n_jobs": 1, "time": 20.85142420000011, "n_items": 48, "check": 1.783402501549456e-06}
+{"nx": 144, "ny": 36, "n_elements": 5184, "n_jobs": 4, "time": 13.572098400000868, "n_items": 48, "check": 1.783402501549456e-06}
+{"nx": 144, "ny": 36, "n_elements": 5184, "n_jobs": 8, "time": 14.321870699999636, "n_items": 48, "check": 1.783402501549456e-06}
+{"nx": 144, "ny": 36, "n_elements": 5184, "n_jobs": 12, "time": 18.71278230000007, "n_items": 48, "check": 1.783402501549456e-06}
+{"nx": 192, "ny": 48, "n_elements": 9216, "n_jobs": 1, "time": 37.279201000000285, "n_items": 48, "check": 1.78378251950217e-06}
+{"nx": 192, "ny": 48, "n_elements": 9216, "n_jobs": 4, "time": 24.38820840000062, "n_items": 48, "check": 1.78378251950217e-06}
+{"nx": 192, "ny": 48, "n_elements": 9216, "n_jobs": 8, "time": 23.503042300000743, "n_items": 48, "check": 1.78378251950217e-06}
+{"nx": 192, "ny": 48, "n_elements": 9216, "n_jobs": 12, "time": 28.98081490000004, "n_items": 48, "check": 1.78378251950217e-06}
+{"nx": 288, "ny": 72, "n_elements": 20736, "n_jobs": 1, "time": 109.51953200000025, "n_items": 48, "check": 1.784046678617158e-06}
+{"nx": 288, "ny": 72, "n_elements": 20736, "n_jobs": 4, "time": 46.55800610000006, "n_items": 48, "check": 1.784046678617158e-06}
+{"nx": 288, "ny": 72, "n_elements": 20736, "n_jobs": 8, "time": 34.19779900000049, "n_items": 48, "check": 1.784046678617158e-06}
+{"nx": 288, "ny": 72, "n_elements": 20736, "n_jobs": 12, "time": 36.33379480000076, "n_items": 48, "check": 1.784046678617158e-06}
