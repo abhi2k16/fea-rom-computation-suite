@@ -104,6 +104,7 @@ def tables():
     num("bktDenseSlow", ratio(rows[1]["t_torch_cpu_dense_s"] / sp[1])); num("bktDenseSlowCuda", ratio(rows[1]["t_torch_cuda_dense_s"] / sp[1]))
     num("bktDenseDof", f"{rows[1]['n_free']:,}".replace(",", "\\,"))
     first = lambda cond: next(f"{r['n_free']:,}".replace(",", "\\,") for r, sp_ in zip(rows, sp) if cond(r, sp_))
+    num("bktDenseBigGB", f"{8 * rows[-1]['n_free'] ** 2 / 1e9:.0f}")
     num("bktMidDof", f"{rows[2]['n_free']:,}".replace(",", "\\,"))
     num("bktCpuWinDof", first(lambda r, s_: r["t_torch_cpu_cg_s"] < s_)); num("bktCudaWinDof", first(lambda r, s_: r["t_torch_cuda_cg_s"] < s_))
     num("bktStrCrossNe", next(f"{r['n_elements']:,}".replace(",", "\\,") for r in rows if r["t_stress_torch_cpu_s"] < r["t_stress_numpy_s"]))

@@ -1,0 +1,5 @@
+   48 elements: loop    25.0 ms, batched   0.41 ms, x 62, difference 5e-16
+  192 elements: loop    98.1 ms, batched   0.87 ms, x112, difference 9e-16
+ 1728 elements: loop   892.7 ms, batched   6.32 ms, x141, difference 3e-15
+[('q', 'Quad4PlaneStressTL', 1728, None)]
+{'q': 'batched'}

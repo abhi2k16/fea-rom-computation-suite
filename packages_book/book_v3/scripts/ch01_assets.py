@@ -4,7 +4,7 @@
 ch01_assets.py -- figures, tables and number macros of Chapter 1 (architectural design of the packages).
 
 Writes into book/:
-    figures/ch01_dispatch.pdf     solve time with backend="scipy" and backend="auto" against the problem size
+    figures/ch06_dispatch.pdf     solve time with backend="scipy" and backend="auto" against the problem size
     tables/ch01_registry.tex      interface conformance of every entry of ELEMENT_REGISTRY, by family
     tables/ch01_packages.tex      size of the two packages (modules, lines) and the import rule
     tables/numbers_ch01.tex       every number quoted in the prose
@@ -191,7 +191,7 @@ def exp_dispatch():
     ax[0].loglog(nd, ts * 1e3, "o-", label="backend='scipy'"); ax[0].loglog(nd, ta * 1e3, "s--", label="backend='auto'")
     ax[0].set_xlabel("dofs"); ax[0].set_ylabel("solve_static time (ms)"); ax[0].legend()
     ax[1].semilogx(nd, (ta - ts) * 1e3, "o-"); ax[1].set_xlabel("dofs"); ax[1].set_ylabel("extra time of 'auto' (ms)")
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch01_dispatch.pdf")); plt.close(fig)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch06_dispatch.pdf")); plt.close(fig)
     sl = np.polyfit(np.log(nd[1:]), np.log(ta[1:] - ts[1:]), 1)[0]
     num("cdeDispSlope", f"{sl:.1f}")
     num("cdeDenseFiveK", f"{8 * 5000 ** 2 / 1e9:.1f}"); num("cdeDenseFiftyK", f"{8 * 50000 ** 2 / 1e9:.1f}")

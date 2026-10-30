@@ -23,6 +23,7 @@ m={'mcPlateSpeed':"%.1f"%(t1/g('plate',2,'process','1')),'mcPlateFour':"%.1f"%(t
  'mcDenseBlas':"%.2f"%(d1/g('dense',1,'process','2')),'mcDenseProc':"%.2f"%(d1/g('dense',2,'process','1')),
  'mcDenseOver':"%.2f"%(d1/g('dense',2,'process','2')),'mcTinySlow':"%.0f"%(g('tiny',2,'process','1')/tt),
  'mcTinyThread':"%.0f"%(g('tiny',2,'thread','1')/tt),'mcPlateOne':"%.0f"%(1000*t1/12),
+ 'mcPlateThread':"%.1f"%(t1/g('plate',2,'thread','1')),
  'mcPlateEff':"%.0f"%(100*t1/g('plate',2,'process','1')/2),'mcTinyPool':"%.0f"%(1000*g('tiny',2,'process','1')),
  'mcBreakEven':"%.0f"%(2*1000*g('tiny',2,'process','1')/12)}
 open('tables/numbers_ch06_multicore.tex','w').write("".join("\\newcommand{\\%s}{%s}\n"%(k,v) for k,v in m.items()))
