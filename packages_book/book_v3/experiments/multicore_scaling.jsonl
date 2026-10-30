@@ -1,0 +1,13 @@
+{"machine": "Intel64 Family 6 Model 158 Stepping 10, GenuineIntel", "logical_cpus": 12, "system": "Windows-10-10.0.26300-SP0", "python": "3.10.18"}
+{"case": "plate", "n_jobs": 1, "backend": "process", "blas": "1", "time": 7.053790599999957, "n_items": 48, "check": 1.7823216823117206e-06}
+{"case": "plate", "n_jobs": 2, "backend": "process", "blas": "1", "time": 8.080446700000266, "n_items": 48, "check": 1.7823216823117206e-06}
+{"case": "plate", "n_jobs": 3, "backend": "process", "blas": "1", "time": 7.464555999999902, "n_items": 48, "check": 1.7823216823117206e-06}
+{"case": "plate", "n_jobs": 4, "backend": "process", "blas": "1", "time": 7.516783199999736, "n_items": 48, "check": 1.7823216823117206e-06}
+{"case": "plate", "n_jobs": 5, "backend": "process", "blas": "1", "time": 8.250827500000014, "n_items": 48, "check": 1.7823216823117206e-06}
+{"case": "plate", "n_jobs": 6, "backend": "process", "blas": "1", "time": 8.694963500000085, "n_items": 48, "check": 1.7823216823117206e-06}
+{"case": "plate", "n_jobs": 7, "backend": "process", "blas": "1", "time": 9.19191550000005, "n_items": 48, "check": 1.7823216823117206e-06}
+{"case": "plate", "n_jobs": 8, "backend": "process", "blas": "1", "time": 9.912844199999654, "n_items": 48, "check": 1.7823216823117206e-06}
+{"case": "plate", "n_jobs": 9, "backend": "process", "blas": "1", "time": 10.979009799999858, "n_items": 48, "check": 1.7823216823117206e-06}
+{"case": "plate", "n_jobs": 10, "backend": "process", "blas": "1", "time": 12.03482189999977, "n_items": 48, "check": 1.7823216823117206e-06}
+{"case": "plate", "n_jobs": 11, "backend": "process", "blas": "1", "time": 13.523259200000211, "n_items": 48, "check": 1.7823216823117206e-06}
+{"case": "plate", "n_jobs": 12, "backend": "process", "blas": "1", "time": 15.090643, "n_items": 48, "check": 1.7823216823117206e-06}
