@@ -245,51 +245,86 @@ def exp_figs72():
     from fea_engine.material import D_plane_stress, Material
     from fea_engine import batched_kernels as bk
 
-    # ------------------------------------------------------------ figure 1: schematic
-    fig, ax = plt.subplots(2, 1, figsize=(7.0, 6.2))
-    a = ax[0]; a.set_xlim(0, 14); a.set_ylim(-0.5, 6.6); a.axis("off"); a.grid(False)
-    nE, nQ = 5, 4
-    for off, title in ((0.4, "loop: one Python call chain per cell"), (7.6, "batched: one array, one call")):
-        a.text(off + 2.9, 6.2, title, ha="center", fontsize=9, weight="bold")
-        for e in range(nE):
+    # ------------------------------------------------------------ figure 1: schematic (axes and fold)
+    with plt.rc_context({"font.size": 8, "mathtext.fontset": "dejavusans"}):
+        RED, REDF = "#c0504d", "#fde9d9"; YEL, YELF = "#bf9000", "#fff2cc"; GRN, GRNF = "#548235", "#e2f0d9"
+        BLU, BLUF = "#5b8fc7", "#eaf2fb"; TR = "#c00000"
+        fig, (a, b) = plt.subplots(2, 1, figsize=(7.0, 7.3), gridspec_kw={"height_ratios": [4.3, 7.0], "hspace": 0.05})
+        for ax in (a, b): ax.axis("off")
+        b.set_aspect("equal")
+
+        # ------------------------------------------------ (a)
+        a.set_xlim(0, 14); a.set_ylim(-1.6, 6.9)
+        a.text(0.0, 6.75, "(a)", fontsize=10, weight="bold", va="center")
+        nE, nQ, cw, ch, gx, gy = 5, 4, 1.0, 0.62, 0.22, 0.28
+        def grid(x0, fc, ec, numbers=False):
+            n = 0
+            for e in range(nE):
+                for q in range(nQ):
+                    x = x0 + q * (cw + gx); y = 4.45 - e * (ch + gy)
+                    hl = numbers and e == 1 and q == 1
+                    a.add_patch(mp.Rectangle((x, y), cw, ch, fc="#ffd9d9" if hl else fc, ec=TR if hl else ec, lw=1.6 if hl else 0.8))
+                    if numbers:
+                        lab = "$En_g$" if (e == nE - 1 and q == nQ - 1) else ("$\\cdots$" if (e == nE - 2 and q == nQ - 1) else str(n + 1))
+                        a.text(x + cw / 2, y + ch / 2, lab, ha="center", va="center", fontsize=7, color=TR if hl else "#444")
+                    n += 1
             for q in range(nQ):
-                a.add_patch(mp.Rectangle((off + 0.8 + q * 1.2, 4.9 - e * 0.9), 1.0, 0.7, fc="#eaf2fb", ec="#5b8fc7", lw=0.8))
-            a.text(off + 0.55, 5.25 - e * 0.9, f"$e={e + 1}$" if e < nE - 1 else "$e=E$", ha="right", va="center", fontsize=7)
-        for q in range(nQ):
-            a.text(off + 1.3 + q * 1.2, 5.75, f"$q={q + 1}$" if q < nQ - 1 else "$q=n_g$", ha="center", fontsize=7)
-    # loop arrows
-    for e in range(nE):
-        for q in range(nQ - 1):
-            a.annotate("", xy=(0.4 + 0.8 + (q + 1) * 1.2, 5.25 - e * 0.9), xytext=(0.4 + 1.8 + q * 1.2, 5.25 - e * 0.9),
-                       arrowprops=dict(arrowstyle="->", color="tab:red", lw=0.8))
-    a.text(3.3, 0.35, "$E\\,n_g$ steps, each a few NumPy calls\non a $2\\times2$ or $3\\times3$ array", ha="center", fontsize=8, color="tab:red")
-    a.add_patch(mp.FancyBboxPatch((7.6 + 0.7, 1.35), 5.0, 4.15, boxstyle="round,pad=0.05", fc="none", ec="tab:green", lw=1.8))
-    a.text(10.5, 0.1, "$F_{eqij}=\\delta_{ij}+\\sum_a u_{eai}\\,(\\partial N_a/\\partial X_j)_{eq}$\none call over the axes $e$ and $q$", ha="center", fontsize=8, color="tab:green")
-    a.text(0.0, 6.5, "(a)", fontsize=10, weight="bold")
-    b = ax[1]; b.set_xlim(0, 14); b.set_ylim(0, 6.0); b.axis("off"); b.grid(False)
-    b.text(0.0, 5.85, "(b)", fontsize=10, weight="bold")
-    b.text(3.0, 5.5, "sum of $n_g$ small products", ha="center", fontsize=9, weight="bold")
-    for q in range(4):
-        x0 = 0.3 + q * 1.5
-        b.add_patch(mp.Rectangle((x0, 3.2), 0.5, 1.5, fc="#fde9d9", ec="#c0504d", lw=0.8))   # B_q^T: n_dof x s  (drawn 8x3)
-        b.add_patch(mp.Rectangle((x0 + 0.6, 3.9), 0.5, 0.8, fc="#fff2cc", ec="#bf9000", lw=0.8))  # D (s x s)
-        b.add_patch(mp.Rectangle((x0 + 1.2, 3.9), 0.0, 0.0))
-        b.text(x0 + 0.25, 2.95, f"$B_{q + 1}^T$", ha="center", fontsize=7); b.text(x0 + 0.85, 3.65, "$D$", ha="center", fontsize=7)
-    b.text(3.0, 1.3, "$K_e=\\sum_{g=1}^{n_g}c_g\\,B_g^T D B_g$\n$n_g$ products, each with contraction length $s$", ha="center", fontsize=8)
-    b.text(7.0, 4.1, "$\\Rightarrow$", ha="center", fontsize=16)
-    b.text(10.4, 5.5, "one stacked product", ha="center", fontsize=9, weight="bold")
-    Qd, sd = 4, 3
-    for q in range(Qd):
-        b.add_patch(mp.Rectangle((8.0, 3.0 + (Qd - 1 - q) * 0.45), 0.9, 0.42, fc="#fde9d9", ec="#c0504d", lw=0.7))
-        b.add_patch(mp.Rectangle((9.8, 3.0 + (Qd - 1 - q) * 0.45), 0.9, 0.42, fc="#fff2cc", ec="#bf9000", lw=0.7))
-    b.text(8.45, 4.95, "$B_c^T$", ha="center", fontsize=8); b.text(10.25, 4.95, "$DB$", ha="center", fontsize=8)
-    b.text(9.35, 3.75, "$\\times$", ha="center", fontsize=12)
-    b.text(8.45, 2.75, "stacked $c_gB_g$\n$(n_g s)\\times n_{dof}$", ha="center", fontsize=7)
-    b.text(10.25, 2.75, "stacked $DB_g$\n$(n_g s)\\times n_{dof}$", ha="center", fontsize=7)
-    b.add_patch(mp.Rectangle((11.7, 3.3), 1.2, 1.2, fc="#e2f0d9", ec="#548235", lw=0.8)); b.text(11.3, 3.85, "$=$", fontsize=12, ha="center")
-    b.text(12.3, 4.7, "$K_e$", ha="center", fontsize=8); b.text(12.3, 2.9, "$n_{dof}\\times n_{dof}$", ha="center", fontsize=7)
-    b.text(10.4, 1.5, "one batched matrix product, contraction length $n_g\\,s$\n(drawn for $n_g=4$, $s=3$: the quadrilateral, length 12)", ha="center", fontsize=8, color="tab:green")
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch06_axes_fold.pdf")); plt.close(fig)
+                a.text(x0 + q * (cw + gx) + cw / 2, 5.4, f"$q={q+1}$" if q < nQ - 1 else "$q=n_g$", ha="center", fontsize=7)
+            for e in range(nE):
+                a.text(x0 - 0.15, 4.45 - e * (ch + gy) + ch / 2, f"$e={e+1}$" if e < nE - 1 else "$e=E$", ha="right", va="center", fontsize=7)
+        gl, gr = 1.0, 8.4
+        grid(gl, BLUF, BLU, numbers=True); grid(gr, GRNF, GRN)
+        a.text(gl + 2.6, 6.1, "loop: one cell at a time", ha="center", va="center", fontsize=9, weight="bold")
+        a.text(gr + 2.6, 6.1, "batched: all cells in one array", ha="center", va="center", fontsize=9, weight="bold")
+        a.text(0.4, 0.2, "$E\\,n_g$ steps, each a separate Python call chain", ha="left", va="center", fontsize=8, color=TR)
+        a.text(0.4, -0.3, "highlighted: step 6, a few NumPy calls", ha="left", va="center", fontsize=7.5, color=TR)
+        x1, x2 = gr - 0.12, gr + 4 * cw + 3 * gx + 0.12
+        a.add_patch(mp.FancyBboxPatch((x1, 4.45 - 4 * (ch + gy) - 0.12), x2 - x1, 5 * ch + 4 * gy + 0.24, boxstyle="round,pad=0.03", fc="none", ec=GRN, lw=1.8))
+        a.text(gr + 2.6, 0.2, "one array of shape $(E,\\,n_g,\\,\\ldots)$, one call", ha="center", va="center", fontsize=8, color=GRN)
+        a.text(gr + 2.6, -1.0, "$F_{eqij}=\\delta_{ij}+\\sum_a u_{eai}\\,(\\partial N_a/\\partial X_j)_{eq}$", ha="center", va="center", fontsize=8, color=GRN)
+
+        # ------------------------------------------------ (b)
+        b.set_xlim(0, 14); b.set_ylim(0, 8.3)
+        b.text(0.0, 8.1, "(b)", fontsize=10, weight="bold", va="center")
+        b.text(7.0, 8.1, "the Gauss-point sum becomes one product", ha="center", va="center", fontsize=9, weight="bold")
+        def R(x, y, w, h, fc, ec, lw=0.8): b.add_patch(mp.Rectangle((x, y), w, h, fc=fc, ec=ec, lw=lw))
+        def T(x, y, s, **k): b.text(x, y, s, ha=k.pop("ha", "center"), va=k.pop("va", "center"), fontsize=k.pop("fontsize", 7.5), **k)
+        # row 1
+        y1, H = 5.9, 1.1
+        def triple(x0, g):
+            R(x0, y1, 0.42, H, REDF, RED); R(x0 + 0.57, y1 + H - 0.42, 0.42, 0.42, YELF, YEL); R(x0 + 1.14, y1 + H - 0.42, H, 0.42, REDF, RED)
+            return x0 + 1.14 + H
+        xs = [0.3, 3.3, 7.3]
+        for x0, lab in zip(xs, ("1", "2", "n_g")):
+            xe = triple(x0, lab)
+            T(x0 + 0.21, y1 - 0.3, f"$B_{{{lab}}}^T$"); T(x0 + 0.78, y1 + H - 0.42 - 0.3, "$D$"); T(x0 + 1.14 + H / 2, y1 + H - 0.42 - 0.3, f"$B_{{{lab}}}$")
+        T(2.9, y1 + H / 2 + 0.15, "$+$", fontsize=11); T(5.9, y1 + H / 2 + 0.15, "$+\\ \\cdots\\ +$", fontsize=11)
+        T(9.95, y1 + H / 2 + 0.15, "$=$", fontsize=11); R(10.45, y1, H, H, GRNF, GRN); T(10.45 + H / 2, y1 - 0.3, "$K_e$")
+        T(11.9, y1 + H / 2, "$K_e=\\sum_{g=1}^{n_g} c_g\\,B_g^T D\\,B_g$", fontsize=8, ha="left")
+        T(5.0, y1 + H + 0.45, "$n_g$ small products, each contracting over $s$ entries", color="#444", fontsize=8)
+        # fold arrow
+        b.annotate("", xy=(3.2, 3.55), xytext=(3.2, 4.9), arrowprops=dict(arrowstyle="-|>", color="#333", lw=1.2))
+        T(3.5, 4.25, "fold: stack the $n_g$ blocks", ha="left", fontsize=8)
+        # row 2
+        ng, bw = 4, 0.55
+        yb = 0.8; Hb = ng * bw
+        xr = 0.6
+        yc = yb + Hb / 2 - H / 2
+        for q in range(ng):
+            R(xr + q * bw, yc, bw, H, REDF, RED, 0.9)
+        R(xr, yc, ng * bw, H, "none", RED, 1.4)
+        T(xr + ng * bw / 2, yc + H + 0.3, "$B_c^T$ ($c_g$ included)"); T(xr + ng * bw / 2, yc - 0.3, "$n_{dof}\\times n_gs$")
+        xd = xr + ng * bw + 0.7
+        T(xd - 0.35, yb + Hb / 2, "$\\times$", fontsize=12)
+        for q in range(ng):
+            R(xd, yb + (ng - 1 - q) * bw, H, bw, YELF, YEL, 0.9)
+        R(xd, yb, H, Hb, "none", YEL, 1.4)
+        T(xd + H / 2, yb + Hb + 0.3, "$DB$"); T(xd + H / 2, yb - 0.3, "$n_gs\\times n_{dof}$")
+        xk = xd + H + 0.7
+        T(xk - 0.35, yb + Hb / 2, "$=$", fontsize=12); R(xk, yc, H, H, GRNF, GRN, 1.4)
+        T(xk + H / 2, yc + H + 0.3, "$K_e$"); T(xk + H / 2, yc - 0.3, "$n_{dof}\\times n_{dof}$")
+        T(xk + H + 0.9, yb + Hb / 2, "one batched matrix product,\ncontraction length $n_g\\,s$\n(drawn for the quadrilateral:\n$n_g=4$, $s=3$, length 12)", ha="left", color=GRN, fontsize=8)
+        fig.savefig(os.path.join(FIG, "ch06_axes_fold.pdf"), bbox_inches="tight", pad_inches=0.03); plt.close(fig)
 
     # ------------------------------------------------------------ figure 2: four variants
     rng = np.random.default_rng(0)
