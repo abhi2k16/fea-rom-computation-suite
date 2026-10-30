@@ -5,7 +5,7 @@ rows=[];base={}
 def row(label,case,nj,be,bl,ref):
     t=g(case,nj,be,bl); rows.append("%s & %d & %s & %.2f & %.2f & %.0f\\,\\%% \\\\"%(label,nj,bl,t,ref/t,100*ref/t/nj))
 t1=g('plate',1,'process','1')
-rows.append("\\multicolumn{6}{@{}l}{\\emph{(a) twelve plate solves, $n=5\\,000$ dofs each; time in s}} \\\\")
+rows.append("\\multicolumn{6}{@{}l}{\\emph{(a) twelve plate-model solves, $n=5\\,000$ dofs each; time in s}} \\\\")
 for bl in('1','2'):
     for nj,be,lab in((1,'process','serial'),(2,'process','2 processes'),(4,'process','4 processes'),(2,'thread','2 threads')):
         t=g('plate',nj,be,bl); rows.append("%s & %d & %s & %.2f & %.2f & %.0f\\,\\%% \\\\"%(lab,nj,bl,t,t1/t,100*t1/t/nj))
@@ -22,6 +22,8 @@ open('tables/ch06_multicore.tex','w').write(tab)
 m={'mcPlateSpeed':"%.1f"%(t1/g('plate',2,'process','1')),'mcPlateFour':"%.1f"%(t1/g('plate',4,'process','1')),
  'mcDenseBlas':"%.2f"%(d1/g('dense',1,'process','2')),'mcDenseProc':"%.2f"%(d1/g('dense',2,'process','1')),
  'mcDenseOver':"%.2f"%(d1/g('dense',2,'process','2')),'mcTinySlow':"%.0f"%(g('tiny',2,'process','1')/tt),
- 'mcTinyThread':"%.0f"%(g('tiny',2,'thread','1')/tt),'mcPlateOne':"%.0f"%(1000*t1/12)}
+ 'mcTinyThread':"%.0f"%(g('tiny',2,'thread','1')/tt),'mcPlateOne':"%.0f"%(1000*t1/12),
+ 'mcPlateEff':"%.0f"%(100*t1/g('plate',2,'process','1')/2),'mcTinyPool':"%.0f"%(1000*g('tiny',2,'process','1')),
+ 'mcBreakEven':"%.0f"%(2*1000*g('tiny',2,'process','1')/12)}
 open('tables/numbers_ch06_multicore.tex','w').write("".join("\\newcommand{\\%s}{%s}\n"%(k,v) for k,v in m.items()))
 print(m); print(tab)
