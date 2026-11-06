@@ -327,6 +327,11 @@ def fig_quality():
     num("cmeQMinDetHi", f"{data[0.45]['dmin'].min():.2f}")
     num("cmeQConvexMin", f"{min(reent['convex']):.2f}"); num("cmeQReentMin", f"{min(reent['re-entrant']):.2f}")
     num("cmeQReentNeg", str(sum(1 for d in reent['re-entrant'] if d <= 0)))
+    num("cmeQUnitDet", "0.25")   # detJ of the unit square: area 1 over the reference area 4
+    num("cmeQReentCentre", f"{np.mean(reent['re-entrant']):.3f}")          # linear detJ: centre = mean of Gauss values
+    num("cmeQReentOther", ", ".join(f"{d:.2f}" for d in reent['re-entrant'] if d > 0))
+    num("cmeQAspLo", f"{data[0.0]['asp'].max():.1f}"); num("cmeQAspHi", f"{data[0.45]['asp'].max():.1f}")
+    num("cmeQAngLo", f"{data[0.0]['ang'].min():.0f}"); num("cmeQAngHi", f"{data[0.45]['ang'].min():.0f}")
     # first perturbation at which an element inverts
     first = None
     for f in np.arange(0.5, 1.51, 0.05):
@@ -542,6 +547,9 @@ def fig_payoff():
     ax.legend(fontsize=5.8, frameon=False); ax.grid(alpha=0.25, which="both"); ax.tick_params(labelsize=6.5)
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch02_payoff.pdf"), bbox_inches="tight"); plt.close(fig)
     num("cmePayRef", f"{ref:.3f}"); num("cmePayRefEl", str(nref))
+    for k, (lab, pf, col) in zip(("U", "R", "P"), strat):
+        mm = M.rectangle_with_hole_mesh_quarter(2.0, 1.0, 0.3, 8, 16, pf(8))
+        num(f"cmePay{k}Nb", f"{mm.check_grading(verbose=False):.2f}")
     for k, (lab, (e, col)) in zip(("U", "R", "P"), curves.items()):
         num(f"cmePay{k}Err", f"{100 * e[3][1]:.1f}"); num(f"cmePay{k}El", str(e[3][0]))   # nr=16
         num(f"cmePay{k}ErrFine", f"{100 * e[-1][1]:.1f}")
