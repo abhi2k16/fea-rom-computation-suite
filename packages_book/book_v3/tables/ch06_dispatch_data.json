@@ -1,0 +1,24 @@
+{
+ "source": "read back from the vector PDF of the earlier figure (about 1 % precision) because the timings were not saved; replaced by the raw timings the next time ch01_assets.py is run",
+ "n_free": [
+  144,
+  544,
+  1200,
+  2112,
+  3280
+ ],
+ "t_scipy_ms": [
+  1.21,
+  3.51,
+  8.83,
+  16.99,
+  29.77
+ ],
+ "t_auto_ms": [
+  1.9,
+  12.9,
+  38.5,
+  191.7,
+  561.8
+ ]
+}

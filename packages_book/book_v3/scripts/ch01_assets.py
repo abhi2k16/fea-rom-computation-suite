@@ -171,7 +171,7 @@ def solve_time(n, backend, reps=3):
         t0 = time.perf_counter()
         s.solve_static()
         best = min(best, time.perf_counter() - t0)
-    return best, s.n_dof
+    return best, len(s.free_dofs)                  # free degrees of freedom: the count that the threshold of 'auto' applies to
 
 
 def exp_dispatch():
@@ -187,11 +187,13 @@ def exp_dispatch():
         ts.append(a); ta.append(b); nd.append(d)
         print(f"dispatch n={n} ({d} dofs): scipy {a*1e3:.2f} ms auto {b*1e3:.2f} ms", flush=True)
     ts, ta, nd = map(np.array, (ts, ta, nd))
-    fig, ax = plt.subplots(1, 2, figsize=(8.2, 3.1))
-    ax[0].loglog(nd, ts * 1e3, "o-", label="backend='scipy'"); ax[0].loglog(nd, ta * 1e3, "s--", label="backend='auto'")
-    ax[0].set_xlabel("dofs"); ax[0].set_ylabel("solve_static time (ms)"); ax[0].legend()
-    ax[1].semilogx(nd, (ta - ts) * 1e3, "o-"); ax[1].set_xlabel("dofs"); ax[1].set_ylabel("extra time of 'auto' (ms)")
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch06_dispatch.pdf")); plt.close(fig)
+    import json, sys
+    json.dump({"source": "measured by ch01_assets.py (minimum of three runs)", "n_free": [int(v) for v in nd],
+               "t_scipy_ms": [float(v) * 1e3 for v in ts], "t_auto_ms": [float(v) * 1e3 for v in ta]},
+              open(os.path.join(TAB, "ch06_dispatch_data.json"), "w"), indent=1)
+    sys.path.insert(0, HERE)
+    import ch06_dispatch_fig                       # figure and the macros numbers_ch06_dispatch.tex, from the stored data
+    ch06_dispatch_fig.main()
     sl = np.polyfit(np.log(nd[1:]), np.log(ta[1:] - ts[1:]), 1)[0]
     num("cdeDispSlope", f"{sl:.1f}")
     num("cdeDenseFiveK", f"{8 * 5000 ** 2 / 1e9:.1f}"); num("cdeDenseFiftyK", f"{8 * 50000 ** 2 / 1e9:.1f}")
