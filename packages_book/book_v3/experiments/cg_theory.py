@@ -8,6 +8,8 @@ from fea_engine.material import Material, D_plane_stress
 from fea_engine.mesh import rectangle_mesh
 from fea_engine.elements import ELEMENT_REGISTRY
 
+TOL64, TOL32 = 1e-10, 1e-5   # the two tolerances of Table bk-cgtheory (macros cgThTolDouble, cgThTolSingle)
+
 def pcg(K, b, dtype, tol, jacobi=True, maxit=20000):
     K = K.astype(dtype); b = b.astype(dtype); d = K.diagonal()
     pre = (lambda r: r / d) if jacobi else (lambda r: r)
@@ -35,13 +37,17 @@ for ny in (8, 16, 32, 64):
     lmin = spl.eigsh(Kff.tocsc(), k=1, sigma=0, which="LM", return_eigenvectors=False)[0]
     lmaxs = spl.eigsh(Ks, k=1, which="LM", return_eigenvectors=False)[0]
     lmins = spl.eigsh(Ks.tocsc(), k=1, sigma=0, which="LM", return_eigenvectors=False)[0]
-    _, itp, okp = pcg(Kff, Ff, np.float64, 1e-10, True)
-    _, itc, okc = pcg(Kff, Ff, np.float64, 1e-10, False)
-    x32, it32, ok32 = pcg(Kff, Ff, np.float32, 1e-10, True, maxit=4 * itp)
-    x32b, it32b, ok32b = pcg(Kff, Ff, np.float32, 1e-5, True)
+    _, itp, okp = pcg(Kff, Ff, np.float64, TOL64, True)
+    _, itc, okc = pcg(Kff, Ff, np.float64, TOL64, False)
+    x32, it32, ok32 = pcg(Kff, Ff, np.float32, TOL64, True, maxit=4 * itp)
+    x32b, it32b, ok32b = pcg(Kff, Ff, np.float32, TOL32, True)
     e32 = np.linalg.norm(x32b - xref) / np.linalg.norm(xref)
     rows.append(dict(n=n, nnz=int(Kff.nnz), kappa=lmax / lmin, kappa_j=lmaxs / lmins, it_cg=itc, it_pcg=itp,
                      f32_conv_1e10=bool(ok32), f32_err_at_1e5=float(e32), it32_1e5=it32b,
                      bytes_csr=int(Kff.data.nbytes + Kff.indices.nbytes + Kff.indptr.nbytes), bytes_dense=8 * n * n))
     print(rows[-1], flush=True)
 json.dump(rows, open("/tmp/cg_theory.json", "w"), indent=1)
+
+def _pow(x):
+    return "$10^{%d}$" % int(round(np.log10(x)))
+open("tables/numbers_ch06_cgtheory_tol.tex", "w").write("\\newcommand{\\cgThTolDouble}{%s\\xspace}\n\\newcommand{\\cgThTolSingle}{%s\\xspace}\n" % (_pow(TOL64), _pow(TOL32)))

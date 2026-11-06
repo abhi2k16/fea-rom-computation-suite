@@ -65,6 +65,13 @@ def tables():
     num("bktGpu", env["gpu"].replace("NVIDIA GeForce ", "")); num("bktTorch", env["torch"].split("+")[0])
     num("bktCuda", env["torch_cuda_build"]); num("bktCores", str(env["cpu_count"]))
     num("bktFirstDof", f"{r0['n_free']:,}".replace(",", "\\,")); num("bktLastDof", f"{r3['n_free']:,}".replace(",", "\\,"))
+    num("bktFirstSciPyMs", ms(r0["t_scipy_s"]))
+    num("bktMeshFirst", f"${r0['nx']}\\times{r0['ny']}$"); num("bktMeshLast", f"${r3['nx']}\\times{r3['ny']}$")
+    import re as _re0
+    _tol = _re0.search(r"tol (1e-\d+)", E6["data"]["note"]).group(1)
+    num("bktCgTol", f"$10^{{-{int(_tol.split('-')[1])}}}$")
+    _kd = max(kern[dev][k] for dev in ("cpu", "cuda") for k in ("max_rel_diff_force", "max_rel_diff_tangent"))
+    num("bktKernDiffMax", sci(_kd))
     # solve table
     L = []
     for r in rows:
@@ -140,6 +147,8 @@ def torch_free():
     # backend="auto"
     from fea_engine.mesh import rectangle_mesh
     MAT = Material(E=2.1e11, nu=0.3, rho=7850.0)
+    AUTO_LOW_THRESHOLD = 1000
+    num("bktAutoLowThr", f"{AUTO_LOW_THRESHOLD:,}".replace(",", "\\,"))
     picks = []
     for nx, ny in ((32, 16), (64, 32)):
         mesh = rectangle_mesh(Lx=2.0, Ly=1.0, nx=nx, ny=ny)
@@ -148,7 +157,7 @@ def torch_free():
         mesh.select_nodes(x=0.0, name="root"); s.fix_dofs("root", ["ux", "uy"])
         rs = s.form_linear_system()
         b, d = select_backend(rs.K)
-        b2, d2 = select_backend(rs.K, dof_threshold=1000)
+        b2, d2 = select_backend(rs.K, dof_threshold=AUTO_LOW_THRESHOLD)
         picks.append((rs.n_free, b, b2, d["spd"]))
     num("bktAutoThr", f"{AUTO_DOF_THRESHOLD:,}".replace(",", "\\,"))
     import re as _re
