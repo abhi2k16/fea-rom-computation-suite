@@ -1,0 +1,8 @@
+good mesh: total area 1.000
+  9 elements, 16 nodes, dim=2
+  detJ range: [2.778e-02, 2.778e-02]  (max/min |detJ| ratio: 1.0)
+  OK: all Gauss-point Jacobians positive (no inverted elements)
+bad  mesh: total area 1.000
+  9 elements, 16 nodes, dim=2
+  detJ range: [-2.778e-02, 2.778e-02]  (max/min |detJ| ratio: 1.0)
+  *** 1 element(s) with non-positive detJ -- INVERTED/DEGENERATE ***

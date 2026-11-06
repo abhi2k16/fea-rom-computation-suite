@@ -506,6 +506,7 @@ def fig_plan():
         fh.write("\\bottomrule\n\\end{tabular}\n")
     closed = max(abs(G.grade_for_growth_ratio(n_, t_) - np.log2(1 + t_)) for n_ in (6, 12, 20) for t_ in (1.1, 1.2, 1.5, 2.0))
     num("cmeGradeClosedDiff", sci(closed)); print("closed-form p = log2(1+rho) max diff", closed)
+    num("cmeGrowthTarget", "1.2"); num("cmeGrowthWarn", f"{G.GROWTH_RATIO_WARN_THRESHOLD:.1f}")   # rule of thumb; code constant
     num("cmePlanWarnLow", str(len(P.warnings))); num("cmePlanWarnHigh", str(len(P2.warnings)))
     # the figure figures/ch02_plan.pdf is drawn by scripts/ch02_plan_fig.py
     print("plan rows", rows, "warnings", len(P.warnings), len(P2.warnings))

@@ -1,0 +1,5 @@
+n_nodes, dim: (20, 2)  n_dof: 40
+node 13 at [3.         0.33333333]: dofs 26, 27 -> U[2*i:2*i+2] = [-5.01006694e-08 -5.72795018e-07]
+U.nodal[13]       = [-5.01006694e-08 -5.72795018e-07]
+uy at the tip nodes: [-9.01e-07 -9.00e-07 -9.00e-07 -9.01e-07]
+largest deflection: node 16 at [4. 0.], uy = -9.0131e-07
