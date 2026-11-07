@@ -34,7 +34,7 @@ def fig_cloud(b):
         ax[k].set_xlim(-0.28, 0.28); ax[k].set_ylim(-0.14, 0.14); ax[k].axhline(0, color="0.6", lw=0.6)
         ax[k].set_xlabel("coordinate on mode 2"); ax[k].set_title(title, fontsize=9)
         cb = fig.colorbar(sc, ax=ax[k], pad=0.02); cb.set_label(lab, fontsize=8)
-        NUM[f"cpdCloudQ3Max{'AB'[k]}"] = sci(float(np.abs(Q[2]).max()))
+        NUM[f"cpdCloudThirdMax{'AB'[k]}"] = sci(float(np.abs(Q[2]).max()))
     ax[0].set_ylabel("coordinate on mode 3")
     for s_, st, lab in ((sv[0], "o-", "fixed tip load"), (sv[1], "s-", "moving load")):
         ax[2].semilogy(np.arange(1, 13), s_[:12], st, ms=4, label=lab)
