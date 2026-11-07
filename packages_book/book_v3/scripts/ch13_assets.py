@@ -336,7 +336,7 @@ def exp_c(ax):
     ax[1].bar(np.arange(n_elem), [-1 if e in sel_ca else 0 for e in range(n_elem)], width=1.0, alpha=0.6, label="contact-aware")
     ax[1].axvspan(min(req) - 0.5, max(req) + 0.5, color="C3", alpha=0.12, label="contact elements")
     ax[1].set_xlabel("element"); ax[1].set_yticks([]); ax[1].legend(loc="lower right"); ax[1].set_title("selected elements (tol $10^{-6}$)")
-    # batched route timing on a plate (external script)
+    # batched path timing on a plate (external script)
     try:
         root = os.path.abspath(os.path.join(BOOK, "..", ".."))
         env = dict(os.environ)

@@ -12,7 +12,7 @@ Writes into book/:
 
 It reuses the family benchmarks of paper/experiments/e10_batched_kernels.py (imported, not run, so the stored
 paper/results/batched_kernels.json is not touched). Times are from the machine that runs this script; the reference
-route is timed once, the batched route is the minimum of several runs. Run from the repository root:
+route is timed once, the batched path is the minimum of several runs. Run from the repository root:
 
     python packages_book/book/scripts/ch06_assets.py
 """
