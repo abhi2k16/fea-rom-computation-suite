@@ -63,7 +63,7 @@ def main():
     ax.plot(xx, 1e3 * u_ex(xx), color=BLUE, lw=1.4, label="exact $u$"); ax.plot(x, 1e3 * u, "o-", color=ORANGE, lw=1.1, ms=3.5, label=r"finite element $u_h$")
     ax.set_xlabel("$x$ (m)", fontsize=7.5); ax.set_ylabel("displacement (mm)", fontsize=7.5); ax.tick_params(labelsize=6.5)
     ax.legend(fontsize=6.3, frameon=False, loc="upper left"); ax.set_title("(a) the solution", fontsize=8)
-    ax.text(0.97, 0.06, f"nodal difference\n{nodal_diff:.1e} m", transform=ax.transAxes, ha="right", fontsize=6.3, color="0.3")
+    ax.text(0.97, 0.06, f"nodal difference\n{nodal_diff / u_ex(L):.0e} of the tip value", transform=ax.transAxes, ha="right", fontsize=6.3, color="0.3")
     # (b)
     ax = axs[1]
     for e in range(ne):
@@ -72,9 +72,9 @@ def main():
         ax.annotate("", xy=(xi, 2.6), xytext=(xi, -q / 1e3), arrowprops=dict(arrowstyle="-|>", color=RED, lw=1.2, mutation_scale=7))
     ax.axhline(0, color="0.7", lw=0.6)
     ax.set_xlim(-0.02, L + 0.02); ax.set_ylim(-3.2, 3.3)
-    ax.set_xlabel("$x$ (m)", fontsize=7.5); ax.set_ylabel(r"$-(EA\,u_h')'-q$  (kN/m)", fontsize=7.5); ax.tick_params(labelsize=6.5)
+    ax.set_xlabel("$x$ (m)", fontsize=7.5); ax.set_ylabel(r"$-(EA\,u_h')'-q$  (kN/m between nodes)", fontsize=7.0); ax.tick_params(labelsize=6.5)
     ax.text(0.5 * L, -2.55, "inside each element: $-q$, not zero", ha="center", fontsize=6.3, color=BLUE)
-    ax.text(0.98, 2.95, "point force at each node\n(the derivative of a kink)", ha="right", va="top", fontsize=6.3, color=RED)
+    ax.text(0.98, 2.95, f"point force of {abs(spike[0]):.0f} N at each node\n(the derivative of a kink; arrows not to scale)", ha="right", va="top", fontsize=6.0, color=RED)
     ax.set_title("(b) the strong form fails for $u_h$", fontsize=8)
     # (c)
     ax = axs[2]; idx = np.arange(1, ne + 1); w = 0.26
@@ -83,9 +83,10 @@ def main():
     ax.axhline(0, color="0.5", lw=0.6)
     ax.set_xticks(idx); ax.set_xticklabels([f"$N_{a}$" for a in idx], fontsize=7)
     ax.set_xlabel("test function $v$", fontsize=7.5); ax.set_ylabel("weak residual / $(P+qL)$", fontsize=7.5); ax.tick_params(labelsize=6.5)
+    ax.set_ylim(-0.075, 0.012)
     ax.legend(fontsize=6.0, frameon=False, loc="lower left")
     ax.set_title("(c) the weak form holds for $u_h$", fontsize=8)
-    ax.text(0.97, 0.97, f"exact and $u_h$:\nat most {max(np.max(np.abs(r_ex)), np.max(np.abs(r_fe))):.0e}", transform=ax.transAxes, ha="right", va="top", fontsize=6.3, color="0.3")
+    ax.text(0.03, 0.44, f"exact $u$ and $u_h$:\nat most {max(np.max(np.abs(r_ex)), np.max(np.abs(r_fe))):.0e}\n(rounding)", transform=ax.transAxes, ha="left", va="center", fontsize=6.3, color="0.3")
     fig.tight_layout(w_pad=1.0)
     fig.savefig(os.path.join(FIG, "ch03_strongweak.pdf"), bbox_inches="tight"); plt.close(fig)
     with open(os.path.join(TAB, "numbers_ch03_strongweak.tex"), "w") as fh:
