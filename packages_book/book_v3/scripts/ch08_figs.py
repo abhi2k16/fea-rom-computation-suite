@@ -316,6 +316,72 @@ def fig_intro(b):
     print({k_: v for k_, v in NUM.items() if k_.startswith("cpdTab") or "Entr" in k_ or "SizeRatio" in k_})
 
 
+def fig_projection(b):
+    from matplotlib.patches import Polygon, FancyBboxPatch, FancyArrowPatch
+    from rom_engine import PodBasis
+    NAVY, ORG, GRN, VIO = "#1b3a5c", "#d9822b", "#2e8b57", "#6a3d9a"
+    fig = plt.figure(figsize=(9.0, 6.4))
+    gs = fig.add_gridspec(2, 2, hspace=0.38, wspace=0.2, width_ratios=[1.2, 1], height_ratios=[1.3, 1])
+    a, bb, c, d = fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1]), fig.add_subplot(gs[1, 0]), fig.add_subplot(gs[1, 1])
+    # ---- (a) geometry: error and residual
+    K = np.array([[4.0, 3.2], [3.2, 3.0]]); th = np.radians(8); v = np.array([np.cos(th), np.sin(th)])
+    u = np.array([2.2, 2.1]); f = K @ u
+    E = v * (v @ u); G = v * (v @ f) / (v @ K @ v)
+    eE, eG = u - E, u - G; rG = f - K @ G
+    a.set_aspect("equal"); a.axis("off")
+    t = np.array([-1.4, 5.6]); a.plot(t * v[0], t * v[1], color=VIO, lw=2.4); a.text(5.6 * v[0] + 0.05, 5.6 * v[1] + 0.1, r"span($\mathbf{V}$)", color=VIO, fontsize=8.5, ha="left")
+    a.plot([u[0], E[0]], [u[1], E[1]], color=ORG, lw=2); a.plot([u[0], G[0]], [u[1], G[1]], color=GRN, lw=2)
+    nn = eE / np.linalg.norm(eE); s_ = 0.15
+    a.add_patch(Polygon([E + s_ * nn, E + s_ * nn + s_ * v, E + s_ * v], closed=False, fill=False, ec=ORG, lw=0.9))
+    rr = rG / np.linalg.norm(rG) * 1.1
+    a.add_patch(FancyArrowPatch(tuple(G), tuple(G + rr), arrowstyle="-|>", mutation_scale=11, color=GRN, lw=1.6, ls="--"))
+    a.add_patch(Polygon([G + s_ * rr / 1.1, G + s_ * rr / 1.1 + s_ * v, G + s_ * v], closed=False, fill=False, ec=GRN, lw=0.9))
+    for pt, col in ((u, NAVY), (E, ORG), (G, GRN)): a.plot(*pt, "o", color=col, ms=6, zorder=5)
+    a.text(u[0] - 0.12, u[1] + 0.05, r"full solution $\mathbf{u}$", color=NAVY, fontsize=9, ha="right", fontweight="bold")
+    a.annotate("Euclidean projection $\\mathbf{V}\\mathbf{V}^T\\mathbf{u}$\nerror $\\perp$ subspace\n(needs $\\mathbf{u}$)", E, (E[0] - 2.3, E[1] - 2.0), color=ORG, fontsize=8, ha="center", arrowprops=dict(arrowstyle="->", color=ORG, lw=0.8))
+    a.annotate("Galerkin solution $\\mathbf{V}\\mathbf{q}$\nresidual $\\mathbf{r}=\\mathbf{f}-\\mathbf{K}\\mathbf{V}\\mathbf{q}\\perp$ subspace\n(needs only $\\mathbf{K},\\mathbf{f}$)", G, (G[0] + 0.9, G[1] - 2.2), color=GRN, fontsize=8, ha="center", arrowprops=dict(arrowstyle="->", color=GRN, lw=0.8))
+    a.text(G[0] + rr[0] + 0.08, G[1] + rr[1] + 0.02, "r (scaled)", color=GRN, fontsize=8, ha="left")
+    a.set_xlim(-3.4, 6.6); a.set_ylim(-3.2, 3.2); a.set_title("(a) two projections of $\\mathbf{u}$ onto the same subspace", fontsize=9, loc="left")
+    # ---- (b) the two errors along the subspace
+    q = np.linspace(-0.5, 4.6, 300); qE, qG = v @ u, (v @ f) / (v @ K @ v)
+    eK = np.array([0.5 * (u - v * x) @ K @ (u - v * x) for x in q]); e2 = np.array([0.5 * (u - v * x) @ (u - v * x) for x in q])
+    bb.plot(q, e2, color=ORG, lw=2, label=r"$\frac{1}{2}\|\mathbf{u}-\mathbf{V}\mathbf{q}\|_2^2$ (Euclidean)"); bb.plot(q, eK, color=GRN, lw=2, label=r"$\frac{1}{2}\|\mathbf{u}-\mathbf{V}\mathbf{q}\|_K^2$ (energy)")
+    bb.axvline(qE, color=ORG, ls=":", lw=1); bb.axvline(qG, color=GRN, ls=":", lw=1)
+    bb.plot([qE], [0.5 * (u - v * qE) @ (u - v * qE)], "o", color=ORG); bb.plot([qG], [0.5 * (u - v * qG) @ K @ (u - v * qG)], "o", color=GRN)
+    bb.text(qE - 0.04, bb.get_ylim()[1] * 0.0 + 0.25, "best in\nEuclidean norm", color=ORG, fontsize=8, ha="right", va="bottom"); bb.text(qG - 0.08, 2.2, "best in\nenergy norm", color=GRN, fontsize=8, ha="right", va="bottom")
+    bb.set_xlabel(r"coefficient $q$ along the subspace ($\mathbf{V}\mathbf{q}=q\,\mathbf{v}$)"); bb.set_ylabel("squared error / 2"); bb.set_ylim(-0.3, 12); bb.legend(fontsize=7.5, loc="upper center", frameon=False)
+    bb.set_title("(b) each error is smallest at a different point", fontsize=9, loc="left")
+    # ---- (c) what each needs
+    c.axis("off"); c.set_xlim(0, 10); c.set_ylim(0, 6)
+    def card(y, col, title, body):
+        c.add_patch(FancyBboxPatch((0.2, y), 9.6, 2.45, boxstyle="round,pad=0.05,rounding_size=0.2", fc=col + "1a", ec=col, lw=1.4))
+        c.text(0.5, y + 2.0, title, fontsize=9, fontweight="bold", color=col, va="center"); c.text(0.5, y + 0.9, body, fontsize=8, va="center", linespacing=1.45)
+    card(3.3, ORG, "Euclidean projection", r"$\hat{\mathbf{u}}=\mathbf{V}\mathbf{V}^T\mathbf{u}$ needs the full solution $\mathbf{u}$:" + "\nit cannot be computed online. It is the best\nthat the basis $\\mathbf{V}$ could do (the POD error).")
+    card(0.4, GRN, "Galerkin projection", r"$(\mathbf{V}^T\mathbf{K}\mathbf{V})\,\mathbf{q}=\mathbf{V}^T\mathbf{f}$ needs only $\mathbf{K}$ and $\mathbf{f}$:" + "\nan $r\\times r$ solve per query. For symmetric positive\ndefinite $\\mathbf{K}$ it minimises the energy error.")
+    c.set_title("(c) what each projection needs", fontsize=9, loc="left")
+    # ---- (d) measured on the beam
+    mus = A.design(60, "olhs", 0); S = b.snapshots(mus); test = A.design(40, "rand", 7)
+    r = 6; V = PodBasis().fit(S, n_modes=24).V[:, :r]
+    e2p, e2g, eKp, eKg = [], [], [], []
+    for mu in test:
+        x = b.solve(mu); Kf = mu[0] * b.K1 + mu[1] * b.K2
+        q_ = np.linalg.solve(V.T @ Kf @ V, V.T @ (Kf @ x)); xg = V @ q_; xp = V @ (V.T @ x)
+        nk = lambda e: float(np.sqrt(e @ Kf @ e))
+        e2p.append(np.linalg.norm(x - xp) / np.linalg.norm(x)); e2g.append(np.linalg.norm(x - xg) / np.linalg.norm(x))
+        eKp.append(nk(x - xp) / nk(x)); eKg.append(nk(x - xg) / nk(x))
+    e2p, e2g, eKp, eKg = map(np.array, (e2p, e2g, eKp, eKg))
+    xi = test[:, 2]
+    d.axhline(1.0, color="0.4", lw=1)
+    d.scatter(xi, e2g / e2p, s=18, color=ORG, label="Euclidean norm", zorder=3); d.scatter(xi, eKg / eKp, s=18, color=GRN, marker="s", label="energy norm", zorder=3)
+    d.set_yscale("log"); d.set_yticks([0.6, 0.8, 1, 1.4, 1.8]); d.set_yticklabels(["0.6", "0.8", "1", "1.4", "1.8"]); d.minorticks_off(); d.set_xlabel(r"load position $\xi$ of the unseen parameter"); d.set_ylabel("error of Galerkin / error of projection")
+    d.legend(fontsize=7.5, loc="lower right", frameon=False); d.text(0.1, 1.75, r"$\uparrow$ Galerkin worse", fontsize=7.5, color="0.35"); d.text(0.1, 0.66, r"$\downarrow$ Galerkin better", fontsize=7.5, color="0.35")
+    d.set_title(f"(d) the beam, {len(test)} unseen parameters, $r={r}$", fontsize=9, loc="left")
+    NUM["cpdProjR"] = str(r); NUM["cpdProjNTest"] = str(len(test)); NUM["cpdProjEnMin"] = f"{np.min(eKg / eKp):.2f}"; NUM["cpdProjWorstRatio"] = f"{np.max(e2g) / np.max(e2p):.2f}"
+    NUM["cpdProjEucRatio"] = f"{np.max(e2g / e2p):.2f}"; NUM["cpdProjEnWins"] = str(int(np.sum(eKg <= eKp * (1 + 1e-9)))); NUM["cpdProjEucWorse"] = str(int(np.sum(e2g >= e2p * (1 - 1e-9))))
+    fig.savefig(os.path.join(FIG, "ch08_projection.pdf"), bbox_inches="tight"); fig.savefig("/tmp/ch08_projection.png", dpi=115, bbox_inches="tight"); plt.close(fig)
+    print({k_: v_ for k_, v_ in NUM.items() if "Proj" in k_})
+
+
 def write_numbers():
     with open(os.path.join(TAB, "numbers_ch08_fig.tex"), "w") as fh:
         fh.write("% generated by scripts/ch08_figs.py -- do not edit\n")
@@ -331,4 +397,5 @@ if __name__ == "__main__":
     fig_svd(b)
     fig_designs(b)
     fig_intro(b)
+    fig_projection(b)
     write_numbers()
