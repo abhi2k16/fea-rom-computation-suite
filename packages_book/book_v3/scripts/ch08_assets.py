@@ -55,6 +55,7 @@ from rom_engine.sampling import optimal_lhs                                     
 LO, HI = 0.5, 5.0
 TIP_LOAD = -1000.0
 XI_LO, XI_HI = 0.1, 0.9
+COST_NSNAP, COST_MODES, COST_NQUERY, COST_NREASM = 16, 8, 200, 20   # cost experiment: snapshots, basis size, queries, re-assembly queries
 
 
 class Beam:
@@ -210,14 +211,14 @@ def exp_cost():
     recon = {}
     for n in (120, 600):
         b = Beam(n)
-        mus = design(16, "olhs", 0)[:, :2]
+        mus = design(COST_NSNAP, "olhs", 0)[:, :2]
         t0 = time.perf_counter(); S = b.snapshots(mus); t_snap = time.perf_counter() - t0
-        t0 = time.perf_counter(); pod = PodBasis().fit(S, n_modes=8); t_pod = time.perf_counter() - t0
+        t0 = time.perf_counter(); pod = PodBasis().fit(S, n_modes=COST_MODES); t_pod = time.perf_counter() - t0
         t0 = time.perf_counter()
         aff = AffineDecomposition([b.K1, b.K2], lambda mu: [mu[0], mu[1]]).project(pod.V)
         Fr = pod.V.T @ b.F
         t_proj = time.perf_counter() - t0
-        test = design(200, "rand", 3)[:, :2]
+        test = design(COST_NQUERY, "rand", 3)[:, :2]
         t0 = time.perf_counter()
         for mu in test:
             np.linalg.solve(aff.assemble_reduced(mu), Fr)
@@ -228,9 +229,9 @@ def exp_cost():
         t_full = (time.perf_counter() - t0) / len(test)
         m = b.model
         t0 = time.perf_counter()
-        for mu in test[:20]:
+        for mu in test[:COST_NREASM]:
             np.linalg.solve(m["K_direct"](mu[0], mu[1])[np.ix_(b.free, b.free)][np.ix_(b.keep, b.keep)], b.F)
-        t_reasm = (time.perf_counter() - t0) / 20
+        t_reasm = (time.perf_counter() - t0) / COST_NREASM
         # reconstruction (lift to the full space), local and global error on the test set, workflow speed-up
         Xr = [np.linalg.solve(aff.assemble_reduced(mu), Fr) for mu in test]
         t0 = time.perf_counter()
