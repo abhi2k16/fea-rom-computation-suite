@@ -851,7 +851,87 @@ def fig_dispatch():
     print("dispatch", len(plain.elements), len(holed.elements), bool(msg))
 
 
-STEPS = {"step1": [fig_anatomy, fig_elements, fig_quality],
+# ---------------------------------------------------------------------------------------------- Sec. 2.1 concept figure
+def _ring_concept(nr=3,nt=6,r0=0.45,r1=1.0):
+    nodes=[];idx={}
+    for j in range(nt+1):
+        for i in range(nr+1):
+            r=r0+(r1-r0)*i/nr; a=0.5*np.pi*j/nt
+            idx[i,j]=len(nodes); nodes.append((r*np.cos(a),r*np.sin(a)))
+    el=[[idx[i,j],idx[i+1,j],idx[i+1,j+1],idx[i,j+1]] for j in range(nt) for i in range(nr)]
+    return M.Mesh(np.array(nodes),np.array(el,dtype=int),dim=2)
+def fig_concept():
+    m=_ring_concept(); X=m.nodes; E=m.elements
+    from collections import Counter
+    from matplotlib.patches import Rectangle, FancyArrowPatch
+    cnt=Counter(E.ravel()); K=[n for n in sorted(cnt) if cnt[n]==4][2]
+    pe=[i for i,e in enumerate(E) if K in e]; pn=sorted(set(E[pe].ravel()))
+    fig=plt.figure(figsize=(8.0,3.2))
+    gs=fig.add_gridspec(1,3,width_ratios=[1.45,1.1,0.9],wspace=0.06)
+    ax=fig.add_subplot(gs[0])
+    for e in E: ax.add_patch(Polygon(X[e],closed=True,fc="#eaf1f8",ec=GREY,lw=0.7))
+    r0,r1=0.45,1.0; th=np.linspace(0,np.pi/2,80)
+    for r in (r0,r1): ax.plot(r*np.cos(th),r*np.sin(th),color=BLUE,lw=1.8)
+    ax.plot([r0,r1],[0,0],color=BLUE,lw=1.8); ax.plot([0,0],[r0,r1],color=BLUE,lw=1.8)
+    ax.plot(X[:,0],X[:,1],"o",ms=2.8,color=BLUE)
+    px=X[pn]; x0,y0=px.min(0)-0.04; x1,y1=px.max(0)+0.04
+    ax.add_patch(Rectangle((x0,y0),x1-x0,y1-y0,fc="none",ec=ORANGE,lw=1.7,zorder=5))
+    ax.annotate("zoomed in (b)",xy=(x1,y1),xytext=(0.62,1.10),color=ORANGE,fontsize=7,ha="center",
+                arrowprops=dict(arrowstyle="->",color=ORANGE,lw=1.0))
+    ax.annotate("boundary",xy=(r1*np.cos(0.25),r1*np.sin(0.25)),xytext=(1.12,0.18),color=BLUE,fontsize=7,va="center",
+                arrowprops=dict(arrowstyle="->",color=BLUE,lw=0.9))
+    c=X[E[3]].mean(0)
+    ax.annotate("domain, cut into\nelements",xy=c,xytext=(1.12,0.62),color="0.25",fontsize=7,va="center",
+                arrowprops=dict(arrowstyle="->",color="0.35",lw=0.9))
+    ax.set_xlim(-0.08,1.62); ax.set_ylim(-0.1,1.25); ax.set_aspect("equal"); ax.axis("off")
+    ax.set_title(f"(a) a curved part, meshed:\n{len(X)} nodes, {len(E)} elements",fontsize=7.5)
+    ax=fig.add_subplot(gs[1]); cx=X[K]
+    for i in pe: ax.add_patch(Polygon(X[E[i]],closed=True,fc="#eaf1f8",ec=GREY,lw=1.0))
+    first=pe[0]
+    ax.add_patch(Polygon(X[E[first]],closed=True,fc="#fdf0dc",ec=ORANGE,lw=1.5))
+    for i in pe:
+        cen=X[E[i]].mean(0)
+        if i!=first: ax.text(*(cen+(cen-cx)*0.30),f"e{i}",ha="center",va="center",fontsize=8,color=ORANGE,weight="bold")
+    cen=X[E[first]].mean(0)
+    ax.text(*cen,f"e{first}",ha="center",va="center",fontsize=8,color=ORANGE,weight="bold")
+    for l,n in enumerate(E[first]):
+        p=X[n]+(cen-X[n])*0.42
+        ax.text(*p,f"{l}",ha="center",va="center",fontsize=6.3,color="0.3",style="italic",
+                bbox=dict(boxstyle="circle,pad=0.14",fc="white",ec="0.55",lw=0.5),zorder=7)
+    for n in pn:
+        hl=(n==K)
+        ax.plot(*X[n],"o",ms=11,mfc=RED if hl else "white",mec=RED if hl else BLUE,mew=0.9,zorder=4)
+        ax.text(*X[n],str(n),ha="center",va="center",fontsize=6.4,color="white" if hl else BLUE,zorder=5,weight="bold")
+    span=(X[pn].max(0)-X[pn].min(0)).max(); h=0.20*span
+    for d in ((1,0),(0,1)):
+        ax.add_patch(FancyArrowPatch(cx+np.array(d)*0.045*span*1.0,cx+np.array(d)*h,arrowstyle="-|>",mutation_scale=8,color=RED,lw=1.3,zorder=6))
+    ax.text(cx[0]+h*1.08,cx[1]-0.005,"$u_x$",color=RED,fontsize=7.5,va="top",zorder=8)
+    ax.text(cx[0]-0.008,cx[1]+h*0.95,"$u_y$",color=RED,fontsize=7.5,ha="right",zorder=8)
+    e=E[first]; a,b=X[e[0]],X[e[1]]; mid=(a+b)/2
+    ax.annotate("edge, shared with\nthe neighbouring element",xy=mid,xytext=(mid[0],X[pn][:,1].min()-0.11),fontsize=6.5,color="0.25",
+                ha="center",va="top",arrowprops=dict(arrowstyle="->",lw=0.8,color="0.4"))
+    pad=0.07; ax.set_xlim(X[pn][:,0].min()-pad,X[pn][:,0].max()+pad); ax.set_ylim(X[pn][:,1].min()-0.30,X[pn][:,1].max()+pad)
+    ax.set_aspect("equal"); ax.axis("off")
+    ax.set_title(f"(b) node {K} (red) is shared by four elements;\nlocal numbers in grey circles",fontsize=7.5)
+    ax=fig.add_subplot(gs[2]); ax.axis("off")
+    ax.text(0,1.0,"connectivity: one row per element",fontsize=7,weight="bold",va="top")
+    ax.text(0,0.915,"                local node\n                 0   1   2   3",family="monospace",fontsize=6.2,va="top",color="0.35")
+    for r,i in enumerate(pe):
+        hl=(i==first)
+        ax.text(0,0.775-0.07*r,f"element {i:2d}:  "+"  ".join(f"{n:2d}" for n in E[i]),family="monospace",fontsize=6.2,va="top",
+                color=ORANGE if hl else "k",weight="bold" if hl else None)
+    ax.text(0,0.46,"coordinates: one row per node",fontsize=7,weight="bold",va="top")
+    for r,n in enumerate(pn):
+        ax.text(0,0.385-0.0455*r,f"node {n:2d}:  ({X[n,0]:5.2f}, {X[n,1]:5.2f})",family="monospace",fontsize=6.0,va="top",
+                color=RED if n==K else "k",weight="bold" if n==K else None)
+    ax.set_xlim(0,1); ax.set_ylim(-0.1,1)
+    ax.set_title("(c) the two arrays behind (b)",fontsize=7.5)
+    fig.savefig(os.path.join(FIG, "ch02_concept.pdf"), bbox_inches="tight"); plt.close(fig)
+    num("cmeCpNodes", str(len(X))); num("cmeCpElems", str(len(E)))
+    num("cmeCpNode", str(K)); num("cmeCpElem", str(first)); num("cmeCpNbrs", str(len(pe)))
+
+
+STEPS = {"step1": [fig_anatomy, fig_concept, fig_elements, fig_quality],
          "step2": [fig_gallery2d, fig_gallery3d, fig_arc, fig_grade_meshes, fig_plan, fig_payoff, fig_multiblock],
          "step3": [fig_parts, fig_sets, fig_viz, fig_dispatch]}
 
