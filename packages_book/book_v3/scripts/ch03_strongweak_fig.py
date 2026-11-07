@@ -69,7 +69,7 @@ def main():
     for e in range(ne):
         ax.plot([x[e], x[e + 1]], [-q / 1e3, -q / 1e3], color=BLUE, lw=1.6)
     for xi, sp in zip(x[1:-1], spike):
-        ax.annotate("", xy=(xi, 2.6), xytext=(xi, -q / 1e3), arrowprops=dict(arrowstyle="-|>", color=RED, lw=1.2, mutation_scale=7))
+        ax.annotate("", xy=(xi, 1.0), xytext=(xi, -q / 1e3), arrowprops=dict(arrowstyle="-|>", color=RED, lw=1.2, mutation_scale=7))
     ax.axhline(0, color="0.7", lw=0.6)
     ax.set_xlim(-0.02, L + 0.02); ax.set_ylim(-3.2, 3.3)
     ax.set_xlabel("$x$ (m)", fontsize=7.5); ax.set_ylabel(r"$-(EA\,u_h')'-q$  (kN/m between nodes)", fontsize=7.0); ax.tick_params(labelsize=6.5)
