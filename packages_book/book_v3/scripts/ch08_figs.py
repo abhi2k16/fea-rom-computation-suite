@@ -73,7 +73,7 @@ def fig_error(b):
         a1.plot(xs, x[tr] / scale, st, lw=1.5, label=f"$r={r}$")
         a2.semilogy(xs, np.abs(x[tr] - ref[tr]) / scale + 1e-16, st, lw=1.5)
         NUM[f"cpdErrPanel{'Two Six Twelve'.split()[(2, 6, 12).index(r)]}"] = sci(err_at(mu, r))
-    a1.set_ylabel("deflection / peak"); a1.legend(fontsize=7, loc="lower left"); a1.set_xticklabels([])
+    a1.set_ylabel("deflection / peak"); a1.legend(fontsize=7, loc="upper center", bbox_to_anchor=(0.5, -0.17), ncol=2, frameon=False); a1.set_xticklabels([])
     a1.set_title(f"(a) one unseen parameter: $\\mu_1={mu[0]:.1f}$, $\\mu_2={mu[1]:.1f}$, $\\xi={mu[2]:.2f}$", fontsize=8.5)
     a2.set_xlabel("position along the span $x/L$"); a2.set_ylabel("|error| / peak"); a2.set_ylim(1e-9, 1)
     a3.loglog(1 - energy[:24], ge, "o-", ms=4)
@@ -130,6 +130,71 @@ def fig_beam(b):
     print({k: v for k, v in NUM.items() if "Beam" in k})
 
 
+def fig_svd(b):
+    from matplotlib.patches import Rectangle
+    from rom_engine import PodBasis
+    mus = A.design(60, "olhs", 0); S = b.snapshots(mus)
+    pod = PodBasis().fit(S, n_modes=8); sv = pod.singular_values
+    tr = 2 * np.arange(b.n); rt = tr + 1
+    for k_, nm in ((1, "Two"), (2, "Three"), (3, "Four")):
+        NUM["cpdModeSv" + nm] = f"{sv[k_] / sv[0]:.3f}"
+    for k_ in range(4):
+        NUM["cpdRotShareMode" + "One Two Three Four".split()[k_]] = f"{100 * np.sum(pod.V[rt, k_] ** 2):.0f}"
+    NUM["cpdRotShareS"] = f"{100 * np.sum(S[rt] ** 2) / np.sum(S ** 2):.0f}"
+    CT, CTl, CR, CRl = "#6baed6", "#deebf7", "#fd8d3c", "#feedde"
+    fig = plt.figure(figsize=(9.0, 4.3))
+    gs = fig.add_gridspec(2, 2, width_ratios=[1.5, 1], height_ratios=[1, 1], wspace=0.38, hspace=0.12)
+    a0 = fig.add_subplot(gs[:, 0]); a1 = fig.add_subplot(gs[0, 1]); a2 = fig.add_subplot(gs[1, 1], sharex=a1)
+
+    def blk(x, y, w, h, fc, ec="k", lw=0.9):
+        a0.add_patch(Rectangle((x, y), w, h, fc=fc, ec=ec, lw=lw))
+    H, y0, hh = 2.0, 1.45, 1.0
+    # S: translation rows above rotation rows
+    blk(0.0, y0 + hh, 0.8, hh, CTl); blk(0.0, y0, 0.8, hh, CRl)
+    a0.text(0.4, y0 + 1.5, r"$\mathbf{S}$", ha="center", va="center", fontsize=11)
+    a0.text(-0.07, y0 + 1.5, "translations $v$\n(length)", ha="right", va="center", fontsize=7.5, color="#08519c")
+    a0.text(-0.07, y0 + 0.5, "rotations $\\theta$\n(radian)", ha="right", va="center", fontsize=7.5, color="#a63603")
+    a0.text(0.4, y0 - 0.17, r"$n\times N$", ha="center", fontsize=8)
+    a0.text(0.4, y0 + H + 0.12, "one column\nper snapshot", ha="center", fontsize=7.5)
+    a0.text(1.0, y0 + 1.0, "=", fontsize=14, ha="center", va="center")
+    ux, kept, wU = 1.2, 0.34, 0.8
+    blk(ux, y0 + hh, kept, hh, CT); blk(ux, y0, kept, hh, CR)
+    blk(ux + kept, y0 + hh, wU - kept, hh, CTl); blk(ux + kept, y0, wU - kept, hh, CRl)
+    a0.text(ux + kept / 2, y0 + 1.5, r"$\mathbf{V}$", ha="center", va="center", fontsize=10)
+    a0.text(ux + kept + (wU - kept) / 2, y0 + 1.5, r"$\mathbf{U}$", ha="center", va="center", fontsize=10)
+    a0.text(ux + wU / 2, y0 - 0.17, r"$n\times N$", ha="center", fontsize=8)
+    a0.text(ux + wU / 2, y0 + H + 0.12, "mode shapes\n(columns)", ha="center", fontsize=7.5)
+    a0.annotate("kept: first $r$\ncolumns of U", (ux + kept / 2, y0 + H), (ux - 0.1, y0 + H + 0.75), fontsize=8, ha="center", color="C0", arrowprops=dict(arrowstyle="->", lw=0.8))
+    sx, sz = ux + wU + 0.12, 0.8
+    blk(sx, y0 + H - sz, sz, sz, "white")
+    for k in range(5):
+        a0.plot([sx + 0.11 + k * 0.14], [y0 + H - 0.11 - k * 0.14], "ko", ms=6 - k)
+    a0.text(sx + 0.1, y0 + H - sz + 0.12, r"$\mathbf{\Sigma}$", fontsize=10, color="0.3")
+    a0.text(sx + sz / 2, y0 + H - sz - 0.17, r"$N\times N$", ha="center", fontsize=8)
+    a0.text(sx + sz / 2, y0 + H + 0.12, "singular\nvalues", ha="center", fontsize=7.5)
+    wx = sx + sz + 0.1
+    blk(wx, y0 + H - sz, sz, sz, "#f0f0f0"); a0.text(wx + sz / 2, y0 + H - sz / 2, r"$\mathbf{W}^T$", ha="center", va="center", fontsize=10)
+    a0.text(wx + sz / 2, y0 + H - sz - 0.17, r"$N\times N$", ha="center", fontsize=8)
+    a0.text(wx + sz / 2, y0 + H + 0.12, "mode mix per\nsnapshot", ha="center", fontsize=7.5)
+    a0.text(0.0, 0.78, "Eckart–Young: $\\mathbf{V}\\mathbf{V}^T\\mathbf{S}$ is the best rank-$r$ approximation,\nwith $\\|\\mathbf{S}-\\mathbf{V}\\mathbf{V}^T\\mathbf{S}\\|_F^2=\\sum_{k>r}\\sigma_k^2$.", fontsize=8, va="center")
+    a0.text(0.0, 0.12, "Rows are drawn grouped by type; in the code they\nalternate $(v,\\theta)$ node by node. The Euclidean SVD\nadds length$^2$ and radian$^2$ in one sum (weighted POD).", fontsize=7.5, va="center", color="0.3")
+    a0.set_xlim(-0.75, wx + sz + 0.05); a0.set_ylim(-0.3, y0 + H + 1.2); a0.axis("off"); a0.set_title("(a) the SVD of the snapshot matrix, by type of unknown", fontsize=9)
+    # (b) both parts of the first four modes (unit-norm modes, true component values)
+    xs = np.arange(1, b.n + 1) / b.n
+    for k in range(4):
+        v = pod.V[tr, k]; t = pod.V[rt, k]
+        sg = 1.0 if v[np.argmax(np.abs(v))] > 0 else -1.0
+        lab = f"mode {k + 1}"
+        a1.plot(xs, sg * v, lw=1.5, label=lab); a2.plot(xs, sg * t, lw=1.5)
+    a1.set_ylabel("translation part $v$"); a2.set_ylabel("rotation part $\\theta$"); a2.set_xlabel("position along the span $x/L$")
+    plt.setp(a1.get_xticklabels(), visible=False)
+    for a_ in (a1, a2): a_.axvline(0.5, color="0.6", ls=":", lw=1); a_.axhline(0, color="0.85", lw=0.6)
+    a1.set_title("(b) the first four POD modes, by type of unknown", fontsize=9, pad=22)
+    a1.legend(fontsize=7, ncol=4, loc="lower center", bbox_to_anchor=(0.5, 1.0), frameon=False, columnspacing=1.0, handlelength=1.2)
+    a2.annotate("kink at the\nregion interface", (0.5, 0.06), (0.62, 0.15), fontsize=7, color="0.35", arrowprops=dict(arrowstyle="->", lw=0.6, color="0.5"))
+    fig.savefig(os.path.join(FIG, "ch08_svd.pdf"), bbox_inches="tight"); fig.savefig("/tmp/ch08_svd.png", dpi=120, bbox_inches="tight"); plt.close(fig)
+
+
 def write_numbers():
     with open(os.path.join(TAB, "numbers_ch08_fig.tex"), "w") as fh:
         fh.write("% generated by scripts/ch08_figs.py -- do not edit\n")
@@ -142,4 +207,5 @@ if __name__ == "__main__":
     fig_cloud(b)
     fig_error(b)
     fig_beam(b)
+    fig_svd(b)
     write_numbers()
