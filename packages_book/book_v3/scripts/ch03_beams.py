@@ -44,6 +44,7 @@ mac['cecTimoShearShare']='%.1f'%(100*(1-P*Lt**3/(3*Et*I_)/ex))
 mac['cecTimoEBLowLD']='%d'%lds[0]; mac['cecTimoEBLow']='%.0f'%(100*(1-ebr[0]))
 mac['cecTimoNB']=str(NB); mac['cecTimoFlatMin']='%.1f'%(100*rat.min()); mac['cecTimoFlatMax']='%.1f'%(100*rat.max())
 mac['cecTimoThinLD']='%d'%lds[-1]
+mac['cecTimoDev']='%.1f'%(100*max(1-rat.min(),rat.max()-1))      # largest deviation of the Reissner tip deflection from the Timoshenko value, in percent
 out=os.path.join(HERE,'..','figures' if os.environ.get('FINAL') else 'preview_figs')
 fig,ax=plt.subplots(1,2,figsize=(6.6,3.0))
 a=ax[0]; a.semilogx(lds,ebr,'s--',color=RED,mfc='none',label='Euler--Bernoulli (no shear)'); a.semilogx(lds,rat,'o-',color=BLUE,label='Reissner element, %d elements'%NB)

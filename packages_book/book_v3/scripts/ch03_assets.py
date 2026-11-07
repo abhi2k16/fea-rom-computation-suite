@@ -191,6 +191,7 @@ def exp_plate():
     num("cecPlateFullFine", f"{rows[-1][2]:.3f}"); num("cecPlateShellFine", f"{rows[-1][3]:.3f}")
     num("cecPlateSriCoarse", f"{rows[0][1]:.3f}"); num("cecPlateShellCoarse", f"{rows[0][3]:.3f}")
     num("cecPlateRatioFS", f"{rows[-1][3] / rows[-1][1]:.4f}")
+    num("cecPlateRefine", str(rows[-1][0] // rows[0][0])); num("cecPlateStiffFactor", f"{round(1 / rows[0][2], -1):.0f}")   # mesh ratio; about 1/(full-integration ratio) at 4 elements
 
 
 # ------------------------------------------------------------------------------------------ element table
