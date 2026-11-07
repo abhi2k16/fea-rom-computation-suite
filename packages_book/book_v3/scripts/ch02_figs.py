@@ -866,8 +866,8 @@ def fig_concept():
     from matplotlib.patches import Rectangle, FancyArrowPatch
     cnt=Counter(E.ravel()); K=[n for n in sorted(cnt) if cnt[n]==4][2]
     pe=[i for i,e in enumerate(E) if K in e]; pn=sorted(set(E[pe].ravel()))
-    fig=plt.figure(figsize=(8.0,3.2))
-    gs=fig.add_gridspec(1,3,width_ratios=[1.45,1.1,0.9],wspace=0.06)
+    fig=plt.figure(figsize=(6.9,3.3))
+    gs=fig.add_gridspec(1,3,width_ratios=[1.3,1.1,0.95],wspace=0.06)
     ax=fig.add_subplot(gs[0])
     for e in E: ax.add_patch(Polygon(X[e],closed=True,fc="#eaf1f8",ec=GREY,lw=0.7))
     r0,r1=0.45,1.0; th=np.linspace(0,np.pi/2,80)
@@ -912,20 +912,20 @@ def fig_concept():
                 ha="center",va="top",arrowprops=dict(arrowstyle="->",lw=0.8,color="0.4"))
     pad=0.07; ax.set_xlim(X[pn][:,0].min()-pad,X[pn][:,0].max()+pad); ax.set_ylim(X[pn][:,1].min()-0.30,X[pn][:,1].max()+pad)
     ax.set_aspect("equal"); ax.axis("off")
-    ax.set_title(f"(b) node {K} (red) is shared by four elements;\nlocal numbers in grey circles",fontsize=7.5)
+    ax.set_title(f"(b) four elements share\nnode {K} (red)",fontsize=7.5)
     ax=fig.add_subplot(gs[2]); ax.axis("off")
     ax.text(0,1.0,"connectivity: one row per element",fontsize=7,weight="bold",va="top")
-    ax.text(0,0.915,"                local node\n                 0   1   2   3",family="monospace",fontsize=6.2,va="top",color="0.35")
+    ax.text(0,0.915,"                local node\n                 0   1   2   3",family="monospace",fontsize=5.4,va="top",color="0.35")
     for r,i in enumerate(pe):
         hl=(i==first)
-        ax.text(0,0.775-0.07*r,f"element {i:2d}:  "+"  ".join(f"{n:2d}" for n in E[i]),family="monospace",fontsize=6.2,va="top",
+        ax.text(0,0.775-0.07*r,f"element {i:2d}:  "+"  ".join(f"{n:2d}" for n in E[i]),family="monospace",fontsize=5.6,va="top",
                 color=ORANGE if hl else "k",weight="bold" if hl else None)
     ax.text(0,0.46,"coordinates: one row per node",fontsize=7,weight="bold",va="top")
     for r,n in enumerate(pn):
-        ax.text(0,0.385-0.0455*r,f"node {n:2d}:  ({X[n,0]:5.2f}, {X[n,1]:5.2f})",family="monospace",fontsize=6.0,va="top",
+        ax.text(0,0.385-0.0455*r,f"node {n:2d}:  ({X[n,0]:5.2f}, {X[n,1]:5.2f})",family="monospace",fontsize=5.4,va="top",
                 color=RED if n==K else "k",weight="bold" if n==K else None)
     ax.set_xlim(0,1); ax.set_ylim(-0.1,1)
-    ax.set_title("(c) the two arrays behind (b)",fontsize=7.5)
+    ax.set_title("(c) the arrays behind (b)",fontsize=7.5)
     fig.savefig(os.path.join(FIG, "ch02_concept.pdf"), bbox_inches="tight"); plt.close(fig)
     num("cmeCpNodes", str(len(X))); num("cmeCpElems", str(len(E)))
     num("cmeCpNode", str(K)); num("cmeCpElem", str(first)); num("cmeCpNbrs", str(len(pe)))
