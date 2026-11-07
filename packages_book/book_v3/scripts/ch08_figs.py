@@ -104,22 +104,22 @@ def fig_beam(b):
     a0.add_patch(Rectangle((0, -0.05), 0.5, 0.1, fc="#9ecae1", ec="k")); a0.add_patch(Rectangle((0.5, -0.05), 0.5, 0.1, fc="#fdae6b", ec="k"))
     a0.plot([0, 0], [-0.22, 0.22], "k", lw=3)
     for y in np.linspace(-0.2, 0.2, 7): a0.plot([-0.03, 0], [y - 0.03, y], "k", lw=0.8)
-    a0.text(0.25, 0, r"region 1: $\mu_1\bm K_1$", ha="center", va="center", fontsize=9); a0.text(0.75, 0, r"region 2: $\mu_2\bm K_2$", ha="center", va="center", fontsize=9)
+    a0.text(0.25, 0, r"region 1: $\mu_1\mathbf{K}_1$", ha="center", va="center", fontsize=9); a0.text(0.75, 0, r"region 2: $\mu_2\mathbf{K}_2$", ha="center", va="center", fontsize=9)
     xi = 0.61
     a0.add_patch(FancyArrowPatch((xi, 0.27), (xi, 0.06), arrowstyle="-|>", mutation_scale=12, color="C3", lw=1.6)); a0.text(xi + 0.015, 0.2, r"unit load at $\xi$", color="C3", fontsize=9)
     a0.add_patch(FancyArrowPatch((1.0, 0.27), (1.0, 0.06), arrowstyle="-|>", mutation_scale=12, color="0.4", lw=1.2)); a0.text(0.965, 0.3, "fixed tip load", color="0.4", fontsize=8, ha="right")
     a0.annotate("", (0, -0.3), (1, -0.3), arrowprops=dict(arrowstyle="<->", lw=0.8)); a0.text(0.5, -0.4, r"span $L=1$, $n=120$ elements, two equal regions", ha="center", fontsize=8.5)
-    a0.set_xlim(-0.08, 1.05); a0.set_ylim(-0.5, 0.4); a0.axis("off"); a0.set_title(r"(a) clamped Euler--Bernoulli beam, $\bm K(\bm\mu)=\mu_1\bm K_1+\mu_2\bm K_2$, $\mu_1,\mu_2\in[0.5,5]$, $\xi\in[0.1,0.9]$", fontsize=9)
+    a0.set_xlim(-0.08, 1.05); a0.set_ylim(-0.5, 0.4); a0.axis("off"); a0.set_title(r"(a) clamped Euler–Bernoulli beam, $\mathbf{K}(\mu)=\mu_1\mathbf{K}_1+\mu_2\mathbf{K}_2$, $\mu_1,\mu_2\in[0.5,5]$, $\xi\in[0.1,0.9]$", fontsize=9)
     # (b) fixed tip load: closed form against the solve
     g = np.linspace(A.LO, A.HI, 60); M1, M2 = np.meshgrid(g, g)
     P, L = abs(A.TIP_LOAD), 1.0
-    delta = P * L ** 3 / 12 * (1 / M1 + 1 / M2)
+    delta = P * L ** 3 / 24 * (7 / M1 + 1 / M2)
     cs = a1.contourf(M1, M2, delta, levels=14, cmap="viridis"); a1.contour(M1, M2, delta, levels=14, colors="w", linewidths=0.4)
     cb = fig.colorbar(cs, ax=a1); cb.set_label("tip deflection", fontsize=8)
     a1.set_xlabel(r"$\mu_1$"); a1.set_ylabel(r"$\mu_2$"); a1.set_title("(b) fixed tip load: smooth and explicit", fontsize=9)
     rng = np.random.default_rng(5); pts = rng.uniform(A.LO, A.HI, size=(30, 2))
     num_ = np.array([abs(b.solve(m)[b.tip]) for m in pts]) if False else np.array([abs(np.linalg.solve(m[0] * b.K1 + m[1] * b.K2, b.F)[b.tip]) for m in pts])
-    ex_ = P * L ** 3 / 12 * (1 / pts[:, 0] + 1 / pts[:, 1])
+    ex_ = P * L ** 3 / 24 * (7 / pts[:, 0] + 1 / pts[:, 1])
     NUM["cpdBeamClosedErr"] = sci(float(np.max(np.abs(num_ - ex_) / ex_)))
     # (c) moving load
     xs = np.linspace(0.1, 0.9, 41)
