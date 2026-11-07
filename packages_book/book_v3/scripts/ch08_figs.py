@@ -252,6 +252,70 @@ def fig_designs(b):
     print({k_: v for k_, v in NUM.items() if "Des" in k_ or "Board" in k_})
 
 
+def fig_intro(b):
+    import re
+    from matplotlib.patches import Rectangle, FancyArrowPatch
+    rows = [[float(x) for x in re.findall(r"[\d.]+", ln.split("\\\\")[0])] for ln in open(os.path.join(TAB, "ch08_cost.tex")).read().split("\n") if re.match(r"\d+ &", ln)]
+    off_ms, red_us, full_us = rows[0][2], rows[0][3], rows[0][4]
+    nf = b.nf; r = A.COST_MODES
+    NUM["cpdTabOffMs"] = f"{off_ms:.0f}"; NUM["cpdTabRedUs"] = f"{red_us:.0f}"; NUM["cpdTabFullUs"] = f"{full_us:.0f}"
+    NUM["cpdEntriesFull"] = f"{nf * nf:,}".replace(",", "\\,"); NUM["cpdEntriesRed"] = str(r * r); NUM["cpdSizeRatio"] = f"{nf / r:.0f}"
+    fig = plt.figure(figsize=(9.0, 6.9))
+    gs = fig.add_gridspec(2, 2, height_ratios=[1.0, 1.05], width_ratios=[1.2, 1], hspace=0.28, wspace=0.12)
+    a0 = fig.add_subplot(gs[0, :]); a1 = fig.add_subplot(gs[1, 0], projection="3d"); a2 = fig.add_subplot(gs[1, 1])
+    # (a) workflow
+    def box(x, y, w, h, fc, txt, fs=8, ec="k"):
+        a0.add_patch(Rectangle((x, y), w, h, fc=fc, ec=ec, lw=1.0)); a0.text(x + w / 2, y + h / 2, txt, ha="center", va="center", fontsize=fs)
+    def arr(x0, y0_, x1, y1_):
+        a0.add_patch(FancyArrowPatch((x0, y0_), (x1, y1_), arrowstyle="-|>", mutation_scale=9, color="0.25", lw=1.1))
+    a0.text(0.0, 4.55, "without reduction: every query is a full solve", fontsize=8.5, fontweight="bold", va="center")
+    box(0.0, 3.5, 1.5, 0.7, "#f0f0f0", r"parameters $\mu_i$")
+    for k in range(3):
+        a0.add_patch(Rectangle((2.2 + 0.12 * (2 - k), 3.5 + 0.1 * (2 - k)), 2.8, 0.7, fc="#deebf7", ec="#08519c", lw=1.0, zorder=2 - k))
+    a0.text(3.72, 3.95, "full solve\n" + r"$\mathbf{K}(\mu_i)\mathbf{u}_i=\mathbf{f}$", ha="center", va="center", fontsize=8, zorder=5)
+    arr(1.5, 3.85, 2.2, 3.85); arr(5.3, 3.85, 6.3, 3.85); box(6.3, 3.5, 1.5, 0.7, "#f0f0f0", r"response $\mathbf{u}_i$")
+    a0.text(8.1, 3.85, f"{full_us:.0f} µs per query,\nrepeated $Q$ times", fontsize=8, va="center", color="#08519c")
+    a0.text(0.0, 2.7, "with a reduced-order model: build once, then every query is a small solve", fontsize=8.5, fontweight="bold", va="center")
+    box(2.2, 1.85, 2.8, 0.5, "#e6e0f3", f"offline build, once: {off_ms:.0f} ms\n(sample, SVD, project)", fs=7.5, ec="#54278f")
+    arr(3.6, 1.85, 3.6, 1.45)
+    box(0.0, 0.6, 1.5, 0.7, "#f0f0f0", r"parameters $\mu_i$")
+    for k in range(3):
+        a0.add_patch(Rectangle((2.2 + 0.12 * (2 - k) + 0.2, 0.6 + 0.1 * (2 - k)), 2.4, 0.7, fc="#e6e0f3", ec="#54278f", lw=1.0, zorder=2 - k))
+    a0.text(3.72 + 0.2, 1.05, f"small solve\n${r}\\times{r}$ system", ha="center", va="center", fontsize=8, zorder=5)
+    arr(1.5, 0.95, 2.4, 0.95); arr(5.3, 0.95, 6.3, 0.95); box(6.3, 0.6, 1.5, 0.7, "#f0f0f0", r"response $\mathbf{u}_i$")
+    a0.text(8.1, 0.95, f"{red_us:.0f} µs per query,\nrepeated $Q$ times", fontsize=8, va="center", color="#54278f")
+    a0.set_xlim(-0.1, 10.2); a0.set_ylim(0.2, 4.9); a0.axis("off"); a0.set_title("(a) many queries: the same question asked $Q$ times", fontsize=9)
+    # (b) schematic: the set of solutions, the subspace of the basis, and the error of one solution
+    a1.view_init(elev=20, azim=-64)
+    xx, yy = np.meshgrid(np.linspace(-1, 1, 2), np.linspace(-1, 1, 2))
+    a1.plot_surface(xx, yy, np.zeros_like(xx), alpha=0.2, color="C4", shade=False, linewidth=0)
+    f_ = lambda x_, y_: 0.20 + 0.30 * x_ ** 2 + 0.10 * y_
+    th = np.linspace(-0.9, 0.9, 30); gx, gy = np.meshgrid(th, th)
+    a1.plot_surface(gx, gy, f_(gx, gy), alpha=0.45, color="C0", shade=True, linewidth=0)
+    rng_ = np.random.default_rng(3); px, py = rng_.uniform(-0.85, 0.85, 16), rng_.uniform(-0.85, 0.85, 16)
+    a1.scatter(px, py, f_(px, py), s=12, color="k", depthshade=False)
+    ux_, uy_ = 0.7, 0.05; uz_ = f_(ux_, uy_)
+    a1.plot([ux_, ux_], [uy_, uy_], [uz_, 0], color="C3", lw=1.8); a1.scatter([ux_], [uy_], [uz_], s=50, color="C3", depthshade=False); a1.scatter([ux_], [uy_], [0], s=36, color="C4", depthshade=False)
+    a1.text(ux_ + 0.05, uy_, uz_ + 0.08, r"$\mathbf{u}(\mu)$", fontsize=9, color="C3")
+    a1.text(ux_ + 0.1, uy_ + 0.12, -0.02, r"$\mathbf{V}\mathbf{q}$", fontsize=9, color="C4")
+    a1.text(ux_ + 0.12, uy_ - 0.05, uz_ / 2, "error", fontsize=8, color="C3")
+    a1.text(-0.95, -0.95, -0.02, "plane = span of the\nreduced basis $\\mathbf{V}$", fontsize=7.5, color="C4", ha="left", va="top")
+    a1.text(-0.9, 0.3, 0.62, "all solutions $\\{\\mathbf{u}(\\mu)\\}$\n(dots: snapshots)", fontsize=7.5, color="C0", ha="left")
+    a1.set_axis_off(); a1.set_xlim(-1, 1); a1.set_ylim(-1, 1); a1.set_zlim(-0.1, 0.7)
+    a1.set_title("(b) the solutions lie near a small set (schematic)", fontsize=9, pad=-6); a1.set_box_aspect((1, 1, 0.6))
+    # (c) sizes to scale
+    a2.add_patch(Rectangle((0, 0), 1, 1, fc="#deebf7", ec="#08519c", lw=1.2)); a2.text(0.5, 0.5, f"{nf}$\\times${nf}\n" + r"$\mathbf{K}\mathbf{u}=\mathbf{f}$" + f"\n{nf * nf:,} entries", ha="center", va="center", fontsize=9)
+    sc = r / nf
+    a2.add_patch(Rectangle((1.25, 0.5 - sc / 2), sc, sc, fc="#e6e0f3", ec="#54278f", lw=1.2))
+    a2.annotate("", (1.25, 0.5), (1.02, 0.5), arrowprops=dict(arrowstyle="-|>", lw=1.2))
+    a2.text(1.25 + sc / 2, 0.5 - sc / 2 - 0.05, f"{r}$\\times${r}\n{r * r} entries", ha="center", va="top", fontsize=8.5, color="#54278f")
+    a2.text(0.5, -0.12, f"to scale: {nf // r}$\\times$ fewer rows and columns,\n{nf * nf // (r * r):,}$\\times$ fewer entries", ha="center", va="top", fontsize=8)
+    a2.set_xlim(-0.05, 1.7); a2.set_ylim(-0.4, 1.12); a2.set_aspect("equal"); a2.axis("off"); a2.set_title("(c) the size of the system", fontsize=9)
+    NUM["cpdEntryRatio"] = f"{nf * nf // (r * r):,}".replace(",", "\\,")
+    fig.savefig(os.path.join(FIG, "ch08_intro.pdf"), bbox_inches="tight"); fig.savefig("/tmp/ch08_intro.png", dpi=115, bbox_inches="tight"); plt.close(fig)
+    print({k_: v for k_, v in NUM.items() if k_.startswith("cpdTab") or "Entr" in k_ or "SizeRatio" in k_})
+
+
 def write_numbers():
     with open(os.path.join(TAB, "numbers_ch08_fig.tex"), "w") as fh:
         fh.write("% generated by scripts/ch08_figs.py -- do not edit\n")
@@ -266,4 +330,5 @@ if __name__ == "__main__":
     fig_beam(b)
     fig_svd(b)
     fig_designs(b)
+    fig_intro(b)
     write_numbers()
