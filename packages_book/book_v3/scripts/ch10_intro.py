@@ -16,6 +16,13 @@ BLUE, VIOLET, GREY, ORANGE = "#08519c", "#54278f", "#636363", "#d95f0e"
 plt.rcParams.update({"font.size": 8, "axes.titlesize": 8.5, "axes.labelsize": 8, "legend.fontsize": 7,
                      "axes.grid": True, "grid.alpha": 0.3})
 NUM = {}
+
+
+def tex(v):
+    m, e = f"{v:.1e}".split("e")
+    return f"${m}\\times10^{{{int(e)}}}$"
+
+
 num = lambda k, v: NUM.__setitem__(k, v)
 
 s, al, be = build_damped_cantilever(n=20)
@@ -70,11 +77,12 @@ for i, nm in enumerate(("One", "Two", "Three")):
 num("cfrIntroFracBand", f"{100 * wid.sum() / (HI - LO):.0f}")
 num("cfrIntroEvenStep", f"{even5[1] - even5[0]:.2f}")
 num("cfrIntroNSnap", str(NS))
+num("cfrIntroBandWidth", f"{HI - LO:.1f}")
 num("cfrIntroRankSix", str(int((rel > 1e-6).sum())))
 num("cfrIntroRankNine", str(int((rel > 1e-9).sum())))
 num("cfrIntroSvTwenty", f"{rel[19]:.0e}".replace("e-", "\\times10^{-") + "}")
-num("cfrIntroSminRatio", f"{smin.max() / smin.min():.1e}")
-num("cfrIntroAmpRatio", f"{amp.max() / amp.min():.1e}")
+num("cfrIntroSminRatio", tex(smin.max() / smin.min()))
+num("cfrIntroAmpRatio", tex(amp.max() / amp.min()))
 num("cfrIntroSminLow", f"{smin.min():.0f}")
 imin = int(np.argmin(smin)); num("cfrIntroSminAt", f"{fine[imin]:.2f}")
 with open(os.path.join(BOOK, "tables", "numbers_ch10_intro.tex"), "w") as fh:
