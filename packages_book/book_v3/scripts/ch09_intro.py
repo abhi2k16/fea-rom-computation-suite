@@ -111,6 +111,7 @@ def fig_modes(d):
     NUM["cbtIntroZetaMax"] = f"{z[:npre][ok].max():.2f}"
     NUM["cbtIntroEstWithinPct"] = f"{100 * np.max(np.abs(ratio[ok] - 1)):.0f}"
     NUM["cbtIntroEstModes"] = str(int(ok.sum()))
+    NUM["cbtIntroPeakRatio"] = sci(peak[0] / peak[7])
     NUM["cbtIntroResidue"] = f"{R[0]:.2f}"
     NUM["cbtIntroResidueSpread"] = f"{R[:npre].max() / R[:npre].min():.2f}"
     NUM["cbtIntroZetaFirst"] = f"{z[0]:.4f}"; NUM["cbtIntroZetaThird"] = f"{z[2]:.3f}"
