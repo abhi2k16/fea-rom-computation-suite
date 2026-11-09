@@ -879,9 +879,9 @@ Not currently planned, but possible future work:
   frequency), vs. `scm.py` remaining nonzero out to ~`1e-7`. The reason:
   bounding `sigma_min(A(omega))^2 = lambda_min(A(omega)^H A(omega))`
   instead of `sigma_min(A(omega))` directly (the standard "SCM-squared"
-  reduction, needed to keep the eigenvalue problem real, symmetric, and
-  PSD for a complex, non-Hermitian `A(omega)`) makes `B_pq = A_p^T A_q +
-  A_q^T A_p` inherit roughly the SQUARE of the raw component
+  reduction, applied through the real 2n x 2n embedding `[[X,-Y],[Y,X]]` of the
+  Hermitian `A^H A = X + iY`, so the eigenvalue problem is real and symmetric)
+  makes the term matrices `A_p^T A_q + A_q^T A_p` inherit roughly the SQUARE of the raw component
   spectral-norm spread (~1e22-1e24, vs. ~1e11-1e12 for the raw `M`/`K`
   matrices themselves) -- worsening the same scale-mismatch problem
   described in the caveat above instead of fixing it. (A real
