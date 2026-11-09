@@ -1,0 +1,79 @@
+"""C1 (PLAN_ch10_math.md): why the Lipschitz lower bound on sigma_min is positive only at the reference.
+Uses rom_engine.scm.SingularValueLowerBound itself (one reference at 10 w1 for panel a; the chapter's 15-reference
+training on the 300-point pool for the counts). figures/ch10_math_cone.pdf, tables/numbers_ch10_cone.tex."""
+import os, warnings
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from scipy.linalg import eigh
+from greedy_frequency_training import build_damped_cantilever
+from rom_engine import FrequencyROM, build_pod_basis_from_frf_snapshots
+from rom_engine.scm import SingularValueLowerBound
+warnings.simplefilter("ignore")
+HERE = os.path.dirname(os.path.abspath(__file__)); BOOK = os.path.dirname(HERE)
+BLUE, VIOLET, GREY, ORANGE = "#08519c", "#54278f", "#636363", "#d95f0e"
+plt.rcParams.update({"font.size": 7.5, "axes.titlesize": 8, "axes.labelsize": 7.5, "axes.grid": True, "grid.alpha": 0.3})
+NUM = {}
+num = lambda k, v: NUM.__setitem__(k, v)
+
+
+def tex(v, p=1):
+    m, e = f"{v:.{p}e}".split("e")
+    return f"${m}\\times10^{{{int(e)}}}$"
+
+
+s, al, be = build_damped_cantilever(n=20)
+fr = np.asarray(s.free_dofs); ix = np.ix_(fr, fr)
+K, M, C = s.K[ix], s.M[ix], s.C[ix]
+wn = np.sqrt(eigh(K, M, eigvals_only=True)); w1 = wn[0]
+F = np.zeros(s.n_dof); F[s.n_dof - 2] = 1000.0; Ff = F[fr]
+rom = FrequencyROM.from_MCK(M, K, build_pod_basis_from_frf_snapshots(np.linspace(0.1, 20, 5) * w1, M, K, Ff, C=C, n_modes=5).V, rayleigh=(al, be))
+nM, nK = np.linalg.norm(M, 2), np.linalg.norm(K, 2)
+Lf = lambda w: np.hypot(2 * w, al) * nM + be * nK
+smin = lambda w: np.linalg.svd(-w ** 2 * M + 1j * w * C + K, compute_uv=False)[-1]
+wj = 10.0 * w1
+b1 = SingularValueLowerBound.from_affine(rom.affine); b1.add_reference(wj)
+d = np.linspace(-1.6e-3, 1.6e-3, 801)
+lb = np.array([b1.lower_bound(wj + x * w1) for x in d]); st = np.array([smin(wj + x * w1) for x in d])
+om = np.linspace(0.1, 20.0, 2000) * w1
+hw = np.array([smin(w) for w in om]) / Lf(om) / w1
+fig, ax = plt.subplots(1, 2, figsize=(7.4, 2.9), constrained_layout=True)
+a = ax[0]
+a.plot(d * 1e3, st / 1e6, color=BLUE, lw=1.2, label=r"true $\sigma_{\min}(\mathbf{A}(\omega))$")
+a.plot(d * 1e3, lb / 1e6, color=ORANGE, lw=1.2, label="Lipschitz bound from one reference")
+a.axvline(0, color=GREY, lw=0.7, ls=":")
+a.set_xlabel(r"$(\omega-\omega_j)/\omega_1$ ($\times10^{-3}$), $\omega_j=10\,\omega_1$"); a.set_ylabel(r"$\sigma_{\min}$ ($\times10^{6}$)")
+a.set_ylim(0, 3.1); a.legend(fontsize=6.5, loc="upper center"); a.set_title("(a) one reference", loc="left")
+a = ax[1]
+a.semilogy(om / w1, hw, color=BLUE, lw=1.0, label=r"half-width $\sigma_{\min}/L$")
+for sp, lab, xx, ff in ((19.9 / 199, "spacing of the 200-point test grid", 8.0, 1.25), (19.9 / 299, "spacing of the 300-point pool", 14.5, 0.55)):
+    a.axhline(sp, color=GREY, lw=0.8, ls="--"); a.text(xx, sp * ff, lab, fontsize=6.3, color=GREY, ha="center")
+for k in range(3):
+    a.axvline(wn[k] / w1, color=ORANGE, lw=0.6, alpha=0.5)
+a.set_xlabel(r"$\omega/\omega_1$"); a.set_ylabel(r"width in $\omega/\omega_1$"); a.set_ylim(2e-7, 0.5)
+a.legend(fontsize=6.5, loc="lower right"); a.set_title("(b) where the bound is positive", loc="left")
+fig.savefig(os.path.join(BOOK, "figures", "ch10_math_cone.pdf"))
+# numbers
+cand = np.linspace(0.1, 20, 300) * w1; grid = np.linspace(0.1, 20, 200) * w1
+b = SingularValueLowerBound.from_affine(rom.affine); b.greedy_train(cand, tol=0.05, max_references=15)
+refs = np.array(b.reference_omegas); lbg = np.array([b.lower_bound(w) for w in grid]); fin = np.where(lbg > 0)[0]
+num("cfrConeNorm", f"{nM:.1f}"); num("cfrConeBetaK", tex(be * nK)); num("cfrConeL", tex(Lf(wj)))
+num("cfrConeLmShare", f"{100 * (1 - np.hypot(2 * wj, al) * nM / Lf(wj)):.1f}"); num("cfrConeLmTerm", tex(np.hypot(2 * wj, al) * nM))
+num("cfrConeSigmaRef", tex(smin(wj))); num("cfrConeHalfRef", tex(smin(wj) / Lf(wj) / w1))
+num("cfrConeHalfMax", tex(hw.max())); num("cfrConeHalfMaxAt", f"{om[np.argmax(hw)] / w1:.1f}"); num("cfrConeHalfMin", tex(hw.min()))
+for j, nm in enumerate(("One", "Two", "Three")):
+    num(f"cfrConeHalfRes{nm}", tex(smin(wn[j]) / Lf(wn[j]) / w1))
+num("cfrConeSpacing", f"{19.9 / 199:.3f}"); num("cfrConeSpacingRatio", f"{(19.9 / 199) / hw.max():.0f}")
+num("cfrConeSigmaChange", f"{100 * (smin(wj + 0.1 * w1) / smin(wj) - 1):.1f}")
+num("cfrConeRefMax", f"{refs.max() / w1:.1f}"); num("cfrConeNRef", str(len(refs)))
+num("cfrConeFinite", str(len(fin))); num("cfrConeFiniteAt", f"{grid[fin[0]] / w1:.1f}"); num("cfrConeFiniteIsRef", str(int(np.any(np.isclose(refs, grid[fin[0]], rtol=1e-12)))))
+num("cfrConeNeeded", tex(19.9 / (2 * hw.max()), 1)); num("cfrConeWmaxRatio", f"{wn[-1] / w1:.0f}")
+num("cfrConeK", tex(nK))
+for dd, nm in ((1e-5, "A"), (1e-4, "B"), (1e-3, "C")):
+    num(f"cfrConeLb{nm}", f"{100 * b1.lower_bound(wj + dd * w1) / smin(wj):.0f}")
+with open(os.path.join(BOOK, "tables", "numbers_ch10_cone.tex"), "w") as fh:
+    fh.write("% generated by scripts/ch10_cone.py -- do not edit\n")
+    for k_, v in NUM.items():
+        fh.write(f"\\newcommand{{\\{k_}}}{{{v}\\xspace}}\n")
+print(NUM)
