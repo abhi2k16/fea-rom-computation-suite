@@ -12,6 +12,7 @@ spec = importlib.util.spec_from_file_location("ch08_assets", os.path.join(HERE, 
 A = importlib.util.module_from_spec(spec); spec.loader.exec_module(A)
 FIG, TAB = A.FIG, A.TAB
 NUM = {}
+BEAM_NPAIRS = 30                               # random pairs for the closed-form check in the beam figure
 
 
 def sci(x):
@@ -52,7 +53,7 @@ def fig_error(b):
     pod = PodBasis().fit(S, n_modes=24)
     sv = pod.singular_values
     energy = np.cumsum(sv ** 2) / np.sum(sv ** 2)
-    ranks = np.arange(1, 25)
+    ranks = np.arange(1, A.RANK_C + 1)
     ge = np.array([A.tip_err(b, pod.V[:, :r], test) for r in ranks])
     # a representative unseen parameter: the one whose error at r = 6 is the median over the test set
     def err_at(mu, r):
@@ -79,8 +80,8 @@ def fig_error(b):
     a3.loglog(1 - energy[:24], ge, "o-", ms=4)
     for r in (1, 2, 3, 4, 6, 12, 24):
         a3.annotate(str(r), (1 - energy[r - 1], ge[r - 1]), textcoords="offset points", xytext=(5, 4), fontsize=7)
-    thr = 1e-4; a3.axvline(thr, color="C3", ls="--", lw=1)
-    a3.text(thr * 1.3, ge.min() * 1.6, "99.99 % rule", color="C3", fontsize=7, rotation=90, va="bottom")
+    thr = A.RULE_GAP; a3.axvline(thr, color="C3", ls="--", lw=1)
+    a3.text(thr * 1.3, ge.min() * 1.6, f"{100 * (1 - A.RULE_GAP):.2f} % rule", color="C3", fontsize=7, rotation=90, va="bottom")
     a3.invert_xaxis()
     a3.set_xlabel("1 $-$ energy captured by $r$ modes"); a3.set_ylabel("worst error on 40 unseen parameters")
     a3.set_title("(b) the energy criterion against the unseen error (labels: $r$)", fontsize=8.5)
@@ -117,7 +118,7 @@ def fig_beam(b):
     cs = a1.contourf(M1, M2, delta, levels=14, cmap="viridis"); a1.contour(M1, M2, delta, levels=14, colors="w", linewidths=0.4)
     cb = fig.colorbar(cs, ax=a1); cb.set_label("tip deflection", fontsize=8)
     a1.set_xlabel(r"$\mu_1$"); a1.set_ylabel(r"$\mu_2$"); a1.set_title("(b) fixed tip load: smooth and explicit", fontsize=9)
-    rng = np.random.default_rng(5); pts = rng.uniform(A.LO, A.HI, size=(30, 2))
+    rng = np.random.default_rng(5); pts = rng.uniform(A.LO, A.HI, size=(BEAM_NPAIRS, 2))
     num_ = np.array([abs(b.solve(m)[b.tip]) for m in pts]) if False else np.array([abs(np.linalg.solve(m[0] * b.K1 + m[1] * b.K2, b.F)[b.tip]) for m in pts])
     ex_ = P * L ** 3 / 24 * (7 / pts[:, 0] + 1 / pts[:, 1])
     NUM["cpdBeamClosedErr"] = sci(float(np.max(np.abs(num_ - ex_) / ex_)))
@@ -199,8 +200,8 @@ def fig_designs(b):
     import itertools
     from scipy.spatial.distance import pdist
     from matplotlib.patches import Rectangle
-    N = 16
-    g = (np.arange(4) + 0.5) / 4
+    N = A.DES_N
+    g = (np.arange(A.DES_GRID_K) + 0.5) / A.DES_GRID_K
     grid = np.array([(x, y) for x in g for y in g])
     rnd = np.random.default_rng(11).uniform(size=(N, 2))
     olhs = A.optimal_lhs(N, 2, rng=np.random.default_rng(0))
@@ -398,7 +399,7 @@ def write_numbers():
 
 
 if __name__ == "__main__":
-    b = A.Beam(120)
+    b = A.Beam(A.N_ELEM)
     fig_cloud(b)
     fig_error(b)
     fig_beam(b)

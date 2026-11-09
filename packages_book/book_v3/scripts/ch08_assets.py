@@ -54,6 +54,12 @@ from rom_engine.sampling import optimal_lhs                                     
 
 LO, HI = 0.5, 5.0
 TIP_LOAD = -1000.0
+N_ELEM = 120                                   # elements of the model-problem beam
+RANK_A, RANK_B, RANK_C = 6, 12, 24             # basis sizes quoted in the text; RANK_C is the largest
+SNAP_NS = [6, 10, 15, 20, 30, 45, 60]          # snapshot budgets of the sampling comparison
+SNAP_CAP, SNAP_REPS = 12, 5                    # basis size cap min(N, SNAP_CAP); random repetitions per budget
+DES_N, DES_GRID_K = 16, 4                      # points of the 2-D designs; grid values per parameter
+RULE_GAP = 1e-4                                # energy rule: stop when 1 - captured energy <= RULE_GAP
 XI_LO, XI_HI = 0.1, 0.9
 COST_NSNAP, COST_MODES, COST_NQUERY, COST_NREASM = 16, 8, 200, 20   # cost experiment: snapshots, basis size, queries, re-assembly queries
 
@@ -124,13 +130,13 @@ def exp_pod(b):
     mus = design(60, "olhs", 0)
     S = b.snapshots(mus)
     test = design(40, "rand", 7)
-    pod = PodBasis().fit(S, n_modes=24)
+    pod = PodBasis().fit(S, n_modes=RANK_C)
     sv = pod.singular_values
-    ranks = np.arange(1, 25)
+    ranks = np.arange(1, RANK_C + 1)
     pe = [proj_err(b, pod.V[:, :r], test) for r in ranks]
     ge = [tip_err(b, pod.V[:, :r], test) for r in ranks]
     # mass-weighted POD on the same snapshots (columns scaled by the mass inner product)
-    podM = PodBasis().fit(S, n_modes=24, M=b.M)
+    podM = PodBasis().fit(S, n_modes=RANK_C, M=b.M)
     geM = [tip_err(b, podM.V[:, :r], test) for r in ranks]
     print("singular values", sv[:8], flush=True)
     print("projection err", pe[:8], "galerkin tip err", ge[:8], "mass-weighted", geM[:8], flush=True)
@@ -139,21 +145,21 @@ def exp_pod(b):
     ax[1].semilogy(ranks, pe, "o-", label="projection error (state)")
     ax[1].semilogy(ranks, ge, "s-", label="Galerkin state error, Euclidean POD")
     ax[1].semilogy(ranks, geM, "^--", label="Galerkin state error, mass-weighted POD")
-    ax[1].set_xlabel("modes retained"); ax[1].set_ylabel("worst relative error, 40 unseen parameters"); ax[1].legend(fontsize=7)
+    ax[1].set_xlabel("modes retained"); ax[1].set_ylabel(f"worst relative error, {len(test)} unseen parameters"); ax[1].legend(fontsize=7)
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch08_pod.pdf")); plt.close(fig)
     num("cpdNSnap", "60"); num("cpdNTest", "40"); num("cpdNFree", str(b.nf))
     num("cpdSvDecade", f"{sv[0] / sv[3]:.0f}")
     for tag, thr in (("FivePct", 5e-2), ("OnePct", 1e-2)):
         r_hit = next((int(r) for r, e in zip(ranks, ge) if e < thr), None)
         num("cpdModesFor" + tag, str(r_hit) if r_hit else "more than 24")
-    num("cpdGalerkinErrTwelve", sci(ge[11])); num("cpdGalerkinErrLast", sci(ge[-1])); num("cpdProjErrLast", sci(pe[-1]))
-    num("cpdSvLast", sci(sv[-1] / sv[0])); num("cpdSvTwelve", sci(sv[11] / sv[0]))
+    num("cpdGalerkinErrTwelve", sci(ge[RANK_B - 1])); num("cpdGalerkinErrLast", sci(ge[-1])); num("cpdProjErrLast", sci(pe[-1]))
+    num("cpdSvLast", sci(sv[-1] / sv[0])); num("cpdSvTwelve", sci(sv[RANK_B - 1] / sv[0]))
     num("cpdGalerkinOverProj", f"{max(g / p for g, p in zip(ge, pe)):.2f}")
     num("cpdMassWins", str(sum(1 for g, m in zip(ge, geM) if m < g))); num("cpdMassCompared", str(len(ge)))
-    num("cpdMassErrTwelve", sci(geM[11]))
-    num("cpdGalerkinErrFour", sci(ge[3])); num("cpdGalerkinErrSix", sci(ge[5]))
-    num("cpdProjErrSix", sci(pe[5])); num("cpdGalerkinErrEight", sci(ge[7]))
-    num("cpdMassErrSix", sci(geM[5])); num("cpdMassOrth", sci(podM.orthonormality_error()))
+    num("cpdMassErrTwelve", sci(geM[RANK_B - 1]))
+    num("cpdGalerkinErrFour", sci(ge[3])); num("cpdGalerkinErrSix", sci(ge[RANK_A - 1]))
+    num("cpdProjErrSix", sci(pe[RANK_A - 1])); num("cpdGalerkinErrEight", sci(ge[7]))
+    num("cpdMassErrSix", sci(geM[RANK_A - 1])); num("cpdMassOrth", sci(podM.orthonormality_error()))
     num("cpdEucOrth", sci(pod.orthonormality_error()))
     return pod
 
@@ -161,21 +167,21 @@ def exp_pod(b):
 # ------------------------------------------------------------------------------------------ snapshots vs design
 def exp_snapshots(b):
     test = design(40, "rand", 7)
-    ns = [6, 10, 15, 20, 30, 45, 60]
+    ns = SNAP_NS
     res = {"olhs": [], "rand": []}
     for kind in res:
         for n in ns:
             errs = []
-            for seed in range(5):
+            for seed in range(SNAP_REPS):
                 S = b.snapshots(design(n, kind, 100 + seed))
-                V = PodBasis().fit(S, n_modes=min(n, 12)).V
+                V = PodBasis().fit(S, n_modes=min(n, SNAP_CAP)).V
                 errs.append(tip_err(b, V, test))
             res[kind].append((np.median(errs), np.max(errs)))
         print(kind, [f"{m:.1e}" for m, _ in res[kind]], flush=True)
     fig, ax = plt.subplots(figsize=(4.8, 3.2))
     for kind, st in (("olhs", "o-"), ("rand", "s--")):
         ax.semilogy(ns, [m for m, _ in res[kind]], st, label=("optimal LHS" if kind == "olhs" else "random") + ", median of 5")
-    ax.set_xlabel("snapshots (basis size $\\min(n,12)$)"); ax.set_ylabel("Galerkin state error, 40 unseen parameters"); ax.legend(fontsize=8)
+    ax.set_xlabel(f"snapshots (basis size $\\min(n,{SNAP_CAP})$)"); ax.set_ylabel(f"Galerkin state error, {len(test)} unseen parameters"); ax.legend(fontsize=8)
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch08_snapshots.pdf")); plt.close(fig)
     num("cpdSnapOlhsB", sci(res["olhs"][3][0])); num("cpdSnapRandB", sci(res["rand"][3][0]))
     num("cpdSnapOlhsA", sci(res["olhs"][1][0])); num("cpdSnapRandA", sci(res["rand"][1][0]))
@@ -285,7 +291,7 @@ def exp_cost():
 
 def main():
     print(platform.platform(), "numpy", np.__version__, flush=True)
-    b = Beam(120)
+    b = Beam(N_ELEM)
     pod = exp_pod(b); exp_snapshots(b); exp_modal(b, pod); exp_cost()
     num("cpdMachine", f"{platform.system()} {platform.release()}, {os.cpu_count()} CPUs, NumPy {np.__version__}")
     with open(os.path.join(TAB, "numbers_ch08.tex"), "w") as fh:
