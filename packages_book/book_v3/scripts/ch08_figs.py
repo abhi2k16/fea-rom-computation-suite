@@ -340,8 +340,8 @@ def fig_projection(b):
     for pt, col in ((u, NAVY), (E, ORG), (G, GRN)): a.plot(*pt, "o", color=col, ms=6, zorder=5)
     a.text(u[0] - 0.12, u[1] + 0.05, r"full solution $\mathbf{u}$", color=NAVY, fontsize=9, ha="right", fontweight="bold")
     a.annotate("Euclidean projection $\\mathbf{V}\\mathbf{V}^T\\mathbf{u}$\nerror $\\perp$ subspace\n(needs $\\mathbf{u}$)", E, (E[0] - 2.3, E[1] - 2.0), color=ORG, fontsize=8, ha="center", arrowprops=dict(arrowstyle="->", color=ORG, lw=0.8))
-    a.annotate("Galerkin solution $\\mathbf{V}\\mathbf{q}$\nresidual $\\mathbf{r}=\\mathbf{f}-\\mathbf{K}\\mathbf{V}\\mathbf{q}\\perp$ subspace\n(needs only $\\mathbf{K},\\mathbf{f}$)", G, (G[0] + 0.9, G[1] - 2.2), color=GRN, fontsize=8, ha="center", arrowprops=dict(arrowstyle="->", color=GRN, lw=0.8))
-    a.text(G[0] + rr[0] + 0.08, G[1] + rr[1] + 0.02, "r (scaled)", color=GRN, fontsize=8, ha="left")
+    a.annotate("Galerkin solution $\\mathbf{V}\\mathbf{q}$\nresidual $\\rho=\\mathbf{f}-\\mathbf{K}\\mathbf{V}\\mathbf{q}\\perp$ subspace\n(needs only $\\mathbf{K},\\mathbf{f}$)", G, (G[0] + 0.9, G[1] - 2.2), color=GRN, fontsize=8, ha="center", arrowprops=dict(arrowstyle="->", color=GRN, lw=0.8))
+    a.text(G[0] + rr[0] + 0.08, G[1] + rr[1] + 0.02, "$\\rho$ (scaled)", color=GRN, fontsize=8, ha="left")
     a.set_xlim(-3.4, 6.6); a.set_ylim(-3.2, 3.2); a.set_title("(a) two projections of $\\mathbf{u}$ onto the same subspace", fontsize=9, loc="left")
     # ---- (b) the two errors along the subspace
     q = np.linspace(-0.5, 4.6, 300); qE, qG = v @ u, (v @ f) / (v @ K @ v)
