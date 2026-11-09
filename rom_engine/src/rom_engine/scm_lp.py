@@ -16,24 +16,20 @@ wrong), this module implements the ORIGINAL classical SCM, applied via the stand
 
     sigma_min(A(omega))^2 = lambda_min(A(omega)^H A(omega))
 
-A(omega)^H A(omega) is REAL, SYMMETRIC, and PSD by construction for any
-A(omega) -- complex and non-Hermitian or not -- so this sidesteps the
-complex-operator ambiguity entirely and lands exactly in the setting
-the classical SCM was designed for. The literature's own caveat about
-this reduction (it blows up the online LP to Q(Q+1)/2 variables for
-large Q) is a non-issue here: rom_engine's Q <= 3 ({M, C, K} or {M, K}
-under proportional damping) gives at most 6 LP variables.
+A(omega)^H A(omega) is HERMITIAN and PSD for any A(omega); for complex theta it is NOT real. Its real
+symmetric part S alone is NOT enough: lambda_min(S) is a minimum over real vectors only and can exceed
+sigma_min^2 (an earlier version of this module used S alone and was measured to overshoot). This module therefore
+works with the equivalent REAL 2n x 2n symmetric matrix [[X, -Y], [Y, X]] of H = X + iY (X symmetric, Y
+antisymmetric), which has exactly the eigenvalues of H, each twice. With a_pq + i b_pq = conj(theta_p) theta_q
+(real M, C, K, so A_q^H = A_q^T):
 
-The affine expansion (real M, C, K, so A_q^H = A_q^T):
+    A^H A = sum_q |theta_q|^2 E_q
+          + sum_{p<q} ( a_pq E_pq^re + b_pq E_pq^im ),
+    E_q      = blkdiag(A_q^T A_q, A_q^T A_q)
+    E_pq^re  = blkdiag(S_pq, S_pq),          S_pq = A_p^T A_q + A_q^T A_p
+    E_pq^im  = [[0, -T_pq], [T_pq, 0]],      T_pq = A_p^T A_q - A_q^T A_p
 
-    A(omega)^H A(omega) = sum_pq conj(theta_p(omega)) theta_q(omega) A_p^T A_q
-                         = sum_q  |theta_q(omega)|^2                * B_qq
-                         + sum_{p<q} Re[conj(theta_p(omega)) theta_q(omega)] * B_pq
-
-    B_qq = A_q^T A_q                      (q)
-    B_pq = A_p^T A_q + A_q^T A_p    (p < q)
-
-both REAL SYMMETRIC, giving Q(Q+1)/2 real-coefficient affine terms.
+all real symmetric, giving Q + 2 Q(Q-1)/2 = Q^2 real-coefficient affine terms (4 for {M, K}, 9 for {M, C, K}).
 
 Online LP (classical SCM structure, scipy.optimize.linprog):
   - box bounds y_pq in [lambda_min(B_pq), lambda_max(B_pq)] (offline,
@@ -46,7 +42,7 @@ Online LP (classical SCM structure, scipy.optimize.linprog):
     offline (one SVD, the same cost scm.py's add_reference() already
     pays) -- valid because ANY vector's Rayleigh quotient at operator
     j can never be smaller than operator j's own smallest eigenvalue;
-  - objective: minimize sum_pq c_pq(omega) y_pq.
+  - objective: minimize sum_t c_t(omega) y_t.
 
 The LP's optimal value is a rigorous lower bound on
 lambda_min(A(omega)^H A(omega)); sqrt(max(0, that)) rigorously lower-
@@ -96,22 +92,30 @@ class LPSingularValueLowerBound:
         self.components = [np.asarray(Aq, dtype=float) for Aq in components]
         self.theta_func = theta_func
         self.Q = len(self.components)
-        self.pairs = _pair_indices(self.Q)
-        self.n_pairs = len(self.pairs)
+        # terms: (p, q, kind); kind "re" (diagonal and real part) or "im" (imaginary part, p < q only)
+        self.terms = [(q, q, "re") for q in range(self.Q)]
+        for p in range(self.Q):
+            for q in range(p + 1, self.Q):
+                self.terms.append((p, q, "re"))
+                self.terms.append((p, q, "im"))
+        self.n_pairs = len(self.terms)
 
-        # Offline, ONE-TIME cost: build every B_pq and its eigenvalue
-        # range -- Q(Q+1)/2 real symmetric (n_dof, n_dof) matrices and
-        # dense eigendecompositions, done once regardless of how many
-        # omega queries follow.
+        # Offline, ONE-TIME cost: build every real 2n x 2n term matrix and its eigenvalue range.
         self._B = []
         y_min = np.empty(self.n_pairs)
         y_max = np.empty(self.n_pairs)
-        for idx, (p, q) in enumerate(self.pairs):
+        for idx, (p, q, kind) in enumerate(self.terms):
             Ap, Aq = self.components[p], self.components[q]
+            Z = np.zeros_like(Ap)
             if p == q:
-                B = Ap.T @ Aq
+                G = Ap.T @ Aq
+                B = np.block([[G, Z], [Z, G]])
+            elif kind == "re":
+                S = Ap.T @ Aq + Aq.T @ Ap
+                B = np.block([[S, Z], [Z, S]])
             else:
-                B = Ap.T @ Aq + Aq.T @ Ap
+                T = Ap.T @ Aq - Aq.T @ Ap
+                B = np.block([[Z, -T], [T, Z]])
             B = 0.5 * (B + B.T)  # symmetrize away any roundoff asymmetry
             self._B.append(B)
             eigvals = np.linalg.eigvalsh(B)
@@ -137,17 +141,14 @@ class LPSingularValueLowerBound:
         return np.asarray(self.theta_func(omega)).ravel()
 
     def _coefficients(self, omega):
-        """c_pq(omega) for every stored (p, q) pair, in self.pairs
-        order: |theta_q|^2 on the diagonal, Re[conj(theta_p) theta_q]
-        off it -- the real coefficients A(omega)^H A(omega)'s affine
-        expansion needs (see module docstring)."""
+        """Real coefficients of A(omega)^H A(omega)'s affine expansion, in self.terms
+        order: |theta_q|^2 on the diagonal, Re and Im of conj(theta_p) theta_q off it
+        (see module docstring)."""
         theta = self._theta(omega)
         c = np.empty(self.n_pairs)
-        for idx, (p, q) in enumerate(self.pairs):
-            if p == q:
-                c[idx] = (theta[q] * np.conj(theta[q])).real
-            else:
-                c[idx] = (np.conj(theta[p]) * theta[q]).real
+        for idx, (p, q, kind) in enumerate(self.terms):
+            z = np.conj(theta[p]) * theta[q]
+            c[idx] = z.real if kind == "re" else z.imag
         return c
 
     def _assemble_AhA(self, omega):
@@ -192,7 +193,7 @@ class LPSingularValueLowerBound:
     # -----------------------------------------------------------------
     def lower_bound(self, omega):
         """sqrt(max(0, LP optimum)), where the LP minimizes
-        sum_pq c_pq(omega) y_pq subject to the box bounds (valid for
+        sum_t c_t(omega) y_t subject to the box bounds (valid for
         ANY unit vector) and, for every stored reference omega_j,
         sum_pq c_pq(omega_j) y_pq >= alpha_j (valid because a Rayleigh
         quotient at operator j can never undercut operator j's own
@@ -228,7 +229,7 @@ class LPSingularValueLowerBound:
         upper bound, just not the tightest one available in principle.
 
         This is a deliberate choice, not an oversight: maximizing
-        sum_pq c_pq(omega) y_pq over the SAME box + reference-
+        sum_t c_t(omega) y_t over the SAME box + reference-
         constraint feasible region lower_bound() uses was tried via
         linprog first, and HiGHS was observed to spuriously report
         "unbounded" on this package's real cantilever fixture -- a
