@@ -148,7 +148,7 @@ def main():
     if not miss:
         num("cbtMissOrder", "none"); num("cbtMissErr", "0"); num("cbtMissBound", "0"); num("cbtMissRel", "0")
     ratio = [e / b for e, b in zip(bt_err_int, bt_bound) if b > 1e-12 * hsv[0]]
-    num("cbtBoundLoose", f"{1 / min(ratio):.0f}"); num("cbtBoundRatioMin", f"{min(ratio):.2f}"); num("cbtBoundRatioMax", f"{max(ratio):.2f}")
+    num("cbtBoundLoose", f"{1 / min(ratio):.0f}"); num("cbtBoundRatioMin", f"{min(ratio):.2g}"); num("cbtBoundRatioMax", f"{max(ratio):.2g}")
     i8 = list(orders).index(8)
     num("cbtBtErrEight", sci(bt_err_fom[i8])); num("cbtBtBoundEight", sci(bt_bound[i8]))
     num("cbtBtErrIntEight", sci(bt_err_int[i8]))
