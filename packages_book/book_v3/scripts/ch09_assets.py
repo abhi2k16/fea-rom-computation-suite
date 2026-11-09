@@ -185,7 +185,7 @@ def main():
         H = k1.frequency_response(omegas); methods["kry1"][0].append(errs(H, Hf)); rom_store[("kry1", r)] = H
         rom_store[("kry1rom", r)] = k1
         try:
-            k2 = KrylovROM.from_MCK(M, K, B, B, C=C, s0=0.0, k=r // 2, two_sided=True)
+            k2 = KrylovROM.from_MCK(M, K, B, B, C=C, s0=0.0, k=r, two_sided=True)      # k vectors per side give a model of k states
             H = k2.frequency_response(omegas); methods["kry2"][0].append(errs(H, Hf)); rom_store[("kry2", r)] = H
             rom_store[("kry2rom", r)] = k2
         except Exception as ex:
@@ -235,6 +235,11 @@ def main():
     for k_, nm in (("bt", "Bt"), ("kry1", "KryOne"), ("kry2", "KryTwo"), ("soar", "Soar")):
         num(f"cbtFar{nm}", sci(np.mean(np.abs(cand[k_] - Hf2)[far] / np.abs(Hf2)[far])))
         num(f"cbtNear{nm}", sci(np.mean(np.abs(cand[k_] - Hf2)[om2 < 8 * w1] / np.abs(Hf2)[om2 < 8 * w1])))
+    mean_rel = lambda k_, msk: np.mean(np.abs(cand[k_] - Hf2)[msk] / np.abs(Hf2)[msk])
+    num("cbtRiseKryOne", sci(mean_rel("kry1", far) / mean_rel("kry1", om2 < 8 * w1)))
+    num("cbtRiseBt", f"{mean_rel('bt', far) / mean_rel('bt', om2 < 8 * w1):.0f}")
+    e1, e2 = methods["kry1"][0][ix[8]], methods["kry2"][0][ix[8]]
+    num("cbtKryEightSpreadPct", f"{100 * (max(max(a / b, b / a) for a, b in zip(e1, e2)) - 1):.0f}")
 
     # ---------------- stability and passivity
     def pm(H):
