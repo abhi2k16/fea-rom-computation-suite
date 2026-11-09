@@ -89,7 +89,7 @@ for r, (p, g, er, mx, at) in enumerate(rows, 1):
     num(f"cfrGrPick{'ABCD'[r - 1]}", f"{p:.2f}")
     num(f"cfrGrGamma{'ABCD'[r - 1]}", f"{g:.2f}")
     for j in range(3):
-        num(f"cfrGrErr{'ABCD'[r - 1]}R{j + 1}", tex(er[j]))
+        num(f"cfrGrErr{'ABCD'[r - 1]}Res{'abc'[j]}", tex(er[j]))
     num(f"cfrGrMax{'ABCD'[r - 1]}", tex(mx)); num(f"cfrGrMaxAt{'ABCD'[r - 1]}", f"{at:.1f}")
 num("cfrGrThirdRes", f"{wn[2] / w1:.1f}"); num("cfrGrSecondRes", f"{wn[1] / w1:.2f}")
 with open(os.path.join(BOOK, "tables", "numbers_ch10_greedy_rounds.tex"), "w") as fh:
