@@ -45,6 +45,29 @@ num("cfrMathOrthHUni", tex(out["uniform"][1]))
 num("cfrMathImagGreedy", f"{out['greedy'][2]:.0f}")
 num("cfrMathImagUni", f"{100 * out['uniform'][2]:.0f}")
 
+
+# ---------------------------------------------------------------- Q15: snapshots damped or undamped, V^T or V^H
+rng = np.random.default_rng(0)
+test = np.concatenate([wn[i] * (1.0 + 0.05 * rng.standard_normal(20)) for i in range(3)])
+truth = {w: s.solve_harmonic(w, F)[fr] for w in test}
+
+
+def near_errors(V, herm):
+    P = V.conj().T if herm else V.T; e = []
+    for w in test:
+        A = -w * w * M + 1j * w * C + K
+        x = V @ np.linalg.solve(P @ A @ V, P @ Ff)
+        e.append(np.linalg.norm(x - truth[w]) / np.linalg.norm(truth[w]))
+    return np.array(e)
+
+
+eT, eH = near_errors(ub.V, False), near_errors(ub.V, True)
+num("cfrMathProjDiff", tex(np.max(np.abs(eT - eH) / eT)))
+gd, hd = greedy_train_frequency_basis(band, M, K, Ff, C=C, n_seed=3, tol=1e-12, max_modes=5)
+ed = near_errors(gd.V, False)
+num("cfrMathGreedyDampMed", tex(np.median(ed))); num("cfrMathGreedyDampMax", tex(np.max(ed)))
+num("cfrMathGreedyDampSel", ", ".join(f"{o / w1:.2f}" for o, _, _ in hd))
+
 # ---------------------------------------------------------------- R1: random vibration
 f = np.linspace(0.1 * w1 / (2 * np.pi), 20 * w1 / (2 * np.pi), 6000); psd = np.ones_like(f)
 full = FrequencyROM.from_MCK(M, K, np.eye(len(fr)), rayleigh=(al, be))
@@ -54,10 +77,10 @@ Gam = Phi[tip, :] * (Phi.T @ Ff)
 var = Gam ** 2 / (8 * zeta * wn ** 3)                   # S_0 Gamma_l^2 / (8 zeta_l w_l^3), S_0 = 1 per Hz
 rms_cf = np.sqrt(var.sum())
 cum = np.concatenate([[0], np.cumsum(0.5 * (S_out[1:] + S_out[:-1]) * np.diff(f))]); cum /= cum[-1]
-num("cfrMathRmsNum", f"{rms:.4e}"); num("cfrMathRmsCF", f"{rms_cf:.4e}")
+num("cfrMathRmsNum", tex(rms, 4)); num("cfrMathRmsCF", tex(rms_cf, 4))
 num("cfrMathRmsDiff", tex(abs(rms_cf - rms) / rms))
 num("cfrMathShareOne", f"{100 * var[0] / var.sum():.2f}"); num("cfrMathShareRest", f"{100 * (1 - var[0] / var.sum()):.2f}")
-num("cfrMathRmsOnly", f"{np.sqrt(var[0]):.4e}")
+num("cfrMathRmsOnly", tex(np.sqrt(var[0]), 4))
 num("cfrMathEffPSD", tex(1000.0 ** 2, 0))
 num("cfrMathBandLoHz", f"{f[0]:.1f}"); num("cfrMathBandHiHz", f"{f[-1]:.0f}")
 fn = wn[:3] / (2 * np.pi)
