@@ -38,7 +38,7 @@ d = np.linspace(-1.6e-3, 1.6e-3, 801)
 lb = np.array([b1.lower_bound(wj + x * w1) for x in d]); st = np.array([smin(wj + x * w1) for x in d])
 om = np.linspace(0.1, 20.0, 2000) * w1
 hw = np.array([smin(w) for w in om]) / Lf(om) / w1
-fig, ax = plt.subplots(1, 2, figsize=(7.4, 2.9), constrained_layout=True)
+fig, ax = plt.subplots(1, 2, figsize=(6.2, 2.9), constrained_layout=True)
 a = ax[0]
 a.plot(d * 1e3, st / 1e6, color=BLUE, lw=1.2, label=r"true $\sigma_{\min}(\mathbf{A}(\omega))$")
 a.plot(d * 1e3, lb / 1e6, color=ORANGE, lw=1.2, label="Lipschitz bound from one reference")

@@ -45,7 +45,7 @@ for k in (3, 4, 5, 6, 7):
     b, _ = run(k); roms[k] = FrequencyROM.from_MCK(M, K, b.V, rayleigh=(al, be))
     hk = run(k)[1]
     assert [h[0] for h in hk] == picks[:len(hk)], "history of shorter run differs"
-fig, ax = plt.subplots(2, 2, figsize=(7.4, 5.0), constrained_layout=True)
+fig, ax = plt.subplots(2, 2, figsize=(6.2, 4.8), constrained_layout=True)
 sel = list(band[seed_idx])
 idx_of = lambda w: int(np.argmin(np.abs(band - w)))
 rows = []

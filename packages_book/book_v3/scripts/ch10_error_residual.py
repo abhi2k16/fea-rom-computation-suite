@@ -56,7 +56,7 @@ np.save('/tmp/e1_R.npy', R); np.save('/tmp/e1_Mo.npy', Mo)
 keep = (R[:, 0] >= 0.1 - 1e-9) & (R[:, 0] <= 20.0 + 1e-9); R, Mo = R[keep], Mo[keep]
 f, e_, r_, imin, imax, cosu, orth = R.T
 amp = e_ / r_
-fig, ax = plt.subplots(1, 3, figsize=(7.4, 2.8), constrained_layout=True)
+fig, ax = plt.subplots(1, 3, figsize=(6.2, 2.8), constrained_layout=True)
 a = ax[0]
 a.fill_between(f, imax, imin, color=BLUE, alpha=0.15, lw=0, label=r"$1/\sigma_{\max}$ to $1/\sigma_{\min}$")
 a.semilogy(f, imin, color=BLUE, lw=0.8, label=r"$1/\sigma_{\min}$")

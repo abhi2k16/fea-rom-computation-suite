@@ -44,7 +44,7 @@ wid = 2 * zeta[:3] * wn[:3] / w1                      # half-power width in unit
 even5 = np.linspace(LO, HI, 5)
 miss = [np.min(np.abs(even5 - wn[k] / w1)) / wid[k] for k in range(3)]
 
-fig, ax = plt.subplots(1, 3, figsize=(7.4, 2.6), constrained_layout=True)
+fig, ax = plt.subplots(1, 3, figsize=(6.2, 2.7), constrained_layout=True)
 a = ax[0]
 a.semilogy(fine, amp, color=BLUE, lw=1.0)
 for k in range(3):

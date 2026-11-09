@@ -48,7 +48,7 @@ e_mod = [dist(Phi[:, :k]) for k in dims]
 e_tail = [dist(np.column_stack([Phi[:, :NM]] + tails[:k - NM])) if k >= NM else np.nan for k in dims]
 e_pod = [dist(U[:, :k]) for k in dims]
 t0_static = np.linalg.solve(K, Ff) - Phi[:, :NM] @ (f[:NM] / wn[:NM] ** 2)
-fig, ax = plt.subplots(1, 3, figsize=(7.4, 2.8), constrained_layout=True)
+fig, ax = plt.subplots(1, 3, figsize=(6.2, 2.8), constrained_layout=True)
 a = ax[0]
 c = np.abs(f[:, None] / Dl); c /= c[0].max()
 cols = plt.cm.viridis(np.linspace(0, 0.9, 6))
