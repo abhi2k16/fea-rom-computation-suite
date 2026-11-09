@@ -1,0 +1,4 @@
+balanced truncation  8 states: sweep  11.0 ms, peak-relative error 6.4e-06
+Krylov               8 states: sweep   9.3 ms, peak-relative error 6.7e-08
+full model sweep (48 unknowns, 400 frequencies): 31 ms
+a priori bound 3.8e-10 m/N = 3.2e-05 of the peak, stable: True

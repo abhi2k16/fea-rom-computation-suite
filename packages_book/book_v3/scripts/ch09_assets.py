@@ -59,6 +59,8 @@ N_EL, L = 24, 1.0
 E, RHO, A_SEC, I_SEC = 210e9, 7800.0, 0.01, 8.33e-6
 ALPHA, BETA = 2.0, 1e-5
 N_PRE = 15
+N_FREQ, BAND_LO, BAND_HI = 400, 0.05, 8.0     # comparison band (in units of omega_1) and number of frequencies
+EXT_HI, N_EXT, FAR_LO = 25.0, 700, 12.0       # extended band of the locality study; 'far' means above FAR_LO * omega_1
 
 
 def build():
@@ -100,7 +102,7 @@ def main():
     n = len(free)
     lam, Vf = eigh(K, M)
     w1 = np.sqrt(lam[0])
-    omegas = np.linspace(0.05, 8.0, 400) * w1
+    omegas = np.linspace(BAND_LO, BAND_HI, N_FREQ) * w1
     F0 = np.zeros(fes.n_dof); F0[free[tip]] = 1.0
     Hf = fes.solve_frequency_sweep(omegas, F0)[:, free[tip]]
     # self-check of the reference against a direct solve of the same matrices
@@ -146,7 +148,7 @@ def main():
     if not miss:
         num("cbtMissOrder", "none"); num("cbtMissErr", "0"); num("cbtMissBound", "0"); num("cbtMissRel", "0")
     ratio = [e / b for e, b in zip(bt_err_int, bt_bound) if b > 1e-12 * hsv[0]]
-    num("cbtBoundRatioMin", f"{min(ratio):.2f}"); num("cbtBoundRatioMax", f"{max(ratio):.2f}")
+    num("cbtBoundLoose", f"{1 / min(ratio):.0f}"); num("cbtBoundRatioMin", f"{min(ratio):.2f}"); num("cbtBoundRatioMax", f"{max(ratio):.2f}")
     i8 = list(orders).index(8)
     num("cbtBtErrEight", sci(bt_err_fom[i8])); num("cbtBtBoundEight", sci(bt_bound[i8]))
     num("cbtBtErrIntEight", sci(bt_err_int[i8]))
@@ -211,6 +213,7 @@ def main():
         for r, nm in ((8, "Eight"), (12, "Twelve")):
             e = methods[key][0][ix[r]]
             num(f"cbt{tag}Max{nm}", sci(e[0])); num(f"cbt{tag}Mean{nm}", sci(e[1]))
+    num("cbtBtGainTwelve", f"{methods['modal'][0][ix[12]][0] / methods['bt'][0][ix[12]][0]:.0f}")
     # ---------------- frequency response figure, order 8
     fig, ax = plt.subplots(figsize=(5.4, 3.3))
     ax.semilogy(omegas / w1, np.abs(Hf), "k-", lw=2, label="full order")
@@ -220,7 +223,7 @@ def main():
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch09_response.pdf")); plt.close(fig)
 
     # locality: error against frequency on an extended band, order 8
-    om2 = np.linspace(0.05, 25.0, 700) * w1
+    om2 = np.linspace(BAND_LO, EXT_HI, N_EXT) * w1
     Hf2 = fes.solve_frequency_sweep(om2, F0)[:, free[tip]]
     cand = {"bt": BalancedTruncationROM.from_MCK(Mp, Kp, Bp, Bp, C=Cp, r=8).frequency_response(om2),
             "kry1": rom_store[("kry1rom", 8)].frequency_response(om2),
@@ -229,15 +232,15 @@ def main():
     fig, ax = plt.subplots(figsize=(5.4, 3.3))
     for k_, c_ in (("bt", "C1"), ("kry1", "C2"), ("soar", "C3"), ("kry2", "C4")):
         ax.semilogy(om2 / w1, np.abs(cand[k_] - Hf2) / np.abs(Hf2), color=c_, lw=1.1, label=labels[k_])
-    ax.axvline(8.0, color="gray", ls=":"); ax.set_xlabel("$\\omega/\\omega_1$"); ax.set_ylabel("relative error $|H_r-H|/|H|$"); ax.legend(fontsize=7)
+    ax.axvline(BAND_HI, color="gray", ls=":"); ax.set_xlabel("$\\omega/\\omega_1$"); ax.set_ylabel("relative error $|H_r-H|/|H|$"); ax.legend(fontsize=7)
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch09_locality.pdf")); plt.close(fig)
-    far = om2 > 12 * w1
+    far = om2 > FAR_LO * w1
     for k_, nm in (("bt", "Bt"), ("kry1", "KryOne"), ("kry2", "KryTwo"), ("soar", "Soar")):
         num(f"cbtFar{nm}", sci(np.mean(np.abs(cand[k_] - Hf2)[far] / np.abs(Hf2)[far])))
-        num(f"cbtNear{nm}", sci(np.mean(np.abs(cand[k_] - Hf2)[om2 < 8 * w1] / np.abs(Hf2)[om2 < 8 * w1])))
+        num(f"cbtNear{nm}", sci(np.mean(np.abs(cand[k_] - Hf2)[om2 < BAND_HI * w1] / np.abs(Hf2)[om2 < BAND_HI * w1])))
     mean_rel = lambda k_, msk: np.mean(np.abs(cand[k_] - Hf2)[msk] / np.abs(Hf2)[msk])
-    num("cbtRiseKryOne", sci(mean_rel("kry1", far) / mean_rel("kry1", om2 < 8 * w1)))
-    num("cbtRiseBt", f"{mean_rel('bt', far) / mean_rel('bt', om2 < 8 * w1):.0f}")
+    num("cbtRiseKryOne", sci(mean_rel("kry1", far) / mean_rel("kry1", om2 < BAND_HI * w1)))
+    num("cbtRiseBt", f"{mean_rel('bt', far) / mean_rel('bt', om2 < BAND_HI * w1):.0f}")
     e1, e2 = methods["kry1"][0][ix[8]], methods["kry2"][0][ix[8]]
     num("cbtKryEightSpreadPct", f"{100 * (max(max(a / b, b / a) for a, b in zip(e1, e2)) - 1):.0f}")
 
