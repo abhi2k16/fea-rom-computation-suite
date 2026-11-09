@@ -126,6 +126,10 @@ def main():
             for k_, rom in (("greedy", rom_g), ("uniform", rom_u), ("modal", rom_m)):
                 en, eb = rel_err(rom, test_near), rel_err(rom, test_band)
                 res[k_].append((en.max(), np.median(en), eb.max()))
+                if r == 5:
+                    om_max = test_near[int(np.argmax(en))]
+                    num(f"cfr{k_.capitalize()}ArgFive", f"{om_max / w1:.1f}")
+                    num(f"cfr{k_.capitalize()}ArgGroup", str(int(np.argmin(np.abs(wn[:3] - om_max))) + 1))
             print(r, {k_: f"{v[-1][0]:.1e}/{v[-1][2]:.1e}" for k_, v in res.items()}, "rank", gb.n_modes, flush=True)
         sel5 = sel_store[5] / w1
         num("cfrSelFive", ", ".join(f"{x:.2f}" for x in sel5[:6]))
