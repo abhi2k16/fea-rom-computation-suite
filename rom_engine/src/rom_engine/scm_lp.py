@@ -125,6 +125,7 @@ class LPSingularValueLowerBound:
         self._y_min = y_min
         self._y_max = y_max
 
+        self.rounding_factor = 0.0       # optional extra safety: multiples of eps * sum|c_t| max|y_t| subtracted from the LP optimum
         self.reference_omegas = []      # list of omega_j
         self.reference_c = []           # list of c(omega_j), the pair-coefficient vector
         self.reference_alpha = []       # list of TRUE lambda_min(A(omega_j)^H A(omega_j))
@@ -176,10 +177,14 @@ class LPSingularValueLowerBound:
         for lower_bound()'s LP at OTHER omegas. Returns the true
         sigma_min(A(omega)) directly, for parity with
         scm.SingularValueLowerBound.add_reference()."""
-        AhA = self._assemble_AhA(omega)
-        AhA = 0.5 * (AhA + AhA.conj().T)
-        alpha = float(np.linalg.eigvalsh(AhA)[0])
-        alpha = max(alpha, 0.0)  # PSD by construction; clip tiny negative roundoff
+        # sigma_min from an SVD of A itself, NOT from eigvalsh(A^H A): squaring the condition number loses
+        # about half the digits of sigma_min (error ~ eps ||A||^2 on lambda), which would make the stored
+        # reference value slightly too large and the "rigorous" bound slightly too high.
+        theta = self._theta(omega)
+        A = theta[0] * self.components[0]
+        for q in range(1, self.Q):
+            A = A + theta[q] * self.components[q]
+        alpha = float(np.linalg.svd(A, compute_uv=False)[-1]) ** 2
         self.reference_omegas.append(float(np.real(omega)))
         self.reference_c.append(self._coefficients(omega))
         self.reference_alpha.append(alpha)
@@ -215,7 +220,10 @@ class LPSingularValueLowerBound:
             # if it ever does, fail safe with the trivial, always-valid
             # bound rather than silently returning something wrong.
             return 0.0
-        alpha_lb = max(float(result.fun), 0.0)
+        # Optional rounding allowance (default 0: measured excess over sigma_min is ~1e-13 relative): the objective sums terms as large as |c_t| max|y_t| (up to ~1e23 here), each
+        # carrying a relative error of order machine epsilon; subtract that so roundoff cannot lift the bound.
+        scale = float(np.sum(np.abs(c) * np.maximum(np.abs(self._y_min), np.abs(self._y_max))))
+        alpha_lb = max(float(result.fun) - self.rounding_factor * np.finfo(float).eps * scale, 0.0)
         return float(np.sqrt(alpha_lb))
 
     def upper_bound(self, omega):
