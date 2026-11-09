@@ -94,8 +94,8 @@ a.set_ylabel(r"$S_{\rm out}=|H|^2S_{\rm in}$ (m$^2$/Hz)"); a.set_title("(c) outp
 a = ax[1, 1]; a.semilogx(f, cum, color=ORANGE)
 for k in range(3):
     a.axvline(fn[k], color=GREY, lw=0.7, ls=":")
-a.set_ylabel(r"share of $\sigma^2$ below $f$"); a.set_ylim(0, 1.05)
-a.set_title(r"(d) where the variance $\sigma^2=\int S_{\rm out}\,df$ comes from", loc="left")
+a.set_ylabel(r"share of $\sigma_{\rm rms}^2$ below $f$"); a.set_ylim(0, 1.05)
+a.set_title(r"(d) where the variance $\sigma_{\rm rms}^2=\int S_{\rm out}\,df$ comes from", loc="left")
 for a_ in ax.ravel():
     a_.set_xlabel("$f$ (Hz)")
 for a_ in (ax[0, 1], ax[1, 0]):
