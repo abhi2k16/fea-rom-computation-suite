@@ -9,6 +9,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from scipy.linalg import solve_continuous_lyapunov, eigh, cholesky, svd
+from rom_engine.krylov import KrylovROM
 import ch09_assets as A
 import ch09_intro as I
 
@@ -95,7 +96,7 @@ def fig_bt(d, e):
     c.set_xlabel("index $k$"); c.set_ylabel("Hankel singular value $\\sigma_k$ (m/N)")
     c.set_title("(c) the beam: where to cut", loc="left"); c.legend(frameon=False, loc="upper right")
     fig.savefig(os.path.join(A.FIG, "ch09_math_bt.pdf"), bbox_inches="tight"); plt.close(fig)
-    NUM["cbtMathBtR"] = str(r); NUM["cbtMathBtNH"] = str(len(h))
+    NUM["cbtMathBtR"] = str(r); NUM["cbtMathBtRp"] = str(r + 1); NUM["cbtMathBtNH"] = str(len(h))
     NUM["cbtMathBtBound"] = A.sci(bound); NUM["cbtMathBtBoundRel"] = A.sci(bound / peak)
     NUM["cbtMathBtSigOne"] = A.sci(h[0]); NUM["cbtMathBtSigR"] = A.sci(h[r - 1]); NUM["cbtMathBtSigRp"] = A.sci(h[r])
     NUM["cbtMathBtDrop"] = A.sci(h[r - 1] / h[r])
@@ -103,8 +104,63 @@ def fig_bt(d, e):
     print("sigma", sig, "hsv[:10]", h[:10])
 
 
+# ---------------------------------------------------------------------------------------- E2 and M2 (Krylov)
+def e2():
+    """One mass-spring-damper again (m=1, k=1): moments about s0=0, and the one-state two-sided Krylov model."""
+    k = KS
+    for c, tag in ((3.0, "Heavy"), (0.2, "Light")):
+        r = KrylovROM.from_MCK(np.array([[1.0]]), np.array([[k]]), np.array([1.0]), np.array([1.0]), C=np.array([[c]]), k=1, two_sided=True)
+        assert r.A_r.shape == (1, 1)
+        om = np.concatenate([np.linspace(0, 4, 4001), np.logspace(np.log10(4), 3, 600)])
+        H = 1 / (k - om ** 2 + 1j * om * c); Hr = r.frequency_response(om)
+        assert np.allclose(Hr, 1 / (k + 1j * om * c), atol=1e-12)              # H_r(s) = 1/(k + c s) exactly
+        err = np.max(np.abs(H - Hr)); peak = np.max(np.abs(H))
+        NUM[f"cbtExK2{tag}Err"] = f"{err:.3f}"; NUM[f"cbtExK2{tag}ErrRel"] = f"{100 * err / peak:.0f}"
+        if tag == "Heavy":
+            m = [1 / k, -c / k ** 2, (c ** 2 - k) / k ** 3, -c * (c ** 2 - 2 * k) / k ** 4]
+            for j, mj in enumerate(m): NUM[f"cbtExMom{'ABCD'[j]}"] = f"{mj:g}"
+            NUM["cbtExMomRedC"] = f"{c ** 2 / k ** 3:g}"
+
+
+def fit_slope(x, e, lo=3e-10, hi=1e-2):
+    m = (e > lo) & (e < hi)
+    return np.polyfit(np.log10(x[m]), np.log10(e[m]), 1)[0], int(m.sum())
+
+
+def fig_krylov(d):
+    M, K, C, B, w1 = d["M"], d["K"], d["C"], d["B"], d["w"][0]
+    m0 = np.mean(np.diag(M)); Ms, Ks, Cs = M / m0, K / (m0 * w1 ** 2), C / (m0 * w1)      # nondimensional: omega in units of omega_1
+    x = np.logspace(-1.7, -0.2, 40)
+    Hf = np.array([B @ np.linalg.solve(-o ** 2 * Ms + 1j * o * Cs + Ks, B) for o in x])
+    fig = plt.figure(figsize=(9.4, 3.2)); gs = fig.add_gridspec(1, 2, width_ratios=[1.5, 1], wspace=0.3)
+    a = fig.add_subplot(gs[0]); b = fig.add_subplot(gs[1])
+    cols = {1: "#6baed6", 2: BLUE, 3: VIOLET}; slopes = {}
+    for kk in (1, 2, 3):
+        r = KrylovROM.from_MCK(Ms, Ks, B, B, C=Cs, s0=0.0, k=kk, two_sided=True)
+        e = np.abs(r.frequency_response(x) - Hf) / np.abs(Hf)
+        sl, npt = fit_slope(x, e); slopes[kk] = sl
+        a.loglog(x, e, "o-", color=cols[kk], ms=2.5, lw=1.1, label=f"$k={kk}$" + (" state" if kk == 1 else " states"))
+        NUM[f"cbtKrySlope{['', 'One', 'Two', 'Three'][kk]}"] = f"{sl:.1f}"
+        ref = e[np.argmin(np.abs(x - 0.3))]
+        xx = np.array([x[0], x[-1]]); a.loglog(xx, ref * (xx / 0.3) ** (2 * kk), ":", color="0.45", lw=0.8)
+    a.axhline(1e-10, color="0.8", lw=0.6)
+    a.text(x[0] * 1.05, 2.5e-10, "rounding level", fontsize=6.5, color="0.5")
+    a.set_ylim(1e-11, 1e-1); a.set_xlabel("$\\omega/\\omega_1$"); a.set_ylabel("relative error $|H_r-H|/|H|$")
+    a.set_title("(a) error of the two-sided model near $s_0=0$", loc="left"); a.legend(frameon=False, loc="lower right")
+    a.set_xlim(0.019, 1.0)
+    for kk, (xt, yt) in ((1, (0.35, 3.4e-2)), (2, (0.40, 1.6e-3)), (3, (0.42, 5e-5))):
+        a.text(xt, yt, f"slope {2 * kk}", fontsize=6.5, color="0.3", ha="left")
+    ks = np.array([1, 2, 3]); b.plot(ks, [slopes[k] for k in ks], "o", color=VIOLET, label="measured")
+    b.plot([0.5, 3.5], [1, 7], "--", color=GREY, lw=1, label="$2k$ moments")
+    b.set_xticks(ks); b.set_xlim(0.5, 3.5); b.set_ylim(0, 7.5); b.set_xlabel("states $k$ (one vector per side)"); b.set_ylabel("slope of the error (fitted)")
+    b.set_title("(b) order of agreement", loc="left"); b.legend(frameon=False, loc="upper left")
+    fig.savefig(os.path.join(A.FIG, "ch09_math_krylov.pdf"), bbox_inches="tight"); plt.close(fig)
+    NUM["cbtKryFitFloor"] = "3\\times10^{-10}"
+    print("two-sided slopes", slopes)
+
+
 if __name__ == "__main__":
-    e = e1(); d = I.setup(); fig_bt(d, e)
+    e = e1(); d = I.setup(); fig_bt(d, e); e2(); fig_krylov(d)
     for k_, v in NUM.items(): print(k_, v)
     with open(os.path.join(A.TAB, "numbers_ch09_math.tex"), "w") as fh:
         fh.write("% generated by scripts/ch09_math.py -- do not edit\n")
