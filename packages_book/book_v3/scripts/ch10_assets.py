@@ -220,6 +220,10 @@ def main():
     sig = np.array([smin(om) for om in grid])
     lb_s = np.array([scm.lower_bound(om) for om in grid]); lb_l = np.array([lp.lower_bound(om) for om in grid])
     num("cfrScmValid", str(int(np.all(lb_s <= sig * (1 + 1e-9))))); num("cfrLpValid", str(int(np.all(lb_l <= sig * (1 + 1e-9)))))
+    for nm, lb in (("Scm", lb_s), ("Lp", lb_l)):
+        viol = lb > sig * (1 + 1e-9)
+        num(f"cfr{nm}ViolN", str(int(viol.sum())))
+        num(f"cfr{nm}ViolMax", sci(float(np.max((lb - sig) / sig))) if viol.any() else "0")
     num("cfrScmPositive", str(int(np.sum(lb_s > 0)))); num("cfrLpPositive", str(int(np.sum(lb_l > 0)))); num("cfrNGrid", str(len(grid)))
     e_grid = np.array([np.linalg.norm(rom5.frequency_response([om], F)[0] - truth(om)) for om in grid])
     cb_s = np.array([certified_error_bound(rom5, scm, om, F) for om in grid])
