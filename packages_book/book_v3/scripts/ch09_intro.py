@@ -93,6 +93,7 @@ def fig_port(d):
     fig.savefig(os.path.join(A.FIG, "ch09_intro_port.pdf"), bbox_inches="tight"); plt.close(fig)
     NUM["cbtIntroStatesFull"] = str(2 * n); NUM["cbtIntroStatesRed"] = str(r); NUM["cbtIntroStatesRatio"] = str(2 * n // r)
     NUM["cbtIntroErrPeak"] = sci(np.max(np.abs(Hr - Hf)) / np.max(np.abs(Hf)))
+    NUM["cbtIntroErrPointMax"] = f"{rel.max():.2f}"; NUM["cbtIntroErrPointAt"] = f"{x[np.argmax(rel)]:.1f}"
 
 
 # --------------------------------------------------------------------------------------------- I2
@@ -121,9 +122,9 @@ def fig_modes(d):
     # (a) peak heights and damping ratios
     a = fig.add_subplot(gs[0]); k = np.arange(1, nm + 1)
     a.bar(k, peak[:nm], color="#9ecae1", edgecolor=BLUE)
-    a.set_yscale("log"); a.set_xlabel("mode $k$"); a.set_ylabel("peak height $R_k/(2\\zeta_k\\omega_k^2)$ (m/N)")
+    a.set_yscale("log"); a.set_xlabel("mode $\\ell$"); a.set_ylabel("peak height $R_\\ell/(2\\zeta_\\ell\\omega_\\ell^2)$ (m/N)")
     a.set_title("(a) how high each mode rises", loc="left")
-    a2 = a.twinx(); a2.semilogy(k, z[:nm], "D-", color=ORANGE, ms=3.5, lw=1); a2.set_ylabel("damping ratio $\\zeta_k$", color=ORANGE); a2.tick_params(axis="y", colors=ORANGE)
+    a2 = a.twinx(); a2.semilogy(k, z[:nm], "D-", color=ORANGE, ms=3.5, lw=1); a2.set_ylabel("damping ratio $\\zeta_\\ell$", color=ORANGE); a2.tick_params(axis="y", colors=ORANGE)
     a.set_xticks(k)
     # (b) Hankel singular values against the estimate
     b = fig.add_subplot(gs[1])
@@ -131,11 +132,11 @@ def fig_modes(d):
     b.plot([lo, hi], [lo, hi], color=GREY, lw=1, ls="--", label="equal")
     m1 = ok.copy(); m1[nm:] = False; m2 = ~ok; m2[nm:] = False
     for jj in range(2):
-        b.loglog(est[m1], pair[m1, jj], "o", color=BLUE, ms=5, mfc=BLUE if jj == 0 else "white", label="$\\zeta_k\\leq0.15$" if jj == 0 else None)
-        b.loglog(est[m2], pair[m2, jj], "s", color=ORANGE, ms=4, mfc=ORANGE if jj == 0 else "white", label="$\\zeta_k>0.15$" if jj == 0 else None)
+        b.loglog(est[m1], pair[m1, jj], "o", color=BLUE, ms=5, mfc=BLUE if jj == 0 else "white", label="$\\zeta_\\ell\\leq0.15$" if jj == 0 else None)
+        b.loglog(est[m2], pair[m2, jj], "s", color=ORANGE, ms=4, mfc=ORANGE if jj == 0 else "white", label="$\\zeta_\\ell>0.15$" if jj == 0 else None)
     for kk in (0, 4, 7):
-        b.annotate(f"$k={kk + 1}$", (est[kk], pair[kk, 0]), (est[kk] * 2.2, pair[kk, 0] * 0.28), fontsize=6.5, color=GREY, arrowprops=dict(arrowstyle="-", color=GREY, lw=0.6))
-    b.set_xlabel("estimate $R_k/(4\\zeta_k\\omega_k^2)$ (m/N)"); b.set_ylabel("Hankel singular values (m/N)")
+        b.annotate(f"$\\ell={kk + 1}$", (est[kk], pair[kk, 0]), (est[kk] * 2.2, pair[kk, 0] * 0.28), fontsize=6.5, color=GREY, arrowprops=dict(arrowstyle="-", color=GREY, lw=0.6))
+    b.set_xlabel("estimate $R_\\ell/(4\\zeta_\\ell\\omega_\\ell^2)$ (m/N)"); b.set_ylabel("Hankel singular values (m/N)")
     b.set_title("(b) what ranks a mode", loc="left"); b.legend(frameon=False, loc="upper left")
     b.set_xlim(lo, hi); b.set_ylim(lo, hi)
     # (c) schematic of balancing

@@ -94,7 +94,7 @@ def fig_bt(d, e):
     c.semilogy(kk[r:], h[r:], "o", color=ORANGE, ms=4, label="dropped")
     c.axvline(r + 0.5, color=GREY, lw=0.8, ls="--")
     bound = 2 * np.sum(h[r:]); peak = np.max(np.abs(d["Hf"]))
-    c.set_xlabel("index $k$"); c.set_ylabel("Hankel singular value $\\sigma_k$ (m/N)")
+    c.set_xlabel("index $i$"); c.set_ylabel("Hankel singular value $\\sigma_i$ (m/N)")
     c.set_title("(c) the beam: where to cut", loc="left"); c.legend(frameon=False, loc="upper right")
     fig.savefig(os.path.join(A.FIG, "ch09_math_bt.pdf"), bbox_inches="tight"); plt.close(fig)
     NUM["cbtMathBtR"] = str(r); NUM["cbtMathBtRp"] = str(r + 1); NUM["cbtMathBtNH"] = str(len(h))

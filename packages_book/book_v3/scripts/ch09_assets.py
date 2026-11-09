@@ -170,7 +170,7 @@ def main():
     print("BT bound/actual r=8", bt_bound[i8], bt_err_int[i8], "holds", holds, "of", len(orders), flush=True)
     fig, ax = plt.subplots(1, 2, figsize=(8.8, 3.2))
     ax[0].semilogy(np.arange(1, len(hsv) + 1), hsv / hsv[0], "o-", ms=3); ax[0].set_xlabel("index"); ax[0].set_ylabel("Hankel singular value / largest")
-    ax[1].semilogy(orders, bt_bound, "s-", ms=3, label="a priori bound $2\\sum_{k>r}\\sigma_k$")
+    ax[1].semilogy(orders, bt_bound, "s-", ms=3, label="a priori bound $2\\sum_{i>r}\\sigma_i$")
     ax[1].semilogy(orders, bt_err_int, "o-", ms=3, label="actual error vs intermediate model")
     ax[1].set_xlabel("retained states $r$"); ax[1].set_ylabel("$H_\\infty$ error (grid maximum)"); ax[1].legend(fontsize=7)
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch09_bt.pdf")); plt.close(fig)
