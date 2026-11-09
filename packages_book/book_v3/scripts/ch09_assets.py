@@ -16,7 +16,7 @@ Writes into book/:
 Run from the repository root:   PYTHONPATH=fea_engine/src:rom_engine/src python packages_book/book/scripts/ch09_assets.py
 """
 __author__ = "Abhijeet <abhijeetshandilya19@gmail.com>"
-import os
+import os, time
 import platform
 import warnings
 import numpy as np
@@ -109,6 +109,21 @@ def main():
     Hd = h_second_order(M, C, K, B, B, omegas[::40])
     num("cbtNDof", str(n)); num("cbtNState", str(2 * n)); num("cbtBandMax", "8"); num("cbtFOne", f"{w1 / (2 * np.pi):.1f}")
     num("cbtNPre", str(N_PRE))
+    # quantities that replace vague words in the text
+    wn = np.sqrt(lam)
+    num("cbtFreqSpan", sci(wn[-1] / wn[0]))
+    num("cbtZetaOne", sci(ALPHA / (2 * w1) + BETA * w1 / 2))              # Rayleigh damping ratio of the first mode
+    from scipy.linalg import solve_continuous_lyapunov as _lyap
+    Araw = np.block([[np.zeros((n, n)), np.eye(n)], [-np.linalg.solve(M, K), -np.linalg.solve(M, C)]])
+    Braw = np.concatenate([np.zeros(n), np.linalg.solve(M, B)])[:, None]
+    Pg = _lyap(Araw, -Braw @ Braw.T); evg = np.linalg.eigvalsh((Pg + Pg.T) / 2)
+    num("cbtRawGramMin", sci(evg.min())); num("cbtRawGramMax", sci(evg.max()))
+    _t0 = time.perf_counter()
+    try:
+        BalancedTruncationROM.from_MCK(M, K, B, B, C=C, r=8)
+    except Exception:
+        pass
+    num("cbtRawBtMs", f"{1e3 * (time.perf_counter() - _t0):.0f}")
 
     # SOAR on the unscaled load: report what the package returns
     Vraw = soar_basis(M, K, B, 4, C=C)
@@ -213,6 +228,7 @@ def main():
         for r, nm in ((8, "Eight"), (12, "Twelve")):
             e = methods[key][0][ix[r]]
             num(f"cbt{tag}Max{nm}", sci(e[0])); num(f"cbt{tag}Mean{nm}", sci(e[1]))
+    num("cbtBtGainEight", f"{methods['modal'][0][ix[8]][0] / methods['bt'][0][ix[8]][0]:.1f}")
     num("cbtBtGainTwelve", f"{methods['modal'][0][ix[12]][0] / methods['bt'][0][ix[12]][0]:.0f}")
     # ---------------- frequency response figure, order 8
     fig, ax = plt.subplots(figsize=(5.4, 3.3))
