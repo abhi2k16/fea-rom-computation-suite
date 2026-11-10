@@ -31,7 +31,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 BOOK = os.path.dirname(HERE)
 FIG, TAB = os.path.join(BOOK, "figures"), os.path.join(BOOK, "tables")
 os.makedirs(FIG, exist_ok=True); os.makedirs(TAB, exist_ok=True)
-plt.rcParams.update({"font.size": 9, "axes.grid": True, "grid.alpha": 0.3, "figure.dpi": 150})
+plt.rcParams.update({"font.size": 8, "axes.grid": True, "grid.alpha": 0.3, "figure.dpi": 150})
 NUM = {}
 
 
@@ -121,10 +121,10 @@ def exp_a():
     g = guyan(K, M, idx)
     u_g = g.expand(solve(g.K, F[idx]))
     num("ccmGuyStatic", sci(np.linalg.norm(u_g - u_full) / np.linalg.norm(u_full)))
-    fig, ax = plt.subplots(figsize=(5.0, 3.3))
+    fig, ax = plt.subplots(figsize=(3.86, 2.8))      # printed at 0.62 of the text width: drawn at that size
     ax.semilogy([r[1] for r in cb_rows[:-1]], [r[2].max() for r in cb_rows[:-1]], "o-", label="Craig-Bampton, two halves")
     ax.semilogy([r[1] for r in gu_rows], [r[2].max() for r in gu_rows], "s--", label="Guyan, transverse masters")
-    ax.set_xlabel("reduced model size"); ax.set_ylabel("max relative error, first 4 frequencies"); ax.legend(fontsize=7)
+    ax.set_xlabel("reduced size (unknowns)"); ax.set_ylabel("worst frequency error, first 4"); ax.legend(fontsize=6)
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch11_cb.pdf")); plt.close(fig)
 
 
@@ -184,13 +184,13 @@ def exp_b():
     num("ccmCcSizeFour", str(4 + 40)); num("ccmCcSavedDofs", str(21 - 4))
     plain = np.abs(natural_frequency_errors(K, M, cb.T, NMODES)).max()
     num("ccmPlainErr", sci(plain))
-    fig, ax = plt.subplots(1, 2, figsize=(8.8, 3.2))
+    fig, ax = plt.subplots(1, 2, figsize=(6.2, 2.7))      # printed at the text width
     ax[0].semilogy([r[1] for r in rows_nm], [r[2] for r in rows_nm], "o-")
-    ax[0].set_xlabel("reduced size (21 interface + $n_m$)"); ax[0].set_ylabel("max relative error, first 15 frequencies")
+    ax[0].set_xlabel("reduced size (21 + $n_m$ unknowns)"); ax[0].set_ylabel("worst frequency error, first 15")
     ax[1].semilogy(keeps, cc, "o-", label="characteristic constraint modes")
     ax[1].semilogy(keeps, gs, "s--", label="interface modes from full-model modes")
     ax[1].axhline(plain, color="gray", ls=":", label="no interface reduction")
-    ax[1].set_xlabel("interface coordinates kept (of 21), $n_m=40$"); ax[1].legend(fontsize=7)
+    ax[1].set_xlabel("interface coordinates kept (of 21), $n_m=40$"); ax[1].legend(fontsize=5.5)
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch11_interface.pdf")); plt.close(fig)
 
 
@@ -346,18 +346,18 @@ def exp_d():
     res2 = ReducedAssembly(ba, bb2, tie2.P).solve(resid2, tang2)
     err2 = np.linalg.norm(res2.u - u_ref2) / np.linalg.norm(u_ref2)
     with open(os.path.join(TAB, "ch11_component.tex"), "w") as fh:
-        fh.write("\\begin{tabular}{rrrrrr}\n\\toprule\nrank per component & reduced unknowns & full unknowns & relative error & Newton iterations & tie violation \\\\\n\\midrule\n")
+        fh.write("\\adjustbox{max width=\\linewidth}{\\begin{tabular}{rrrrrr}\n\\toprule\nrank per component & reduced unknowns & full unknowns & relative error & Newton iterations & tie violation \\\\\n\\midrule\n")
         for r, nr, nf, e, it, cv, te in rows:
             fh.write(f"{r} & {nr} & {nf} & {sci(e)} & {it} & {sci(te)} \\\\\n")
-        fh.write("\\bottomrule\n\\end{tabular}\n")
+        fh.write("\\bottomrule\n\\end{tabular}}\n")
     num("ccmCompFull", str(rows[0][2])); num("ccmCompErrThree", sci(rows[0][3])); num("ccmCompErrSix", sci(rows[1][3]))
     num("ccmCompErrTwelve", sci(rows[2][3])); num("ccmCompRedTwelve", str(rows[2][1]))
     num("ccmCompTie", sci(max(r[6] for r in rows))); num("ccmCompConv", "all" if all(r[5] for r in rows) else "not all")
     num("ccmCompReuseErr", sci(err2)); num("ccmCompReuseConv", "yes" if res2.converged else "no")
     num("ccmCompMono", "yes" if rows[0][3] > rows[1][3] > rows[2][3] else "no")
-    fig, ax = plt.subplots(figsize=(4.4, 3.2))
+    fig, ax = plt.subplots(figsize=(3.43, 2.5))      # printed at 0.55 of the text width
     ax.semilogy([r[0] for r in rows], [r[3] for r in rows], "o-")
-    ax.set_xlabel("POD rank per component"); ax.set_ylabel("relative error of the tied solution")
+    ax.set_xlabel("POD rank per component"); ax.set_ylabel("assembly error")
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch11_component.pdf")); plt.close(fig)
 
 
