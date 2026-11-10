@@ -32,7 +32,7 @@ f_fix = hz(eigh(KL[np.ix_(keep, keep)], ML[np.ix_(keep, keep)], eigvals_only=Tru
 e_cb = np.abs(f_cb - f_full) / f_full; e_g = np.abs(f_g - f_full) / f_full
 ratio = f_full / f_fix[0]
 words = ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight"]
-NUM["ccmItFull"] = str(K.shape[0]); NUM["ccmItIface"] = str(len(ibL)); NUM["ccmItInt"] = str(nint)
+NUM["ccmItElem"] = str(2 * NEL); NUM["ccmItFull"] = str(K.shape[0]); NUM["ccmItIface"] = str(len(ibL)); NUM["ccmItInt"] = str(nint)
 NUM["ccmItFreqOne"] = f"{f_full[0]:.0f}"; NUM["ccmItFreqThree"] = f"{f_full[2]:.0f}"
 NUM["ccmItFixOne"] = f"{f_fix[0]:.0f}"
 NUM["ccmItRatioOne"] = f"{ratio[0]:.2f}"; NUM["ccmItRatioTwo"] = f"{ratio[1]:.2f}"; NUM["ccmItRatioThree"] = f"{ratio[2]:.2f}"
