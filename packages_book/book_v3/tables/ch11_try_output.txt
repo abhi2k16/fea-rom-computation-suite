@@ -1,0 +1,3 @@
+full beam: 78 unknowns, f1 = 533.25 Hz
+Guyan           12 unknowns: worst error of the first 4 frequencies 1.1e-03
+Craig-Bampton   12 unknowns: worst error of the first 4 frequencies 9.3e-05
