@@ -14,6 +14,19 @@ with contextlib.redirect_stdout(buf):
     exec(compile(m.group(1), "listing", "exec"), ns)
 open(os.path.join(TAB, "ch11_try_output.txt"), "w").write(buf.getvalue())
 NUM["ccmClRatio"] = f"{ns['err_g'] / ns['err_c']:.0f}"
+# ---- Rayleigh-Ritz properties of the Craig-Bampton beam: each of the first four frequencies is an upper bound and non-increasing in n_m
+spec0 = importlib.util.spec_from_file_location("a0", os.path.join(HERE, "ch11_assets.py")); a0 = importlib.util.module_from_spec(spec0); spec0.loader.exec_module(a0)
+from rom_engine.cms import couple as _couple, craig_bampton as _cb
+fr0, K0, M0 = a0.beam(1.0, 2 * a0.NEL, [0, 2 * a0.NEL]); f0 = a0.freqs_hz(K0, M0, 4)
+frL0, KL0, ML0 = a0.beam(0.5, a0.NEL, [0]); frR0, KR0, MR0 = a0.beam(0.5, a0.NEL, [a0.NEL])
+pos0 = lambda f_, d: int(np.where(f_ == d)[0][0])
+ibL0 = [pos0(frL0, 2 * a0.NEL), pos0(frL0, 2 * a0.NEL + 1)]; ibR0 = [pos0(frR0, 0), pos0(frR0, 1)]
+prev, ub, mono = None, True, True
+for nm in (1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 30):
+    cp0 = _couple([_cb(KL0, ML0, ibL0, nm), _cb(KR0, MR0, ibR0, nm)], [[0, 1], [0, 1]])
+    e0 = (np.asarray(cp0.solve_modal(4)[0]) - f0) / f0
+    ub &= bool(np.all(e0 >= -1e-9)); mono &= prev is None or bool(np.all(e0 <= prev * (1 + 1e-9) + 1e-14)); prev = e0
+NUM["ccmClUpperBound"] = "yes" if ub else "no"; NUM["ccmClMonoEach"] = "yes" if mono else "no"
 # ---- constants of the experiment script
 src = open(os.path.join(HERE, "ch11_assets.py")).read()
 NUM["ccmClMastersMax"] = str(max(int(x) for x in re.search(r"for m in \(([\d, ]+)\):", src).group(1).split(",")))
