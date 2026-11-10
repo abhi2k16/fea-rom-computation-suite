@@ -40,6 +40,7 @@ for m_, tag in (("cb", "Cb"), ("guyan", "Guyan")):
 NUM["ccmShRatioFour"] = f"{err['guyan'][3] / err['cb'][3]:.0f}"; NUM["ccmShRatioEight"] = f"{err['guyan'][7] / err['cb'][7]:.0f}"
 NUM["ccmShGuyWins"] = ", ".join(str(k + 1) for k in range(8) if err["guyan"][k] < err["cb"][k])
 NUM["ccmShGuyWinsCount"] = str(int((err["guyan"] < err["cb"]).sum()))
+NUM["ccmShGuyWinsCountComp"] = str(int((err["guyan"] >= err["cb"]).sum()))
 xs = np.arange(1, NEL * 2) * (1.0 / (2 * NEL))                 # transverse dofs at the nodes between the clamps
 def pointwise(mode):
     ue = Vf[:, mode]; out = {}
