@@ -340,6 +340,7 @@ def main():
         zeta1 = 0.5 * (alpha / w1 + beta * w1)
         num("cfrFLo", f"{0.1 * w1 / (2 * np.pi):.1f}"); num("cfrFHi", f"{f_max:.0f}")
         num("cfrRvHalfPower", f"{2 * zeta1 * w1 / (2 * np.pi):.2f}"); num("cfrRvSpacing", f"{(fq[1] - fq[0]):.2f}")
+        num("cfrRvPerWidth", f"{(2 * zeta1 * w1 / (2 * np.pi)) / (fq[1] - fq[0]):.1f}")
         out = []
         for r in (3, 5, 8):
             gb, _ = greedy_train_frequency_basis(band, M, K, F, rayleigh=(alpha, beta), n_seed=3, tol=1e-12, max_modes=r)
