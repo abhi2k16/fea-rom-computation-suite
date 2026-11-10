@@ -32,11 +32,14 @@ def full_shape(x):
     return u
 _, X = cp.solve_modal(8); _, Xg = eigh(g.K, g.M)
 mac = lambda u, v: abs(u @ M @ v) ** 2 / ((u @ M @ u) * (v @ M @ v))
+mac_plain = lambda u, v: abs(u @ v) ** 2 / ((u @ u) * (v @ v))      # the plain form of equation (cm-mac), as in rom_engine.interface_reduction.mac_matrix
 shapes = {"cb": [full_shape(X[:, k]) for k in range(8)], "guyan": [g.expand(Xg[:, k]) for k in range(8)]}
 err = {m_: np.array([1 - mac(Vf[:, k], shapes[m_][k]) for k in range(8)]) for m_ in shapes}
 words = ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight"]
 for m_, tag in (("cb", "Cb"), ("guyan", "Guyan")):
     for k in range(8): NUM[f"ccmSh{tag}{words[k]}"] = sci(err[m_][k])
+err_plain = {m_: np.array([1 - mac_plain(Vf[:, k], shapes[m_][k]) for k in range(8)]) for m_ in shapes}
+NUM["ccmShCbEightPlain"] = sci(err_plain["cb"][7]); NUM["ccmShGuyanEightPlain"] = sci(err_plain["guyan"][7])
 NUM["ccmShRatioFour"] = f"{err['guyan'][3] / err['cb'][3]:.0f}"; NUM["ccmShRatioEight"] = f"{err['guyan'][7] / err['cb'][7]:.0f}"
 NUM["ccmShGuyWins"] = ", ".join(str(k + 1) for k in range(8) if err["guyan"][k] < err["cb"][k])
 NUM["ccmShGuyWinsCount"] = str(int((err["guyan"] < err["cb"]).sum()))
