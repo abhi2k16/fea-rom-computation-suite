@@ -183,6 +183,14 @@ for meth in ("deim", "qdeim"):
     e_ = [qerr(f, TEST[a_]) for a_ in AMPS]; tag = meth.capitalize()
     NF.update({f"chf{tag}Pts": str(NPT), f"chf{tag}Elems": str(touched(d.indices)), f"chf{tag}ErrZero": sci(e_[0]), f"chf{tag}ErrOne": sci(e_[2]), f"chf{tag}ErrTen": sci(e_[4])})
 
+# ---------------- F4: batched against per-element speed-ups on the plate (values of the timing run in numbers_ch13.tex; nothing is re-timed here)
+ops = [("training matrix", "cbtSpeed"), ("force, selected", "cbtForceSpeed"), ("tangent, selected", "cbtTangentSpeed"), ("indicator, 3 states", "cbtIndSpeed")]
+vals = [float(old(k)) for _, k in ops]
+assert abs(float(old("cbtPer")) / float(old("cbtBat")) - vals[0]) < 0.05 * vals[0]
+fig, a = plt.subplots(figsize=(3.6, 2.4)); bars = a.barh([o for o, _ in ops][::-1], vals[::-1], color="C0"); a.set_xscale("log"); a.axvline(1, color="k", lw=.8)
+for bar, v in zip(bars, vals[::-1]): a.text(v * 1.08, bar.get_y() + bar.get_height() / 2, f"{v:g}", va="center", fontsize=6.5)
+a.set_xlim(0.8, 300); a.set_xlabel("speed-up of the batched kernel over one call per element"); fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch13_batch.pdf"))
+
 # training on the full-order snapshots themselves (not lifted): the mismatch the chapter warns about
 Gx, bx = ecsw_training_matrix(U, Xu, m.elem_dofs, m.elem_force); wx, ix = ecsw_weights(Gx, bx, tol=1e-8); ecx = mk(U, wx, ix)
 NF.update(chfSnapN=str(ecx.n_selected), chfSnapErr=sci(max(ferr(ecx, U, p_) for p_ in held)))
