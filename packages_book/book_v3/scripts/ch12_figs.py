@@ -62,7 +62,7 @@ assert okh == 30
 m_, k_, c_ = 1.0, 1e4, 4.0; xs = lambda w: 1 / (k_ - w ** 2 * m_ + 1j * w * c_)
 def sdof(wa, wb): r_ = LoewnerROM.fit(np.array([wa]), np.array([wb]), np.array([xs(wa)]), np.array([xs(wb)])); return r_.eta[0]
 zs = c_ / (2 * np.sqrt(k_ * m_)); zr = zs / np.sqrt(1 - zs ** 2)
-NUMH = {"cnfHystEta": "$%.1f\\times10^{%d}$" % (float(f"{np.median(deh):.1e}".split("e")[0]), int(f"{np.median(deh):.1e}".split("e")[1])),
+NUMH = {"cnfZetaDiffPct": f"{100 * (1 / np.sqrt(1 - (et.max() / np.sqrt(1 + et.max() ** 2)) ** 2) - 1):.1f}", "cnfHystEta": "$%.1f\\times10^{%d}$" % (float(f"{np.median(deh):.1e}".split("e")[0]), int(f"{np.median(deh):.1e}".split("e")[1])),
         "cnfSdofZeta": f"{zr:.4f}", "cnfSdofWaOne": "90", "cnfSdofWbOne": "110", "cnfSdofWaTwo": "60", "cnfSdofWbTwo": "140",
         "cnfSdofEtaOne": f"{sdof(90., 110.):.4f}", "cnfSdofEtaTwo": f"{sdof(60., 140.):.4f}"}
 

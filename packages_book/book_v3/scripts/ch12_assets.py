@@ -121,7 +121,7 @@ def exp_a():
     ax[0].set_xlabel("relative noise on the response samples (0 plotted at $10^{-5}$)"); ax[0].set_ylabel("fraction of draws with all modes within 2 %")
     ax[1].plot(rom.f[inb], rom.eta[inb], "o", label="identified (in band)")
     ax[1].plot(f_true, eta_true, "k+", ms=10, label="damped eigenproblem")
-    ax[1].set_xlabel("frequency (Hz)"); ax[1].set_ylabel("loss factor $\\eta$"); ax[1].legend(fontsize=7)
+    ax[1].set_xlabel("frequency (Hz)"); ax[1].set_ylabel("damping ratio $\\tilde\\zeta$"); ax[1].legend(fontsize=7)
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch12_loewner.pdf")); plt.close(fig)
 
 
