@@ -117,17 +117,18 @@ for nz in (0.0, 1e-2):
 def blocks(nz, key, Xg):
     d = getattr(mods[nz], key) - Xg; n_ = np.linalg.norm(Xg)
     return [np.linalg.norm(d[:nb, :nb]) / n_, np.linalg.norm(d[:nb, nb:]) / n_, np.linalg.norm(d[nb:, nb:]) / n_]
-fig, ax = plt.subplots(1, 3, figsize=(6.3, 2.6), gridspec_kw={"width_ratios": [1, 1, 1.25]})
+fig = plt.figure(figsize=(6.3, 2.8)); gs4 = fig.add_gridspec(2, 3, width_ratios=[1, 1, 1.25], height_ratios=[1, 0.07], hspace=0.55)
+ax = [fig.add_subplot(gs4[0, 0]), fig.add_subplot(gs4[0, 1]), fig.add_subplot(gs4[0, 2])]; cax = fig.add_subplot(gs4[1, 0:2])
 Kmax = np.abs(Kg).max(); L_ = lambda X: np.log10(np.abs(X) / Kmax + 1e-16)
 im = ax[0].imshow(L_(Kg), vmin=-8, vmax=0, cmap="viridis"); ax[0].set_title("(a) $K$ of the Galerkin model", fontsize=6.5)
 ax[1].imshow(L_(mods[1e-2].K - Kg), vmin=-8, vmax=0, cmap="viridis"); ax[1].set_title("(b) error of inferred $K$, noise $10^{-2}$", fontsize=6.5)
 for c_ in range(2):
     ax[c_].axhline(nb - .5, color="w", lw=.6); ax[c_].axvline(nb - .5, color="w", lw=.6); ax[c_].set_xticks([0, 2, 6, 11]); ax[c_].set_yticks([0, 2, 6, 11])
-cb = fig.colorbar(im, ax=ax[:2], orientation="horizontal", shrink=.9, pad=.2); cb.set_label("$\\log_{10}(|\\cdot|/\\max|K|)$", fontsize=6)
+cb = fig.colorbar(im, cax=cax, orientation="horizontal"); cb.set_label("$\\log_{10}(|\\cdot|/\\max|K|)$", fontsize=6)
 x_ = np.arange(6); b0 = blocks(0.0, "M", Mg) + blocks(0.0, "K", Kg); b1 = blocks(1e-2, "M", Mg) + blocks(1e-2, "K", Kg)
 ax[2].bar(x_ - .2, b0, .4, label="exact data"); ax[2].bar(x_ + .2, b1, .4, label="noise $10^{-2}$"); ax[2].set_yscale("log"); ax[2].set_xticks(x_)
 ax[2].set_xticklabels(["M bb", "M bq", "M qq", "K bb", "K bq", "K qq"], fontsize=6); ax[2].legend(fontsize=5.5); ax[2].set_ylabel("block error / $\\|X\\|_F$"); ax[2].set_title("(c) where the error sits", fontsize=6.5)
-fig.tight_layout(); fig.savefig(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "figures", "ch12_opinfblocks.pdf"))
+fig.subplots_adjust(left=0.07, right=0.99, top=0.92, bottom=0.14, wspace=0.35); fig.savefig(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "figures", "ch12_opinfblocks.pdf"))
 assert np.linalg.norm(Kg[:nb, nb:]) < 1e-10 * np.linalg.norm(Kg)                       # the coupling block of K is zero by construction
 NUM.update({"cnfKbbZero": sci_(b0[3]), "cnfKbqZero": sci_(b0[4]), "cnfKqqZero": sci_(b0[5]), "cnfKbbNoise": sci_(b1[3]), "cnfKbqNoise": sci_(b1[4]), "cnfKqqNoise": sci_(b1[5]),
             "cnfMbbZero": sci_(b0[0]), "cnfMbbShare": f"{100 * np.linalg.norm(Mg[:nb, :nb]) / np.linalg.norm(Mg):.0f}"})
