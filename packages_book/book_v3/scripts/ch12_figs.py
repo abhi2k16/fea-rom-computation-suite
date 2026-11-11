@@ -232,6 +232,9 @@ sel = sorted({j for i in pk_ for j in (i - 1, i, i + 1)}); rest = [i for i in ra
 sel = sel + [rest[j] for j in np.linspace(0, len(rest) - 1, NSAMP - len(sel)).astype(int)]; errP = loewner_errors(sel)
 assert max(errL) > 0.02 and max(errP) < 0.02 and len(pk_) == nm
 NUMX = {"cnfExLargeMax": f"{fp[large].max():.0f}", "cnfExLargeErrThree": sci_(errL[2]), "cnfExLargeErrFour": sci_(errL[3]), "cnfExPeakErr": sci_(max(errP))}
+_src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "rom_engine", "tests", "test_operator_inference.py")).read()
+assert "rtol=1e-10, atol=1e-12" in _src
+NUM["cnfOiRtol"] = "10^{-10}"; NUM["cnfOiAtol"] = "10^{-12}"
 NUM.update(NUMH); NUM.update(NUMX)
 
 # ---------------------------------------------------------------- V7: settings typed in the text become macros (asserted against ch12_assets.py), small-load sweep, printed output of the listing
