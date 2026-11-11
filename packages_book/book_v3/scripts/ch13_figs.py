@@ -64,7 +64,7 @@ NI.update(chyNZeroCols=str(len(zero)), chyNReqSel=str(len(set(sel) & set(req))),
           chyErrRTen=sci(errr[10]), chyErrRTwelve=sci(errr[12]), chyRTen="10", chyRTwelve="12", chyCountLo=str(cnt[0]), chyCountHi=str(cnt[-1]), chyRLo=str(rs[0]), chyRHi=str(rs[-1]),
           chyResTolHigh=sci(res[0]), chyResFour=sci(res[3]), chyResEight=sci(res[5]), chyUnseenTolHigh=sci(eu[0]),
           chyOutLoads=" and ".join(f"{p[0]:g}" for p in out), chyOutDepths=" and ".join(f"{-p[1]:g}" for p in out),
-          chyTolHigh="10^{-1}", chyTolFour="10^{-4}", chyTolEight="10^{-8}", chyProjRes=sci(projres), chyRankTol="10^{-10}")
+          chyTolHigh="10^{-1}", chyTolFour="10^{-4}", chyTolEight="10^{-8}", chyProjRes=sci(projres), chyRankTol="10^{-10}", chyNHeld={2: "two", 3: "three", 4: "four", 5: "five"}[len(held)], chfDepthTrainMax=f"{max(-g for _, g in train):g}")
 fig, ax = plt.subplots(1, 3, figsize=(6.3, 2.8))
 a = ax[0]; a.axvspan(min(req) - .5, max(req) + .5, color="0.85", label="elements touching the obstacle")
 a.plot(range(nel), np.ones(nel), ".", color="0.55", ms=2.5, label=f"naive: all {nel}, weight 1")
