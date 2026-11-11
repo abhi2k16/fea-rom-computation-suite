@@ -66,7 +66,7 @@ b_ = ax[1]; b_.plot(rs, [nel] * len(rs), "k--", label="naive"); b_.plot(rs, cnt,
 for x, y in zip(rs, cnt): b_.annotate(str(y), (x, y), textcoords="offset points", xytext=(0, 4), ha="center", fontsize=6)
 b_.set_xlabel("reduced unknowns $r$"); b_.set_ylabel("elements evaluated per force"); b_.set_title("(b) cost of one force", fontsize=7); b_.legend(fontsize=6, loc="center right")
 c = ax[2]; c.loglog(tols, res, "s-", color="C3", ms=3, label="training residual"); c.loglog(tols, eu, "o-", color="C0", ms=3, label="unseen states"); c.loglog(tols, eo, "^--", color="C1", ms=3, label="out of range")
-c.invert_xaxis(); c.set_xlabel("tolerance"); c.set_ylabel("relative error"); c.set_title("(c) the tolerance", fontsize=7); c.legend(fontsize=5.5, loc="lower left")
+c.invert_xaxis(); c.set_xlabel("tolerance"); c.set_ylabel("relative error"); c.set_title("(c) the tolerance", fontsize=7, pad=16); c.legend(fontsize=5.5, loc="lower left")
 sx = c.secondary_xaxis("top"); sx.set_xticks(tols); sx.set_xticklabels([str(n_) for n_ in nsel], fontsize=5.5); sx.set_xlabel("elements selected", fontsize=6, labelpad=1); sx.minorticks_off()
 fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch13_intro.pdf"))
 
