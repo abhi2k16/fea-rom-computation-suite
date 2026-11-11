@@ -57,7 +57,7 @@ NI.update(chyNZeroCols=str(len(zero)), chyNReqSel=str(len(set(sel) & set(req))),
           chyOutLoads=" and ".join(f"{p[0]:g}" for p in out), chyOutDepths=" and ".join(f"{-p[1]:g}" for p in out),
           chyTolHigh="10^{-1}", chyTolFour="10^{-4}", chyTolEight="10^{-8}")
 assert zero == list(range(zero[0], zero[-1] + 1)) and set(zero) <= set(req)
-fig, ax = plt.subplots(1, 3, figsize=(6.3, 2.4))
+fig, ax = plt.subplots(1, 3, figsize=(6.3, 2.8))
 a = ax[0]; a.axvspan(min(req) - .5, max(req) + .5, color="0.85", label="elements touching the obstacle")
 a.plot(range(nel), np.ones(nel), ".", color="0.55", ms=2.5, label=f"naive: all {nel}, weight 1")
 a.vlines(sel, 0, w4[sel], color="C0"); a.plot(sel, w4[sel], "o", color="C0", ms=3.5, label=f"ECSW: {len(sel)} elements")
