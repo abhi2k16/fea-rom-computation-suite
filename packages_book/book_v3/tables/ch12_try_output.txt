@@ -1,0 +1,4 @@
+1 harmonic(s): omega = 11.5650 rad/s, relative error 1.3e-03
+3 harmonic(s): omega = 11.5812 rad/s, relative error 2.9e-05
+7 harmonic(s): omega = 11.5812 rad/s, relative error 3.4e-09
+linear omega = 10.0000 rad/s misses the measured 11.5497 rad/s by 13%
