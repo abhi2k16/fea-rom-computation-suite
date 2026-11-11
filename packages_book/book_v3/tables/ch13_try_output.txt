@@ -1,0 +1,3 @@
+tol 1e-02:  9 of 60 elements, worst force error 6.3e-03
+tol 1e-04: 12 of 60 elements, worst force error 1.3e-06
+tol 1e-08: 17 of 60 elements, worst force error 2.3e-08

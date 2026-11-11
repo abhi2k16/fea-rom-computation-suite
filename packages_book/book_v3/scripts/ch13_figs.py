@@ -183,6 +183,9 @@ for meth in ("deim", "qdeim"):
     e_ = [qerr(f, TEST[a_]) for a_ in AMPS]; tag = meth.capitalize()
     NF.update({f"chf{tag}Pts": str(NPT), f"chf{tag}Elems": str(touched(d.indices)), f"chf{tag}ErrZero": sci(e_[0]), f"chf{tag}ErrOne": sci(e_[2]), f"chf{tag}ErrTen": sci(e_[4])})
 
+# training on the full-order snapshots themselves (not lifted): the mismatch the chapter warns about
+Gx, bx = ecsw_training_matrix(U, Xu, m.elem_dofs, m.elem_force); wx, ix = ecsw_weights(Gx, bx, tol=1e-8); ecx = mk(U, wx, ix)
+NF.update(chfSnapN=str(ecx.n_selected), chfSnapErr=sci(max(ferr(ecx, U, p_) for p_ in held)))
 # ---------------- the listing of Sec. 13.4 is run exactly as printed in ch13.tex; its output is what the chapter shows
 _tex = open(os.path.join(HERE, "..", "chapters", "ch13.tex"), encoding="utf-8").read()
 _m = re.search(r"\\begin\{lstlisting\}\[caption=\{ECSW on the hardening chain[^\n]*\n(.*?)\\end\{lstlisting\}", _tex, re.S)
