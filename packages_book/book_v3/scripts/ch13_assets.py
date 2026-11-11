@@ -229,7 +229,7 @@ def exp_b(ax):
 
 
 # ------------------------------------------------------------------------------------------ C
-def exp_c(ax):
+def exp_c(ax, timing=True):
     m = NonlinearChainContact()
     train = [(s, g) for s in (0.5, 1, 1.5, 2, 2.5, 3) for g in (-0.08, -0.15, -0.25)]
     sols = [m.solve(*p) for p in train]
@@ -237,11 +237,12 @@ def exp_c(ax):
     Xl = np.array([s[1] for s in sols]).T
     r = 8
     U = np.linalg.svd(Xu, full_matrices=False)[0][:, :r]
+    XS = U @ (U.T @ Xu)        # lifted training states U q: what the reduced model evaluates online (Chapter 13, Sec. 13.2)
     req = [e for e, g in enumerate(m.elem_dofs) if set(g.tolist()) & set(m.obs_nodes.tolist())]
     n_elem = len(m.elem_dofs)
     num("cecN", str(m.n)); num("cecNElem", str(n_elem)); num("cecNTrain", str(len(train))); num("cecRank", str(r))
     num("cecNReq", str(len(req))); num("cecNObs", str(len(m.obs_nodes)))
-    G, b = ecsw_training_matrix(U, Xu, m.elem_dofs, m.elem_force)
+    G, b = ecsw_training_matrix(U, XS, m.elem_dofs, m.elem_force)
     held = [(1.25, -0.12), (2.2, -0.2), (0.8, -0.1)]
     out = [(4.0, -0.30), (5.0, -0.40)]
     # force error at held-out states: full reduced force vs ECSW reduced force
@@ -264,8 +265,8 @@ def exp_c(ax):
         num(f"cec{names[tol]}N", str(ns_)); num(f"cec{names[tol]}Err", sci(fe)); num(f"cec{names[tol]}ErrOut", sci(fo))
     print("tol sweep", nsel, [f"{x:.2g}" for x in ferr], [f"{x:.2g}" for x in ferr_out], flush=True)
     # plain vs contact-aware at 1e-6, reduced contact Newton
-    ec_plain = ECSW.fit(U, Xu, m.elem_dofs, m.elem_force, m.elem_tangent, tol=1e-6)
-    ec_ca = fit_contact_aware_ecsw(U, Xu, m.elem_dofs, m.elem_force, req, m.elem_tangent, tol=1e-6)
+    ec_plain = ECSW.fit(U, XS, m.elem_dofs, m.elem_force, m.elem_tangent, tol=1e-6)
+    ec_ca = fit_contact_aware_ecsw(U, XS, m.elem_dofs, m.elem_force, req, m.elem_tangent, tol=1e-6)
     num("cecPlainN", str(ec_plain.n_selected)); num("cecCaN", str(ec_ca.n_selected))
     num("cecPlainRes", sci(ec_plain.info["residual"])); num("cecCaRes", sci(ec_ca.info["residual"]))
     nmf = nonneg_dual_basis(Xl, r)
@@ -291,7 +292,7 @@ def exp_c(ax):
         print(tag, prm, {k: (v[0], f"{v[1]:.2g}", f"{v[2]:.2g}") for k, v in d.items()}, flush=True)
     # reporting: offline (full solves, training matrix, NNLS, dual basis), online (reduced Newton), lift, local quantities
     t0 = time.perf_counter(); [m.solve(*p_) for p_ in train]; t_sol = time.perf_counter() - t0
-    t0 = time.perf_counter(); Gt, bt = ecsw_training_matrix(U, Xu, m.elem_dofs, m.elem_force); t_G = time.perf_counter() - t0
+    t0 = time.perf_counter(); Gt, bt = ecsw_training_matrix(U, XS, m.elem_dofs, m.elem_force); t_G = time.perf_counter() - t0
     t0 = time.perf_counter(); ecsw_weights(Gt, bt, tol=1e-6); t_w = time.perf_counter() - t0
     t0 = time.perf_counter(); nonneg_dual_basis(Xl, r); t_n = time.perf_counter() - t0
     prm = held[0]
@@ -337,6 +338,8 @@ def exp_c(ax):
     ax[1].axvspan(min(req) - 0.5, max(req) + 0.5, color="C3", alpha=0.12, label="contact elements")
     ax[1].set_xlabel("element"); ax[1].set_yticks([]); ax[1].legend(loc="lower right"); ax[1].set_title("selected elements (tol $10^{-6}$)")
     # batched path timing on a plate (external script)
+    if not timing:
+        return
     try:
         root = os.path.abspath(os.path.join(BOOK, "..", ".."))
         env = dict(os.environ)
@@ -471,5 +474,21 @@ def main():
     print("wrote", len(NUM), "macros")
 
 
+def rerun_ecsw():
+    """Re-run experiment C only (no plate timing) and rewrite only its non-timing macros in tables/numbers_ch13.tex
+    and figures/ch13_ecsw.pdf; the timing macros (cecTime*, cecSpeedOnline, cecBreakEven, cbt*) keep their measured values."""
+    global NUM
+    NUM = {}
+    fc, ac = plt.subplots(1, 2, figsize=(9.0, 3.0))
+    exp_c(ac, timing=False); fc.tight_layout(); fc.savefig(os.path.join(FIG, "ch13_ecsw.pdf")); plt.close(fc)
+    path = os.path.join(TAB, "numbers_ch13.tex"); lines = open(path).read().split("\n"); done = set()
+    for i, ln in enumerate(lines):
+        mm = re.match(r"\\newcommand\{\\(\w+)\}\{", ln)
+        if mm and mm.group(1) in NUM and not mm.group(1).startswith(("cecTime", "cecSpeedOnline", "cecBreakEven", "cbt")):
+            lines[i] = f"\\newcommand{{\\{mm.group(1)}}}{{{NUM[mm.group(1)]}\\xspace}}"; done.add(mm.group(1))
+    open(path, "w").write("\n".join(lines)); print("rewrote", len(done), "macros")
+
+
 if __name__ == "__main__":
-    main()
+    import sys as _s
+    rerun_ecsw() if "--ecsw-only" in _s.argv else main()
