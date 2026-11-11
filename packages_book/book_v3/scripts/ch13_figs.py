@@ -43,15 +43,16 @@ for t in tols:
     w, info = ecsw_weights(G, b, tol=t); ec = mk(U, w, info); nsel.append(ec.n_selected); res.append(np.linalg.norm(G @ w - b) / np.linalg.norm(b))
     eu.append(max(ferr(ec, U, p) for p in held)); eo.append(max(ferr(ec, U, p) for p in out))
 assert sci(eu[3]) == old("cecFourEErr") and sci(eo[3]) == old("cecFourEErrOut") and sci(eu[5]) == old("cecEightEErr") and sci(eo[5]) == old("cecEightEErrOut")
-rs = [2, 3, 4, 6, 8, 10, 12]; cnt = []
+rs = [2, 3, 4, 6, 8, 10, 12]; cnt = []; errr = {}
 for r in rs:
-    Ur = basis(Xu, r); Gr, br = mat(Ur, Xu); wr, _ = ecsw_weights(Gr, br, tol=1e-4); cnt.append(int((wr > 0).sum()))
-assert cnt[rs.index(R)] == len(sel)
+    Ur = basis(Xu, r); Gr, br = mat(Ur, Xu); wr, inr = ecsw_weights(Gr, br, tol=1e-4); cnt.append(int((wr > 0).sum()))
+    errr[r] = max(ferr(mk(Ur, wr, inr), Ur, p) for p in held)
+assert cnt[rs.index(R)] == len(sel) and sci(errr[R]) == old("cecFourEErr")
 cn = np.abs(G).max(axis=0); zero = [e for e in range(nel) if cn[e] < 1e-10]
 rankG = int(np.linalg.matrix_rank(G, tol=1e-10 * np.linalg.norm(G, 2)))
 sv = np.linalg.svd(G, compute_uv=False); sv = sv / sv[0]
 NI.update(chyNZeroCols=str(len(zero)), chyNReqSel=str(len(set(sel) & set(req))), chyRankG=str(rankG), chyKne=str(len(train) * nel),
-          chyCountLo=str(cnt[0]), chyCountHi=str(cnt[-1]), chyRLo=str(rs[0]), chyRHi=str(rs[-1]),
+          chyNRows=str(G.shape[0]), chyErrRTen=sci(errr[10]), chyErrRTwelve=sci(errr[12]), chyRTen="10", chyRTwelve="12", chyCountLo=str(cnt[0]), chyCountHi=str(cnt[-1]), chyRLo=str(rs[0]), chyRHi=str(rs[-1]),
           chyResTolHigh=sci(res[0]), chyResFour=sci(res[3]), chyResEight=sci(res[5]), chyUnseenTolHigh=sci(eu[0]),
           chyOutLoads=" and ".join(f"{p[0]:g}" for p in out), chyOutDepths=" and ".join(f"{-p[1]:g}" for p in out),
           chyTolHigh="10^{-1}", chyTolFour="10^{-4}", chyTolEight="10^{-8}")
@@ -101,7 +102,7 @@ a.axvspan(0, max(SS), color="0.88", label="training range"); a.set_xlabel("load 
 fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch13_extrap.pdf"))
 y = dict(zip(S, Y[1e-4])); inside = [y[s] for s in S if s <= max(SS)]
 NF.update(chfInLo=sci(min(inside)), chfInHi=sci(max(inside)), chfAtEdge=sci(y[3]), chfAtHalf=sci(y[3.5]), chfJump=f"{y[3.5] / y[3]:.0f}", chfAtFour=sci(y[4]), chfAtEight=sci(y[8]),
-          chfDoubling=f"{y[8] / y[4]:.0f}", chfLoadMax=f"{max(S):g}", chfLoadTrainMax=f"{max(SS):g}", chfLoadRatio=f"{max(S) / max(SS):.1f}", chfDepth=f"{-DEPTH:g}",
+          chfDoubling=f"{y[8] / y[4]:.0f}", chfLoadMax=f"{max(S):g}", chfLoadMin=f"{min(S):g}", chfLoadTrainMax=f"{max(SS):g}", chfLoadRatio=f"{max(S) / max(SS):.1f}", chfDepth=f"{-DEPTH:g}",
           chfAtHalfLoad=f"{S[S.index(3.5)]:g}", chfAtFourLoad="4")
 # Exercise 2: train to load factor 2 only, test at load factor 3
 tr2 = [(s, g) for s in SS if s <= 2 for g in GG]; X2 = np.array([solve(p) for p in tr2]).T; U2 = basis(X2, R); G2, b2 = mat(U2, X2)
