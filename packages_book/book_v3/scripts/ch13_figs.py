@@ -172,7 +172,7 @@ for (key, (label, qs)), mk_ in zip(SETS.items(), ("o-", "s-", "^-", "d--")):
 ax[0].set_xticks(range(len(AMPS))); ax[0].set_xticklabels(["0", "0.3 %", "1 %", "3 %", "10 %"]); ax[0].set_xlabel("perturbation of the test states"); ax[0].set_ylabel("error of the reduced force")
 ax[0].legend(fontsize=5.2); ax[0].set_title(r"(a) tolerance $10^{-4}$", fontsize=7); ax[1].set_xlabel("elements selected"); ax[1].set_ylabel("error at 10 % perturbed states"); ax[1].set_title("(b) tolerance sweep", fontsize=7); ax[1].legend(fontsize=5.2)
 fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch13_train.pdf"))
-NF.update(chfPertOne="1", chfPertTen="10", chfPertLow="3", chfPertHigh="10", chfBoxSamples=str(len(SETS["Box"][1])), chfBoxWiden="10", chfPertCopies="2")
+NF.update(chfRatioEqTen=f"{TT['Eq']['err'][4] / TT['Eq']['err'][0]:.0f}", chfPertOne="1", chfPertTen="10", chfPertLow="3", chfPertHigh="10", chfBoxSamples=str(len(SETS["Box"][1])), chfBoxWiden="10", chfPertCopies="2")
 # DEIM / QDEIM comparison on the same test states (force basis from the equilibrium force snapshots)
 Fs = np.array([m.internal_force(U @ q) for q in eqs]).T; fsv = np.linalg.svd(Fs, compute_uv=False)
 NF.update(chfFRank=str(int((fsv / fsv[0] > 1e-10).sum())), chfFSvTwo=sci(fsv[1] / fsv[0]))
