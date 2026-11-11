@@ -179,7 +179,7 @@ def exp_b():
     ax[0].set_xlabel("central point load (N)"); ax[0].set_ylabel("mid-span deflection (mm)"); ax[0].legend(fontsize=7)
     for key, st, lab in (("ice", "o-", "polynomial (ICE)"), ("mfs", "s--", "RBF surrogate"), ("lin", "^:", "linear")):
         ax[1].semilogy([r["r"] for r in rows], [r[key] for r in rows], st, label=lab)
-    ax[1].set_xlabel("retained modes"); ax[1].set_ylabel("max relative error of mid-span deflection"); ax[1].legend(fontsize=7)
+    ax[1].set_xticks([2, 3, 4]); ax[1].set_xlabel("retained modes (active: 1, 2, 2)"); ax[1].set_ylabel("max relative error of mid-span deflection"); ax[1].legend(fontsize=7)
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch12_nlrom.pdf")); plt.close(fig)
     with open(os.path.join(TAB, "ch12_nlrom.tex"), "w") as fh:
         fh.write("\\begin{tabular}{rrrr}\n\\toprule\nmodes & linear & polynomial (ICE) & RBF surrogate \\\\\n\\midrule\n")
