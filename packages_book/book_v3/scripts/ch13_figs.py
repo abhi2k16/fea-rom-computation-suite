@@ -189,7 +189,18 @@ vals = [float(old(k)) for _, k in ops]
 assert abs(float(old("cbtPer")) / float(old("cbtBat")) - vals[0]) < 0.05 * vals[0]
 fig, a = plt.subplots(figsize=(3.6, 2.4)); bars = a.barh([o for o, _ in ops][::-1], vals[::-1], color="C0"); a.set_xscale("log"); a.axvline(1, color="k", lw=.8)
 for bar, v in zip(bars, vals[::-1]): a.text(v * 1.08, bar.get_y() + bar.get_height() / 2, f"{v:g}", va="center", fontsize=6.5)
-a.set_xlim(0.8, 300); a.set_xlabel("speed-up of the batched kernel over one call per element"); fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch13_batch.pdf"))
+a.set_xlim(0.8, 300); a.set_xlabel("speed-up over one call per element"); fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch13_batch.pdf"))
+
+# ---------------- F5: ECSW against DEIM / QDEIM on the perturbed test states of Sec. 13.4.2
+curves = [("ECSW, equilibria, %d el." % TT["Eq"]["n"], TT["Eq"]["err"], "o-", "C0"), ("ECSW, + %d %% perturbed, %d el." % (10, TT["PertHigh"]["n"]), TT["PertHigh"]["err"], "s-", "C1")]
+for meth, npt, mk_, col in (("deim", 4, "^--", "C2"), ("qdeim", 4, "v:", "C3"), ("deim", 8, "d--", "C4")):
+    d = DEIM.from_snapshots(Fs, n_points=npt, method=meth); f = lambda q, d=d: d.approximate_reduced(U, m.internal_force(U @ q)[d.indices])
+    e_ = [qerr(f, TEST[a_]) for a_ in AMPS]; curves.append((f"{meth.upper()}, {npt} points, {touched(d.indices)} el.", e_, mk_, col))
+    NF[f"chfFive{meth.capitalize()}{'Four' if npt == 4 else 'Eight'}Elems"] = str(touched(d.indices)); NF[f"chfFive{meth.capitalize()}{'Four' if npt == 4 else 'Eight'}ErrTen"] = sci(e_[4])
+fig, a = plt.subplots(figsize=(3.9, 2.6))
+for lab, e_, mk_, col in curves: a.semilogy(range(len(AMPS)), e_, mk_, color=col, ms=3, label=lab)
+a.set_xticks(range(len(AMPS))); a.set_xticklabels(["0", "0.3 %", "1 %", "3 %", "10 %"]); a.set_xlabel("perturbation of the test states"); a.set_ylabel("error of the reduced force"); a.legend(fontsize=5.3, loc="lower right")
+fig.tight_layout(); fig.savefig(os.path.join(FIG, "ch13_deim.pdf"))
 
 # training on the full-order snapshots themselves (not lifted): the mismatch the chapter warns about
 Gx, bx = ecsw_training_matrix(U, Xu, m.elem_dofs, m.elem_force); wx, ix = ecsw_weights(Gx, bx, tol=1e-8); ecx = mk(U, wx, ix)
