@@ -15,7 +15,8 @@ xp=np.array([sysobj.solve_harmonic(w,F)[tip] for w in op])
 fd=np.geomspace(fmin,fmax,1500); xd=np.array([sysobj.solve_harmonic(2*np.pi*f,F)[tip] for f in fd])
 E=np.zeros((30,nm)); sets=[]
 for d in range(30):
-    rng=np.random.default_rng(100+d); ni=nm+3; idx=rng.choice(npool,2*ni,replace=False); ia,ib=idx[:ni],idx[ni:]
+    rng=np.random.default_rng(100+d); rng.standard_normal(npool); rng.standard_normal(npool)   # the noise draws of ch12_assets.py exp_a (zero here) come before the choice
+    ni=nm+3; idx=rng.choice(npool,2*ni,replace=False); ia,ib=idx[:ni],idx[ni:]
     rom=LoewnerROM.fit(op[ia],op[ib],xp[ia],xp[ib]); inb=(rom.f>=fmin)&(rom.f<=fmax)&(rom.eta>=0)&(rom.eta<=1); fi=rom.f[inb]
     E[d]=[min(abs(fi-t))/t if len(fi) else 1 for t in ft]; sets.append((ia,ib))
 fail=E.max(1)>=.02
@@ -37,8 +38,33 @@ fig.tight_layout(); fig.savefig(os.path.join(os.path.dirname(os.path.abspath(__f
 
 NUM={"cnfNFail":str(int(fail.sum())),"cnfFOne":f"{ft[0]:.0f}","cnfHalfWidth":f"{hw:.1f}","cnfGridHz":f"{np.median(np.diff(fp)):.0f}",
  "cnfNSamp":str(2*(nm+3)),"cnfDistFailLo":f"{dd[fail].min():.0f}","cnfDistFailHi":f"{dd[fail].max():.0f}","cnfDistOkMed":f"{np.median(dd[ok]):.0f}",
- "cnfOthersMax":"$%.1f\\times10^{%d}$"%tuple([float(f"{E[:,1:].max():.1e}".split("e")[0]),int(f"{E[:,1:].max():.1e}".split("e")[1])]),
+ "cnfDistOkMax":f"{dd[ok].max():.0f}","cnfOthersOk":"$%.1f\\times10^{%d}$"%(float(f"{E[ok][:,1:].max():.1e}".split("e")[0]),int(f"{E[ok][:,1:].max():.1e}".split("e")[1])),
+ "cnfOthersFail":"%.2f"%E[fail][:,1:].max(),
  "cnfMissedFirst":str(int(np.sum(E[fail].argmax(1)==0)))}
+
+import re
+_T = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tables", "numbers_ch12.tex")).read()
+assert int(fail.sum()) == 30 - int(re.search(r"\\cldZeroFound\}\{(\d+)", _T).group(1))          # same draws as Table 12.3
+assert int(np.sum(E[fail].argmax(1) == 0)) == int(fail.sum())
+# hysteretic damping with the same modal damping ratios: the response is rational in omega^2
+w2_, Phi_ = eigh(K, M); w_ = np.sqrt(w2_); zeta_ = (fx["alpha"] + fx["beta"] * w_ ** 2) / (2 * w_)
+tipf = list(free).index(n_dof - 2); Fh = np.zeros(len(free)); Fh[tipf] = 1000.
+xh = np.array([(Phi_ @ (1 / (w2_ * (1 + 2j * zeta_) - o ** 2) * (Phi_.T @ Fh)))[tipf] for o in op])
+pole = np.sqrt(w2_ * (1 + 2j * zeta_)); fth = pole.real / 2 / np.pi; eth = pole.imag / pole.real; mh = (fth >= fmin) & (fth <= fmax); fth, eth = fth[mh], eth[mh]
+okh = 0; deh = []
+for d in range(30):
+    rng = np.random.default_rng(100 + d); rng.standard_normal(npool); rng.standard_normal(npool); idx = rng.choice(npool, 2 * (nm + 3), replace=False); ia, ib = idx[:nm + 3], idx[nm + 3:]
+    rom = LoewnerROM.fit(op[ia], op[ib], xh[ia], xh[ib]); inb = (rom.f >= fmin) & (rom.f <= fmax) & (rom.eta >= 0) & (rom.eta <= 1); fi, ei = rom.f[inb], rom.eta[inb]
+    ef = [abs(fi[np.argmin(abs(fi - t))] - t) / t for t in fth]
+    if max(ef) < .02: okh += 1; deh.append(max(abs(ei[np.argmin(abs(fi - t))] - e_) for t, e_ in zip(fth, eth)))
+assert okh == 30
+# single degree of freedom, viscous: the eigenvalue depends on the two samples
+m_, k_, c_ = 1.0, 1e4, 4.0; xs = lambda w: 1 / (k_ - w ** 2 * m_ + 1j * w * c_)
+def sdof(wa, wb): r_ = LoewnerROM.fit(np.array([wa]), np.array([wb]), np.array([xs(wa)]), np.array([xs(wb)])); return r_.eta[0]
+zs = c_ / (2 * np.sqrt(k_ * m_)); zr = zs / np.sqrt(1 - zs ** 2)
+NUMH = {"cnfHystEta": "$%.1f\\times10^{%d}$" % (float(f"{np.median(deh):.1e}".split("e")[0]), int(f"{np.median(deh):.1e}".split("e")[1])),
+        "cnfSdofZeta": f"{zr:.4f}", "cnfSdofWaOne": "90", "cnfSdofWbOne": "110", "cnfSdofWaTwo": "60", "cnfSdofWbTwo": "140",
+        "cnfSdofEtaOne": f"{sdof(90., 110.):.4f}", "cnfSdofEtaTwo": f"{sdof(60., 140.):.4f}"}
 
 # ---------------------------------------------------------------- F3: harmonic content of the Duffing solution
 from scipy.integrate import solve_ivp
@@ -164,8 +190,8 @@ for a_, n_ in zip(ax, (7, 20)):
     for nz, c_ in ((0.0, "C0"), (1e-4, "C2"), (1e-2, "C3")):
         S_ = []
         for d_ in range(30):
-            rng_ = np.random.default_rng(100 + d_); idx_ = rng_.choice(npool, 2 * n_, replace=False); ia_, ib_ = idx_[:n_], idx_[n_:]
-            xn_ = xp + nz * np.abs(xp) * (rng_.standard_normal(npool) + 1j * rng_.standard_normal(npool)) / np.sqrt(2)
+            rng_ = np.random.default_rng(100 + d_); xn_ = xp + nz * np.abs(xp) * (rng_.standard_normal(npool) + 1j * rng_.standard_normal(npool)) / np.sqrt(2)   # noise first, as in ch12_assets.py
+            idx_ = rng_.choice(npool, 2 * n_, replace=False); ia_, ib_ = idx_[:n_], idx_[n_:]
             sv_ = np.linalg.svd(pencilE(ia_, ib_, xn_), compute_uv=False); S_.append(sv_ / sv_[0])
         S_ = np.array(S_); k_ = np.arange(1, n_ + 1); SV[(n_, nz)] = np.median(S_, 0)
         a_.semilogy(k_, SV[(n_, nz)], "o-", ms=3, color=c_, label="noise 0" if nz == 0 else f"noise {nz:g}"); a_.fill_between(k_, S_.min(0), S_.max(0), color=c_, alpha=.15)
@@ -193,6 +219,7 @@ NUM.update({"cnfLoadImg": f"{abs(fh3[2] / fh3[0]):.2f}", "cnfTermsFive": str(nt5
             "cnfIceFiveFortyFive": sci_(ei5s.max()), "cnfIceFiveNinety": sci_(ei5.max()), "cnfIceSixFortyFive": f"{ei6.max():.1f}",
             "cnfLowLoad": f"{loadsb[1]:.0f}", "cnfLowIceThree": sci_(ei3[0]), "cnfLowLinThree": sci_(el3[0]), "cnfLowIceFive": sci_(ei5[0]), "cnfLowLinFive": sci_(el5[0])})
 
+NUM.update(NUMH)
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),"..","tables","numbers_ch12_fig.tex"),"w") as fh:
     fh.write("% generated by scripts/ch12_figs.py -- do not edit\n")
     for k,v in NUM.items(): fh.write("\\newcommand{\\%s}{%s\\xspace}\n"%(k,v))
