@@ -1,5 +1,5 @@
-"""Extra figures of Chapter 12 (F1: why Loewner draws fail; F3: harmonic content of the Duffing backbone). Run: PYTHONPATH=fea_engine/src:rom_engine/src:rom_engine/tests python packages_book/book_v3/scripts/ch12_figs.py
-Writes figures/ch12_loewnerfail.pdf, figures/ch12_harm.pdf and tables/numbers_ch12_fig.tex (macro prefix cnf, no digits in names). Same data and draws (seed 100+d) as scripts/ch12_assets.py, no noise."""
+"""Extra figures of Chapter 12 (F1: why Loewner draws fail; F3: harmonic content of the Duffing backbone; F2: the fitted restoring force and the training range). Run: PYTHONPATH=fea_engine/src:rom_engine/src:rom_engine/tests python packages_book/book_v3/scripts/ch12_figs.py
+Writes figures/ch12_loewnerfail.pdf, figures/ch12_harm.pdf, figures/ch12_fnl.pdf and tables/numbers_ch12_fig.tex (macro prefix cnf, no digits in names). Same data and draws (seed 100+d) as scripts/ch12_assets.py, no noise."""
 import os
 import importlib.util,numpy as np, matplotlib
 matplotlib.use("Agg"); import matplotlib.pyplot as plt
@@ -71,6 +71,38 @@ def sci_(x):
     m, e = f"{x:.1e}".split("e"); return f"${m}\\times10^{{{int(e)}}}$"
 NUM.update({"cnfHarmDiff": f"{100 * np.max(abs(q7 - q1)) / pk:.1f}", "cnfHarmThree": sci_(abs(c[2]) / abs(c[0])), "cnfHarmFive": sci_(abs(c[4]) / abs(c[0])),
             "cnfErrFive": sci_(res[5][2]), "cnfHarmIntMax": sci_(np.max(abs(r_.y[0] - np.interp(r_.t * w7, tau, q7))) / pk)})
+
+
+# ---------------------------------------------------------------- F2: the fitted restoring force and the training range
+N_E = 16; fxb = a.clamped(N_E, 3); Vb, Mb, fb, freeb = fxb["V"], fxb["M_ff"], fxb["freq_hz"], fxb["free_dofs"]
+Lamb = (2 * np.pi * fb) ** 2; midb = list(freeb).index((N_E // 2) * 3 + 1); shb = np.zeros(len(freeb)); shb[midb] = -1; fhb = Vb.T @ shb
+loadsb = np.linspace(0, 6000, 13); ufb = [fxb["fom_solver"](Pq * shb, n_steps=30) for Pq in loadsb]
+qlt = np.array([Pq * fhb / Lamb for Pq in loadsb]); qft = np.array([Vb.T @ (Mb @ u_) for u_ in ufb])
+def run(frac, ns):
+    stg = a.AppliedLoadStrategy(frac, 0.01, ns, np.random.default_rng(0)); ql_, qn_, F_ = stg.generate(Vb, Mb, fb, fxb["mode_shape_peaks"], fxb["fom_solver"])
+    ic = a.PolynomialModalROM(3).fit(qn_, F_); mf_ = a.MultiFidelitySurrogate().fit(ql_, F_); qp_ = np.zeros(3); ei_, em_, qi_, qm_ = [], [], [], []
+    for Pq, u_ in zip(loadsb[1:], ufb[1:]):
+        q_, _ = ic.predict(F_ext=Pq * fhb, Lambda=Lamb, q0=qp_); qp_ = q_; qm0 = mf_.reconstruct_q_nl(Pq * fhb / Lamb, Lamb); qi_.append(q_); qm_.append(qm0)
+        ref = u_[midb]; ei_.append(abs((Vb @ q_)[midb] - ref) / abs(ref)); em_.append(abs((Vb @ qm0)[midb] - ref) / abs(ref))
+    return ql_, qn_, F_, np.array(qi_), np.array(qm_), max(ei_), max(em_)
+DEF, WIDE, NS = (0.3, 3.0), (0.3, 5.0), (10, 20, 45, 90)
+rd = {n_: run(DEF, n_) for n_ in NS}; rw = {n_: run(WIDE, n_) for n_ in NS}
+ql, qn, Fd, qi, qm, _, _ = rd[45]
+assert (ql > 0).all() and abs(qlt[:, 1]).max() < 1e-12 and qlt[-1, 2] < 0      # test sweep: q_l2 = 0, q_l3 < 0, training all positive
+fig, ax = plt.subplots(1, 3, figsize=(6.3, 2.6))
+ax[0].plot(ql[:, 0] * 1e3, ql[:, 2] * 1e3, "o", ms=2.5, color="0.5", label="training"); ax[0].plot(qlt[:, 0] * 1e3, qlt[:, 2] * 1e3, "C3-", label="test sweep")
+ax[0].set_xlabel("$q_{l,1}$ (mm)"); ax[0].set_ylabel("$q_{l,3}$ (mm)"); ax[0].legend(fontsize=5.5); ax[0].set_title("(a) training loads", fontsize=7)
+fnl_t = Lamb * (qlt - qft); qip = np.vstack([np.zeros(3), qi]); qmp = np.vstack([np.zeros(3), qm])
+ax[1].plot(qn[:, 0] * 1e3, Fd[:, 0], ".", ms=3, color="0.6", label="training"); ax[1].plot(qft[:, 0] * 1e3, fnl_t[:, 0], "k-", label="full order")
+ax[1].plot(qip[:, 0] * 1e3, (Lamb * (qlt - qip))[:, 0], "C0--", label="polynomial"); ax[1].plot(qmp[:, 0] * 1e3, (Lamb * (qlt - qmp))[:, 0], "C1-.", label="RBF")
+ax[1].set_xlabel("$q_{nl,1}$ (mm)"); ax[1].set_ylabel("$f_{nl,1}$"); ax[1].legend(fontsize=5.5); ax[1].set_title("(b) the fitted force", fontsize=7)
+ax[2].semilogy(NS, [rd[n_][5] for n_ in NS], "C0o--", label="polynomial"); ax[2].semilogy(NS, [rd[n_][6] for n_ in NS], "C1s-.", label="RBF, default range"); ax[2].semilogy(NS, [rw[n_][6] for n_ in NS], "C2^-", label="RBF, wider range")
+ax[2].set_xlabel("training solves"); ax[2].set_ylabel("largest error, mid-span"); ax[2].legend(fontsize=5.5); ax[2].set_title("(c) more data", fontsize=7)
+fig.tight_layout(); fig.savefig(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "figures", "ch12_fnl.pdf"))
+NUM.update({"cnfRangeLo": f"{DEF[0]:g}", "cnfRangeHi": f"{DEF[1]:g}", "cnfWideHi": f"{WIDE[1]:g}",
+            "cnfTrMax": f"{rd[45][0][:, 0].max() * 1e3:.1f}", "cnfTestMax": f"{qlt[-1, 0] * 1e3:.1f}", "cnfWideMax": f"{rw[45][0][:, 0].max() * 1e3:.1f}",
+            "cnfTrQnl": f"{rd[45][1][:, 0].max() * 1e3:.1f}", "cnfTestQnl": f"{qft[-1, 0] * 1e3:.1f}",
+            "cnfWideMfsTen": sci_(rw[10][6]), "cnfWideMfsFortyFive": sci_(rw[45][6]), "cnfWideMfsNinety": sci_(rw[90][6]), "cnfWideIceNinety": sci_(rw[90][5])})
 
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),"..","tables","numbers_ch12_fig.tex"),"w") as fh:
     fh.write("% generated by scripts/ch12_figs.py -- do not edit\n")
