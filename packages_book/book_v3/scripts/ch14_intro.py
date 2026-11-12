@@ -1,4 +1,5 @@
-r"""Preview of Chapter 14 introduction figure F0 (no macros written)."""
+r"""Chapter 14 introduction: figure ch14_intro.pdf and macros tables/numbers_ch14_intro.tex (prefix crx).
+Run from the repository root with PYTHONPATH=fea_engine/src:rom_engine/src:rom_engine/tests:fea_engine/tests."""
 import os, sys, warnings
 import numpy as np, scipy.sparse as sp
 import matplotlib; matplotlib.use("Agg")
@@ -51,8 +52,8 @@ a.set_xlabel("t"); a.set_ylabel("smallest lifted contact force")
 a.set_title("(a) sign of the lifted force, $p_\\lambda=20$"); a.legend(fontsize=7, loc="center right")
 b = ax[1]
 b.semilogy(sizes, err["nmf"], "o-", color="C0", label="error, NMF"); b.semilogy(sizes, err["svd"], "s-", color="C3", label="error, SVD")
-b.semilogy(sizes, np.maximum(kkt["nmf"], 1e-17), "o--", color="C0", mfc="w", label="reduced KKT residual, NMF")
-b.semilogy(sizes, np.maximum(kkt["svd"], 1e-17), "s--", color="C3", mfc="w", label="reduced KKT residual, SVD")
+b.semilogy(sizes, np.maximum(kkt["nmf"], 1e-17), "o--", color="C0", mfc="w", label="reduced KKT, NMF")
+b.semilogy(sizes, np.maximum(kkt["svd"], 1e-17), "s--", color="C3", mfc="w", label="reduced KKT, SVD")
 b.set_xlabel(r"$p=p_\lambda$"); b.set_title("(b) the reduced check cannot see it"); b.legend(fontsize=7)
 c_ = ax[2]
 c_.step(ks, rk, "o-", where="post", color="C2"); c_.axhline(rows, color="k", ls="--", lw=.8)
@@ -60,5 +61,14 @@ c_.text(0.2, rows + 0.4, f"{rows} constraints (full row rank)", fontsize=7)
 c_.set_xlabel("unit vectors added to the 3-mode basis"); c_.set_ylabel(r"rank of the reduced constraints")
 c_.set_title("(c) rank repair"); c_.set_ylim(0, rows + 3)
 plt.tight_layout()
-out = os.path.join("packages_book/book_v3/preview_figs", "ch14_intro_preview.png"); plt.savefig(out, dpi=150)
-print(i, j, [f"{x:.1e}" for x in err["nmf"]], [f"{x:.1e}" for x in err["svd"]], kkt["nmf"], kkt["svd"], rk, lifts["svd"][:, [i,j]].min())
+B = "packages_book/book_v3"
+plt.savefig(os.path.join(B, "figures", "ch14_intro.pdf")); plt.savefig(os.path.join(B, "preview_figs", "ch14_intro_preview.png"), dpi=150)
+def sci(x):
+    m, e = f"{x:.1e}".split("e"); return f"${m}\\times10^{{{int(e)}}}$"
+srow = {p: ContactROM(mem.K, mem.B, Ux[:, :p], svd_dual_basis(Ltr[:, act], p), M=M).solve_dynamic(force, c, H, NS).lam.min() for p in sizes}
+d = dict(crxNmfOutMin=sci(min(err["nmf"])), crxNmfOutMax=sci(max(err["nmf"])), crxSvdOutMin=sci(min(err["svd"])),
+         crxSvdMinLamWorst=sci(min(srow.values())), crxKktMax=sci(max(max(kkt["nmf"]), max(kkt["svd"]))),
+         crxRankBefore=str(rk[0]), crxBasisModes="3", crxPLam="20")
+with open(os.path.join(B, "tables", "numbers_ch14_intro.tex"), "w") as fh:
+    for k, v in d.items(): fh.write(f"\\newcommand{{\\{k}}}{{{v}\\xspace}}\n")
+print(d)
