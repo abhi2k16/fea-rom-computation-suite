@@ -75,6 +75,20 @@ sel_nl = [e for e in range(E0, m.n) if kappa[e] > 1e-6]
 sci = lambda v: "$%s\\times10^{%d}$" % tuple(f"{v:.1e}".split("e")[0:1] + [int(f"{v:.1e}".split("e")[1])])
 D.update(cfmHeld=str(len(held)), cfmHeldZero=str(len(zero)), cfmHeldNoise=str(len(noise)), cfmElong=sci(elong),
          cfmKLo=f"{min(kappa[e] for e in noise):.2g}", cfmKHi=f"{max(kappa[e] for e in noise):.2g}", cfmHardSel=str(len(sel_nl)), cfmHard=str(m.n - E0))
+# --- numbers derived from the Chapter 13/14 macro file (no digits typed in the text)
+import re
+_T = open(B + "/tables/numbers_ch13.tex").read()
+def old(k):
+    v = re.search(r"\\newcommand\{\\" + k + r"\}\{(.*?)\\xspace\}", _T).group(1)
+    mm = re.match(r"\$([\d.]+)\\times10\^\{(-?\d+)\}\$", v)
+    return float(mm.group(1)) * 10 ** int(mm.group(2)) if mm else float(v)
+rat = [old(f"cgr{k}Med") / old(f"cgr{k}Greedy") for k in ("Two", "Four", "Six", "Eight")]
+car = [old(f"cecPlainNmf{k}Err") / old(f"cecCaNmf{k}Err") for k in ("In", "InB", "InC", "Out", "OutB")]
+out = [4.0 / 3.0, 5.0 / 3.0, 0.30 / 0.25, 0.40 / 0.25]      # out-of-range load factors and depths over the training maxima (3 and 0.25) of Chapter 13
+rid = max(old("crdFullErr"), old("crdThreeErr"), old("crdOneErr"))
+D.update(cfmFacOutIn=f"{old('chdNmfThirtyOut') / old('chdNmfThirtyIn'):.1f}", cfmGreedyLo=f"{min(rat):.1f}", cfmGreedyHi=f"{max(rat):.1f}",
+         cfmOutLo=f"{min(out):.1f}", cfmOutHi=f"{max(out):.1f}", cfmCaRatio=f"{max(car):.1f}",
+         cfmRidErr="$%.1f\\times10^{%d}$" % (rid / 10 ** int(np.floor(np.log10(rid))), int(np.floor(np.log10(rid)))))
 print(D)
 with open(B + "/tables/numbers_ch14_more.tex", "w") as fh:
     for kk_, v in D.items(): fh.write(f"\\newcommand{{\\{kk_}}}{{{v}\\xspace}}\n")
