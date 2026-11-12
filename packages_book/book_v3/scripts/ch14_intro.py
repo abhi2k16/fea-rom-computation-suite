@@ -11,7 +11,7 @@ from rom_engine import ContactROM, nonneg_dual_basis, active_snapshot_columns
 from rom_engine.contact_dual_basis import svd_dual_basis
 from rom_engine.contact_hyper_reduction import rank_deficiency, enrich_basis_for_constraints
 H, NS = 0.005, 120
-plt.rcParams.update({"font.size": 8.5, "axes.grid": True, "grid.alpha": 0.3})
+plt.rcParams.update({"font.size": 8, "axes.grid": True, "grid.alpha": 0.3})
 mem = ObstacleMembrane(18); n = mem.n_dof
 M = sp.diags(np.full(n, mem.h ** 2)).tocsr(); force = lambda t: mem.f
 train = [(0.35, 0.10), (0.45, 0.12), (0.40, 0.18), (0.40, 0.12)]; test = (0.55, 0.05)
@@ -37,7 +37,7 @@ V3 = np.linalg.svd(Xu, full_matrices=False)[0][:, :3]; V3e, added = enrich_basis
 rows = m.B.shape[0]; ks = list(range(len(added) + 1))
 rk = [rows - rank_deficiency(m.B, V3e[:, :3 + k]) for k in ks]
 
-fig, ax = plt.subplots(1, 3, figsize=(11.5, 3.5))
+fig, ax = plt.subplots(1, 3, figsize=(8.6, 3.0))
 a = ax[0]
 t = np.arange(Lf.shape[0]) * H
 mn = lambda L: L.min(1)
@@ -47,17 +47,17 @@ a.plot(t, mn(Lf), "k", lw=2.2, label="full order")
 a.plot(t, mn(lifts["nmf"]), "--", color="C0", lw=1.6, label="NMF lift")
 a.plot(t, mn(lifts["svd"]), "-", color="C3", lw=1.2, label="SVD lift")
 a.set_ylim(lo, -lo * 0.08)
-a.text(0.02, 0.06, r"inadmissible: $\lambda<0$", transform=a.transAxes, fontsize=7, color="C3")
+a.text(0.02, 0.06, r"inadmissible: $\lambda<0$", transform=a.transAxes, fontsize=6.5, color="C3")
 a.set_xlabel("t"); a.set_ylabel("smallest lifted contact force")
-a.set_title("(a) sign of the lifted force, $p_\\lambda=20$"); a.legend(fontsize=7, loc="center right")
+a.set_title("(a) sign of the lifted force, $p_\\lambda=20$"); a.legend(fontsize=6.5, loc="center right")
 b = ax[1]
 b.semilogy(sizes, err["nmf"], "o-", color="C0", label="error, NMF"); b.semilogy(sizes, err["svd"], "s-", color="C3", label="error, SVD")
 b.semilogy(sizes, np.maximum(kkt["nmf"], 1e-17), "o--", color="C0", mfc="w", label="reduced KKT, NMF")
 b.semilogy(sizes, np.maximum(kkt["svd"], 1e-17), "s--", color="C3", mfc="w", label="reduced KKT, SVD")
-b.set_xlabel(r"$p=p_\lambda$"); b.set_title("(b) the reduced check cannot see it"); b.legend(fontsize=7)
+b.set_xlabel(r"$p=p_\lambda$"); b.set_title("(b) the reduced check cannot see it"); b.legend(fontsize=6.5)
 c_ = ax[2]
 c_.step(ks, rk, "o-", where="post", color="C2"); c_.axhline(rows, color="k", ls="--", lw=.8)
-c_.text(0.2, rows + 0.4, f"{rows} constraints (full row rank)", fontsize=7)
+c_.text(0.2, rows + 0.4, f"{rows} constraints (full row rank)", fontsize=6.5)
 c_.set_xlabel("unit vectors added to the 3-mode basis"); c_.set_ylabel(r"rank of the reduced constraints")
 c_.set_title("(c) rank repair"); c_.set_ylim(0, rows + 3)
 plt.tight_layout()
