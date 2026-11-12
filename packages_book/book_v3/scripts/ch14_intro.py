@@ -69,6 +69,24 @@ srow = {p: ContactROM(mem.K, mem.B, Ux[:, :p], svd_dual_basis(Ltr[:, act], p), M
 d = dict(crxNmfOutMin=sci(min(err["nmf"])), crxNmfOutMax=sci(max(err["nmf"])), crxSvdOutMin=sci(min(err["svd"])),
          crxSvdMinLamWorst=sci(min(srow.values())), crxKktMax=sci(max(max(kkt["nmf"]), max(kkt["svd"]))),
          crxRankBefore=str(rk[0]), crxBasisModes="3", crxPLam="20")
+# --- mechanism of the SVD failure (Section 14.4): sign of the leading vector, penetration of the lifted solution
+from scipy.optimize import nnls  # noqa: F401
+gapf = lambda u: ((mem.B @ u.T).T - c)
+mech = {}
+for p_ in (10, 20, 30, 40):
+    Us = svd_dual_basis(Ltr[:, act], p_).copy(); Uf1 = Us.copy()
+    if Uf1[:, 0].sum() < 0: Uf1[:, 0] *= -1
+    r0 = ContactROM(mem.K, mem.B, Ux[:, :p_], Us, M=M).solve_dynamic(force, c, H, NS)
+    r1 = ContactROM(mem.K, mem.B, Ux[:, :p_], Uf1, M=M).solve_dynamic(force, c, H, NS)
+    e = lambda r: np.sum((r.u - Uf) ** 2) / np.sum(Uf ** 2)
+    mech[p_] = (e(r0), e(r1), r1.lam.min(), r0.lam, gapf(r0.u).min())
+    if p_ == 20:
+        rn = ContactROM(mem.K, mem.B, Ux[:, :p_], nonneg_dual_basis(Ltr[:, act], p_).U, M=M).solve_dynamic(force, c, H, NS)
+        d.update(crxGapSvd=f"{-mech[20][4]:.2g}", crxGapNmf=f"{-gapf(rn.u).min():.2g}",
+                 crxLamMaxSvd=sci(r0.lam.max()), crxLamMaxNmf=f"{rn.lam.max():.3g}", crxLamMaxFull=f"{Lf.max():.2g}")
+ratios = [mech[q][0] / mech[q][1] for q in mech]
+d.update(crxFlipErrBefore=sci(mech[10][0]), crxFlipErrAfter=sci(mech[10][1]), crxFlipMinLam=sci(mech[10][2]),
+         crxFlipFactorMin=str(int(np.floor(min(ratios)))), crxFlipFactorMax=str(int(np.ceil(max(ratios)))))
 with open(os.path.join(B, "tables", "numbers_ch14_intro.tex"), "w") as fh:
     for k, v in d.items(): fh.write(f"\\newcommand{{\\{k}}}{{{v}\\xspace}}\n")
 print(d)
