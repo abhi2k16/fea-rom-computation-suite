@@ -23,12 +23,12 @@ fig, ax = plt.subplots(2, NSHOW, figsize=(8.4, 4.0))
 for j in range(NSHOW):
     for i, (U, name, cmap) in enumerate(((Us, "SVD", "RdBu_r"), (Un, "NMF", "viridis"))):
         v = U[:, j].reshape(n, n); a = ax[i, j]
-        if name == "SVD": m = np.abs(v).max(); im = a.pcolormesh(mem.X, mem.Y, v, shading="nearest", cmap=cmap, vmin=-m, vmax=m)
-        else: im = a.pcolormesh(mem.X, mem.Y, v, shading="nearest", cmap=cmap, vmin=0, vmax=v.max())
+        if name == "SVD": m = np.abs(v).max(); im = a.pcolormesh(mem.X, mem.Y, v, shading="nearest", rasterized=True, cmap=cmap, vmin=-m, vmax=m)
+        else: im = a.pcolormesh(mem.X, mem.Y, v, shading="nearest", rasterized=True, cmap=cmap, vmin=0, vmax=v.max())
         a.set_aspect("equal"); a.set_xticks([]); a.set_yticks([])
         a.set_title(f"{name} vector {j + 1}\n{100 * negfrac(U)[j]:.0f} % negative entries", fontsize=7.5)
 plt.tight_layout(); B = "packages_book/book_v3"
-plt.savefig(os.path.join(B, "figures", "ch14_basis.pdf")); plt.savefig(os.path.join(B, "preview_figs", "ch14_f2_preview.png"), dpi=150)
+plt.savefig(os.path.join(B, "figures", "ch14_basis.pdf"), dpi=300); plt.savefig(os.path.join(B, "preview_figs", "ch14_f2_preview.png"), dpi=150)
 shown = negfrac(Us)[:NSHOW]
 d = dict(cfbPLam=str(PL), cfbNShow=str(NSHOW), cfbNegLo=f"{100 * min(shown[1:]):.0f}", cfbNegHi=f"{100 * max(shown[1:]):.0f}")
 with open(os.path.join(B, "tables", "numbers_ch14_basis.tex"), "w") as fh:

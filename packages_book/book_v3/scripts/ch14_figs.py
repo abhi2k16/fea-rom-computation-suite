@@ -19,7 +19,7 @@ fig, ax = plt.subplots(1, 3, figsize=(9.0, 3.0))
 # (a) field at the step of most contact, outside obstacle
 g = tests["outside"]; c, U, L = fom[g]; k = int((L > 1e-9).sum(1).argmax())
 u = U[k].reshape(n, n); act = (L[k] > 1e-9).reshape(n, n)
-a = ax[0]; im = a.pcolormesh(mem.X, mem.Y, u, shading="nearest", cmap="viridis"); plt.colorbar(im, ax=a, fraction=0.046, pad=0.02, label="displacement")
+a = ax[0]; im = a.pcolormesh(mem.X, mem.Y, u, shading="nearest", rasterized=True, cmap="viridis"); plt.colorbar(im, ax=a, fraction=0.046, pad=0.02, label="displacement")
 a.contour(mem.X, mem.Y, c.reshape(n, n), levels=[-0.29, -0.25, -0.2, -0.15], colors="w", linewidths=0.7)
 xi, yi = np.nonzero(act); a.plot(mem.X[xi, yi], mem.Y[xi, yi], "r.", ms=4, label="in contact")
 a.set_aspect("equal"); a.grid(False); a.set_xlabel("x"); a.set_ylabel("y"); a.set_title("(a) held-out obstacle, most contact", fontsize=8); a.legend(fontsize=6.5, loc="lower left")
@@ -36,7 +36,7 @@ cc.plot(t, (fom[tests["inside"]][2] > 1e-9).sum(1), color="C2", label="inside")
 cc.plot(t, (fom[tests["outside"]][2] > 1e-9).sum(1), color="C3", label="outside")
 cc.set_xlabel("t"); cc.set_ylabel("active constraints (of %d)" % N); cc.set_title("(c) active set in time", fontsize=8); cc.legend(fontsize=6.5)
 plt.tight_layout(); B = "packages_book/book_v3"
-plt.savefig(os.path.join(B, "figures", "ch14_membrane.pdf")); plt.savefig(os.path.join(B, "preview_figs", "ch14_f1_preview.png"), dpi=150)
+plt.savefig(os.path.join(B, "figures", "ch14_membrane.pdf"), dpi=300); plt.savefig(os.path.join(B, "preview_figs", "ch14_f1_preview.png"), dpi=150)
 d = dict(cfgStep=str(k), cfgTime=f"{k * H:.2f}", cfgPeakOut=str(int((fom[tests["outside"]][2] > 1e-9).sum(1).max())),
          cfgPeakInLo=str(min(int((fom[q][2] > 1e-9).sum(1).max()) for q in train + [tests["inside"]])),
          cfgPeakInHi=str(max(int((fom[q][2] > 1e-9).sum(1).max()) for q in train + [tests["inside"]])),
