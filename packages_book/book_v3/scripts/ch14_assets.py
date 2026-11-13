@@ -129,6 +129,8 @@ def fig_mfs(d):
     num("cvfMfsDecayA", f"{ra:.4f}"); num("cvfMfsDecayB", f"{rb:.4f}"); check("MFS free decay R2 case a", ra, 0.9971, 1e-3); check("MFS free decay R2 case b", rb, 0.9898, 1e-3)
     be = np.max(np.abs(z["omega_mfs_backbone"] / z["omega_fe_backbone"] - 1)) * 100
     wl = 2 * np.pi * f1[0]; hard = (z["omega_fe_backbone"][-1] / wl - 1) * 100
+    bei = np.max(np.abs(z["omega_ice_backbone"] / z["omega_fe_backbone"] - 1)) * 100
+    num("cvfMfsBackErrIce", pct(bei)); check("ICE backbone error (%)", bei, 0.87, 0.02)
     num("cvfMfsBackErr", pct(be)); num("cvfMfsHardening", pct(hard, 3)); check("MFS backbone error (%)", be, 0.96, 0.02); check("MFS hardening range (%)", hard, 22, 0.05)
     sp = float(z["t_fe_mean"] / z["t_mfs_mean"]); num("cvfMfsSpeed", sci(sp)); check("MFS static speed ratio", sp, 1.7e4, 0.05)
     num("cvfMfsTfe", f"{float(z['t_fe_mean']):.2f}"); num("cvfMfsTmfs", sci(float(z["t_mfs_mean"])))
